@@ -1,0 +1,30 @@
+{
+  "extends": [
+    "stylelint-config-standard-scss",
+    "stylelint-config-sass-guidelines"
+  ],
+  "plugins": ["stylelint-order", "stylelint-scss"],
+  "rules": {
+    "@stylistic/indentation": null,
+    "font-family-no-missing-generic-family-keyword": null,
+    "no-descending-specificity": null,
+    "selector-class-pattern": ["^[a-z0-9-]+$"],
+    "selector-max-id": 5,
+    "selector-no-qualifying-type": [
+      true,
+      { "ignore": ["attribute", "class", "id"] }
+    ],
+    "selector-max-compound-selectors": 5,
+    "max-nesting-depth": 5,
+    "selector-pseudo-class-no-unknown": [
+      true,
+      { "ignorePseudoClasses": ["host"] }
+    ],
+    "selector-pseudo-element-no-unknown": [
+      true,
+      { "ignorePseudoElements": ["ng-deep"] }
+    ],
+    "order/properties-alphabetical-order": true,
+    "@stylistic/function-parentheses-space-inside": "never-single-line"
+  }
+}

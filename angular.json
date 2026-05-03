@@ -1,0 +1,151 @@
+{
+  "$schema": "./node_modules/@angular/cli/lib/config/schema.json",
+  "cli": {
+    "analytics": false,
+    "schematicCollections": ["@ngrx/schematics"]
+  },
+  "newProjectRoot": ".",
+  "projects": {
+    "terapia-nutricional-ui": {
+      "projectType": "application",
+      "schematics": {
+        "@schematics/angular:component": { "style": "scss" },
+        "@schematics/angular:application": { "strict": true }
+      },
+      "root": "",
+      "sourceRoot": "src",
+      "prefix": "app",
+      "architect": {
+        "build": {
+          "builder": "@angular/build:application",
+          "options": {
+            "allowedCommonJsDependencies": [],
+            "outputPath": { "base": "dist/terapia-nutricional-ui" },
+            "index": "src/index.html",
+            "polyfills": ["zone.js"],
+            "tsConfig": "tsconfig.app.json",
+            "inlineStyleLanguage": "scss",
+            "assets": [
+              "src/favicon.svg",
+              "src/assets/html",
+              "src/assets/images"
+            ],
+            "styles": ["src/styles.scss"],
+            "scripts": [],
+            "browser": "src/main.ts"
+          },
+          "configurations": {
+            "development": {
+              "extractLicenses": false,
+              "optimization": false,
+              "sourceMap": true
+            },
+            "production": {
+              "budgets": [
+                { "maximumWarning": "6kb", "type": "anyComponentStyle" }
+              ],
+              "fileReplacements": [
+                {
+                  "replace": "src/environments/environment.ts",
+                  "with": "src/environments/environment.prod.ts"
+                }
+              ],
+              "extractLicenses": true,
+              "optimization": true,
+              "sourceMap": false,
+              "outputHashing": "all"
+            },
+            "analyze": {
+              "budgets": [
+                { "maximumWarning": "6kb", "type": "anyComponentStyle" }
+              ],
+              "fileReplacements": [
+                {
+                  "replace": "src/environments/environment.ts",
+                  "with": "src/environments/environment.prod.ts"
+                }
+              ],
+              "extractLicenses": true,
+              "optimization": true,
+              "sourceMap": false,
+              "statsJson": true,
+              "namedChunks": true,
+              "outputHashing": "all",
+              "baseHref": "/terapia-nutricional-ui/"
+            }
+          },
+          "defaultConfiguration": "production"
+        },
+        "serve": {
+          "builder": "@angular/build:dev-server",
+          "configurations": {
+            "development": {
+              "proxyConfig": "proxies/proxy.mock.conf.js",
+              "buildTarget": "terapia-nutricional-ui:build:development",
+              "host": "127.0.0.1"
+            },
+            "remote": {
+              "proxyConfig": "proxies/proxy.remote.conf.js",
+              "buildTarget": "terapia-nutricional-ui:build:development",
+              "host": "127.0.0.1",
+              "port": 5200,
+              "ssl": false,
+              "open": true
+            },
+            "local": {
+              "proxyConfig": "proxies/proxy.local.conf.js",
+              "buildTarget": "terapia-nutricional-ui:build:development",
+              "host": "127.0.0.1",
+              "open": true
+            },
+            "production": {
+              "proxyConfig": "proxies/proxy.mock.conf.js",
+              "buildTarget": "terapia-nutricional-ui:build:production",
+              "host": "127.0.0.1"
+            }
+          },
+          "defaultConfiguration": "development"
+        },
+        "extract-i18n": {
+          "builder": "@angular/build:extract-i18n",
+          "options": {
+            "buildTarget": "terapia-nutricional-ui:build:development"
+          }
+        },
+        "test": {
+          "builder": "@angular/build:karma",
+          "options": {
+            "watch": false,
+            "polyfills": ["zone.js"],
+            "tsConfig": "tsconfig.spec.json",
+            "karmaConfig": "karma.conf.js",
+            "assets": ["src/assets/html", "src/assets/images"],
+            "codeCoverage": true
+          }
+        },
+        "lint": {
+          "builder": "@angular-eslint/builder:lint",
+          "options": {
+            "lintFilePatterns": [
+              "src/**/*.ts",
+              "e2e/**/*.ts",
+              "src/**/*.html"
+            ],
+            "eslintConfig": "eslint.config.mjs"
+          }
+        }
+      }
+    }
+  },
+  "version": 1,
+  "schematics": {
+    "@schematics/angular:component": { "type": "component" },
+    "@schematics/angular:directive": { "type": "directive" },
+    "@schematics/angular:service": { "type": "service" },
+    "@schematics/angular:guard": { "typeSeparator": "." },
+    "@schematics/angular:interceptor": { "typeSeparator": "." },
+    "@schematics/angular:module": { "typeSeparator": "." },
+    "@schematics/angular:pipe": { "typeSeparator": "." },
+    "@schematics/angular:resolver": { "typeSeparator": "." }
+  }
+}

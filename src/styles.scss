@@ -1,0 +1,20 @@
+// Global styles for TerapiaNutricional UI
+// Import Angular Material theme and PrimeNG here
+
+// Reset / base
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: Roboto, 'Helvetica Neue', sans-serif;
+}

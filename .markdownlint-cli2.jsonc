@@ -1,0 +1,19 @@
+{
+  "config": {
+    "default": true,
+    "MD013": {
+      "code_blocks": false,
+      "tables": false,
+      "strict": false
+    }
+  },
+  "ignores": [
+    "node_modules",
+    ".git",
+    "vendor",
+    "dist",
+    "build",
+    "openapi"
+  ],
+  "globs": ["**/*.md"]
+}

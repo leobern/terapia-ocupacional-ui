@@ -1,0 +1,39 @@
+# Dependências
+node_modules/
+.pnpm-store/
+
+# Build outputs
+dist/
+out-tsc/
+target/
+
+# Angular cache
+.angular/
+
+# Stryker
+.stryker-tmp/
+
+# ng-apimock
+.ngapimock/
+
+# E2E generated
+dist/e2e/
+
+# Coverage
+coverage/
+
+# Environment locals (não commitar)
+.env.local
+
+# IDE
+.idea/
+.vscode/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# OS
+.DS_Store
+Thumbs.db

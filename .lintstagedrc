@@ -1,0 +1,7 @@
+{
+  "*.{html,scss,css,json,js,md,mjs,mts}": [
+    "prettier --write --log-level=silent"
+  ],
+  "*rc": ["prettier --write --parser json --log-level=silent"],
+  "*.{ts,html}": ["eslint --flag v10_config_lookup_from_file --fix"]
+}
