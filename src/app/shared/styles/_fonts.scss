@@ -1,0 +1,175 @@
+// =============================================================================
+// Helvetica Neue — arquivos fornecidos pelo usuário (helvetica-neue-5.zip),
+// extraídos em src/assets/fonts/helvetica-neue/. Um @font-face por peso/estilo
+// do arquivo original, mapeado para o `font-weight` numérico padrão da família
+// (convenção Adobe/Helvetica Neue: UltraLight 100 … Black 900).
+//
+// IMPORTANTE: este arquivo só deve ser `@use`ado UMA VEZ, em styles.scss (a
+// folha de estilo global). Angular compila o SCSS de cada componente como
+// uma unidade separada — se este arquivo fosse importado a partir de
+// _tokens.scss (que quase todo componente usa), cada componente duplicaria
+// estas ~16 regras @font-face no bundle final. As variáveis de peso de fonte
+// (usadas livremente nos componentes) vivem à parte, em _font-weights.scss,
+// que não emite CSS nenhum.
+// =============================================================================
+
+@font-face {
+  font-family: 'Helvetica Neue';
+  src: url('/assets/fonts/helvetica-neue/HelveticaNeueUltraLight.otf')
+    format('opentype');
+  font-weight: 100;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Helvetica Neue';
+  src: url('/assets/fonts/helvetica-neue/HelveticaNeueUltraLightItalic.otf')
+    format('opentype');
+  font-weight: 100;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Helvetica Neue';
+  src: url('/assets/fonts/helvetica-neue/HelveticaNeueThin.otf')
+    format('opentype');
+  font-weight: 200;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Helvetica Neue';
+  src: url('/assets/fonts/helvetica-neue/HelveticaNeueThinItalic.otf')
+    format('opentype');
+  font-weight: 200;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Helvetica Neue';
+  src: url('/assets/fonts/helvetica-neue/HelveticaNeueLight.otf')
+    format('opentype');
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Helvetica Neue';
+  src: url('/assets/fonts/helvetica-neue/HelveticaNeueLightItalic.otf')
+    format('opentype');
+  font-weight: 300;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Helvetica Neue';
+  src: url('/assets/fonts/helvetica-neue/HelveticaNeueRoman.otf')
+    format('opentype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Helvetica Neue';
+  src: url('/assets/fonts/helvetica-neue/HelveticaNeueItalic.ttf')
+    format('truetype');
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Helvetica Neue';
+  src: url('/assets/fonts/helvetica-neue/HelveticaNeueMedium.otf')
+    format('opentype');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Helvetica Neue';
+  src: url('/assets/fonts/helvetica-neue/HelveticaNeueMediumItalic.otf')
+    format('opentype');
+  font-weight: 500;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Helvetica Neue';
+  src: url('/assets/fonts/helvetica-neue/HelveticaNeueBold.otf')
+    format('opentype');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Helvetica Neue';
+  src: url('/assets/fonts/helvetica-neue/HelveticaNeueBoldItalic.otf')
+    format('opentype');
+  font-weight: 700;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Helvetica Neue';
+  src: url('/assets/fonts/helvetica-neue/HelveticaNeueHeavy.otf')
+    format('opentype');
+  font-weight: 800;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Helvetica Neue';
+  src: url('/assets/fonts/helvetica-neue/HelveticaNeueHeavyItalic.otf')
+    format('opentype');
+  font-weight: 800;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Helvetica Neue';
+  src: url('/assets/fonts/helvetica-neue/HelveticaNeueBlack.otf')
+    format('opentype');
+  font-weight: 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Helvetica Neue';
+  src: url('/assets/fonts/helvetica-neue/HelveticaNeueBlackItalic.otf')
+    format('opentype');
+  font-weight: 900;
+  font-style: italic;
+  font-display: swap;
+}
+
+// -----------------------------------------------------------------------------
+// Nunito Sans — reservada a elementos interativos (botões, tags, inputs — grupo
+// criado pelo usuário no Figma em 2026-07-23, ver DS-component-button/spec.md).
+// Baixada do Google Fonts (subconjunto "latin", SIL Open Font License 1.1) e
+// auto-hospedada aqui — nunca via <link>/@import de CDN, para não quebrar o
+// offline-first (Constituição, Princípio IV). Só o peso Bold (700) até agora,
+// que é o único usado no design system até o momento; adicionar outros pesos
+// quando algum componente precisar.
+// -----------------------------------------------------------------------------
+@font-face {
+  font-family: 'Nunito Sans';
+  src: url('/assets/fonts/nunito-sans/NunitoSans-Bold.woff2') format('woff2');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}

@@ -1,0 +1,15 @@
+<button
+  type="button"
+  class="button"
+  [class]="variantClass()"
+  [class.button--full-width]="fullWidth()"
+  [disabled]="disabled()"
+>
+  @if (iconLeft(); as icon) {
+    <ph-icon class="button__icon" [name]="icon" [size]="24" />
+  }
+  <span class="button__label">{{ label() }}</span>
+  @if (iconRight(); as icon) {
+    <ph-icon class="button__icon" [name]="icon" [size]="24" />
+  }
+</button>

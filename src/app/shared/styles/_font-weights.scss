@@ -1,0 +1,21 @@
+// =============================================================================
+// Uma variável Sass por arquivo de fonte do helvetica-neue-5.zip (pedido do
+// usuário) — usar nos componentes em vez do número "mágico" de font-weight,
+// já que o nome do arquivo original (Roman, Heavy, Black…) não corresponde
+// 1:1 ao número.
+//
+// Separado de _fonts.scss (que só tem as regras @font-face) de propósito:
+// esse arquivo não emite nenhum CSS, só variáveis — por isso pode ser
+// `@use`ado com segurança de _tokens.scss e, através dele, de toda folha de
+// estilo de componente sem duplicar @font-face. _fonts.scss só deve ser
+// `@use`ado uma única vez, em styles.scss (raiz global) — ver nota lá.
+// =============================================================================
+
+$font-weight-ultralight: 100;
+$font-weight-thin: 200;
+$font-weight-light: 300;
+$font-weight-roman: 400;
+$font-weight-medium: 500;
+$font-weight-bold: 700;
+$font-weight-heavy: 800;
+$font-weight-black: 900;

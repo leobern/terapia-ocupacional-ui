@@ -1,0 +1,210 @@
+// =============================================================================
+// Design tokens — fonte única de verdade para cor, tipografia, espaçamento e
+// raio de borda. Dois níveis, para permitir tema claro/escuro sem tocar em
+// componente nenhum:
+//
+//   1. "Paleta" ($color-*): os hex crus, extraídos 1:1 dos Color Styles do
+//      Figma "Conductia" (zhRV09hpYhPYLp9UV8ojYc) via get_design_context /
+//      inspeção direta de fills — nunca estimados de screenshot.
+//   2. "Semântico" (--*, custom properties em :root): o que os componentes
+//      de fato consomem (ex.: var(--surface), não $color-surface). Trocar de
+//      tema é sobrescrever este bloco para um seletor de tema — nada muda no
+//      SCSS de paleta nem nos componentes.
+//
+// Hoje só existe o tema claro (é o único especificado no Figma). O bloco
+// `:root[data-theme='dark']` já está com a mesma lista de propriedades — só
+// falta preencher os hex reais quando o dark mode for especificado.
+// =============================================================================
+
+// `font-weights` (não `fonts`!) — não emite @font-face, só variáveis; ver
+// nota em _fonts.scss sobre por que os dois ficam em arquivos separados.
+@use 'font-weights' as fonts;
+
+// -----------------------------------------------------------------------------
+// 1. Paleta — hex crus (Color Styles do Figma)
+// -----------------------------------------------------------------------------
+
+// default/*
+$color-primary: #004466;
+$color-secondary: #00aaff; // era #0088cc — redefinido no Figma (DS-component-button, 2026-07-23)
+$color-tertiary: #85e0e0;
+
+// content/*
+// Numeração segue o Figma "Conductia" como fonte de verdade — o usuário reorganizou a
+// escala content/* na origem (inseriu um novo degrau), deslocando os nomes que antes eram
+// content-4/content-5 para content-5/content-6. Nomes e hex abaixo refletem o Figma atual,
+// não a numeração histórica deste arquivo.
+$color-content-1: #002233;
+$color-content-2: #006da3;
+$color-content-3: #218383;
+$color-content-5: #94acb8; // era content-4 neste arquivo; Figma atual chama de content-5
+$color-content-6: #ffffff; // era content-5 neste arquivo; Figma atual chama de content-6
+
+// state/*
+$color-state-disabled: #c7ccd1;
+$color-state-disabled-2: #4e585f;
+
+// border/*
+$color-border: #e8eff2;
+$color-border-2: #cedde3;
+
+// surface/*
+$color-surface: #ffffff;
+$color-surface-2: #f4f6f6;
+$color-surface-glass-1: #ffffff;
+$color-surface-glass-2: #e3e8e8;
+
+// communication/*
+// `comm-focus` — token dedicado dentro do próprio grupo comm (não reaproveita
+// comm-info), criado pelo usuário no Figma em 2026-07-23 especificamente para
+// ficar isolado caso a cor do anel de foco precise mudar no futuro sem afetar
+// nada mais que usa comm-info.
+$color-comm-info: #990099;
+$color-comm-alert: #ff002a;
+$color-comm-success: #19e63b;
+$color-comm-warning: #ffd400;
+$color-comm-focus: #ff33bb;
+
+// focus/* — padrão único de foco por teclado para TODO elemento clicável do
+// design system (decisão do usuário, 2026-07-23, não vem de nenhum nó Figma
+// específico — é uma convenção de acessibilidade transversal): anel sólido de
+// `$focus-ring-width` na cor `comm-focus`, afastado `$focus-ring-offset` do
+// componente. Usar via `mixins.focus-ring` (_mixins.scss) — nunca declarar
+// `outline`/`outline-offset` manualmente em cada componente.
+$color-focus-ring: $color-comm-focus;
+$focus-ring-width: 2px;
+$focus-ring-offset: 4px;
+
+// logo/*
+$color-logo-1: #f3d4f3;
+$color-logo-2: #a6fbfb;
+$color-logo-3: #b3fcd7;
+$color-logo-4: #e6e4df;
+
+// decorative/* — usados só no background animado das telas (não são Color
+// Style nomeado no Figma, só um fill solto nos blobs de fundo).
+$color-decorative-forest: #0d7742;
+
+// -----------------------------------------------------------------------------
+// Tipografia — duas famílias: Helvetica Neue (texto geral) e Nunito Sans
+// (elementos interativos — botões, tags, inputs — grupo criado pelo usuário
+// no Figma em 2026-07-23). Nunito Sans é auto-hospedada (só o peso Bold/700,
+// único usado até agora — ver _fonts.scss) com fallback para Helvetica Neue,
+// nunca para uma fonte não carregada.
+// -----------------------------------------------------------------------------
+$font-family-base: 'Helvetica Neue', Arial, sans-serif;
+$font-family-interactive: 'Nunito Sans', 'Helvetica Neue', Arial, sans-serif;
+
+// Escala de tamanho ainda não existe de forma genérica no projeto — nasce aqui
+// nomeada pelo estilo Figma "Interactive/Default - Bold" (DS-component-button,
+// research.md §6); generalizar para uma escala completa fica para quando outro
+// componente precisar de um tamanho diferente. Altura de linha não é tokenizada
+// — o Figma especifica 100%/normal, não um valor numérico fixo.
+$font-size-button: 16px;
+
+$font-weight-ultralight: fonts.$font-weight-ultralight;
+$font-weight-thin: fonts.$font-weight-thin;
+$font-weight-light: fonts.$font-weight-light;
+$font-weight-roman: fonts.$font-weight-roman;
+$font-weight-medium: fonts.$font-weight-medium;
+$font-weight-bold: fonts.$font-weight-bold;
+$font-weight-heavy: fonts.$font-weight-heavy;
+$font-weight-black: fonts.$font-weight-black;
+
+// -----------------------------------------------------------------------------
+// Espaçamento — grid de 8px (spec: todo padding/gap/margin nasce daqui),
+// com 0 e 4px como únicas exceções ao grid.
+// -----------------------------------------------------------------------------
+$space-0: 0;
+$space-4: 4px;
+$space-8: 8px;
+$space-16: 16px;
+$space-24: 24px;
+$space-32: 32px;
+$space-40: 40px;
+$space-48: 48px;
+$space-56: 56px;
+$space-64: 64px;
+$space-80: 80px;
+
+// -----------------------------------------------------------------------------
+// Raio de borda — os valores de canto usados nos componentes do Figma.
+// "-pill" é o valor "infinito" (400px) usado em badges/avatares circulares.
+// -----------------------------------------------------------------------------
+$radius-sm: 16px;
+$radius-md: 24px;
+$radius-lg: 32px;
+$radius-tag: 26px; // pílula de altura fixa (tag de hospital, tag de usuário)
+$radius-pill: 400px;
+
+// -----------------------------------------------------------------------------
+// 2. Semântico — o que os componentes consomem. Ver nota no topo do arquivo:
+// trocar de tema = sobrescrever só este bloco (ou o bloco dark abaixo).
+// -----------------------------------------------------------------------------
+:root {
+  --color-primary: #{$color-primary};
+  --color-secondary: #{$color-secondary};
+  --color-tertiary: #{$color-tertiary};
+  --color-content-1: #{$color-content-1};
+  --color-content-2: #{$color-content-2};
+  --color-content-3: #{$color-content-3};
+  --color-content-5: #{$color-content-5};
+  --color-content-6: #{$color-content-6};
+  --color-state-disabled: #{$color-state-disabled};
+  --color-state-disabled-2: #{$color-state-disabled-2};
+  --color-border: #{$color-border};
+  --color-border-2: #{$color-border-2};
+  --color-focus-ring: #{$color-focus-ring};
+  --focus-ring-width: #{$focus-ring-width};
+  --focus-ring-offset: #{$focus-ring-offset};
+  --color-surface: #{$color-surface};
+  --color-surface-2: #{$color-surface-2};
+  --color-surface-glass-1: #{$color-surface-glass-1};
+  --color-surface-glass-2: #{$color-surface-glass-2};
+  --color-comm-info: #{$color-comm-info};
+  --color-comm-alert: #{$color-comm-alert};
+  --color-comm-success: #{$color-comm-success};
+  --color-comm-warning: #{$color-comm-warning};
+  --color-comm-focus: #{$color-comm-focus};
+  --color-logo-1: #{$color-logo-1};
+  --color-logo-2: #{$color-logo-2};
+  --color-logo-3: #{$color-logo-3};
+  --color-logo-4: #{$color-logo-4};
+  --color-decorative-forest: #{$color-decorative-forest};
+
+  --font-family-base: #{$font-family-base};
+  // Compatibilidade com código existente que ainda referencia os nomes
+  // antigos (heading/body) — ambos apontam para a mesma família única agora.
+  --font-family-heading: #{$font-family-base};
+  --font-family-body: #{$font-family-base};
+  --font-family-interactive: #{$font-family-interactive};
+  --font-size-button: #{$font-size-button};
+
+  --space-0: #{$space-0};
+  --space-4: #{$space-4};
+  --space-8: #{$space-8};
+  --space-16: #{$space-16};
+  --space-24: #{$space-24};
+  --space-32: #{$space-32};
+  --space-40: #{$space-40};
+  --space-48: #{$space-48};
+  --space-56: #{$space-56};
+  --space-64: #{$space-64};
+  --space-80: #{$space-80};
+
+  --radius-sm: #{$radius-sm};
+  --radius-md: #{$radius-md};
+  --radius-lg: #{$radius-lg};
+  --radius-tag: #{$radius-tag};
+  --radius-pill: #{$radius-pill};
+}
+
+// Estrutura pronta para o tema escuro (ainda não especificado no Figma) —
+// mesma lista de propriedades de :root, valores a preencher quando existir
+// spec de dark mode. Nenhum componente precisa mudar quando isso acontecer.
+:root[data-theme='dark'] {
+  // --color-surface: TODO;
+  // --color-surface-2: TODO;
+  // --color-content-1: TODO;
+  // ...
+}

@@ -9,7 +9,7 @@ import sonarjs from 'eslint-plugin-sonarjs';
 import eslintPluginPrettierRecommended from 'eslint-plugin-prettier/recommended';
 import ngrx from '@ngrx/eslint-plugin/v9';
 import importPlugin from 'eslint-plugin-import';
-import rxjs from '@smarttools/eslint-plugin-rxjs';
+import rxjs from 'eslint-plugin-rxjs';
 import playwright from 'eslint-plugin-playwright';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
@@ -48,7 +48,11 @@ export default defineConfig(
       importPlugin.flatConfigs.typescript,
       sonarjs.configs.recommended,
       ...ngrx.configs.allTypeChecked,
-      rxjs.configs.recommended,
+      // `rxjs.configs.recommended` ainda vem no formato eslintrc antigo
+      // (`plugins: ['rxjs']`, array de string), incompatível com flat
+      // config do ESLint 9 — usar só as regras, e registrar o plugin
+      // propriamente no bloco `plugins` abaixo.
+      { rules: rxjs.configs.recommended.rules },
       ...tseslint.configs.strict,
       ...tseslint.configs.stylistic,
       tseslint.configs.eslintRecommended,
@@ -58,6 +62,7 @@ export default defineConfig(
     processor: angular.processInlineTemplates,
     plugins: {
       'simple-import-sort': simpleImportSort,
+      rxjs,
     },
     settings: {
       'import/resolver': {
@@ -69,6 +74,25 @@ export default defineConfig(
       },
     },
     rules: {
+      // rxjs — as regras abaixo exigem parserServices tipado
+      // (`getTypeServices`/`getParserServices`), mas `eslint-plugin-rxjs@5.0.3`
+      // usa uma versão interna de `@typescript-eslint/utils` incompatível com
+      // a versão de `typescript-eslint` deste projeto, e falham com "You must
+      // therefore provide a value for the parserOptions.project property"
+      // mesmo com o project corretamente configurado. Desativadas até a
+      // dependência ser atualizada — as outras regras rxjs (que não exigem
+      // tipo) continuam ativas via `rxjs.configs.recommended` acima.
+      'rxjs/no-async-subscribe': 'off',
+      'rxjs/no-create': 'off',
+      'rxjs/no-ignored-notifier': 'off',
+      'rxjs/no-implicit-any-catch': 'off',
+      'rxjs/no-nested-subscribe': 'off',
+      'rxjs/no-redundant-notify': 'off',
+      'rxjs/no-subject-unsubscribe': 'off',
+      'rxjs/no-unbound-methods': 'off',
+      'rxjs/no-unsafe-subject-next': 'off',
+      'rxjs/no-unsafe-takeuntil': 'off',
+
       // Angular
       '@angular-eslint/prefer-output-emitter-ref': 'error',
       '@angular-eslint/prefer-output-readonly': 'error',
@@ -156,7 +180,11 @@ export default defineConfig(
         'error',
         { blankLine: 'always', next: 'return', prev: '*' },
         { blankLine: 'always', next: '*', prev: ['const', 'let', 'var'] },
-        { blankLine: 'any', next: ['const', 'let', 'var'], prev: ['const', 'let', 'var'] },
+        {
+          blankLine: 'any',
+          next: ['const', 'let', 'var'],
+          prev: ['const', 'let', 'var'],
+        },
       ],
     },
   },
@@ -173,7 +201,12 @@ export default defineConfig(
       'jasmine/named-spy': 2,
       'jasmine/no-assign-spyon': 2,
       'jasmine/prefer-toBeUndefined': 2,
-      'jasmine/missing-expect': [2, 'expectObservable()', 'expect()', 'expectAsync()'],
+      'jasmine/missing-expect': [
+        2,
+        'expectObservable()',
+        'expect()',
+        'expectAsync()',
+      ],
       'jasmine/no-disabled-tests': 2,
       'jasmine/no-spec-dupes': [2, 'branch'],
       'jasmine/no-suite-dupes': [2, 'branch'],

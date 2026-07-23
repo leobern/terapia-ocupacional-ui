@@ -1,0 +1,45 @@
+@use '../../shared/styles/tokens';
+
+.gallery {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: tokens.$space-32;
+  font-family: tokens.$font-family-base;
+  color: tokens.$color-content-1;
+}
+
+.gallery__title {
+  font-size: 24px;
+  margin-bottom: tokens.$space-8;
+}
+
+.gallery__note,
+.gallery__hint {
+  color: tokens.$color-content-2;
+  margin-bottom: tokens.$space-24;
+}
+
+.gallery__section {
+  margin-top: tokens.$space-40;
+}
+
+.gallery__section h3 {
+  margin-top: tokens.$space-32;
+  margin-bottom: tokens.$space-16;
+}
+
+.gallery__grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: tokens.$space-16;
+}
+
+.gallery__stack {
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$space-16;
+}
+
+.gallery__narrow {
+  max-width: 200px;
+}

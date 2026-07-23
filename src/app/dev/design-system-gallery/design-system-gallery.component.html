@@ -1,0 +1,102 @@
+<main class="gallery">
+  <h1 class="gallery__title">Design System — Preview de componentes</h1>
+  <p class="gallery__note">
+    Página de desenvolvimento, fora do produto — usada para testar visualmente e
+    por teclado os componentes do design system antes de uma feature
+    consumi-los.
+  </p>
+
+  <section class="gallery__section">
+    <h2>Button — DS-component-button</h2>
+
+    <h3>Habilitado</h3>
+    <div class="gallery__grid">
+      <app-button kind="primary" appearance="solid" label="Primary Solid" />
+      <app-button
+        kind="primary"
+        appearance="outlined"
+        label="Primary Outlined"
+      />
+      <app-button kind="secondary" appearance="solid" label="Secondary Solid" />
+      <app-button
+        kind="secondary"
+        appearance="outlined"
+        label="Secondary Outlined"
+      />
+      <app-button kind="tertiary" appearance="solid" label="Tertiary Solid" />
+      <app-button
+        kind="tertiary"
+        appearance="outlined"
+        label="Tertiary Outlined"
+      />
+    </div>
+
+    <h3>Desabilitado (aparência única, independente de kind/appearance)</h3>
+    <div class="gallery__grid">
+      <app-button
+        kind="primary"
+        appearance="solid"
+        label="Disabled Solid"
+        [disabled]="true"
+      />
+      <app-button
+        kind="tertiary"
+        appearance="outlined"
+        label="Disabled Outlined"
+        [disabled]="true"
+      />
+    </div>
+
+    <h3>Com ícones opcionais</h3>
+    <div class="gallery__grid">
+      <app-button
+        kind="primary"
+        appearance="solid"
+        iconLeft="check-circle"
+        label="Ícone à esquerda"
+      />
+      <app-button
+        kind="primary"
+        appearance="solid"
+        iconRight="pencil-simple"
+        label="Ícone à direita"
+      />
+      <app-button
+        kind="primary"
+        appearance="solid"
+        iconLeft="check-circle"
+        iconRight="pencil-simple"
+        label="Os dois ícones"
+      />
+    </div>
+
+    <h3>Truncamento e fullWidth</h3>
+    <div class="gallery__stack">
+      <div class="gallery__narrow">
+        <app-button
+          kind="primary"
+          appearance="solid"
+          label="Um label bem mais longo do que o espaço disponível"
+        />
+      </div>
+      <app-button
+        kind="primary"
+        appearance="solid"
+        label="Ocupa 100% do container"
+        [fullWidth]="true"
+      />
+    </div>
+
+    <h3>Navegação por teclado</h3>
+    <p class="gallery__hint">
+      Use Tab para navegar entre os botões abaixo e veja o anel de foco (2px,
+      <code>comm-focus</code>, 4px de distância). Passe o mouse pra ver o hover
+      (escurece + levanta) e clique pra ver o active (escurece mais + afunda).
+    </p>
+    <div class="gallery__grid">
+      <app-button kind="primary" appearance="solid" label="Foco 1" />
+      <app-button kind="secondary" appearance="outlined" label="Foco 2" />
+      <app-button kind="tertiary" appearance="solid" label="Foco 3" />
+    </div>
+  </section>
+</main>

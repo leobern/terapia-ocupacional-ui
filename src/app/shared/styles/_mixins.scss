@@ -1,0 +1,22 @@
+@use 'tokens';
+
+// -----------------------------------------------------------------------------
+// Padrão único de foco por teclado para todo elemento clicável do design
+// system (decisão do usuário, 2026-07-23 — convenção de acessibilidade
+// transversal, não vinculada a nenhum nó Figma específico): anel sólido de
+// 2px na cor `comm-focus` (token próprio dentro do grupo comm, isolado de
+// comm-info de propósito), afastado 4px do componente.
+//
+// `outline`/`outline-offset` (não `box-shadow`) de propósito: outline
+// acompanha automaticamente o `border-radius` do elemento em todos os
+// navegadores evergreen, sem precisar replicar o raio manualmente, e não
+// afeta o box model (não empurra layout, ao contrário de um `border` extra).
+// `:focus-visible` (não `:focus`) para o anel só aparecer em navegação por
+// teclado, nunca em clique de mouse.
+// -----------------------------------------------------------------------------
+@mixin focus-ring {
+  &:focus-visible {
+    outline: tokens.$focus-ring-width solid tokens.$color-focus-ring;
+    outline-offset: tokens.$focus-ring-offset;
+  }
+}
