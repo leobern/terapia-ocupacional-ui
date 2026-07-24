@@ -47,6 +47,9 @@ describe('InputSelectComponent', () => {
     }).compileComponents();
 
     fixture = TestBed.createComponent(InputSelectComponent);
+    // `placeholder` é obrigatório (input.required) — precisa de um valor antes
+    // do primeiro `detectChanges()`, senão o Angular lança em runtime.
+    fixture.componentRef.setInput('placeholder', 'Placeholder de teste');
     fixture.detectChanges();
   });
 
@@ -244,27 +247,37 @@ describe('InputSelectComponent', () => {
       const cs = getComputedStyle(containerEl());
 
       expect(cs.borderColor).toBe('rgb(0, 34, 51)'); // content-1 #002233
-      expect(cs.boxShadow).toContain('rgba(0, 34, 51, 0.4)');
+      expect(cs.boxShadow).toContain('rgba(0, 34, 51, 0.6)');
       expect(cs.borderTopWidth).toBe('1px');
       expect(before.width).toBe(after.width);
       expect(before.height).toBe(after.height);
     });
 
-    it('also applies the systemic pink focus-visible ring alongside the box-shadow (accessibility decision)', () => {
+    it('also applies the systemic pink ring alongside the box-shadow when focus arrives via keyboard', () => {
       attachToDom();
+      // Nenhum mousedown disparado antes — KeyboardFocusService assume
+      // teclado por padrão (shared/services/keyboard-focus.service.ts).
       (fieldEl() as HTMLInputElement).focus();
       fixture.detectChanges();
-
-      // Ambiente de teste: `.focus()` programático sem interação de mouse
-      // prévia é tratado como navegação por teclado pela heurística do
-      // Chrome — mesma premissa já usada no teste equivalente do Button.
-      expect(fieldEl().matches(':focus-visible')).toBeTrue();
 
       const cs = getComputedStyle(containerEl());
 
       expect(cs.outlineWidth).toBe('2px');
       expect(cs.outlineColor).toBe('rgb(255, 51, 187)'); // comm-focus #FF33BB
       expect(cs.outlineOffset).toBe('4px');
+    });
+
+    it('does NOT show the pink ring when focus arrives via mouse click, but keeps the box-shadow', () => {
+      attachToDom();
+      fieldEl().dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
+      (fieldEl() as HTMLInputElement).focus();
+      fixture.detectChanges();
+
+      const cs = getComputedStyle(containerEl());
+
+      expect(cs.outlineStyle).toBe('none');
+      expect(cs.borderColor).toBe('rgb(0, 34, 51)');
+      expect(cs.boxShadow).toContain('rgba(0, 34, 51, 0.6)');
     });
 
     it('does not show the clear icon by default (unfocused, empty)', () => {
@@ -317,6 +330,108 @@ describe('InputSelectComponent', () => {
 
       expect(valueChangeSpy).toHaveBeenCalledWith('');
       expect(document.activeElement).toBe(fieldEl());
+    });
+
+    it('also shows the clear icon for variant=select when focused and filled', () => {
+      attachToDom();
+      fixture.componentRef.setInput('variant', 'select');
+      fixture.componentRef.setInput('value', 'Hospital A');
+      fixture.detectChanges();
+      fieldEl().dispatchEvent(new Event('focus'));
+      fixture.detectChanges();
+
+      expect(clearEl()).not.toBeNull();
+    });
+
+    it('uses content-5 for the trailing icon color (not the dynamic text color)', () => {
+      fixture.componentRef.setInput('trailingIcon', 'warning-circle');
+      fixture.detectChanges();
+
+      const icon = fixture.nativeElement.querySelector('.input-select__icon--trailing');
+
+      expect(getComputedStyle(icon).color).toBe('rgb(148, 172, 184)'); // content-5 #94ACB8
+    });
+
+    it('uses content-1 for the leading icon color, always (not the dynamic text color)', () => {
+      fixture.componentRef.setInput('iconLeft', 'envelope-simple');
+      fixture.detectChanges();
+
+      const icon = fixture.nativeElement.querySelector('.input-select__icon--leading');
+
+      expect(getComputedStyle(icon).color).toBe('rgb(0, 34, 51)'); // content-1 #002233
+
+      fixture.componentRef.setInput('value', 'thiago.angelito@gmail.com');
+      fixture.detectChanges();
+
+      expect(getComputedStyle(icon).color).toBe('rgb(0, 34, 51)'); // permanece content-1 em Filled
+    });
+
+    it('overrides the leading and trailing icon colors to state-disabled-2 when disabled (never leaks content-1/content-5)', () => {
+      fixture.componentRef.setInput('iconLeft', 'envelope-simple');
+      fixture.componentRef.setInput('trailingIcon', 'warning-circle');
+      fixture.componentRef.setInput('disabled', true);
+      fixture.detectChanges();
+
+      const leading = fixture.nativeElement.querySelector('.input-select__icon--leading');
+      const trailing = fixture.nativeElement.querySelector('.input-select__icon--trailing');
+
+      expect(getComputedStyle(leading).color).toBe('rgb(78, 88, 95)'); // state-disabled-2 #4E585F
+      expect(getComputedStyle(trailing).color).toBe('rgb(78, 88, 95)');
+    });
+
+    it('uses content-3 for the clear icon color', () => {
+      attachToDom();
+      fixture.componentRef.setInput('value', 'thiago.angelito@gmail.com');
+      fixture.detectChanges();
+      (fieldEl() as HTMLInputElement).focus();
+      fixture.detectChanges();
+
+      expect(getComputedStyle(clearEl() as HTMLElement).color).toBe('rgb(33, 131, 131)'); // content-3 #218383
+    });
+  });
+
+  describe('US3 — placeholder some ao focar', () => {
+    it('shows the placeholder when unfocused and empty', () => {
+      fixture.componentRef.setInput('placeholder', 'Insira seu e-mail');
+      fixture.detectChanges();
+
+      expect((fieldEl() as HTMLInputElement).placeholder).toBe('Insira seu e-mail');
+    });
+
+    it('hides the placeholder as soon as the field is focused, even before typing', () => {
+      attachToDom();
+      fixture.componentRef.setInput('placeholder', 'Insira seu e-mail');
+      fixture.detectChanges();
+      (fieldEl() as HTMLInputElement).focus();
+      fixture.detectChanges();
+
+      expect((fieldEl() as HTMLInputElement).placeholder).toBe('');
+    });
+
+    it('shows the placeholder again on blur when the field remains empty', () => {
+      attachToDom();
+      fixture.componentRef.setInput('placeholder', 'Insira seu e-mail');
+      fixture.detectChanges();
+      (fieldEl() as HTMLInputElement).focus();
+      fixture.detectChanges();
+      (fieldEl() as HTMLInputElement).blur();
+      fixture.detectChanges();
+
+      expect((fieldEl() as HTMLInputElement).placeholder).toBe('Insira seu e-mail');
+    });
+
+    it('hides the placeholder text for variant=select while focused and empty', () => {
+      attachToDom();
+      fixture.componentRef.setInput('variant', 'select');
+      fixture.componentRef.setInput('placeholder', 'Selecione o hospital');
+      fixture.detectChanges();
+
+      expect(fieldEl().textContent?.trim()).toBe('Selecione o hospital');
+
+      fieldEl().dispatchEvent(new Event('focus'));
+      fixture.detectChanges();
+
+      expect(fieldEl().textContent?.trim()).toBe('');
     });
   });
 });

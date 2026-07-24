@@ -1,6 +1,7 @@
-import { ChangeDetectionStrategy, Component, computed, input, output, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input, output, signal } from '@angular/core';
 
 import { PhIconComponent } from '../../icons/ph-icon/ph-icon.component';
+import { KeyboardFocusService } from '../../services/keyboard-focus.service';
 
 /**
  * Determina o elemento semântico interno (specs/ds/DS-component-input-select/spec.md):
@@ -28,7 +29,13 @@ export type InputSelectVariant = 'text' | 'select';
 export class InputSelectComponent {
   readonly variant = input<InputSelectVariant>('text');
   readonly value = input<string>('');
-  readonly placeholder = input<string>('');
+  // Obrigatório (não `''` por default): sem placeholder configurado, o estado
+  // Default/unfocused-vazio (ex.: depois de um clear + unfocus) fica em
+  // branco em vez de mostrar uma mensagem de instrução — falha de
+  // configuração silenciosa que só aparecia em teste manual. Falha em tempo
+  // de compilação (Angular template type checking) em vez de runtime, mesmo
+  // padrão de `label`/`icon`/`ariaLabel` obrigatórios no Button/IconButton.
+  readonly placeholder = input.required<string>();
   readonly iconLeft = input<string | null>(null);
   readonly trailingIcon = input<string | null>(null);
   readonly disabled = input<boolean>(false);
@@ -44,16 +51,31 @@ export class InputSelectComponent {
     this.variant() === 'select' ? 'caret-down' : this.trailingIcon(),
   );
 
+  // Placeholder some ao focar (mesmo antes de digitar) e volta a aparecer só
+  // quando o campo perde o foco E continua vazio — decisão do usuário: o
+  // placeholder é uma mensagem de instrução, não deve conviver com o cursor
+  // de edição para não parecer texto editável.
+  protected readonly displayPlaceholder = computed(() => (this.focused() ? '' : this.placeholder()));
+
+  // Mesma técnica do Button/IconButton — ver
+  // shared/services/keyboard-focus.service.ts. Captura a modalidade no
+  // momento do foco; o anel rosa só aparece quando esta foi via teclado.
+  protected readonly keyboardFocused = signal(false);
+
+  private readonly keyboardFocusService = inject(KeyboardFocusService);
+
   protected onInput(event: Event): void {
     this.valueChange.emit((event.target as HTMLInputElement).value);
   }
 
   protected onFocus(): void {
     this.focused.set(true);
+    this.keyboardFocused.set(this.keyboardFocusService.isKeyboard());
   }
 
   protected onBlur(): void {
     this.focused.set(false);
+    this.keyboardFocused.set(false);
   }
 
   protected onSelectClick(): void {

@@ -82,8 +82,10 @@ $focus-ring-offset: 4px;
 // próprio (Button, IconButton); este é um `box-shadow` sempre visível em
 // `:focus` (clique ou teclado), pois campos de texto tradicionalmente marcam
 // foco em qualquer método de interação. Os dois nunca se aplicam ao mesmo
-// componente — ver DS-component-input-select/research.md.
-$color-input-focus-ring: rgba($color-content-1, 0.4);
+// componente — ver DS-component-input-select/research.md. Opacidade 60% —
+// ajustada pelo usuário no Figma nesta sessão (era 40%; reconfirmado via
+// get_design_context em 4344:6952: `shadow-[...rgba(0,34,51,0.6)]`).
+$color-input-focus-ring: rgba($color-content-1, 0.6);
 
 // logo/*
 $color-logo-1: #f3d4f3;

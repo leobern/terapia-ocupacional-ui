@@ -430,6 +430,11 @@
     <h2>Input/Select — DS-component-input-select</h2>
 
     <h3>variant="text" — Default / Filled</h3>
+    <p class="gallery__hint">
+      Todas as instâncias abaixo são interativas (dois-vias com um signal da
+      galeria) — digite, apague, clique no clear, tudo deve refletir de verdade,
+      não é só um mock estático.
+    </p>
     <div class="gallery__stack">
       <app-input-select
         iconLeft="envelope-simple"
@@ -437,7 +442,9 @@
       />
       <app-input-select
         iconLeft="envelope-simple"
-        value="thiago.angelito@gmail.com"
+        placeholder="Insira seu e-mail"
+        [value]="demoTextFilledValue()"
+        (valueChange)="demoTextFilledValue.set($event)"
       />
     </div>
 
@@ -451,7 +458,9 @@
       <app-input-select
         variant="select"
         iconLeft="file-text"
-        value="thiago.angelito@gmail.com"
+        placeholder="Selecione o hospital"
+        [value]="demoSelectFilledValue()"
+        (valueChange)="demoSelectFilledValue.set($event)"
       />
     </div>
 
@@ -459,7 +468,9 @@
     <div class="gallery__narrow">
       <app-input-select
         iconLeft="envelope-simple"
-        value="um.email.bem.mais.longo.do.que.o.espaco.disponivel.para.caber@example.com"
+        placeholder="Insira seu e-mail"
+        [value]="demoTruncatedValue()"
+        (valueChange)="demoTruncatedValue.set($event)"
       />
     </div>
 
@@ -468,7 +479,12 @@
       <app-input-select
         iconLeft="envelope-simple"
         placeholder="Campo bloqueado"
+        [value]="demoSelectFocusValue()"
         [disabled]="true"
+        (valueChange)="demoSelectFocusValue.set($event)"
+        (selectTrigger)="
+          demoSelectFocusValue.set('Hospital Demo (clique simulou selecionar)')
+        "
       />
     </div>
 
@@ -476,17 +492,20 @@
       Navegação por teclado (foco, box-shadow + anel rosa, ícone de limpar)
     </h3>
     <p class="gallery__hint">
-      Use Tab para focar os campos abaixo — repare na borda escura +
-      <code>box-shadow</code> translúcido (sempre, qualquer método de foco)
-      somados ao anel rosa sistêmico (<code>comm-focus</code>, só teclado). No
-      segundo campo, já preenchido, o ícone de limpar (X) só aparece enquanto o
-      campo está focado.
+      Clique nos campos abaixo: a borda escura + <code>box-shadow</code>
+      translúcido aparecem (qualquer método de foco), mas o anel rosa
+      (<code>comm-focus</code>) NÃO aparece — só teclado mostra o rosa. Use Tab
+      para navegar entre eles e comparar. No segundo campo (e no terceiro, após
+      "selecionar"), digite/apague para ver o clear (X) — só aparece com foco +
+      valor preenchido.
     </p>
     <div class="gallery__stack">
       <app-input-select iconLeft="envelope-simple" placeholder="Foco vazio" />
       <app-input-select
         iconLeft="envelope-simple"
-        value="thiago.angelito@gmail.com"
+        placeholder="Insira seu e-mail"
+        [value]="demoEmailFocusValue()"
+        (valueChange)="demoEmailFocusValue.set($event)"
       />
       <app-input-select
         variant="select"

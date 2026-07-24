@@ -60,12 +60,11 @@
   // Anel de foco rosa sistêmico (`mixins.focus-ring`) — decisão de
   // acessibilidade revisada com o usuário (DS-component-input-select/spec.md
   // § Clarifications, research.md §1): coexiste com o `box-shadow` acima,
-  // nunca o substitui. Não dá para usar `@include mixins.focus-ring` direto
-  // aqui: aquele mixin gera `&:focus-visible`, mas o elemento que realmente
-  // recebe foco é o `.input-select__field` descendente, não este container —
-  // por isso usamos `:has()` para detectar o descendente em `:focus-visible`,
-  // reaproveitando os MESMOS tokens do mixin (não valores novos).
-  &:has(.input-select__field:focus-visible) {
+  // nunca o substitui. `.keyboard-focus` (classe controlada por
+  // `KeyboardFocusService`, não `:focus-visible` puro — ver _mixins.scss) +
+  // `:focus-within` (o elemento realmente focado é o `.input-select__field`
+  // descendente, nunca este container).
+  &.keyboard-focus:focus-within {
     outline: tokens.$focus-ring-width solid tokens.$color-focus-ring;
     outline-offset: tokens.$focus-ring-offset;
   }
@@ -86,8 +85,21 @@
   min-height: 32px;
 }
 
+// Cor fixa (não herda o `color` dinâmico do texto/placeholder) — os ícones do
+// Figma não mudam de cor entre Default/Filled, diferente do texto. Ícone
+// esquerdo e direito têm cores fixas DIFERENTES entre si (confirmado por
+// inspeção visual do usuário contra o Figma — os ícones são assets de
+// imagem exportados, sem cor extraível via `get_variable_defs`).
 .input-select__icon {
   flex-shrink: 0;
+}
+
+.input-select__icon--leading {
+  color: tokens.$color-content-1;
+}
+
+.input-select__icon--trailing {
+  color: tokens.$color-content-5;
 }
 
 .input-select__field {
@@ -122,7 +134,12 @@
   }
 }
 
-.input-select--disabled .input-select__field {
+// Estado disabled MUST usar exclusivamente tokens `state-disabled*` para toda
+// cor (fundo, borda, texto, ícone) — nenhuma cor de variante/estado normal
+// (content-1/content-3/content-5) pode vazar aqui. Regra transversal do
+// design system, não só deste componente (Constituição, Princípio VIII).
+.input-select--disabled .input-select__field,
+.input-select--disabled .input-select__icon {
   color: tokens.$color-state-disabled-2;
 
   &::placeholder {
@@ -140,5 +157,5 @@
   flex-shrink: 0;
   align-items: center;
   cursor: pointer;
-  color: tokens.$color-content-1;
+  color: tokens.$color-content-3;
 }
