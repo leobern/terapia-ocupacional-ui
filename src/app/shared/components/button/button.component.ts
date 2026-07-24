@@ -1,6 +1,7 @@
-import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input, signal } from '@angular/core';
 
 import { PhIconComponent } from '../../icons/ph-icon/ph-icon.component';
+import { KeyboardFocusService } from '../../services/keyboard-focus.service';
 
 /**
  * Mapeia a propriedade Figma `type` (specs/ds/DS-component-button/spec.md) — renomeada
@@ -37,4 +38,20 @@ export class ButtonComponent {
   readonly label = input.required<string>();
 
   protected readonly variantClass = computed(() => `button--${this.kind()} button--${this.appearance()}`);
+
+  // Captura a modalidade (teclado vs. ponteiro) no MOMENTO do foco — ver
+  // shared/services/keyboard-focus.service.ts. Não usar o signal do serviço
+  // diretamente no template: ele reflete a interação mais recente a
+  // qualquer momento, não a que originou este foco especificamente.
+  protected readonly keyboardFocused = signal(false);
+
+  private readonly keyboardFocusService = inject(KeyboardFocusService);
+
+  protected onFocus(): void {
+    this.keyboardFocused.set(this.keyboardFocusService.isKeyboard());
+  }
+
+  protected onBlur(): void {
+    this.keyboardFocused.set(false);
+  }
 }

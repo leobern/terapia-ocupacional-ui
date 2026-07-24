@@ -162,15 +162,12 @@ describe('IconButtonComponent', () => {
     });
   });
 
-  it('shows the design-system focus ring (comm-focus, 2px, 4px offset) on :focus-visible', () => {
+  it('shows the design-system focus ring (comm-focus, 2px, 4px offset) when focus arrives via keyboard', () => {
     attachToDom();
+    // Nenhum mousedown disparado antes — KeyboardFocusService assume teclado
+    // por padrão (ver shared/services/keyboard-focus.service.ts).
     buttonEl().focus();
     fixture.detectChanges();
-
-    // Mesma heurística já documentada em button.component.spec.ts: `.focus()`
-    // programático sem interação de mouse prévia é tratado como navegação por
-    // teclado pelo Chrome.
-    expect(buttonEl().matches(':focus-visible')).toBeTrue();
 
     const cs = getComputedStyle(buttonEl());
 
@@ -178,5 +175,16 @@ describe('IconButtonComponent', () => {
     expect(cs.outlineStyle).toBe('solid');
     expect(cs.outlineColor).toBe('rgb(255, 51, 187)'); // comm-focus #FF33BB
     expect(cs.outlineOffset).toBe('4px');
+  });
+
+  it('does NOT show the pink focus ring when focus arrives via mouse click', () => {
+    attachToDom();
+    buttonEl().dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
+    buttonEl().focus();
+    fixture.detectChanges();
+
+    const cs = getComputedStyle(buttonEl());
+
+    expect(cs.outlineStyle).toBe('none');
   });
 });

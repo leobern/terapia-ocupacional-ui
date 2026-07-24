@@ -121,6 +121,11 @@ $font-size-interactive: 16px;
 // Input). Mesma família/peso, só o tamanho muda.
 $font-size-label: 12px;
 
+// Estilo Figma "Interactive/Title - Bold" (DS-component-avatar) — iniciais do avatar
+// `size="big"`, Nunito Sans Bold 40px. `size="small"`/`"default"` reusam
+// `$font-size-interactive` (16px) sem token novo.
+$font-size-title: 40px;
+
 $font-weight-ultralight: fonts.$font-weight-ultralight;
 $font-weight-thin: fonts.$font-weight-thin;
 $font-weight-light: fonts.$font-weight-light;
@@ -145,6 +150,10 @@ $space-48: 48px;
 $space-56: 56px;
 $space-64: 64px;
 $space-80: 80px;
+// Container do avatar `size="big"` (DS-component-avatar, research.md §5) — 120px
+// medido via `get_metadata` dos nós Figma `4356:7109`/`4356:7110`/`4356:7112`, fora
+// do grid de 8px regular (não é múltiplo comum a outros componentes ainda).
+$space-120: 120px;
 
 // -----------------------------------------------------------------------------
 // Raio de borda — os valores de canto usados nos componentes do Figma.
@@ -213,6 +222,7 @@ $icon-size-xs: 12px;
   --font-family-interactive: #{$font-family-interactive};
   --font-size-interactive: #{$font-size-interactive};
   --font-size-label: #{$font-size-label};
+  --font-size-title: #{$font-size-title};
 
   --space-0: #{$space-0};
   --space-4: #{$space-4};
@@ -225,6 +235,7 @@ $icon-size-xs: 12px;
   --space-56: #{$space-56};
   --space-64: #{$space-64};
   --space-80: #{$space-80};
+  --space-120: #{$space-120};
 
   --radius-sm: #{$radius-sm};
   --radius-md: #{$radius-md};

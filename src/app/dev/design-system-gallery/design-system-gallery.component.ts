@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component } from '@angular/core';
 
+import { AvatarComponent } from '../../shared/components/avatar/avatar.component';
 import { BadgeComponent } from '../../shared/components/badge/badge.component';
 import { ButtonComponent } from '../../shared/components/button/button.component';
 import { IconButtonComponent } from '../../shared/components/icon-button/icon-button.component';
@@ -14,7 +15,7 @@ import { InputSelectComponent } from '../../shared/components/input-select/input
  */
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [BadgeComponent, ButtonComponent, IconButtonComponent, InputSelectComponent],
+  imports: [AvatarComponent, BadgeComponent, ButtonComponent, IconButtonComponent, InputSelectComponent],
   selector: 'app-design-system-gallery',
   styleUrl: './design-system-gallery.component.scss',
   templateUrl: './design-system-gallery.component.html',

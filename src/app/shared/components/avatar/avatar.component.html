@@ -1,0 +1,30 @@
+<ng-template #avatarBody>
+  @if (type() === 'photo') {
+    <img class="avatar__image" alt="" [src]="imageUrl()" />
+  } @else {
+    <span class="avatar__initials">{{ initials() }}</span>
+  }
+</ng-template>
+
+@if (showEditBadge()) {
+  <button
+    type="button"
+    class="avatar__content avatar__edit-trigger"
+    [attr.aria-label]="editAriaLabel()"
+    (click)="editPhoto.emit()"
+  >
+    <ng-container [ngTemplateOutlet]="avatarBody" />
+  </button>
+  <app-badge
+    class="avatar__edit-badge"
+    type="icon"
+    icon="camera"
+    backgroundColor="var(--color-surface)"
+    iconColor="var(--color-content-1)"
+    aria-hidden="true"
+  />
+} @else {
+  <span class="avatar__content">
+    <ng-container [ngTemplateOutlet]="avatarBody" />
+  </span>
+}

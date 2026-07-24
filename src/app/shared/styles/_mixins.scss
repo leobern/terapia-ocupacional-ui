@@ -11,11 +11,24 @@
 // acompanha automaticamente o `border-radius` do elemento em todos os
 // navegadores evergreen, sem precisar replicar o raio manualmente, e não
 // afeta o box model (não empurra layout, ao contrário de um `border` extra).
-// `:focus-visible` (não `:focus`) para o anel só aparecer em navegação por
-// teclado, nunca em clique de mouse.
+//
+// `.keyboard-focus:focus` (não `:focus-visible` puro) — o heurístico nativo
+// de `:focus-visible` trata `<input>`/`<textarea>` como categoria especial
+// que casa mesmo em clique de mouse (diferente de `<button>`/`<div
+// tabindex>`), o que fazia o anel aparecer ao clicar num campo de texto. A
+// classe `.keyboard-focus` é controlada via `KeyboardFocusService`
+// (`shared/services/keyboard-focus.service.ts`), que rastreia manualmente se
+// a última interação foi teclado ou ponteiro — mesmo comportamento
+// garantido para QUALQUER elemento, independente do heurístico da tag.
 // -----------------------------------------------------------------------------
 @mixin focus-ring {
-  &:focus-visible {
+  // Reseta o outline padrão do navegador (`outline: auto` em `:focus`) —
+  // sem isso, um foco por CLIQUE (sem `.keyboard-focus`) ainda mostraria o
+  // anel azul nativo do browser, já que `:focus` continua verdadeiro mesmo
+  // quando não é navegação por teclado.
+  outline: none;
+
+  &.keyboard-focus:focus {
     outline: tokens.$focus-ring-width solid tokens.$color-focus-ring;
     outline-offset: tokens.$focus-ring-offset;
   }

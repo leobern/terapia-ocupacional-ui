@@ -1,6 +1,7 @@
-import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input, signal } from '@angular/core';
 
 import { PhIconComponent } from '../../icons/ph-icon/ph-icon.component';
+import { KeyboardFocusService } from '../../services/keyboard-focus.service';
 
 /**
  * Mapeia a propriedade Figma `type` (specs/ds/DS-component-icon-button/spec.md) — mesma
@@ -51,4 +52,18 @@ export class IconButtonComponent {
   // 32px (`default`) / 16px (`size="small"`) — ver research.md §4: reusa a prop `size`
   // (número em px) já existente em `ph-icon`, sem mudar a API do wrapper.
   protected readonly iconSizePx = computed(() => (this.size() === 'small' ? 16 : 32));
+
+  // Mesma técnica do Button — ver comentário lá e
+  // shared/services/keyboard-focus.service.ts.
+  protected readonly keyboardFocused = signal(false);
+
+  private readonly keyboardFocusService = inject(KeyboardFocusService);
+
+  protected onFocus(): void {
+    this.keyboardFocused.set(this.keyboardFocusService.isKeyboard());
+  }
+
+  protected onBlur(): void {
+    this.keyboardFocused.set(false);
+  }
 }

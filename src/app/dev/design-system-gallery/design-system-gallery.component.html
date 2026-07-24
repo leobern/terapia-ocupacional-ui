@@ -356,6 +356,77 @@
   </section>
 
   <section class="gallery__section">
+    <h2>Avatar — DS-component-avatar</h2>
+
+    <h3>type="photo" — 3 tamanhos, sem iniciais</h3>
+    <div class="gallery__grid">
+      <app-avatar
+        size="small"
+        type="photo"
+        imageUrl="https://picsum.photos/id/64/200"
+      />
+      <app-avatar
+        size="default"
+        type="photo"
+        imageUrl="https://picsum.photos/id/64/200"
+      />
+      <app-avatar
+        size="big"
+        type="photo"
+        imageUrl="https://picsum.photos/id/64/200"
+      />
+    </div>
+
+    <h3>type="user" — fundo var(--color-tertiary), iniciais</h3>
+    <div class="gallery__grid">
+      <app-avatar size="small" type="user" name="Julia Nogueira" />
+      <app-avatar size="default" type="user" name="Julia Nogueira" />
+      <app-avatar size="big" type="user" name="Julia Nogueira" />
+    </div>
+
+    <h3>type="patient" — fundo var(--color-state-disabled), iniciais</h3>
+    <div class="gallery__grid">
+      <app-avatar size="small" type="patient" name="Julia Nogueira" />
+      <app-avatar size="default" type="patient" name="Julia Nogueira" />
+      <app-avatar size="big" type="patient" name="Julia Nogueira" />
+    </div>
+
+    <h3>Regra de iniciais — nome único, vazio/erro, múltiplos sobrenomes</h3>
+    <div class="gallery__grid">
+      <app-avatar type="user" name="Julia" />
+      <app-avatar type="user" [name]="null" />
+      <app-avatar type="user" name="Ana Paula da Silva Nogueira" />
+    </div>
+
+    <h3>Badge de edição — presente em "default"/"big", ausente em "small"</h3>
+    <p class="gallery__hint">
+      <code>editable="true"</code> nunca exibe o badge em
+      <code>size="small"</code> — regra do próprio componente (FR-007), não uma
+      opção do consumidor.
+    </p>
+    <div class="gallery__grid">
+      <app-avatar
+        size="small"
+        type="user"
+        name="Julia Nogueira"
+        [editable]="true"
+      />
+      <app-avatar
+        size="default"
+        type="user"
+        name="Julia Nogueira"
+        [editable]="true"
+      />
+      <app-avatar
+        size="big"
+        type="user"
+        name="Julia Nogueira"
+        [editable]="true"
+      />
+    </div>
+  </section>
+
+  <section class="gallery__section">
     <h2>Input/Select — DS-component-input-select</h2>
 
     <h3>variant="text" — Default / Filled</h3>

@@ -213,16 +213,12 @@ describe('ButtonComponent', () => {
     expect(buttonEl().offsetWidth).toBe(400);
   });
 
-  it('shows the design-system focus ring (comm-focus, 2px, 4px offset) on :focus-visible', () => {
+  it('shows the design-system focus ring (comm-focus, 2px, 4px offset) when focus arrives via keyboard', () => {
     attachToDom();
+    // Nenhum mousedown disparado antes — KeyboardFocusService assume teclado
+    // por padrão (ver shared/services/keyboard-focus.service.ts).
     buttonEl().focus();
     fixture.detectChanges();
-
-    // Ambiente de teste: sem interação de mouse anterior na página, um
-    // `.focus()` programático é tratado como navegação por teclado pela
-    // heurística do Chrome — mesmo comportamento confirmado manualmente via
-    // Tab real no navegador nesta sessão (ver spec.md § Clarifications).
-    expect(buttonEl().matches(':focus-visible')).toBeTrue();
 
     const cs = getComputedStyle(buttonEl());
 
@@ -230,5 +226,18 @@ describe('ButtonComponent', () => {
     expect(cs.outlineStyle).toBe('solid');
     expect(cs.outlineColor).toBe('rgb(255, 51, 187)'); // comm-focus #FF33BB
     expect(cs.outlineOffset).toBe('4px');
+  });
+
+  it('does NOT show the pink focus ring when focus arrives via mouse click', () => {
+    attachToDom();
+    // Simula o gesto real de clique (mousedown antes do foco) — é isso que
+    // o KeyboardFocusService rastreia para decidir a modalidade.
+    buttonEl().dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
+    buttonEl().focus();
+    fixture.detectChanges();
+
+    const cs = getComputedStyle(buttonEl());
+
+    expect(cs.outlineStyle).toBe('none');
   });
 });
