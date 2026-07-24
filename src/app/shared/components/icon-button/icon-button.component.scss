@@ -1,0 +1,184 @@
+@use '../../styles/tokens';
+@use '../../styles/mixins';
+
+// Mesmo motivo do Button: tira o host do fluxo de layout — sem isso,
+// `<app-icon-button>` (inline por padrão) ficaria entre o `<button>` real e o
+// container pai.
+:host {
+  display: contents;
+}
+
+.icon-button {
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  // Sem largura/altura fixas de propósito: o tamanho total do botão nasce do
+  // ícone (32px/16px, definido via TS em `iconSizePx`) + este padding uniforme
+  // nos 4 lados — 48×48 (default) / 32×32 (small), igual ao nó Figma
+  // `2042:1839` (research.md §4/data-model.md).
+  padding: tokens.$space-8;
+  border-style: solid;
+  border-radius: tokens.$radius-sm;
+  cursor: pointer;
+  transition:
+    filter 0.2s ease,
+    transform 0.15s ease,
+    box-shadow 0.2s ease;
+
+  // Padrão único de foco por teclado do design system — ver _mixins.scss.
+  // Mesmo mixin do Button, não uma regra própria (spec.md § Clarifications).
+  @include mixins.focus-ring;
+
+  // Hover/Active reusam literalmente os valores finais já implementados e
+  // comitados no Button (FR-009 do spec) — nenhum valor próprio.
+  &:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 3px 6px rgba(tokens.$color-content-1, 0.2);
+  }
+
+  &:active:not(:disabled) {
+    filter: brightness(0.85);
+    transform: translateY(0) scale(0.97);
+    box-shadow: none;
+    transition-duration: 0.08s;
+  }
+}
+
+// `ph-icon` é um elemento customizado `display: inline` por padrão — sem uma
+// caixa explícita, o tamanho do glifo da fonte de ícone (variável por
+// navegador/ambiente) determinaria o tamanho do container, quebrando as
+// dimensões fixas 48×48/32×32 exigidas pelo Figma. Fixar width/height aqui
+// torna o tamanho do botão determinístico, independente de métricas de fonte.
+.icon-button ph-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.icon-button--default ph-icon {
+  width: tokens.$icon-size-lg;
+  height: tokens.$icon-size-lg;
+}
+
+.icon-button--small ph-icon {
+  width: tokens.$icon-size-sm;
+  height: tokens.$icon-size-sm;
+}
+
+// Largura/altura explícitas do container (não só o ícone) — com
+// `box-sizing: border-box`, a borda (0/2/3px conforme `appearance`) fica
+// contida dentro desta dimensão fixa em vez de somar por cima, mesmo padrão
+// usado pelo `.button` (altura 48px fixa) do Button. 48×48 (default) / 32×32
+// (small) = tamanho do ícone + padding `var(--space-8)` nos dois lados.
+.icon-button--default {
+  width: calc(#{tokens.$icon-size-lg} + #{tokens.$space-8} * 2);
+  height: calc(#{tokens.$icon-size-lg} + #{tokens.$space-8} * 2);
+}
+
+.icon-button--small {
+  width: calc(#{tokens.$icon-size-sm} + #{tokens.$space-8} * 2);
+  height: calc(#{tokens.$icon-size-sm} + #{tokens.$space-8} * 2);
+}
+
+// --- borda por appearance (habilitado) --------------------------------------
+// solid: borda inferior de 2px em content-1 (efeito de profundidade, mesmo
+// padrão do Button, independe de kind). outlined: borda assimétrica (2px
+// topo/laterais, 3px inferior) + fundo opaco surface — cor da borda varia por
+// kind abaixo. icon: chromeless, sem fundo nem borda.
+
+.icon-button--solid {
+  border-width: 0 0 2px;
+  border-color: tokens.$color-content-1;
+}
+
+.icon-button--outlined {
+  border-width: 2px 2px 3px;
+  background: tokens.$color-surface;
+}
+
+.icon-button--icon {
+  border: none;
+  // Sem isso, o `<button>` nativo mostra o fundo cinza padrão do navegador
+  // (UA stylesheet) em vez de ficar transparente — só `solid`/`outlined`
+  // definem fundo explícito, `icon` é a única variante chromeless.
+  background: transparent;
+}
+
+// --- kind × appearance (fundo/borda/ícone, estado habilitado) ---------------
+// A cor do ícone vem de `color` (herdada pelo `<i>` interno de `ph-icon`,
+// mesma técnica já usada no Button).
+
+.icon-button--primary.icon-button--solid {
+  background: tokens.$color-primary;
+  color: tokens.$color-content-6;
+}
+
+.icon-button--secondary.icon-button--solid {
+  background: tokens.$color-secondary;
+  color: tokens.$color-content-1;
+}
+
+.icon-button--tertiary.icon-button--solid {
+  background: tokens.$color-tertiary;
+  color: tokens.$color-content-1;
+}
+
+.icon-button--primary.icon-button--outlined {
+  border-color: tokens.$color-content-1;
+  color: tokens.$color-content-1;
+}
+
+.icon-button--secondary.icon-button--outlined {
+  border-color: tokens.$color-content-2;
+  color: tokens.$color-content-2;
+}
+
+.icon-button--tertiary.icon-button--outlined {
+  border-color: tokens.$color-content-3;
+  color: tokens.$color-content-3;
+}
+
+.icon-button--primary.icon-button--icon {
+  color: tokens.$color-content-1;
+}
+
+.icon-button--secondary.icon-button--icon {
+  color: tokens.$color-content-2;
+}
+
+.icon-button--tertiary.icon-button--icon {
+  color: tokens.$color-content-3;
+}
+
+// --- active: borda na cor do próprio fundo (não remove, só "esconde") ------
+// Mesma técnica do Button: manter a largura da borda e só trocar a cor evita
+// o deslocamento lateral de layout que `border: 0` causaria.
+
+.icon-button--primary.icon-button--solid:active:not(:disabled) {
+  border-color: tokens.$color-primary;
+}
+
+.icon-button--secondary.icon-button--solid:active:not(:disabled) {
+  border-color: tokens.$color-secondary;
+}
+
+.icon-button--tertiary.icon-button--solid:active:not(:disabled) {
+  border-color: tokens.$color-tertiary;
+}
+
+.icon-button--outlined:active:not(:disabled) {
+  border-color: tokens.$color-surface;
+}
+
+// --- disabled (aparência única, por último de propósito) --------------------
+// Mesma nota do Button: `.icon-button:disabled` tem a MESMA especificidade que
+// `.icon-button--{kind}.icon-button--{appearance}` (duas classes) — por isso
+// vem depois no arquivo, para vencer o empate pela ordem de origem.
+.icon-button:disabled {
+  background: tokens.$color-state-disabled;
+  border: none;
+  color: tokens.$color-state-disabled-2;
+  cursor: not-allowed;
+}

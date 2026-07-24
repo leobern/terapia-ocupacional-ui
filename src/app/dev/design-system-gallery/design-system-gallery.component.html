@@ -99,4 +99,203 @@
       <app-button kind="tertiary" appearance="solid" label="Foco 3" />
     </div>
   </section>
+
+  <section class="gallery__section">
+    <h2>IconButton — DS-component-icon-button</h2>
+
+    <h3>Habilitado — size="default" (48×48px)</h3>
+    <div class="gallery__grid">
+      <app-icon-button
+        kind="primary"
+        appearance="solid"
+        icon="arrow-left"
+        ariaLabel="Voltar"
+      />
+      <app-icon-button
+        kind="primary"
+        appearance="outlined"
+        icon="arrow-left"
+        ariaLabel="Voltar"
+      />
+      <app-icon-button
+        kind="primary"
+        appearance="icon"
+        icon="arrow-left"
+        ariaLabel="Voltar"
+      />
+      <app-icon-button
+        kind="secondary"
+        appearance="solid"
+        icon="arrow-left"
+        ariaLabel="Voltar"
+      />
+      <app-icon-button
+        kind="secondary"
+        appearance="outlined"
+        icon="arrow-left"
+        ariaLabel="Voltar"
+      />
+      <app-icon-button
+        kind="secondary"
+        appearance="icon"
+        icon="arrow-left"
+        ariaLabel="Voltar"
+      />
+      <app-icon-button
+        kind="tertiary"
+        appearance="solid"
+        icon="arrow-left"
+        ariaLabel="Voltar"
+      />
+      <app-icon-button
+        kind="tertiary"
+        appearance="outlined"
+        icon="arrow-left"
+        ariaLabel="Voltar"
+      />
+      <app-icon-button
+        kind="tertiary"
+        appearance="icon"
+        icon="arrow-left"
+        ariaLabel="Voltar"
+      />
+    </div>
+
+    <h3>Habilitado — size="small" (32×32px)</h3>
+    <div class="gallery__grid">
+      <app-icon-button
+        kind="primary"
+        appearance="solid"
+        size="small"
+        icon="arrow-left"
+        ariaLabel="Voltar"
+      />
+      <app-icon-button
+        kind="primary"
+        appearance="outlined"
+        size="small"
+        icon="arrow-left"
+        ariaLabel="Voltar"
+      />
+      <app-icon-button
+        kind="primary"
+        appearance="icon"
+        size="small"
+        icon="arrow-left"
+        ariaLabel="Voltar"
+      />
+      <app-icon-button
+        kind="secondary"
+        appearance="solid"
+        size="small"
+        icon="arrow-left"
+        ariaLabel="Voltar"
+      />
+      <app-icon-button
+        kind="secondary"
+        appearance="outlined"
+        size="small"
+        icon="arrow-left"
+        ariaLabel="Voltar"
+      />
+      <app-icon-button
+        kind="secondary"
+        appearance="icon"
+        size="small"
+        icon="arrow-left"
+        ariaLabel="Voltar"
+      />
+      <app-icon-button
+        kind="tertiary"
+        appearance="solid"
+        size="small"
+        icon="arrow-left"
+        ariaLabel="Voltar"
+      />
+      <app-icon-button
+        kind="tertiary"
+        appearance="outlined"
+        size="small"
+        icon="arrow-left"
+        ariaLabel="Voltar"
+      />
+      <app-icon-button
+        kind="tertiary"
+        appearance="icon"
+        size="small"
+        icon="arrow-left"
+        ariaLabel="Voltar"
+      />
+    </div>
+
+    <h3>
+      Desabilitado (aparência única, independente de kind/appearance/size)
+    </h3>
+    <div class="gallery__grid">
+      <app-icon-button
+        kind="primary"
+        appearance="solid"
+        icon="arrow-left"
+        ariaLabel="Voltar"
+        [disabled]="true"
+      />
+      <app-icon-button
+        kind="tertiary"
+        appearance="solid"
+        size="small"
+        icon="arrow-left"
+        ariaLabel="Voltar"
+        [disabled]="true"
+      />
+    </div>
+
+    <h3>Qualquer ícone Phosphor (icon é livre, não fixo no componente)</h3>
+    <div class="gallery__grid">
+      <app-icon-button
+        kind="primary"
+        appearance="solid"
+        icon="x"
+        ariaLabel="Fechar"
+      />
+      <app-icon-button
+        kind="secondary"
+        appearance="outlined"
+        icon="pencil-simple"
+        ariaLabel="Editar"
+      />
+      <app-icon-button
+        kind="tertiary"
+        appearance="icon"
+        icon="trash"
+        ariaLabel="Excluir"
+      />
+    </div>
+
+    <h3>Navegação por teclado</h3>
+    <p class="gallery__hint">
+      Use Tab para navegar entre os botões abaixo e veja o mesmo anel de foco do
+      Button (2px, <code>comm-focus</code>, 4px de distância). Passe o mouse pra
+      ver o hover (levanta) e clique pra ver o active (escurece + afunda).
+    </p>
+    <div class="gallery__grid">
+      <app-icon-button
+        kind="primary"
+        appearance="solid"
+        icon="arrow-left"
+        ariaLabel="Foco 1"
+      />
+      <app-icon-button
+        kind="secondary"
+        appearance="outlined"
+        icon="arrow-left"
+        ariaLabel="Foco 2"
+      />
+      <app-icon-button
+        kind="tertiary"
+        appearance="icon"
+        icon="arrow-left"
+        ariaLabel="Foco 3"
+      />
+    </div>
+  </section>
 </main>

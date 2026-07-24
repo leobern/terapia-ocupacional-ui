@@ -138,6 +138,15 @@ $radius-tag: 26px; // pílula de altura fixa (tag de hospital, tag de usuário)
 $radius-pill: 400px;
 
 // -----------------------------------------------------------------------------
+// Tamanho de ícone — nasce aqui com o icon-button (DS-component-icon-button,
+// research.md §6), primeiro componente a tokenizar isso; sem estilo Figma
+// nomeado para generalizar, então os 2 tamanhos observados (32px/16px) bastam
+// por ora.
+// -----------------------------------------------------------------------------
+$icon-size-lg: 32px;
+$icon-size-sm: 16px;
+
+// -----------------------------------------------------------------------------
 // 2. Semântico — o que os componentes consomem. Ver nota no topo do arquivo:
 // trocar de tema = sobrescrever só este bloco (ou o bloco dark abaixo).
 // -----------------------------------------------------------------------------
@@ -197,6 +206,9 @@ $radius-pill: 400px;
   --radius-lg: #{$radius-lg};
   --radius-tag: #{$radius-tag};
   --radius-pill: #{$radius-pill};
+
+  --icon-size-lg: #{$icon-size-lg};
+  --icon-size-sm: #{$icon-size-sm};
 }
 
 // Estrutura pronta para o tema escuro (ainda não especificado no Figma) —
