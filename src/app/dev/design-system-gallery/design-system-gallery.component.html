@@ -298,4 +298,130 @@
       />
     </div>
   </section>
+
+  <section class="gallery__section">
+    <h2>Badge — DS-component-badge</h2>
+
+    <h3>type="numeral" — formatação (1 dígito, 3 dígitos, estouro "+999")</h3>
+    <div class="gallery__grid">
+      <app-badge type="numeral" [value]="1" />
+      <app-badge type="numeral" [value]="42" />
+      <app-badge type="numeral" [value]="999" />
+      <app-badge type="numeral" [value]="1000" />
+      <app-badge type="numeral" [value]="9999" />
+    </div>
+
+    <h3>type="icon" — qualquer ícone, qualquer cor de fundo/ícone</h3>
+    <div class="gallery__grid">
+      <app-badge type="icon" icon="check" />
+      <app-badge
+        type="icon"
+        icon="x"
+        backgroundColor="var(--color-comm-alert)"
+        iconColor="var(--color-content-6)"
+      />
+      <app-badge
+        type="icon"
+        icon="star"
+        backgroundColor="var(--color-comm-warning)"
+        iconColor="var(--color-content-1)"
+      />
+    </div>
+
+    <h3>type="color" — indicador simples, qualquer cor</h3>
+    <div class="gallery__grid">
+      <app-badge type="color" />
+      <app-badge type="color" color="var(--color-comm-success)" />
+      <app-badge type="color" color="var(--color-secondary)" />
+    </div>
+
+    <h3>Composição — badge flutuando sobre um icon-button (uso pretendido)</h3>
+    <p class="gallery__hint">
+      O badge não define sua própria ancoragem — o wrapper abaixo (<code
+        >position: relative</code
+      >
+      + <code>position: absolute</code> no badge) é responsabilidade do
+      consumidor, exatamente como documentado em spec.md § Diretrizes de Uso.
+    </p>
+    <div class="gallery__grid">
+      <span style="position: relative; display: inline-block">
+        <app-icon-button icon="bell" ariaLabel="Notificações" />
+        <app-badge
+          type="numeral"
+          style="position: absolute; top: -4px; right: -4px"
+          [value]="3"
+        />
+      </span>
+    </div>
+  </section>
+
+  <section class="gallery__section">
+    <h2>Input/Select — DS-component-input-select</h2>
+
+    <h3>variant="text" — Default / Filled</h3>
+    <div class="gallery__stack">
+      <app-input-select
+        iconLeft="envelope-simple"
+        placeholder="Insira seu e-mail"
+      />
+      <app-input-select
+        iconLeft="envelope-simple"
+        value="thiago.angelito@gmail.com"
+      />
+    </div>
+
+    <h3>variant="select" — chevron sempre presente, Default / Filled</h3>
+    <div class="gallery__stack">
+      <app-input-select
+        variant="select"
+        iconLeft="file-text"
+        placeholder="Selecione o hospital"
+      />
+      <app-input-select
+        variant="select"
+        iconLeft="file-text"
+        value="thiago.angelito@gmail.com"
+      />
+    </div>
+
+    <h3>Truncamento com reticências</h3>
+    <div class="gallery__narrow">
+      <app-input-select
+        iconLeft="envelope-simple"
+        value="um.email.bem.mais.longo.do.que.o.espaco.disponivel.para.caber@example.com"
+      />
+    </div>
+
+    <h3>Desabilitado</h3>
+    <div class="gallery__stack">
+      <app-input-select
+        iconLeft="envelope-simple"
+        placeholder="Campo bloqueado"
+        [disabled]="true"
+      />
+    </div>
+
+    <h3>
+      Navegação por teclado (foco, box-shadow + anel rosa, ícone de limpar)
+    </h3>
+    <p class="gallery__hint">
+      Use Tab para focar os campos abaixo — repare na borda escura +
+      <code>box-shadow</code> translúcido (sempre, qualquer método de foco)
+      somados ao anel rosa sistêmico (<code>comm-focus</code>, só teclado). No
+      segundo campo, já preenchido, o ícone de limpar (X) só aparece enquanto o
+      campo está focado.
+    </p>
+    <div class="gallery__stack">
+      <app-input-select iconLeft="envelope-simple" placeholder="Foco vazio" />
+      <app-input-select
+        iconLeft="envelope-simple"
+        value="thiago.angelito@gmail.com"
+      />
+      <app-input-select
+        variant="select"
+        iconLeft="file-text"
+        placeholder="Foco — select"
+      />
+    </div>
+  </section>
 </main>

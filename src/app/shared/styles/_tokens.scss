@@ -75,6 +75,16 @@ $color-focus-ring: $color-comm-focus;
 $focus-ring-width: 2px;
 $focus-ring-offset: 4px;
 
+// `$color-input-focus-ring` — anel de foco EMBUTIDO no próprio desenho do
+// DS-component-input-select (nó Figma `4344:6952`, `State=Focus`), distinto do
+// `$color-focus-ring`/`mixins.focus-ring` acima: aquele é um `outline` de
+// `:focus-visible` só-teclado para elementos clicáveis sem foco visual
+// próprio (Button, IconButton); este é um `box-shadow` sempre visível em
+// `:focus` (clique ou teclado), pois campos de texto tradicionalmente marcam
+// foco em qualquer método de interação. Os dois nunca se aplicam ao mesmo
+// componente — ver DS-component-input-select/research.md.
+$color-input-focus-ring: rgba($color-content-1, 0.4);
+
 // logo/*
 $color-logo-1: #f3d4f3;
 $color-logo-2: #a6fbfb;
@@ -95,12 +105,21 @@ $color-decorative-forest: #0d7742;
 $font-family-base: 'Helvetica Neue', Arial, sans-serif;
 $font-family-interactive: 'Nunito Sans', 'Helvetica Neue', Arial, sans-serif;
 
-// Escala de tamanho ainda não existe de forma genérica no projeto — nasce aqui
-// nomeada pelo estilo Figma "Interactive/Default - Bold" (DS-component-button,
-// research.md §6); generalizar para uma escala completa fica para quando outro
-// componente precisar de um tamanho diferente. Altura de linha não é tokenizada
-// — o Figma especifica 100%/normal, não um valor numérico fixo.
-$font-size-button: 16px;
+// Escala de tamanho ainda não existe de forma genérica no projeto — nasce
+// nomeada pelo estilo Figma "Interactive/Default - Bold" (DS-component-button)
+// e renomeada de `$font-size-button` para `$font-size-interactive` em
+// DS-component-input-select/research.md, já que o mesmo 16px agora é
+// compartilhado por Button e Input/Select (ambos elementos interativos,
+// mesma família Nunito Sans). Generalizar para uma escala completa fica para
+// quando outro componente precisar de um tamanho diferente. Altura de linha
+// não é tokenizada — o Figma especifica 100%/normal, não um valor numérico
+// fixo.
+$font-size-interactive: 16px;
+
+// Estilo Figma "Interactive/Label - Bold" (DS-component-badge) — texto do numeral do
+// badge, Nunito Sans Bold 12px, distinto do `$font-size-interactive` (16px, Button/
+// Input). Mesma família/peso, só o tamanho muda.
+$font-size-label: 12px;
 
 $font-weight-ultralight: fonts.$font-weight-ultralight;
 $font-weight-thin: fonts.$font-weight-thin;
@@ -145,6 +164,10 @@ $radius-pill: 400px;
 // -----------------------------------------------------------------------------
 $icon-size-lg: 32px;
 $icon-size-sm: 16px;
+// Glifo interno de `type="icon"` do badge (DS-component-badge, research.md §5) — 12px
+// medido via `get_metadata` do nó Figma `2188:4990`, não corresponde a nenhum dos 2
+// tamanhos acima.
+$icon-size-xs: 12px;
 
 // -----------------------------------------------------------------------------
 // 2. Semântico — o que os componentes consomem. Ver nota no topo do arquivo:
@@ -166,6 +189,7 @@ $icon-size-sm: 16px;
   --color-focus-ring: #{$color-focus-ring};
   --focus-ring-width: #{$focus-ring-width};
   --focus-ring-offset: #{$focus-ring-offset};
+  --color-input-focus-ring: #{$color-input-focus-ring};
   --color-surface: #{$color-surface};
   --color-surface-2: #{$color-surface-2};
   --color-surface-glass-1: #{$color-surface-glass-1};
@@ -187,7 +211,8 @@ $icon-size-sm: 16px;
   --font-family-heading: #{$font-family-base};
   --font-family-body: #{$font-family-base};
   --font-family-interactive: #{$font-family-interactive};
-  --font-size-button: #{$font-size-button};
+  --font-size-interactive: #{$font-size-interactive};
+  --font-size-label: #{$font-size-label};
 
   --space-0: #{$space-0};
   --space-4: #{$space-4};
@@ -209,6 +234,7 @@ $icon-size-sm: 16px;
 
   --icon-size-lg: #{$icon-size-lg};
   --icon-size-sm: #{$icon-size-sm};
+  --icon-size-xs: #{$icon-size-xs};
 }
 
 // Estrutura pronta para o tema escuro (ainda não especificado no Figma) —

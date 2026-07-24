@@ -30,7 +30,7 @@
   // arquivo auto-hospedado não carregar.
   font-family: tokens.$font-family-interactive;
   font-weight: tokens.$font-weight-bold;
-  font-size: tokens.$font-size-button;
+  font-size: tokens.$font-size-interactive;
   line-height: normal; // Figma: 100% — não é um valor numérico tokenizável
   cursor: pointer;
   transition:

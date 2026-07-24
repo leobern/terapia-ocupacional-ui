@@ -1,0 +1,8 @@
+@switch (type()) {
+  @case ('numeral') {
+    <span class="badge__label">{{ displayValue() }}</span>
+  }
+  @case ('icon') {
+    <ph-icon [name]="icon()" [size]="12" [style.color]="iconColor()" />
+  }
+}

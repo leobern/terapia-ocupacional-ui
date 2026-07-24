@@ -1,0 +1,57 @@
+@use '../../styles/tokens';
+
+// O host É a caixa visual do badge (ver nota em badge.component.ts) — nenhum
+// `display: contents` aqui, ao contrário de Button/IconButton: o consumidor posiciona
+// o badge ("flutuando" sobre outro elemento) aplicando `style="position: absolute; ..."`
+// diretamente na tag `<app-badge>`, o que exige que o host seja um elemento real no
+// modelo de caixa. Badge não é focável/interativo: não há elemento `<button>` nem
+// `mixins.focus-ring`.
+:host {
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  border-radius: tokens.$radius-pill;
+}
+
+// --- type="numeral" ----------------------------------------------------------------
+// Cores SEMPRE fixas — desvio de contraste WCAG AA aprovado explicitamente pelo
+// usuário (spec.md § Fidelidade ao Design System, desvio 1). Não existe prop de cor
+// para este type; não deve existir binding de cor aqui.
+:host(.badge--numeral) {
+  min-width: tokens.$space-24;
+  height: tokens.$space-24;
+  padding-inline: tokens.$space-8;
+  background: tokens.$color-secondary;
+}
+
+.badge__label {
+  color: tokens.$color-content-6;
+  font-family: tokens.$font-family-interactive;
+  font-weight: tokens.$font-weight-bold;
+  font-size: tokens.$font-size-label;
+  line-height: normal;
+  white-space: nowrap;
+}
+
+// --- type="icon" --------------------------------------------------------------------
+// Fundo vem de `backgroundColor` (bindado via [style.background] no host, badge.component.ts)
+// — nenhuma cor própria aqui, "qualquer cor" é responsabilidade do consumidor (research.md §3).
+:host(.badge--icon) {
+  width: tokens.$space-24;
+  height: tokens.$space-24;
+  padding: tokens.$space-8;
+}
+
+:host(.badge--icon) ph-icon {
+  width: tokens.$icon-size-xs;
+  height: tokens.$icon-size-xs;
+}
+
+// --- type="color" ---------------------------------------------------------------------
+// Fundo vem de `color` (bindado via [style.background] no host) — sem conteúdo interno.
+:host(.badge--color) {
+  width: tokens.$space-8;
+  height: tokens.$space-8;
+}

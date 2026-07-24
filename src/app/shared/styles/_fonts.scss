@@ -162,10 +162,18 @@
 // criado pelo usuário no Figma em 2026-07-23, ver DS-component-button/spec.md).
 // Baixada do Google Fonts (subconjunto "latin", SIL Open Font License 1.1) e
 // auto-hospedada aqui — nunca via <link>/@import de CDN, para não quebrar o
-// offline-first (Constituição, Princípio IV). Só o peso Bold (700) até agora,
-// que é o único usado no design system até o momento; adicionar outros pesos
-// quando algum componente precisar.
+// offline-first (Constituição, Princípio IV). Pesos adicionados conforme os
+// componentes passam a precisar: Bold (700, Button) e Medium (500,
+// DS-component-input-select — placeholder).
 // -----------------------------------------------------------------------------
+@font-face {
+  font-family: 'Nunito Sans';
+  src: url('/assets/fonts/nunito-sans/NunitoSans-Medium.woff2') format('woff2');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
 @font-face {
   font-family: 'Nunito Sans';
   src: url('/assets/fonts/nunito-sans/NunitoSans-Bold.woff2') format('woff2');

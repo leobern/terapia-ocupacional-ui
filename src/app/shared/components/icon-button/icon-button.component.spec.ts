@@ -84,6 +84,7 @@ describe('IconButtonComponent', () => {
   }
 
   it('renders a single, unified disabled appearance regardless of kind/appearance/size', () => {
+    attachToDom();
     fixture.componentRef.setInput('kind', 'tertiary');
     fixture.componentRef.setInput('appearance', 'outlined');
     fixture.componentRef.setInput('size', 'small');
@@ -91,6 +92,14 @@ describe('IconButtonComponent', () => {
     fixture.detectChanges();
 
     expect(buttonEl().disabled).toBe(true);
+
+    // FR-005: aparência única (--color-state-disabled / --color-state-disabled-2),
+    // travada como regressão em vez de só confiar no atributo `disabled` nativo.
+    const cs = getComputedStyle(buttonEl());
+
+    expect(cs.backgroundColor).toBe('rgb(199, 204, 209)'); // --color-state-disabled #C7CCD1
+    expect(cs.color).toBe('rgb(78, 88, 95)'); // --color-state-disabled-2 #4E585F
+    expect(cs.borderStyle).toBe('none');
   });
 
   it('renders as a native <button type="button">', () => {
