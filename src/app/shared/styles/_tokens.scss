@@ -128,6 +128,11 @@ $font-size-label: 12px;
 // `$font-size-interactive` (16px) sem token novo.
 $font-size-title: 40px;
 
+// Estilo Figma "Interactive/Subsection - Bold" (DS-component-tag) — texto do
+// type="default" da tag, Nunito Sans Bold 14px, distinto de `$font-size-interactive`
+// (16px, type="user") e `$font-size-label` (12px, type="status").
+$font-size-subsection: 14px;
+
 $font-weight-ultralight: fonts.$font-weight-ultralight;
 $font-weight-thin: fonts.$font-weight-thin;
 $font-weight-light: fonts.$font-weight-light;
@@ -156,6 +161,11 @@ $space-80: 80px;
 // medido via `get_metadata` dos nós Figma `4356:7109`/`4356:7110`/`4356:7112`, fora
 // do grid de 8px regular (não é múltiplo comum a outros componentes ainda).
 $space-120: 120px;
+// `max-width` do type="default" da tag (DS-component-tag, research.md §6) — 280px
+// medido via `get_design_context` do nó Figma `2218:5666` (`max-w-[280px]`), fora do
+// grid de 8px regular, mas uma restrição de design real, não um detalhe de
+// implementação — mesma lógica já usada para `$space-120`.
+$space-280: 280px;
 
 // -----------------------------------------------------------------------------
 // Raio de borda — os valores de canto usados nos componentes do Figma.
@@ -225,6 +235,7 @@ $icon-size-xs: 12px;
   --font-size-interactive: #{$font-size-interactive};
   --font-size-label: #{$font-size-label};
   --font-size-title: #{$font-size-title};
+  --font-size-subsection: #{$font-size-subsection};
 
   --space-0: #{$space-0};
   --space-4: #{$space-4};
@@ -238,6 +249,7 @@ $icon-size-xs: 12px;
   --space-64: #{$space-64};
   --space-80: #{$space-80};
   --space-120: #{$space-120};
+  --space-280: #{$space-280};
 
   --radius-sm: #{$radius-sm};
   --radius-md: #{$radius-md};
