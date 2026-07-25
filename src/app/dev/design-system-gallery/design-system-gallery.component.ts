@@ -3,6 +3,7 @@ import { ChangeDetectionStrategy, Component, signal } from '@angular/core';
 import { AvatarComponent } from '../../shared/components/avatar/avatar.component';
 import { BadgeComponent } from '../../shared/components/badge/badge.component';
 import { ButtonComponent } from '../../shared/components/button/button.component';
+import { CardPatientsComponent } from '../../shared/components/card-patients/card-patients.component';
 import { GraphMetaComponent } from '../../shared/components/graph-meta/graph-meta.component';
 import { IconButtonComponent } from '../../shared/components/icon-button/icon-button.component';
 import { InputSelectComponent } from '../../shared/components/input-select/input-select.component';
@@ -21,6 +22,7 @@ import { TagComponent } from '../../shared/components/tag/tag.component';
     AvatarComponent,
     BadgeComponent,
     ButtonComponent,
+    CardPatientsComponent,
     GraphMetaComponent,
     IconButtonComponent,
     InputSelectComponent,
@@ -45,4 +47,12 @@ export class DesignSystemGalleryComponent {
   );
   protected readonly demoEmailFocusValue = signal('thiago.angelito@gmail.com');
   protected readonly demoSelectFocusValue = signal('');
+
+  // Demonstra a área de toque estendida do card-patients — o card zerado
+  // não deve atualizar isto ao clicar (CTA desabilitado).
+  protected readonly cardPatientsLastClick = signal('nenhum clique ainda');
+
+  protected onCardPatientsClick(variant: string): void {
+    this.cardPatientsLastClick.set(`card-patients (${variant}) — ${new Date().toLocaleTimeString()}`);
+  }
 }

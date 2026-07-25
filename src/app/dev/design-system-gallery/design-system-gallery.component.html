@@ -613,6 +613,38 @@
   </section>
 
   <section class="gallery__section">
+    <h2>Card Patients — DS-component-card-patients</h2>
+    <p class="gallery__hint">
+      Comparar cada estado abaixo via <code>get_screenshot</code> contra o nó
+      Figma (quickstart.md § Validação 2) — default: nó <code>4041:1472</code>;
+      zerado: nó <code>4310:8272</code> (consultado, não encontrado no Figma —
+      spec.md § Fidelidade ao Design System). O graph-meta sempre exibe a média
+      (mesmo com <code>patientCount = 0</code> — é a média dos pacientes já
+      atendidos, não zera junto com o contador). Clique em qualquer ponto do
+      card (não só no ícone) — área de toque estendida; o texto abaixo do grid
+      mostra o último <code>cardClick</code>
+      disparado (o card zerado não deve atualizar, CTA desabilitado).
+    </p>
+    <div class="gallery__grid">
+      <app-card-patients
+        actionAriaLabel="Ver listagem de pacientes"
+        [patientCount]="10"
+        [averageCaloricPercentage]="62"
+        [averageProteinPercentage]="48"
+        (cardClick)="onCardPatientsClick('default')"
+      />
+      <app-card-patients
+        actionAriaLabel="Ver listagem de pacientes"
+        [patientCount]="0"
+        [averageCaloricPercentage]="81"
+        [averageProteinPercentage]="74"
+        (cardClick)="onCardPatientsClick('zerado')"
+      />
+    </div>
+    <p class="gallery__hint">Último clique: {{ cardPatientsLastClick() }}</p>
+  </section>
+
+  <section class="gallery__section">
     <h2>Tag — DS-component-tag</h2>
 
     <h3>type="user" — nome curto e nome longo (truncamento), com/sem ícone</h3>

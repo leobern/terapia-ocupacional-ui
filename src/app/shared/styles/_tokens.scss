@@ -174,6 +174,11 @@ $space-280: 280px;
 $radius-sm: 16px;
 $radius-md: 24px;
 $radius-lg: 32px;
+// Canto superior-direito do container do DS-component-card-patients (nó Figma `4041:1472`) —
+// sem binding de variável no Figma (valor literal no nó), mas coincide com `$space-40` já
+// existente na escala de spacing — exposto como token de radius reutilizável em vez de
+// hardcode (specs/ds/DS-component-card-patients/research.md §4).
+$radius-xl: 40px;
 $radius-tag: 26px; // pílula de altura fixa (tag de hospital, tag de usuário)
 $radius-pill: 400px;
 
@@ -254,6 +259,7 @@ $icon-size-xs: 12px;
   --radius-sm: #{$radius-sm};
   --radius-md: #{$radius-md};
   --radius-lg: #{$radius-lg};
+  --radius-xl: #{$radius-xl};
   --radius-tag: #{$radius-tag};
   --radius-pill: #{$radius-pill};
 

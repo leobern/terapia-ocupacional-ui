@@ -1,0 +1,39 @@
+<article
+  class="card-patients"
+  [class.card-patients--disabled]="ctaDisabled()"
+  (click)="onCardClick()"
+>
+  <div class="card-patients__row">
+    <div class="card-patients__content">
+      <app-graph-meta
+        [topPercentage]="averageCaloricPercentage()"
+        [bottomPercentage]="averageProteinPercentage()"
+        [ariaLabel]="
+          'Aporte calórico ' +
+          averageCaloricPercentage() +
+          '%, aporte protéico ' +
+          averageProteinPercentage() +
+          '%'
+        "
+      />
+    </div>
+  </div>
+
+  <div class="card-patients__label">
+    @if (title()) {
+      <p class="card-patients__title">{{ title() }}</p>
+    }
+    <p class="card-patients__subtitle">{{ subtitle() }}</p>
+  </div>
+
+  <div class="card-patients__actions">
+    <app-icon-button
+      kind="secondary"
+      appearance="outlined"
+      size="small"
+      icon="arrow-right"
+      [ariaLabel]="actionAriaLabel()"
+      [disabled]="ctaDisabled()"
+    />
+  </div>
+</article>
