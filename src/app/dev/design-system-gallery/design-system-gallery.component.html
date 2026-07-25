@@ -516,6 +516,103 @@
   </section>
 
   <section class="gallery__section">
+    <h2>Graph Meta — DS-component-graph-meta</h2>
+    <p class="gallery__hint">
+      Comparar cada combinação abaixo via <code>get_screenshot</code> contra a
+      variante Figma equivalente (quickstart.md § Validação 2) — arco externo
+      (topo) e interno (base) resolvem cor de forma totalmente independente.
+    </p>
+
+    <h3>
+      size="Default" — as 5 faixas de cor
+      (State=0%/&lt;10%/&lt;50%/&gt;50%/100%)
+    </h3>
+    <div class="gallery__grid">
+      <app-graph-meta
+        ariaLabel="0%, 0%"
+        [topPercentage]="0"
+        [bottomPercentage]="0"
+      />
+      <app-graph-meta
+        ariaLabel="5%, 0%"
+        [topPercentage]="5"
+        [bottomPercentage]="0"
+      />
+      <app-graph-meta
+        ariaLabel="35%, 0%"
+        [topPercentage]="35"
+        [bottomPercentage]="0"
+      />
+      <app-graph-meta
+        ariaLabel="81%, 65%"
+        [topPercentage]="81"
+        [bottomPercentage]="65"
+      />
+      <app-graph-meta
+        ariaLabel="100%, 100%"
+        [topPercentage]="100"
+        [bottomPercentage]="100"
+      />
+    </div>
+
+    <h3>size="Small" — mesmas 5 faixas</h3>
+    <div class="gallery__grid">
+      <app-graph-meta
+        size="Small"
+        ariaLabel="0%, 0%"
+        [topPercentage]="0"
+        [bottomPercentage]="0"
+      />
+      <app-graph-meta
+        size="Small"
+        ariaLabel="5%, 0%"
+        [topPercentage]="5"
+        [bottomPercentage]="0"
+      />
+      <app-graph-meta
+        size="Small"
+        ariaLabel="35%, 0%"
+        [topPercentage]="35"
+        [bottomPercentage]="0"
+      />
+      <app-graph-meta
+        size="Small"
+        ariaLabel="81%, 65%"
+        [topPercentage]="81"
+        [bottomPercentage]="65"
+      />
+      <app-graph-meta
+        size="Small"
+        ariaLabel="100%, 100%"
+        [topPercentage]="100"
+        [bottomPercentage]="100"
+      />
+    </div>
+
+    <h3>
+      Independência entre os dois arcos (combinação livre, fora das 5 variantes
+      Figma)
+    </h3>
+    <div class="gallery__grid">
+      <app-graph-meta
+        ariaLabel="topo 81% verde, base 35% amarelo"
+        [topPercentage]="81"
+        [bottomPercentage]="35"
+      />
+      <app-graph-meta
+        ariaLabel="topo 5% vermelho, base 90% azul"
+        [topPercentage]="5"
+        [bottomPercentage]="90"
+      />
+      <app-graph-meta
+        ariaLabel="topo 0% disabled, base 100% azul"
+        [topPercentage]="0"
+        [bottomPercentage]="100"
+      />
+    </div>
+  </section>
+
+  <section class="gallery__section">
     <h2>Tag — DS-component-tag</h2>
 
     <h3>type="user" — nome curto e nome longo (truncamento), com/sem ícone</h3>
