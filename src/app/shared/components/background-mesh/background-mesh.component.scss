@@ -1,0 +1,68 @@
+// -----------------------------------------------------------------------------
+// DS-component-background-mesh — fundo decorativo puramente visual, atrás de
+// todo o conteúdo da tela. `position: fixed` (não `absolute` — spec.md §
+// Clarifications, 2026-07-25: não deve rolar com o conteúdo da página).
+//
+// As 4 cores (2 blobs + 2 stops do gradiente do mesh) são hex cru recebidas via
+// `input()` no `.component.ts` — nenhum token do design system é usado nesta v1
+// (desvio do Princípio VIII documentado e aprovado em spec.md § Clarifications).
+// Por isso este arquivo não importa `../../styles/tokens`.
+// -----------------------------------------------------------------------------
+// `:host` é o próprio elemento raiz — sem `<div>` wrapper interno (removido
+// pelo usuário, 2026-07-26): os blobs e o SVG são filhos diretos do host.
+// `aria-hidden="true"` migrou para o host via metadata do componente (`host:`
+// no `@Component`), já que não há mais um elemento de template para carregá-lo.
+:host {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+// -----------------------------------------------------------------------------
+// Blobs de cor (canto superior-esquerdo) — SEMPRE circulares (largura ==
+// altura), variando de tamanho conforme a tela via `width: 100%` + `max-width`
+// (o único valor que muda por blob) + `aspect-ratio: 1/1` (deriva a altura da
+// largura, nunca o contrário). Corrigido em 2026-07-26 (achado do
+// `/speckit-converge`, T013): a versão anterior usava `top:0; bottom:0`
+// (2 insets opostos), o que força uma altura definida igual à altura cheia do
+// host e ANULA o `aspect-ratio` sempre que essa altura excede o `max-width` —
+// produzindo uma cápsula alongada em vez de um círculo. Ancoragem por um único
+// inset por eixo (`top`/`left`, nunca `top`+`bottom` juntos), mesmo princípio
+// já usado no mesh estático abaixo (`bottom`+`right`, nunca 2 insets opostos).
+// Sem animação (removida pelo usuário, 2026-07-26).
+// -----------------------------------------------------------------------------
+.background-mesh__blob {
+  position: absolute;
+  top: 0;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  border-radius: 50%;
+  filter: blur(160px);
+  mix-blend-mode: color;
+
+  &--1 {
+    left: 0;
+    max-width: 680px;
+  }
+
+  &--2 {
+    left: 200px;
+    max-width: 960px;
+  }
+}
+
+// -----------------------------------------------------------------------------
+// Mesh estático (canto inferior-direito) — sem animação. Ajustado pelo
+// usuário via DevTools (2026-07-26): ancorado direto no canto (`bottom:0;
+// right:0`, sem `top` nem `display:block`), tamanho limitado por
+// `max-width` em vez do `top`/`bottom`% original do Figma (research.md §5).
+// -----------------------------------------------------------------------------
+.background-mesh__static {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  aspect-ratio: 620 / 620;
+  max-width: 940px;
+}

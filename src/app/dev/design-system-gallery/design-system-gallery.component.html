@@ -1,4 +1,6 @@
 <main class="gallery">
+  <app-background-mesh />
+
   <h1 class="gallery__title">Design System — Preview de componentes</h1>
   <p class="gallery__note">
     Página de desenvolvimento, fora do produto — usada para testar visualmente e
@@ -745,6 +747,27 @@
         label="Crítico"
         backgroundColor="var(--color-comm-alert)"
       />
+    </div>
+  </section>
+
+  <section class="gallery__section">
+    <h2>Background Mesh — DS-component-background-mesh</h2>
+    <p class="gallery__hint">
+      Comparar via <code>get_screenshot</code> contra os nós Figma mobile
+      (<code>4360:7158</code>/<code>4360:7165</code>) e desktop
+      (<code>4366:9534</code>) (quickstart.md § Validação 2). O componente usa
+      <code>position: fixed</code> — o quadro abaixo tem
+      <code>transform: translateZ(0)</code>, que por spec do CSS cria um novo
+      containing block para elementos <code>fixed</code> descendentes,
+      confinando a pré-visualização ao quadro em vez de cobrir a página inteira
+      (a implementação real do componente continua fixa à viewport quando usada
+      sem esse wrapper). Redimensionar o quadro/navegador para conferir o
+      comportamento responsivo; emular
+      <code>prefers-reduced-motion: reduce</code> no DevTools para conferir que
+      os 3 blobs param de se mover.
+    </p>
+    <div class="gallery__background-mesh-frame">
+      <app-background-mesh />
     </div>
   </section>
 </main>

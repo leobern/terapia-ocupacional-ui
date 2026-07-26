@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, signal } from '@angular/core';
 
 import { AvatarComponent } from '../../shared/components/avatar/avatar.component';
+import { BackgroundMeshComponent } from '../../shared/components/background-mesh/background-mesh.component';
 import { BadgeComponent } from '../../shared/components/badge/badge.component';
 import { ButtonComponent } from '../../shared/components/button/button.component';
 import { CardNotifyComponent } from '../../shared/components/card-notify/card-notify.component';
@@ -21,6 +22,7 @@ import { TagComponent } from '../../shared/components/tag/tag.component';
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     AvatarComponent,
+    BackgroundMeshComponent,
     BadgeComponent,
     ButtonComponent,
     CardNotifyComponent,

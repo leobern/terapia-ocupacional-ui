@@ -1,15 +1,18 @@
 @use '../../shared/styles/tokens';
 
-// Host cobre a página inteira (não só a coluna central de 960px) — sem isso,
-// as laterais fora do max-width do .gallery ficariam com o branco padrão do
-// body, criando "faixas" visíveis contra o fundo colorido.
+// Host cobre a página inteira (não só a coluna central de 960px). Sem
+// background próprio (removido pelo usuário, 2026-07-26).
 :host {
   display: block;
   min-height: 100vh;
-  background: tokens.$color-surface-2;
 }
 
+// Sem background próprio (removido pelo usuário, 2026-07-26) — a página
+// mostra o fundo real (branco/transparente), deixando o background-mesh
+// (instância full-page acima do conteúdo) ser o único responsável pela cor
+// de fundo visível.
 .gallery {
+  position: relative;
   box-sizing: border-box;
   max-width: 960px;
   margin: 0 auto;
@@ -52,4 +55,18 @@
 
 .gallery__narrow {
   max-width: 200px;
+}
+
+// Quadro de pré-visualização do background-mesh (`position: fixed` por
+// natureza) — `transform` aqui cria um novo containing block para
+// descendentes `fixed` (spec CSS), confinando a prévia a este quadro em vez
+// de cobrir a página inteira. Sem border-radius/background própria (ajuste
+// visual do usuário, 2026-07-26) — o quadro deve se misturar ao fundo real
+// da página (ver `.gallery`/instância full-page da seção Background Mesh),
+// não ter chrome visual próprio.
+.gallery__background-mesh-frame {
+  position: relative;
+  overflow: hidden;
+  height: 480px;
+  transform: translateZ(0);
 }
