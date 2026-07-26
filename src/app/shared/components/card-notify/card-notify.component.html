@@ -1,0 +1,36 @@
+<article
+  class="card-notify"
+  [class.card-notify--disabled]="actionDisabled()"
+  (click)="onCardClick()"
+>
+  <div class="card-notify__row">
+    <app-avatar
+      [name]="authorName()"
+      [imageUrl]="authorPhotoUrl() ?? ''"
+      [type]="avatarType()"
+    />
+    <div class="card-notify__text">
+      <p class="card-notify__name">{{ authorName() }}</p>
+      <p class="card-notify__specialty">{{ authorSpecialty() }}</p>
+    </div>
+  </div>
+
+  <div class="card-notify__content">
+    <p class="card-notify__description">{{ description() }}</p>
+  </div>
+
+  <div class="card-notify__footer">
+    <div class="card-notify__time">
+      <ph-icon name="bell" [size]="16" />
+      <span>{{ time() }}</span>
+    </div>
+    <app-icon-button
+      kind="secondary"
+      appearance="outlined"
+      size="small"
+      icon="arrow-right"
+      [ariaLabel]="actionAriaLabel()"
+      [disabled]="actionDisabled()"
+    />
+  </div>
+</article>

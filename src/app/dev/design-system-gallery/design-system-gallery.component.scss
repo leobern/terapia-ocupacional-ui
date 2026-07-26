@@ -1,6 +1,16 @@
 @use '../../shared/styles/tokens';
 
+// Host cobre a página inteira (não só a coluna central de 960px) — sem isso,
+// as laterais fora do max-width do .gallery ficariam com o branco padrão do
+// body, criando "faixas" visíveis contra o fundo colorido.
+:host {
+  display: block;
+  min-height: 100vh;
+  background: tokens.$color-surface-2;
+}
+
 .gallery {
+  box-sizing: border-box;
   max-width: 960px;
   margin: 0 auto;
   padding: tokens.$space-32;

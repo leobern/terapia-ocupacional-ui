@@ -645,6 +645,41 @@
   </section>
 
   <section class="gallery__section">
+    <h2>Card Notify — DS-component-card-notify</h2>
+    <p class="gallery__hint">
+      Comparar cada variante abaixo via <code>get_screenshot</code> contra o nó
+      Figma <code>4041:1490</code> (quickstart.md § Validação 2) — único estado
+      definido no Figma de origem. A segunda instância varia
+      <code>authorPhotoUrl</code> (avatar com foto) e uma descrição mais longa,
+      para validar o truncamento em 2 linhas. Clique em qualquer ponto do card
+      (não só no ícone) — área de toque estendida; o texto abaixo do grid mostra
+      o último <code>cardClick</code> disparado (a instância com
+      <code>actionDisabled</code> não deve atualizar).
+    </p>
+    <div class="gallery__grid">
+      <app-card-notify
+        authorName="Jairo Nepomuceno"
+        authorSpecialty="Enfermeiro"
+        description="Suspendemos a formula XYZ do paciente Renato Lemos Santos"
+        time="19:27"
+        actionAriaLabel="Ver detalhes da notificação"
+        (cardClick)="onCardNotifyClick('default')"
+      />
+      <app-card-notify
+        authorName="Michelle Franklin"
+        authorSpecialty="Nutricionista"
+        authorPhotoUrl="https://i.pravatar.cc/112?img=47"
+        description="Paciente relatou desconforto abdominal após a última refeição registrada no plano alimentar"
+        time="Ontem"
+        actionAriaLabel="Ver detalhes da notificação"
+        [actionDisabled]="true"
+        (cardClick)="onCardNotifyClick('actionDisabled')"
+      />
+    </div>
+    <p class="gallery__hint">Último clique: {{ cardNotifyLastClick() }}</p>
+  </section>
+
+  <section class="gallery__section">
     <h2>Tag — DS-component-tag</h2>
 
     <h3>type="user" — nome curto e nome longo (truncamento), com/sem ícone</h3>

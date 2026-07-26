@@ -37,6 +37,7 @@ $color-tertiary: #85e0e0;
 $color-content-1: #002233;
 $color-content-2: #006da3;
 $color-content-3: #218383;
+$color-content-4: #73848c; // preenche o slot deixado vago pela renumeração acima (DS-component-card-notify, 2026-07-24)
 $color-content-5: #94acb8; // era content-4 neste arquivo; Figma atual chama de content-5
 $color-content-6: #ffffff; // era content-5 neste arquivo; Figma atual chama de content-6
 
@@ -206,6 +207,7 @@ $icon-size-xs: 12px;
   --color-content-1: #{$color-content-1};
   --color-content-2: #{$color-content-2};
   --color-content-3: #{$color-content-3};
+  --color-content-4: #{$color-content-4};
   --color-content-5: #{$color-content-5};
   --color-content-6: #{$color-content-6};
   --color-state-disabled: #{$color-state-disabled};

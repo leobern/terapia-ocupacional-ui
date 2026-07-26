@@ -3,6 +3,7 @@ import { ChangeDetectionStrategy, Component, signal } from '@angular/core';
 import { AvatarComponent } from '../../shared/components/avatar/avatar.component';
 import { BadgeComponent } from '../../shared/components/badge/badge.component';
 import { ButtonComponent } from '../../shared/components/button/button.component';
+import { CardNotifyComponent } from '../../shared/components/card-notify/card-notify.component';
 import { CardPatientsComponent } from '../../shared/components/card-patients/card-patients.component';
 import { GraphMetaComponent } from '../../shared/components/graph-meta/graph-meta.component';
 import { IconButtonComponent } from '../../shared/components/icon-button/icon-button.component';
@@ -22,6 +23,7 @@ import { TagComponent } from '../../shared/components/tag/tag.component';
     AvatarComponent,
     BadgeComponent,
     ButtonComponent,
+    CardNotifyComponent,
     CardPatientsComponent,
     GraphMetaComponent,
     IconButtonComponent,
@@ -52,7 +54,15 @@ export class DesignSystemGalleryComponent {
   // não deve atualizar isto ao clicar (CTA desabilitado).
   protected readonly cardPatientsLastClick = signal('nenhum clique ainda');
 
+  // Demonstra a área de toque estendida do card-notify — a instância com
+  // actionDisabled=true não deve atualizar isto ao clicar.
+  protected readonly cardNotifyLastClick = signal('nenhum clique ainda');
+
   protected onCardPatientsClick(variant: string): void {
     this.cardPatientsLastClick.set(`card-patients (${variant}) — ${new Date().toLocaleTimeString()}`);
+  }
+
+  protected onCardNotifyClick(variant: string): void {
+    this.cardNotifyLastClick.set(`card-notify (${variant}) — ${new Date().toLocaleTimeString()}`);
   }
 }
