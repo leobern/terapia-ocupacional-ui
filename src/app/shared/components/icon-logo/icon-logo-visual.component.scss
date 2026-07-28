@@ -1,0 +1,319 @@
+@use '../../styles/tokens';
+
+// -----------------------------------------------------------------------------
+// DS-component-icon-logo — núcleo visual compartilhado (interno).
+// ⚠️ REGRA QUE NÃO PODE SER QUEBRADA (research.md §1):
+// Nenhum ancestral das camadas com `mix-blend-mode` pode criar stacking context.
+// `transform`, `filter`, `opacity < 1`, `will-change` e `isolation` criam — e todo
+// stacking context forma um GRUPO ISOLADO para blending. Se o `:host` ou o
+// `.icon-logo__symbol` ganhar qualquer uma dessas propriedades, as 3 luzes deixam
+// de compor com a malha e o miolo do disco e viram manchas chapadas. Não há erro
+// de build nem teste vermelho óbvio — só fica visualmente errado. Por isso a
+// órbita é animada em CADA LUZ, nunca num wrapper, e `will-change` idem.
+// (`icon-logo-visual.component.spec.ts` tem um teste que trava essa regra.)
+// Toda medida deriva de `--icon-logo-size` (data-model.md §4) — não há px
+// absoluto neste arquivo além do default da própria custom property.
+// -----------------------------------------------------------------------------
+:host {
+  // O default NÃO é declarado como `--icon-logo-size: 48px` de propósito: declarar
+  // a própria custom property aqui a fixaria neste elemento e BLOQUEARIA o valor
+  // que o consumidor define em `app-icon-logo` (ou em qualquer ancestral) de
+  // chegar até aqui. O fallback do `var()` dá o mesmo default preservando a herança.
+  --icon-logo-resolved-size: var(--icon-logo-size, 48px);
+
+  // Derivadas de escala — ver data-model.md §4 (coluna "@48px" para conferência).
+  --icon-logo-bleed: calc(var(--icon-logo-resolved-size) * 0.375); // 18px
+  --icon-logo-box: calc(var(--icon-logo-resolved-size) * 1.75); // 84px
+  --icon-logo-border-width: calc(var(--icon-logo-resolved-size) / 24); // 2px
+  --icon-logo-surface-size: calc(
+    var(--icon-logo-resolved-size) * 0.925
+  ); // 44.4px
+
+  // Metade do gap ((48 − 44,4) / 2 = 1,8px) mais o nudge de +0,2px que o Figma
+  // aplica nesta camada — que somam exatamente `size / 24` (2px @48px).
+  --icon-logo-surface-offset: calc(var(--icon-logo-resolved-size) / 24);
+  --icon-logo-light-size: calc(var(--icon-logo-resolved-size) * 2 / 3); // 32px
+
+  // Cor de acento do estado: pinta borda, halo e traço da malha de uma vez.
+  // A matriz completa está em data-model.md §2.
+  --icon-logo-accent: #{tokens.$color-secondary};
+
+  // A caixa inclui o transbordamento das luzes e do halo, para que nenhum
+  // ancestral com `overflow: hidden` corte a auréola (FR-017).
+  display: inline-block;
+  height: var(--icon-logo-box);
+  pointer-events: none;
+  position: relative;
+  vertical-align: middle;
+  width: var(--icon-logo-box);
+}
+
+:host([data-state='button']) {
+  --icon-logo-accent: #{tokens.$color-primary};
+}
+
+:host([data-state='disabled']) {
+  --icon-logo-accent: #{tokens.$color-border-2};
+
+  // 1px @48px — o Figma afina a borda no disabled.
+  --icon-logo-border-width: calc(var(--icon-logo-resolved-size) / 48);
+}
+
+// Círculo visível, centrado na caixa de bleed. Posicionado por `inset` e NÃO por
+// `translate(-50%)`: um transform aqui isolaria o blend das camadas filhas.
+.icon-logo__symbol {
+  inset: var(--icon-logo-bleed);
+  position: absolute;
+}
+
+// -----------------------------------------------------------------------------
+// Ordem das camadas no DOM = ordem de composição. `multiply` e `color` compõem
+// contra o que já foi pintado abaixo, então reordenar muda o resultado visual
+// (data-model.md §2). A ordem das PROPRIEDADES abaixo é alfabética por exigência
+// do stylelint e não tem relação com isso.
+// -----------------------------------------------------------------------------
+.icon-logo__base {
+  background: tokens.$color-surface;
+  border: var(--icon-logo-border-width) solid var(--icon-logo-accent);
+  border-radius: 50%;
+  box-sizing: border-box;
+  inset: 0;
+  position: absolute;
+}
+
+// Rebaixa levemente a luminosidade do miolo — sem ela o blend `color` das camadas
+// acima não teria onde "pegar" (branco puro mantém a luminosidade no blend color).
+.icon-logo__surface {
+  background: tokens.$color-surface-2;
+  border-radius: 50%;
+  filter: blur(calc(var(--icon-logo-resolved-size) / 12));
+  height: var(--icon-logo-surface-size);
+  left: var(--icon-logo-surface-offset);
+  mix-blend-mode: multiply;
+  position: absolute;
+  top: var(--icon-logo-surface-offset);
+  width: var(--icon-logo-surface-size);
+}
+
+// Halo — transborda o círculo. Ausente no visual `button` (ver template).
+.icon-logo__halo {
+  background: var(--icon-logo-accent);
+  border-radius: 50%;
+  filter: blur(calc(var(--icon-logo-resolved-size) / 6));
+  inset: calc(var(--icon-logo-resolved-size) / -24);
+  mix-blend-mode: color;
+  position: absolute;
+}
+
+// A máscara replica exatamente a exportada do Figma (assets/figma-mesh-mask.svg):
+// gradiente radial centrado, raio = metade do lado, transparente em 75.9615%.
+// `closest-side` faz a geometria acompanhar qualquer `--icon-logo-size` sem
+// recalcular nada. `black` aqui não é cor de design — é o portador do canal alfa
+// da máscara (só a opacidade importa). O prefixo `-webkit-` é exigido pelo Safari.
+$mesh-fade-mask: radial-gradient(
+  circle closest-side,
+  black 0%,
+  transparent 75.9615%
+);
+
+.icon-logo__mesh {
+  // `currentColor` no `stroke` do path — o traço herda o acento do estado.
+  color: var(--icon-logo-accent);
+  height: auto;
+  inset: calc(var(--icon-logo-resolved-size) / 48);
+  -webkit-mask-image: $mesh-fade-mask;
+  mask-image: $mesh-fade-mask;
+  position: absolute;
+  width: auto;
+}
+
+// -----------------------------------------------------------------------------
+// As 3 luzes. Ficam sempre no DOM (FR-011: crossfade nos dois sentidos) e são
+// posicionadas no CENTRO do círculo, deslocadas para a posição do Figma pelo
+// próprio transform de órbita — assim a animação e a posição estática usam a
+// mesma fórmula (data-model.md §5).
+// -----------------------------------------------------------------------------
+.icon-logo__light {
+  border-radius: 50%;
+  height: var(--icon-logo-light-size);
+  left: 50%;
+  margin-left: calc(var(--icon-logo-light-size) / -2);
+  margin-top: calc(var(--icon-logo-light-size) / -2);
+  mix-blend-mode: color;
+  opacity: 0;
+  position: absolute;
+  top: 50%;
+  transform: rotate(var(--icon-logo-angle)) translate(var(--icon-logo-radius))
+    rotate(calc(var(--icon-logo-angle) * -1));
+  transition: opacity 320ms ease-out;
+  width: var(--icon-logo-light-size);
+}
+
+.icon-logo__light--1 {
+  --icon-logo-angle: 206.565deg;
+  --icon-logo-radius: calc(var(--icon-logo-resolved-size) * 0.372678);
+
+  background: tokens.$color-logo-3;
+  filter: blur(calc(var(--icon-logo-resolved-size) / 6));
+}
+
+.icon-logo__light--2 {
+  --icon-logo-angle: 319.399deg;
+  --icon-logo-radius: calc(var(--icon-logo-resolved-size) * 0.384148);
+
+  background: tokens.$color-logo-2;
+  filter: blur(calc(var(--icon-logo-resolved-size) / 6));
+}
+
+.icon-logo__light--3 {
+  --icon-logo-angle: 90deg;
+  --icon-logo-radius: calc(var(--icon-logo-resolved-size) * 0.291667);
+
+  background: tokens.$color-logo-1;
+  filter: blur(calc(var(--icon-logo-resolved-size) / 4));
+}
+
+// Visíveis em `anim` (animadas) e no hover do botão (estáticas).
+:host([data-state='anim']) .icon-logo__light,
+:host(.icon-logo--lights-visible) .icon-logo__light {
+  opacity: 1;
+}
+
+// -----------------------------------------------------------------------------
+// Animação — só no visual `anim`. Apenas `transform`, `scale` e `opacity`: nunca
+// `filter`, nunca dimensões (FR-008). A "respiração do halo" da proposta original
+// foi removida de propósito — escalar elemento com `filter: blur()` re-rasteriza o
+// desfoque a cada quadro (spec.md § Clarifications 2026-07-26, Desvio 8).
+// A órbita usa `transform` e o pulso usa a propriedade independente `scale`, que é
+// aplicada ANTES do `transform` na cascata de transformações — por isso as duas
+// animações convivem no mesmo elemento sem uma sobrescrever a outra.
+// -----------------------------------------------------------------------------
+:host([data-state='anim']) {
+  .icon-logo__light {
+    // Apenas nas luzes — NUNCA num ancestral (research.md §2).
+    will-change: transform;
+  }
+
+  .icon-logo__light--1 {
+    animation:
+      icon-logo-orbit-1 8s linear infinite,
+      icon-logo-pulse-1 2.6s ease-in-out infinite alternate;
+  }
+
+  .icon-logo__light--2 {
+    animation:
+      icon-logo-orbit-2 8s linear infinite,
+      icon-logo-pulse-2 3.3s ease-in-out -0.9s infinite alternate;
+  }
+
+  .icon-logo__light--3 {
+    animation:
+      icon-logo-orbit-3 8s linear infinite,
+      icon-logo-pulse-3 4.1s ease-in-out -1.7s infinite alternate;
+  }
+
+  .icon-logo__mesh {
+    animation: icon-logo-mesh-glow 3s ease-in-out infinite alternate;
+  }
+}
+
+// Cada órbita gira 360° a partir do ângulo inicial da sua luz. O `rotate` negativo
+// final contra-rotaciona a luz para ela não girar sobre o próprio eixo.
+@keyframes icon-logo-orbit-1 {
+  from {
+    transform: rotate(206.565deg) translate(var(--icon-logo-radius))
+      rotate(-206.565deg);
+  }
+
+  to {
+    transform: rotate(566.565deg) translate(var(--icon-logo-radius))
+      rotate(-566.565deg);
+  }
+}
+
+@keyframes icon-logo-orbit-2 {
+  from {
+    transform: rotate(319.399deg) translate(var(--icon-logo-radius))
+      rotate(-319.399deg);
+  }
+
+  to {
+    transform: rotate(679.399deg) translate(var(--icon-logo-radius))
+      rotate(-679.399deg);
+  }
+}
+
+@keyframes icon-logo-orbit-3 {
+  from {
+    transform: rotate(90deg) translate(var(--icon-logo-radius)) rotate(-90deg);
+  }
+
+  to {
+    transform: rotate(450deg) translate(var(--icon-logo-radius)) rotate(-450deg);
+  }
+}
+
+// Durações que não sincronizam entre si, para o conjunto nunca "bater o passo".
+@keyframes icon-logo-pulse-1 {
+  from {
+    scale: 0.88;
+  }
+
+  to {
+    scale: 1.14;
+  }
+}
+
+@keyframes icon-logo-pulse-2 {
+  from {
+    scale: 0.92;
+  }
+
+  to {
+    scale: 1.18;
+  }
+}
+
+@keyframes icon-logo-pulse-3 {
+  from {
+    scale: 0.9;
+  }
+
+  to {
+    scale: 1.2;
+  }
+}
+
+@keyframes icon-logo-mesh-glow {
+  from {
+    opacity: 0.7;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+// -----------------------------------------------------------------------------
+// Movimento reduzido — requisito de acessibilidade (FR-009), não preferência
+// estética. As luzes continuam VISÍVEIS e estáticas nas posições base do Figma:
+// o estado `anim` segue legível como "diferente de default" sem depender de
+// movimento. Como a posição base já é o ponto de partida das animações, basta
+// desligá-las — nada precisa ser reposicionado.
+// -----------------------------------------------------------------------------
+@media (prefers-reduced-motion: reduce) {
+  :host([data-state='anim']) {
+    .icon-logo__light,
+    .icon-logo__light--1,
+    .icon-logo__light--2,
+    .icon-logo__light--3,
+    .icon-logo__mesh {
+      animation: none;
+      will-change: auto;
+    }
+  }
+
+  .icon-logo__light {
+    transition-duration: 0s;
+  }
+}

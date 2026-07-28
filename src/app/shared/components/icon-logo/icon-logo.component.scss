@@ -1,0 +1,13 @@
+// -----------------------------------------------------------------------------
+// DS-component-icon-logo — wrapper público decorativo.
+// Não declara NENHUMA propriedade que crie stacking context (`transform`,
+// `filter`, `opacity < 1`, `will-change`, `isolation`): isolaria o blend das
+// camadas do núcleo e quebraria a composição de cor (research.md §1).
+// Não declara medidas próprias — a escala inteira vive no núcleo, derivada de
+// `--icon-logo-size`, que herda por este elemento até lá.
+// -----------------------------------------------------------------------------
+:host {
+  display: inline-block;
+  line-height: 0; // remove o espaço de baseline do inline-block em volta do símbolo
+  pointer-events: none;
+}
