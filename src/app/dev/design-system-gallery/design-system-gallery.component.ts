@@ -8,6 +8,7 @@ import { CardNotifyComponent } from '../../shared/components/card-notify/card-no
 import { CardPatientsComponent } from '../../shared/components/card-patients/card-patients.component';
 import { GraphMetaComponent } from '../../shared/components/graph-meta/graph-meta.component';
 import { IconButtonComponent } from '../../shared/components/icon-button/icon-button.component';
+import { InputChatComponent } from '../../shared/components/input-chat/input-chat.component';
 import { InputSelectComponent } from '../../shared/components/input-select/input-select.component';
 import { TagComponent } from '../../shared/components/tag/tag.component';
 
@@ -29,6 +30,7 @@ import { TagComponent } from '../../shared/components/tag/tag.component';
     CardPatientsComponent,
     GraphMetaComponent,
     IconButtonComponent,
+    InputChatComponent,
     InputSelectComponent,
     TagComponent,
   ],
@@ -60,11 +62,31 @@ export class DesignSystemGalleryComponent {
   // actionDisabled=true não deve atualizar isto ao clicar.
   protected readonly cardNotifyLastClick = signal('nenhum clique ainda');
 
+  // Mesma lição do input-select: um componente de apresentação só reage de
+  // verdade se alguém escutar o output e devolver o valor. Sem isto, o teste
+  // manual de crescimento/rolagem/troca de face não funcionaria e o bug ficaria
+  // mascarado pela demo, não pelo componente.
+  protected readonly chatValue = signal('');
+  protected readonly chatDisabledValue = signal('Mensagem em campo desabilitado');
+  protected readonly chatLastEvent = signal('nenhum evento ainda');
+
   protected onCardPatientsClick(variant: string): void {
     this.cardPatientsLastClick.set(`card-patients (${variant}) — ${new Date().toLocaleTimeString()}`);
   }
 
   protected onCardNotifyClick(variant: string): void {
     this.cardNotifyLastClick.set(`card-notify (${variant}) — ${new Date().toLocaleTimeString()}`);
+  }
+
+  protected onChatSend(message: string): void {
+    this.chatLastEvent.set(`send: "${message}"`);
+  }
+
+  protected onChatAudioEvent(event: string): void {
+    this.chatLastEvent.set(`${event} — ${new Date().toLocaleTimeString()}`);
+  }
+
+  protected onChatAudioSend(blob: Blob): void {
+    this.chatLastEvent.set(`audioSend: ${blob.size} bytes, type="${blob.type}"`);
   }
 }

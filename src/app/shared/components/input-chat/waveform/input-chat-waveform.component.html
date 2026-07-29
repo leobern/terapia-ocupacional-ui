@@ -1,0 +1,25 @@
+<!--
+  6 grupos de 5 barras = 30 barras. A subdivisão veio da medição do SVG que o
+  Figma exporta para os nós 4054:3375…3381 (research.md §3), não de leitura
+  visual — a leitura visual sugeria 4 barras e estava errada.
+
+  `aria-hidden`: as ondas são puramente decorativas. Quem comunica o estado
+  para tecnologia assistiva é a região `aria-live` do componente pai.
+-->
+<div
+  class="input-chat-waveform"
+  aria-hidden="true"
+  [class.input-chat-waveform--idle]="!handle()"
+>
+  @for (group of groups; track group) {
+    <div class="input-chat-waveform__group">
+      @for (bar of barsPerGroup; track bar) {
+        <span
+          #bar
+          class="input-chat-waveform__bar"
+          [style.animation-delay.s]="-0.12 * (group * 5 + bar)"
+        ></span>
+      }
+    </div>
+  }
+</div>

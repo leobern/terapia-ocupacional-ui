@@ -1,5 +1,5 @@
 @use '../../styles/tokens';
-@use '../../styles/mixins';
+@use '../../styles/input-shell';
 
 // Mesmo motivo do Button/IconButton: tira o host do fluxo de layout — sem
 // isso, `<app-input-select>` (inline por padrão) ficaria entre a `.input-select`
@@ -9,79 +9,43 @@
 }
 
 .input-select {
-  box-sizing: border-box;
-  display: flex;
-  align-items: flex-start;
-  width: 100%;
-  // `min-height`/`max-height` (não `height` fixo) — o Figma da própria fonte
-  // (get_design_context) já usa `min-h-[48px]` para Filled/Focus em vez de
-  // `h-[48px]` fixo, propositalmente (ajuste do usuário para preparar o reuso
-  // deste shell no futuro `input-chat`, que cresce verticalmente — ver
-  // spec.md § Anatomia/Assumptions). Hoje, com padding vertical (space-8×2) +
-  // altura mínima da row interna (32px) + borda (1px×2), o conteúdo natural
-  // soma 50px — 2px acima do que a metadata do Figma mede para os 3 símbolos
-  // (todos 48px exatos). `max-height: 48px` + `overflow: hidden` (Figma:
-  // `overflow-clip`) fixam o resultado visual em 48px hoje, absorvendo esse
-  // slack de 2px sem alterar `min-height` (a propriedade que sinaliza a
-  // preparação estrutural) — remover só o `max-height` quando `input-chat`
-  // precisar de crescimento real.
-  overflow: hidden;
-  min-height: 48px;
+  // Borda, raio, fundo, `min-height: 48px` e os dois indicadores de foco vêm do
+  // mixin compartilhado (`shared/styles/_input-shell.scss`), extraído deste
+  // arquivo quando `DS-component-input-chat` passou a precisar do mesmo visual
+  // com layout diferente — ver specs/ds/DS-component-input-chat/research.md §1.
+  // Nenhum valor mudou na extração; a suíte deste componente é o gate disso.
+  @include input-shell.chrome;
+
+  // FICAM AQUI (não no mixin) — são exatamente o que diverge do `input-chat`.
+  // `max-height: 48px` + `overflow: hidden` travam este campo em uma linha.
+  // Com padding vertical (space-8×2) + row interna (32px) + borda (1px×2), o
+  // conteúdo natural soma 50px — 2px acima dos 48px que a metadata do Figma
+  // mede. O clamp absorve esse slack sem mexer no `min-height`.
+  // NOTA (2026-07-28): a versão anterior deste comentário dizia "remover o
+  // `max-height` quando `input-chat` precisar de crescimento real". Não foi o
+  // que aconteceu, e é melhor assim: o `input-chat` NÃO herda esta trava — ele
+  // aplica o mesmo mixin e declara o próprio `max-height: 160px` com
+  // `overflow-y: auto`. Este campo continua de linha única, sem regressão.
   max-height: 48px;
+  overflow: hidden;
   padding: tokens.$space-8 tokens.$space-16;
-  border: 1px solid tokens.$color-border-2;
-  border-radius: tokens.$radius-sm;
-  background: tokens.$color-surface;
-  // Sem transição em border-color/box-shadow: o estado de foco precisa
-  // refletir instantaneamente (sem animação — nenhum dado de
-  // `get_motion_context` para este nó), igual ao comportamento nativo de
-  // `:focus` de qualquer `<input>`. Só o hover (proposta de engenharia sem
-  // fonte Figma) anima.
-  transition: filter 0.15s ease;
 
   &--select {
     cursor: pointer;
   }
 
   &:hover:not(.input-select--disabled):not(:focus-within) {
-    filter: brightness(0.95);
-  }
-
-  // Foco (qualquer método — clique ou teclado): campos de texto tradicionalmente
-  // marcam foco em qualquer interação, não só navegação por teclado (diferente
-  // de um botão, onde o clique já dá feedback próprio). `:focus-within` (não
-  // `:focus`) porque o elemento realmente focado é o `.input-select__field`
-  // interno (`<input>` ou o trigger do select), nunca este container.
-  &:focus-within {
-    border-color: tokens.$color-content-1;
-    box-shadow: 0 0 0 2px tokens.$color-input-focus-ring;
-  }
-
-  // Anel de foco rosa sistêmico (`mixins.focus-ring`) — decisão de
-  // acessibilidade revisada com o usuário (DS-component-input-select/spec.md
-  // § Clarifications, research.md §1): coexiste com o `box-shadow` acima,
-  // nunca o substitui. `.keyboard-focus` (classe controlada por
-  // `KeyboardFocusService`, não `:focus-visible` puro — ver _mixins.scss) +
-  // `:focus-within` (o elemento realmente focado é o `.input-select__field`
-  // descendente, nunca este container).
-  &.keyboard-focus:focus-within {
-    outline: tokens.$focus-ring-width solid tokens.$color-focus-ring;
-    outline-offset: tokens.$focus-ring-offset;
+    @include input-shell.hover-chrome;
   }
 
   &--disabled {
-    cursor: not-allowed;
-    background: tokens.$color-state-disabled;
-    border-color: tokens.$color-state-disabled;
+    @include input-shell.disabled-chrome;
   }
 }
 
 .input-select__content {
-  display: flex;
-  flex: 1 0 0;
-  align-items: center;
-  gap: tokens.$space-8;
-  min-width: 0;
+  @include input-shell.content-row;
+
   min-height: 32px;
 }
 
@@ -103,6 +67,8 @@
 }
 
 .input-select__field {
+  @include input-shell.field-typography;
+
   flex: 1 0 0;
   min-width: 0;
   overflow: hidden;
@@ -110,11 +76,8 @@
   outline: none;
   background: transparent;
   padding: 0;
-  font-family: tokens.$font-family-interactive;
-  font-size: tokens.$font-size-interactive;
-  font-weight: tokens.$font-weight-medium;
-  line-height: normal;
-  color: tokens.$color-content-5;
+  // Truncamento em uma linha — o oposto do `input-chat`, que quebra palavra e
+  // cresce; por isso overflow de texto fica fora do mixin compartilhado.
   text-overflow: ellipsis;
   white-space: nowrap;
 
@@ -124,8 +87,7 @@
   }
 
   &--filled {
-    color: tokens.$color-content-1;
-    font-weight: tokens.$font-weight-bold;
+    @include input-shell.field-filled;
   }
 
   &--select {
@@ -140,11 +102,7 @@
 // design system, não só deste componente (Constituição, Princípio VIII).
 .input-select--disabled .input-select__field,
 .input-select--disabled .input-select__icon {
-  color: tokens.$color-state-disabled-2;
-
-  &::placeholder {
-    color: tokens.$color-state-disabled-2;
-  }
+  @include input-shell.disabled-content;
 }
 
 // `all: unset` reseta a UA stylesheet padrão de `<button>` (borda, fundo,

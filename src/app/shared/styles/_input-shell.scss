@@ -1,0 +1,108 @@
+@use 'tokens';
+
+// =============================================================================
+// Chrome visual compartilhado dos campos de entrada do design system.
+// -----------------------------------------------------------------------------
+// Extraído de `DS-component-input-select` (que era o único dono destes valores)
+// quando `DS-component-input-chat` passou a precisar do MESMO visual com uma
+// estrutura de layout diferente — ver specs/ds/DS-component-input-chat/research.md §1.
+// -----------------------------------------------------------------------------
+// A alternativa seria parametrizar o `InputSelectComponent` com props de
+// multi-linha, mas o spec dele diz explicitamente "não usar variant='text' para
+// conteúdo multi-linha"; e duplicar os valores é proibido pelo Princípio VIII.
+// Um mixin compartilhado resolve os dois: um único lugar declara borda/raio/
+// fundo/foco/disabled, e cada componente monta seu próprio layout em volta.
+// -----------------------------------------------------------------------------
+// O QUE FICA DE FORA, de propósito (diverge entre os dois consumidores):
+//   - `padding`   -> input-select: 8/16 no container; input-chat: 8/0 no rolável
+//                    mais 0/16 na row interna (para a barra de rolagem não
+//                    cobrir o texto — DS-component-input-chat FR-002)
+//   - `max-height`/`overflow` -> input-select trava em 48px; input-chat cresce
+//                    até 160px e rola
+//   - overflow do texto -> ellipsis (select) vs. quebra de palavra (chat)
+// =============================================================================
+
+/// Borda, raio, fundo, altura mínima e os dois indicadores de foco.
+/// Aplicar no container do campo (o elemento que tem a borda visível).
+@mixin chrome {
+  align-items: flex-start;
+  background: tokens.$color-surface;
+  border: 1px solid tokens.$color-border-2;
+  border-radius: tokens.$radius-sm;
+  box-sizing: border-box;
+  display: flex;
+  min-height: 48px;
+
+  // Só `filter` anima (hover). Foco NÃO anima: precisa refletir
+  // instantaneamente, igual ao `:focus` nativo de qualquer campo — e não há
+  // dado de `get_motion_context` para nenhum destes nós.
+  transition: filter 0.15s ease;
+  width: 100%;
+
+  // `border-width` permanece 1px em TODOS os estados; o destaque de foco vem de
+  // cor mais box-shadow, nunca de espessura — evita layout shift
+  // (DS-component-input-select FR-010/SC-008).
+  &:focus-within {
+    border-color: tokens.$color-content-1;
+    box-shadow: 0 0 0 2px tokens.$color-input-focus-ring;
+  }
+
+  // Anel rosa sistêmico, só em navegação por teclado. Coexiste com o box-shadow
+  // acima — nunca o substitui (decisão de acessibilidade registrada em
+  // DS-component-input-select § Clarifications). `.keyboard-focus` é controlada
+  // por `KeyboardFocusService`, não `:focus-visible` puro: o heurístico nativo
+  // casaria também em clique de mouse para `<input>`/`<textarea>`.
+  &.keyboard-focus:focus-within {
+    outline: tokens.$focus-ring-width solid tokens.$color-focus-ring;
+    outline-offset: tokens.$focus-ring-offset;
+  }
+}
+
+/// Realce de hover. O consumidor aplica sob os próprios seletores de exclusão
+/// (`:not(--disabled):not(:focus-within)`), que dependem do nome de classe dele.
+@mixin hover-chrome {
+  filter: brightness(0.95);
+}
+
+/// Fundo/borda do estado desabilitado. Constituição, Princípio VIII: quando
+/// `disabled`, NENHUMA cor de estado normal pode vazar — nem parcialmente. O
+/// consumidor MUST aplicar `disabled-content` em todo texto/ícone junto com isto.
+@mixin disabled-chrome {
+  background: tokens.$color-state-disabled;
+  border-color: tokens.$color-state-disabled;
+  cursor: not-allowed;
+}
+
+/// Cor única de todo conteúdo (texto, placeholder, ícones) no estado desabilitado.
+@mixin disabled-content {
+  color: tokens.$color-state-disabled-2;
+
+  &::placeholder {
+    color: tokens.$color-state-disabled-2;
+  }
+}
+
+/// Row interna que alinha ícones e texto. O `padding` fica de fora (diverge
+/// entre os consumidores — ver nota no topo).
+@mixin content-row {
+  align-items: center;
+  display: flex;
+  flex: 1 0 0;
+  gap: tokens.$space-8;
+  min-width: 0;
+}
+
+/// Tipografia do campo no estado vazio/placeholder (Figma "Interactive/Default").
+@mixin field-typography {
+  color: tokens.$color-content-5;
+  font-family: tokens.$font-family-interactive;
+  font-size: tokens.$font-size-interactive;
+  font-weight: tokens.$font-weight-medium;
+  line-height: normal;
+}
+
+/// Tipografia do campo preenchido (Figma "Interactive/Default - Bold").
+@mixin field-filled {
+  color: tokens.$color-content-1;
+  font-weight: tokens.$font-weight-bold;
+}

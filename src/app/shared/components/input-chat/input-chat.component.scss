@@ -1,0 +1,147 @@
+@use '../../styles/tokens';
+@use '../../styles/input-shell';
+
+// Mesmo motivo do Button/IconButton/InputSelect: tira o host do fluxo de
+// layout, para `<app-input-chat>` não ficar entre a row real e o container pai.
+:host {
+  display: contents;
+}
+
+// Row externa: campo (ou barra de ondas) mais o botão principal à direita.
+// `align-items: flex-end` é o que mantém o botão colado na base enquanto o
+// campo cresce para cima (nó Figma 4426:8736).
+.input-chat {
+  align-items: flex-end;
+  display: flex;
+  gap: tokens.$space-8;
+  justify-content: flex-end;
+
+  // Âncora do botão de cancelar do modo áudio, que é posicionado
+  // absolutamente dentro da barra de ondas (nó 4054:3363).
+  position: relative;
+  width: 100%;
+}
+
+.input-chat__shell {
+  @include input-shell.chrome;
+
+  flex: 1 0 0;
+  min-width: 0;
+
+  // FICAM AQUI (não no mixin) — é exatamente o que diverge do `input-select`,
+  // que trava em `max-height: 48px` com `overflow: hidden`. Aqui o campo cresce
+  // até o teto (`max-height` vem por binding, default 160px do Figma) e então
+  // ganha rolagem vertical. `overflow-x: clip` garante que uma palavra longa
+  // quebre em vez de gerar rolagem horizontal (Figma: `overflow-x-clip`).
+  overflow: clip auto;
+
+  // Só o padding VERTICAL — o horizontal vive na row interna (FR-002).
+  padding: tokens.$space-8 0;
+
+  &--disabled {
+    @include input-shell.disabled-chrome;
+  }
+
+  &:hover:not(.input-chat__shell--disabled, :focus-within) {
+    @include input-shell.hover-chrome;
+  }
+}
+
+.input-chat__content {
+  @include input-shell.content-row;
+
+  // Só o padding HORIZONTAL — o vertical vive no shell rolável (FR-002).
+  padding: 0 tokens.$space-16;
+
+  // NOTA: o Figma declara `min-h-[32px]` nesta row. Aplicá-lo literalmente
+  // somaria 32 + padding 16 + borda 2 = 50px no estado vazio, 2px acima dos
+  // 48px que a metadata do Figma mede para o símbolo `State=Text` (322×48) —
+  // o mesmo slack de 2px já documentado em `input-select`, que o resolve com
+  // `max-height: 48px`. Aqui não há como clampar (o campo precisa crescer), e
+  // o `min-height: 48px` do shell já reserva exatamente uma linha de conteúdo.
+  // Omitir o `min-height` da row entrega os 48px medidos; declará-lo entregaria
+  // 50px. Optamos pela medida real do nó.
+}
+
+.input-chat__field {
+  @include input-shell.field-typography;
+
+  background: transparent;
+  border: 0;
+  flex: 1 0 0;
+  min-width: 0;
+  outline: none;
+
+  // Sem rolagem própria: quem rola é o shell (`.input-chat__shell`), para a
+  // barra ficar dentro da borda arredondada e fora do padding horizontal.
+  overflow: hidden;
+  padding: 0;
+  resize: none;
+
+  // O oposto do `input-select` (que trunca com reticências em uma linha):
+  // aqui o texto quebra por palavra e o campo cresce (FR-003).
+  white-space: pre-wrap;
+  word-break: break-word;
+
+  &::placeholder {
+    color: tokens.$color-content-5;
+    font-weight: tokens.$font-weight-medium;
+  }
+
+  &--filled {
+    @include input-shell.field-filled;
+  }
+}
+
+// Estado disabled: TODA cor vem de `state-disabled*`, sem exceção nem
+// vazamento parcial (Constituição, Princípio VIII — regra transversal elevada
+// a partir do achado em `DS-component-input-select`).
+.input-chat__shell--disabled .input-chat__field {
+  @include input-shell.disabled-content;
+}
+
+// Barra do modo áudio (nó 4054:3382): mesmo chrome do campo de texto — inclusive
+// o fundo `surface`, aplicado pelo usuário no Figma durante /speckit-design — mas
+// com altura fixa de uma linha e o padding horizontal reduzido, já que o conteúdo
+// é o conjunto de ondas e não texto.
+.input-chat__audio {
+  @include input-shell.chrome;
+
+  align-items: center;
+  flex: 1 0 0;
+  min-width: 0;
+  padding: 0 tokens.$space-8;
+  position: relative;
+}
+
+// Botão de cancelar sobreposto à esquerda, dentro da barra (nó 4054:3363). As
+// ondas ficam centralizadas no container inteiro e o botão flutua por cima —
+// é assim que o Figma desenha, não uma coluna a mais no flex.
+.input-chat__cancel {
+  left: 0;
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+// Região de status para leitores de tela. Visualmente oculta, mas NUNCA
+// `display: none` nem `visibility: hidden` — as duas removem o conteúdo da
+// árvore de acessibilidade e o anúncio de `aria-live` deixaria de acontecer.
+//
+// EXCEÇÃO DOCUMENTADA ao Princípio VIII (auditoria SC-002): os `1px` abaixo
+// não são valor de design — não vêm do Figma, não descrevem aparência e não
+// são configuráveis. São o recorte canônico do padrão "screen-reader only",
+// onde o tamanho precisa ser mínimo mas não-zero (um elemento 0×0 é ignorado
+// por parte dos leitores de tela). Tokenizá-los sugeriria, falsamente, que são
+// uma decisão visual do design system.
+.input-chat__status {
+  border: 0;
+  clip-path: inset(50%);
+  height: 1px;
+  margin: 0;
+  overflow: hidden;
+  padding: 0;
+  position: absolute;
+  white-space: nowrap;
+  width: 1px;
+}

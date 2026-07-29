@@ -770,4 +770,63 @@
       <app-background-mesh />
     </div>
   </section>
+
+  <section class="gallery__section">
+    <h2>Input Chat — DS-component-input-chat</h2>
+    <p class="gallery__hint">
+      Campo de mensagem da assistente de IA. Digitar até passar de uma linha: o
+      campo cresce <strong>para cima</strong> e o botão permanece colado na
+      base. A partir de ~7 linhas ele trava em 160px e ganha barra de rolagem
+      <strong>dentro</strong> da borda arredondada, sem cobrir o texto. Ao
+      digitar o primeiro caractere o botão troca de face (gravar → enviar)
+      <strong>sem mudar de posição</strong>.
+    </p>
+    <div class="gallery__row gallery__row--stack">
+      <app-input-chat
+        placeholder="Escreva a sua mensagem"
+        [(value)]="chatValue"
+        (send)="onChatSend($event)"
+        (audioModeStart)="onChatAudioEvent('audioModeStart')"
+        (audioModeStop)="onChatAudioEvent('audioModeStop')"
+        (audioSend)="onChatAudioSend($event)"
+        (audioModeError)="onChatAudioEvent('audioModeError: ' + $event)"
+      />
+      <p class="gallery__hint">
+        Último evento: <code>{{ chatLastEvent() }}</code>
+      </p>
+    </div>
+    <p class="gallery__hint">
+      Instância <code>disabled</code> — toda cor MUST vir de
+      <code>state-disabled*</code>, sem vazamento parcial (Princípio VIII):
+    </p>
+    <div class="gallery__row gallery__row--stack">
+      <app-input-chat
+        placeholder="Escreva a sua mensagem"
+        [disabled]="true"
+        [(value)]="chatDisabledValue"
+      />
+    </div>
+  </section>
+
+  <section class="gallery__section">
+    <h2>Bottom Nav Bar — DS-component-bottom-nav-bar</h2>
+    <p class="gallery__hint">
+      Esta é a única entrada <strong>documental</strong> da galeria: o
+      componente já está visível no rodapé desta própria página, montado uma
+      única vez pelo shell da aplicação (<code>app.component.html</code>).
+      Instanciá-lo aqui criaria uma segunda barra fixa sobreposta à primeira, o
+      que o contrato do componente proíbe explicitamente
+      (<code>specs/ds/DS-component-bottom-nav-bar/contracts/bottom-nav-bar-api.md</code>).
+    </p>
+    <p class="gallery__hint">
+      Para conferir: comparar via <code>get_screenshot</code> contra o nó Figma
+      <code>2265:1390</code>; redimensionar o navegador nas larguras 671px (100%
+      da largura), 672px e 1199px (640px centralizada, acompanhando o
+      <code>page-container</code>) e 1200px (a barra some e o
+      <code>nav-menu</code> lateral assume). O símbolo da IA transborda 8px
+      acima da barra de propósito — nenhum ancestral pode ter
+      <code>overflow: hidden</code>. Roteiro completo em
+      <code>specs/ds/DS-component-bottom-nav-bar/quickstart.md</code>.
+    </p>
+  </section>
 </main>

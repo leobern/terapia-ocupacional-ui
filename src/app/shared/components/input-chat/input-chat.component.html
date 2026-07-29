@@ -1,0 +1,77 @@
+<div class="input-chat">
+  @if (mode() === 'audio') {
+    <!--
+      Barra de ondas (nó 4054:3382). O botão de cancelar é posicionado
+      absolutamente à esquerda DENTRO dela (nó 4054:3363) e vem antes do botão
+      principal no DOM — assim a ordem de Tab já nasce cancelar → enviar (ação
+      destrutiva antes da construtiva) sem nenhum `tabindex` explícito.
+    -->
+    <div class="input-chat__audio">
+      <app-input-chat-waveform [handle]="captureHandle()" />
+
+      <div class="input-chat__cancel">
+        <app-icon-button
+          kind="secondary"
+          appearance="icon"
+          icon="stop"
+          ariaLabel="Cancelar gravação"
+          (click)="onCancelAudio()"
+        />
+      </div>
+    </div>
+  } @else {
+    <!--
+      Shell rolável. O padding VERTICAL fica aqui e o HORIZONTAL na row interna
+      (FR-002): é isso que faz a barra de rolagem aparecer dentro da borda
+      arredondada, com folga em cima/embaixo, sem passar por cima do texto.
+    -->
+    <div
+      class="input-chat__shell"
+      [class.input-chat__shell--disabled]="disabled()"
+      [class.keyboard-focus]="keyboardFocused()"
+      [style.max-height.px]="maxHeight()"
+    >
+      <div class="input-chat__content">
+        <textarea
+          class="input-chat__field"
+          rows="1"
+          [appAutoResizeTextarea]="value()"
+          [class.input-chat__field--filled]="hasValue()"
+          [value]="value()"
+          [placeholder]="displayPlaceholder()"
+          [disabled]="disabled()"
+          (input)="onInput($event)"
+          (keydown)="onKeydown($event)"
+          (focus)="onFocus()"
+          (blur)="onBlur()"
+        ></textarea>
+      </div>
+    </div>
+  }
+
+  <!--
+    UMA única instância, três faces (gravar / enviar mensagem / enviar áudio).
+    Fora do @if de propósito: três instâncias separadas seriam três nós DOM
+    criados e destruídos, o que mudaria a posição do botão e perderia o foco de
+    teclado no meio de uma transição (SC-004).
+  -->
+  <app-icon-button
+    [kind]="mainButtonFace().kind"
+    [appearance]="mainButtonFace().appearance"
+    [icon]="mainButtonFace().icon"
+    [ariaLabel]="mainButtonFace().ariaLabel"
+    [disabled]="disabled()"
+    (click)="onMainButtonClick()"
+  />
+
+  <!--
+    As ondas são decorativas (`aria-hidden`), então esta região é o ÚNICO canal
+    do modo áudio para tecnologia assistiva — obrigatória, não um extra.
+  -->
+  <p class="input-chat__status" aria-live="polite">
+    @if (mode() === 'audio') {
+      Gravando. Toque em enviar áudio para mandar, ou em cancelar gravação para
+      voltar a escrever.
+    }
+  </p>
+</div>
