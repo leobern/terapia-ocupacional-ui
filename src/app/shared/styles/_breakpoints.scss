@@ -1,0 +1,26 @@
+// =============================================================================
+// Breakpoints — únicos do projeto, para serem replicados em toda tela
+// (specs "Ajustes de componentes" item 8).
+//
+//   breakpoint-xs: <672px            (celular)
+//   breakpoint-sm: >=672px           (tablet — navbar + bottom-sheet)
+//   breakpoint-md: >=1200px          (desktop — menu lateral + side-IA)
+//
+// Mobile-first: as regras "base" (fora de qualquer @include) são o xs: por
+// isso só existem mixins para "a partir de sm" e "a partir de md".
+// =============================================================================
+
+$breakpoint-sm: 672px;
+$breakpoint-md: 1200px;
+
+@mixin sm {
+  @media (min-width: $breakpoint-sm) {
+    @content;
+  }
+}
+
+@mixin md {
+  @media (min-width: $breakpoint-md) {
+    @content;
+  }
+}

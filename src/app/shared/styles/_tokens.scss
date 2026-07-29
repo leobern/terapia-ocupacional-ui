@@ -197,6 +197,44 @@ $icon-size-sm: 16px;
 $icon-size-xs: 12px;
 
 // -----------------------------------------------------------------------------
+// Empilhamento — escala mínima de 3 degraus, criada com o DS-component-bottom-nav-bar
+// (research.md §3), primeiro elemento `position: fixed` do produto. Antes disso o
+// projeto só tinha números soltos (`page-container` usava `z-index: 1` literal).
+//
+// A regra por trás dos valores: a barra inferior fica SEMPRE abaixo de qualquer
+// overlay — um botão clicável flutuando sobre um diálogo modal quebra o focus trap
+// (spec.md § Clarifications, 2026-07-26). Os degraus são bem espaçados para caber
+// camadas intermediárias sem renumerar nada.
+//
+// Fora desta escala continuam valores locais ao próprio contexto de empilhamento e
+// que não competem com a barra: o `-1` do background-mesh e o `0` do
+// `.page-background`.
+// -----------------------------------------------------------------------------
+$z-index-content: 1;
+$z-index-bottom-nav: 10;
+$z-index-overlay: 100;
+
+// -----------------------------------------------------------------------------
+// Altura ocupada pela barra de navegação inferior (DS-component-bottom-nav-bar).
+// 104px = $space-16 (topo) + 48px (icon-button) + $space-40 (base), medidos no nó
+// Figma `2265:1390`.
+//
+// Existe como token GLOBAL, e não como custom property publicada pelo `:host` da
+// barra, porque quem precisa dela é o `page-container` — irmão da barra, não
+// descendente, que nunca enxergaria uma property declarada no host dela
+// (research.md §4). A alternativa (medir com ResizeObserver e escrever no :root)
+// acoplaria layout a JS e criaria salto no primeiro frame.
+// -----------------------------------------------------------------------------
+$bottom-nav-bar-height: 104px;
+
+// Largura máxima da coluna de conteúdo no breakpoint-sm (tablet). Nasceu literal
+// no `page-container`; virou token quando a `bottom-nav-bar` passou a ter que
+// acompanhar exatamente a mesma largura (spec.md § Clarifications, 2026-07-26) —
+// dois arquivos que precisam ficar em sincronia por definição não podem repetir
+// o número.
+$content-max-width: 640px;
+
+// -----------------------------------------------------------------------------
 // 2. Semântico — o que os componentes consomem. Ver nota no topo do arquivo:
 // trocar de tema = sobrescrever só este bloco (ou o bloco dark abaixo).
 // -----------------------------------------------------------------------------
@@ -268,6 +306,16 @@ $icon-size-xs: 12px;
   --icon-size-lg: #{$icon-size-lg};
   --icon-size-sm: #{$icon-size-sm};
   --icon-size-xs: #{$icon-size-xs};
+
+  --z-index-content: #{$z-index-content};
+  --z-index-bottom-nav: #{$z-index-bottom-nav};
+  --z-index-overlay: #{$z-index-overlay};
+
+  // Inclui a área segura do aparelho (indicador de home do iOS) para que o
+  // consumidor reserve o espaço REAL ocupado, não só os 104px do desenho.
+  --bottom-nav-bar-height: calc(
+    #{$bottom-nav-bar-height} + env(safe-area-inset-bottom, 0px)
+  );
 }
 
 // Estrutura pronta para o tema escuro (ainda não especificado no Figma) —

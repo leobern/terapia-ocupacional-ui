@@ -1,0 +1,39 @@
+<!--
+  Ordem do DOM = ordem de tabulação = leitura visual da esquerda para a direita
+  (menu → IA → ações), apesar do cluster central ser posicionado de forma
+  absoluta. Trocar esta ordem quebra spec.md FR-007.
+-->
+<nav class="bottom-nav-bar" aria-label="Navegação principal">
+  <app-icon-button
+    kind="primary"
+    appearance="icon"
+    size="default"
+    icon="list"
+    [ariaLabel]="menuLabel"
+    (click)="menuClick.emit()"
+  />
+
+  <div class="bottom-nav-bar__ai">
+    <app-icon-logo-button
+      [ariaLabel]="aiButtonLabel"
+      (clicked)="aiClick.emit()"
+    />
+
+    <!--
+      O convite é adjacente ao botão, não o nome dele — sem `aria-hidden` o leitor
+      de tela anunciaria o texto duas vezes (spec.md § Acessibilidade).
+    -->
+    <span class="bottom-nav-bar__ai-label" aria-hidden="true">{{
+      aiLabel()
+    }}</span>
+  </div>
+
+  <app-icon-button
+    kind="primary"
+    appearance="icon"
+    size="default"
+    icon="squares-four"
+    [ariaLabel]="actionsLabel"
+    (click)="actionsClick.emit()"
+  />
+</nav>
