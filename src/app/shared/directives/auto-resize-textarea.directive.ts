@@ -52,6 +52,25 @@ export class AutoResizeTextareaDirective {
     const el = this.host.nativeElement;
 
     el.style.height = 'auto';
-    el.style.height = `${el.scrollHeight}px`;
+
+    const measured = el.scrollHeight;
+
+    // `scrollHeight` é 0 quando o elemento não tem layout — o caso real é o
+    // componente ser renderizado dentro de um container ainda fechado/oculto
+    // (bottom-sheet, drawer). Travar a altura em `0px` ali deixava o campo
+    // invisível e inclicável: sem placeholder, sem cursor, sem como digitar.
+    // Só voltava ao normal depois de entrar e sair do modo áudio, porque isso
+    // recria o `<textarea>` com o container já visível.
+    //
+    // Deixando a altura natural (`rows="1"` = uma linha) quando não há layout,
+    // o campo nasce utilizável e passa a se ajustar assim que o container abre
+    // e o usuário digita.
+    if (measured === 0) {
+      el.style.height = '';
+
+      return;
+    }
+
+    el.style.height = `${measured}px`;
   }
 }

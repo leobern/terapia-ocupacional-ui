@@ -50,17 +50,20 @@
 .input-chat__content {
   @include input-shell.content-row;
 
+  // `min-height` + `align-items: center` são o que centraliza o texto
+  // verticalmente no estado vazio. Sem isto, o shell tem 48px de altura mínima
+  // mas alinha o conteúdo ao topo (`align-items: flex-start`, necessário para o
+  // campo crescer para baixo), e uma linha de 22px ficava visivelmente colada em
+  // cima — foi o desalinhamento reportado em teste manual.
+  //
+  // Uma versão anterior omitia o `min-height` para o estado vazio fechar em
+  // exatos 48px em vez de 50px. Era a troca errada: 2px de altura não valem um
+  // texto torto, e o usuário reafirmou a estrutura no Figma (nó `4045:2681`,
+  // `min-h-[32px]` na row `content`).
+  min-height: 32px;
+
   // Só o padding HORIZONTAL — o vertical vive no shell rolável (FR-002).
   padding: 0 tokens.$space-16;
-
-  // NOTA: o Figma declara `min-h-[32px]` nesta row. Aplicá-lo literalmente
-  // somaria 32 + padding 16 + borda 2 = 50px no estado vazio, 2px acima dos
-  // 48px que a metadata do Figma mede para o símbolo `State=Text` (322×48) —
-  // o mesmo slack de 2px já documentado em `input-select`, que o resolve com
-  // `max-height: 48px`. Aqui não há como clampar (o campo precisa crescer), e
-  // o `min-height: 48px` do shell já reserva exatamente uma linha de conteúdo.
-  // Omitir o `min-height` da row entrega os 48px medidos; declará-lo entregaria
-  // 50px. Optamos pela medida real do nó.
 }
 
 .input-chat__field {

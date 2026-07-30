@@ -534,14 +534,40 @@ describe('InputChatComponent', () => {
       attachToDom();
     });
 
-    it('mede 48px com o campo vazio', () => {
-      expect(shellHeight()).toBe(48);
+    // 50px, não 48: borda 1 + padding 8 + row (`min-height: 32px`) + padding 8 +
+    // borda 1. É a soma exata da estrutura que o Figma declara no nó `4045:2681`.
+    // A metadata do Figma mede o símbolo como 48px porque desenha o stroke por
+    // dentro do frame — a mesma diferença de 2px já documentada em
+    // `input-select`, que lá é absorvida por um `max-height: 48px` (impossível
+    // aqui, o campo precisa crescer).
+    //
+    // Uma versão anterior omitia o `min-height: 32px` da row para fechar em
+    // exatos 48px. O efeito colateral era o texto encostado no topo do campo,
+    // reportado em teste manual — a altura "certa" custava um alinhamento errado.
+    const ALTURA_UMA_LINHA = 50;
+
+    it('mede uma linha com o campo vazio', () => {
+      expect(shellHeight()).toBe(ALTURA_UMA_LINHA);
     });
 
-    it('mantem 48px com uma unica linha', () => {
+    it('mantem a altura de uma linha com uma unica linha de texto', () => {
       setValue(linhas(1));
 
-      expect(shellHeight()).toBe(48);
+      expect(shellHeight()).toBe(ALTURA_UMA_LINHA);
+    });
+
+    it('centraliza o texto verticalmente no estado vazio', () => {
+      const row = fixture.nativeElement.querySelector('.input-chat__content');
+      const rowBox = row.getBoundingClientRect();
+      const campoBox = fieldEl().getBoundingClientRect();
+
+      // Folga igual em cima e embaixo dentro da row — é isto que o
+      // `align-items: center` + `min-height: 32px` garantem.
+      const acima = campoBox.top - rowBox.top;
+      const abaixo = rowBox.bottom - campoBox.bottom;
+
+      expect(Math.abs(acima - abaixo)).toBeLessThanOrEqual(1);
+      expect(acima).toBeGreaterThan(0);
     });
 
     it('cresce de forma monotonica ate o teto', () => {
@@ -580,14 +606,14 @@ describe('InputChatComponent', () => {
       expect(shellHeight()).toBe(96);
     });
 
-    it('volta a 48px ao esvaziar o campo', () => {
+    it('volta a altura de uma linha ao esvaziar o campo', () => {
       setValue(linhas(12));
 
       expect(shellHeight()).toBe(160);
 
       setValue('');
 
-      expect(shellHeight()).toBe(48);
+      expect(shellHeight()).toBe(ALTURA_UMA_LINHA);
     });
   });
 

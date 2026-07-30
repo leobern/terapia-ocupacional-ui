@@ -10,8 +10,13 @@
       <app-input-chat-waveform [handle]="captureHandle()" />
 
       <div class="input-chat__cancel">
+        <!--
+          `kind="primary"` com `appearance="icon"` resolve para o ícone em
+          `content-1` (#002233) — medido no SVG do nó 4054:3363 após o ajuste do
+          usuário; antes era `secondary`/`content-2`.
+        -->
         <app-icon-button
-          kind="secondary"
+          kind="primary"
           appearance="icon"
           icon="stop"
           ariaLabel="Cancelar gravação"

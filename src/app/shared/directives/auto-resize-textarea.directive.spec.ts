@@ -80,6 +80,30 @@ describe('AutoResizeTextareaDirective', () => {
     expect(textarea.style.height).toBe('66px');
   });
 
+  it('NAO trava a altura em 0 quando o elemento ainda nao tem layout', () => {
+    // Regressão: dentro de um bottom-sheet/drawer fechado, `scrollHeight` é 0 no
+    // primeiro render. Travar `height: 0px` ali deixava o campo invisível e
+    // inclicável — sem placeholder, sem cursor. O usuário só conseguia digitar
+    // depois de entrar e sair do modo áudio, que recria o `<textarea>` já visível.
+    stubScrollHeight(0);
+
+    fixture.componentInstance.directive().resize();
+
+    expect(textarea.style.height).toBe('');
+  });
+
+  it('volta a medir normalmente quando o elemento ganha layout', () => {
+    stubScrollHeight(0);
+    fixture.componentInstance.directive().resize();
+
+    expect(textarea.style.height).toBe('');
+
+    stubScrollHeight(66);
+    fixture.componentInstance.directive().resize();
+
+    expect(textarea.style.height).toBe('66px');
+  });
+
   it('nao declara max-height — o teto vive no CSS do ancestral rolavel', () => {
     stubScrollHeight(999);
 
