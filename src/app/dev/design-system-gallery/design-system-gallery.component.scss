@@ -113,3 +113,40 @@
   // Estilo Figma "Subsection": Helvetica Neue Regular 14px / 1.35, content-2.
   margin: 0;
 }
+
+// Composição de chat de REFERÊNCIA do drawer (nó Figma `4412:5721`) — mesma
+// tipografia do `.sheet-demo` (o par de mobile/tablet), porque é o mesmo
+// conteúdo de exemplo em ambos os nós Figma. Vive aqui, não no componente,
+// pelo mesmo motivo do bottom-sheet: pertence ao conteúdo PROJETADO, não ao
+// design system (spec.md § Assumptions). Alvo de SC-001 de
+// `specs/ds/DS-component-drawer`.
+.drawer-demo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-8);
+}
+
+.drawer-demo__title {
+  color: var(--color-content-1);
+  font-family: var(--font-family-heading);
+  font-size: 24px;
+  font-weight: tokens.$font-weight-bold;
+  line-height: 1.2;
+  margin: 0 0 var(--space-16);
+}
+
+.drawer-demo__body {
+  color: var(--color-content-1);
+  font-family: var(--font-family-body);
+  font-size: 16px;
+  line-height: 1.35;
+  margin: 0;
+}
+
+.drawer-demo__hint {
+  color: var(--color-content-2);
+  font-family: var(--font-family-body);
+  font-size: var(--font-size-subsection);
+  line-height: 1.35;
+  margin: 0;
+}

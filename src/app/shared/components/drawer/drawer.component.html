@@ -1,0 +1,77 @@
+@if (viewportBreakpoint.isDesktop()) {
+  <dialog
+    #dialogEl
+    class="drawer"
+    [class.drawer--expanded]="isModal()"
+    [attr.role]="roleAttr()"
+    [attr.aria-modal]="ariaModalAttr()"
+    [attr.aria-label]="ariaLabel()"
+    (cancel)="onCancel($event)"
+  >
+    <div class="drawer__header">
+      @if (showLogo()) {
+        <app-icon-logo class="drawer__logo" state="default" />
+      } @else {
+        <!-- Mantém o `space-between` do Figma mesmo sem o logo. -->
+        <span class="drawer__logo-placeholder" aria-hidden="true"></span>
+      }
+
+      <div class="drawer__buttons">
+        <!--
+          O `<span>` existe porque o host do `app-icon-button` é `display: contents` e
+          portanto NÃO gera caixa: largura, altura e padding aplicados nele são
+          inertes. É este wrapper que carrega a caixa de conteúdo de 32x32 e o
+          padding que leva o alvo de toque a 44x44 (FR-015) — mesmo padrão do
+          `bottom-sheet`.
+        -->
+        <span class="drawer__expand">
+          <app-icon-button
+            kind="secondary"
+            appearance="icon"
+            size="small"
+            [icon]="expandIcon()"
+            [ariaLabel]="expandLabel()"
+            (click)="onToggleExpand()"
+          />
+        </span>
+
+        @if (dismissible()) {
+          <span class="drawer__close">
+            <app-icon-button
+              kind="secondary"
+              appearance="icon"
+              size="small"
+              icon="x"
+              ariaLabel="Fechar"
+              (click)="onCloseClick()"
+            />
+          </span>
+        } @else {
+          <span class="drawer__close-placeholder" aria-hidden="true"></span>
+        }
+      </div>
+    </div>
+
+    <div class="drawer__content">
+      <ng-content select="[drawerContent]" />
+    </div>
+
+    @if (hasShortcuts()) {
+      <div class="drawer__actions">
+        @for (shortcut of visibleShortcuts(); track shortcut.id) {
+          <app-button
+            class="drawer__shortcut"
+            kind="secondary"
+            appearance="outlined"
+            [label]="shortcut.label"
+            (click)="onShortcut(shortcut)"
+          />
+        }
+      </div>
+    }
+
+    <div class="drawer__footer">
+      <ng-content select="[drawerFooter]" />
+    </div>
+  </dialog>
+}

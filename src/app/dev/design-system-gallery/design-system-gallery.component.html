@@ -913,4 +913,64 @@
       />
     </app-bottom-sheet>
   </section>
+
+  <section class="gallery__section">
+    <h2>Drawer — DS-component-drawer</h2>
+    <p class="gallery__hint">
+      Par de <strong>desktop</strong> do bottom-sheet: mesma proposta (chat da
+      IA + atalhos), mas painel fixo ancorado à direita, sem scrim, que reserva
+      espaço do conteúdo em vez de sobrepô-lo. A composição abaixo reproduz o nó
+      Figma <code>4412:5749</code> (mensagem de abertura + 2 atalhos +
+      <code>input-chat</code>) e existe para a verificação de fidelidade; ela
+      <strong>não</strong> faz parte do design system.
+    </p>
+    <p class="gallery__hint">
+      <strong>Só renderiza em <code>md</code> (&ge;1200px).</strong> Em
+      celular/tablet ele não é montado — nem o elemento host existe no DOM
+      (FR-013). Alargue a janela para testar.
+    </p>
+    <div class="gallery__row gallery__row--stack">
+      <app-button label="Abrir drawer" (click)="drawerOpen.set(true)" />
+      <p class="gallery__hint">
+        Largura atual: <code>{{ drawerSnap() }}</code> — último evento:
+        <code>{{ drawerLastEvent() }}</code>
+      </p>
+    </div>
+    <p class="gallery__hint">
+      O botão de expandir alterna a largura entre <code>default</code> (480px) e
+      <code>expanded</code> (tela cheia menos o rail de navegação) — sem nenhuma
+      animação. Em <code>expanded</code> ele vira modal (foco preso, conteúdo
+      por trás inerte); em <code>default</code> a página continua totalmente
+      interativa. <code>Esc</code> nunca fecha nem recolhe. Roteiro completo em
+      <code>specs/ds/DS-component-drawer/quickstart.md</code>.
+    </p>
+
+    <app-drawer
+      ariaLabel="Assistente de IA"
+      [open]="drawerOpen()"
+      [snap]="drawerSnap()"
+      [shortcuts]="drawerShortcuts()"
+      (closed)="onDrawerClosed()"
+      (snapChange)="onDrawerSnapChange($event)"
+      (shortcutSelect)="onDrawerShortcut($event)"
+    >
+      <div drawerContent class="drawer-demo">
+        <h3 class="drawer-demo__title">Como eu posso te ajudar?</h3>
+        <p class="drawer-demo__body">
+          Quer tirar uma dúvida, ou quer que eu faça um resumo de todas as suas
+          tarefas do dia?<br />
+          Eu posso fazer praticamente tudo, só me diz o que você precisa?
+        </p>
+        <p class="drawer-demo__hint">
+          Você pode conversar comigo via texto ou áudio.
+        </p>
+      </div>
+
+      <app-input-chat
+        drawerFooter
+        placeholder="Escreva a sua mensagem"
+        [(value)]="drawerChatValue"
+      />
+    </app-drawer>
+  </section>
 </main>

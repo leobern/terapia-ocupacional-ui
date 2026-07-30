@@ -1,0 +1,129 @@
+@use '../../styles/tokens';
+
+// -----------------------------------------------------------------------------
+// DS-component-drawer — nó Figma `4412:5749`. Par de DESKTOP do bottom-sheet.
+//
+// O container é um `<dialog>` alternando `.show()` (não-modal, `default`) e
+// `.showModal()` (modal, `expanded`) conforme `snap` — ver o docblock do
+// componente para o porquê. Sem animação em nenhuma transição (FR-008): ao
+// contrário do `bottom-sheet`, esta entry não anima abrir/fechar/expandir.
+// -----------------------------------------------------------------------------
+
+// Geometria DESTE componente, não tokens de design — mesmo critério das
+// alturas de encaixe do `bottom-sheet` (Desvio 7 de lá). Aqui é o Desvio 2:
+// a largura `expanded` não tem origem no Figma.
+$width-default: 480px;
+$width-expanded: calc(100vw - var(--space-80));
+
+// Alvo de toque mínimo do WCAG 2.5.5. NÃO é token de design — mesma
+// justificativa do `bottom-sheet` (`$min-touch-target`/`$close-hit-inset`).
+$min-touch-target: 44px;
+$icon-hit-inset: ($min-touch-target - tokens.$space-32) * 0.5;
+
+:host {
+  display: contents;
+}
+
+.drawer {
+  background: var(--color-surface);
+  border: 0;
+  border-radius: var(--radius-xl) 0 0 var(--radius-xl);
+  color: var(--color-content-1);
+  display: none;
+  flex-direction: column;
+  height: 100dvh;
+  inset: 0 0 0 auto;
+  margin: 0;
+  max-height: 100dvh;
+  max-width: 100vw;
+  overflow: visible;
+  padding: 0;
+
+  // O UA stylesheet do `<dialog>` usa `position: absolute` por padrão, MESMO
+  // quando modal — funciona sem isto só porque `showModal()` promove o
+  // elemento ao top layer, cujo containing block é sempre a viewport. Em
+  // `snap="default"` (não-modal, `.show()`) não há promoção ao top layer, e
+  // `position: absolute` passaria a resolver contra o ancestral posicionado
+  // mais próximo (ex.: `.gallery { position: relative }`), ancorando o
+  // drawer ali em vez da borda direita da TELA. `fixed` é explícito para os
+  // dois modos não dependerem de promoção ao top layer.
+  position: fixed;
+  width: $width-default;
+
+  &[open] {
+    display: flex;
+  }
+
+  &--expanded {
+    width: $width-expanded;
+  }
+
+  // Sem scrim em nenhum `snap` (spec.md Desvio 3) — `showModal()` gera um
+  // `::backdrop` por padrão no UA stylesheet; zerá-lo é o que a spec pede.
+  &::backdrop {
+    background: transparent;
+  }
+}
+
+.drawer__header {
+  align-items: flex-start;
+  display: flex;
+  flex-shrink: 0;
+  justify-content: space-between;
+  padding: var(--space-24);
+}
+
+.drawer__logo,
+.drawer__logo-placeholder {
+  flex-shrink: 0;
+  height: var(--space-48);
+  width: var(--space-48);
+}
+
+.drawer__buttons {
+  display: flex;
+  flex-shrink: 0;
+  gap: var(--space-8);
+}
+
+// Alvo de toque de 44x44 sem mexer na caixa visual de 32x32 (FR-015) — mesma
+// técnica do `bottom-sheet__close` (ver o comentário lá para o porquê do
+// `<span>` e das duas alternativas com `::after` que falharam).
+.drawer__expand,
+.drawer__close,
+.drawer__close-placeholder {
+  box-sizing: content-box;
+  display: block;
+  flex-shrink: 0;
+  height: tokens.$space-32;
+  margin: -$icon-hit-inset;
+  padding: $icon-hit-inset;
+  width: tokens.$space-32;
+}
+
+.drawer__content {
+  flex: 1 0 0;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 0 var(--space-40) var(--space-40);
+}
+
+// Faixa de atalhos: some inteira (padding incluído) quando não há atalhos —
+// o `@if` do template cobre este bloco (FR-009).
+.drawer__actions {
+  display: flex;
+  flex-shrink: 0;
+  flex-wrap: wrap;
+  gap: var(--space-16);
+  padding: var(--space-8) var(--space-40);
+}
+
+// Preenchimento assimétrico do nó Figma (`4412:5729`) — diferente do
+// cabeçalho e da faixa de atalhos, que usam padding simétrico.
+.drawer__footer {
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  padding: var(--space-24) var(--space-24) var(--space-40) var(--space-40);
+}

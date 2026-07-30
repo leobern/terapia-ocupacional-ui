@@ -11,6 +11,7 @@ import {
 import { ButtonComponent } from '../../shared/components/button/button.component';
 import { CardNotifyComponent } from '../../shared/components/card-notify/card-notify.component';
 import { CardPatientsComponent } from '../../shared/components/card-patients/card-patients.component';
+import { DrawerComponent, type DrawerSnap } from '../../shared/components/drawer/drawer.component';
 import { GraphMetaComponent } from '../../shared/components/graph-meta/graph-meta.component';
 import { IconButtonComponent } from '../../shared/components/icon-button/icon-button.component';
 import { InputChatComponent } from '../../shared/components/input-chat/input-chat.component';
@@ -34,6 +35,7 @@ import { TagComponent } from '../../shared/components/tag/tag.component';
     ButtonComponent,
     CardNotifyComponent,
     CardPatientsComponent,
+    DrawerComponent,
     GraphMetaComponent,
     IconButtonComponent,
     InputChatComponent,
@@ -96,6 +98,25 @@ export class DesignSystemGalleryComponent {
 
   protected readonly sheetChatValue = signal('');
 
+  // --- drawer -------------------------------------------------------------
+  //
+  // Par de DESKTOP do bottom-sheet: mesmo padrão de estado controlado —
+  // `open`/`snap` vivem aqui, o componente só emite intenções
+  // (contracts/drawer-api.md § Obrigações do consumidor).
+  protected readonly drawerOpen = signal(false);
+  protected readonly drawerSnap = signal<DrawerSnap>('default');
+  protected readonly drawerLastEvent = signal('nenhum evento ainda');
+
+  // Os dois atalhos desenhados no Figma (`4412:5727`/`4412:5728`) — mesmo
+  // conteúdo de exemplo do bottom-sheet, reaproveitado por serem os mesmos
+  // dois atalhos no nó do drawer.
+  protected readonly drawerShortcuts = signal<ChatShortcut[]>([
+    { id: 'pendencias', label: 'Quais são minhas pendências de hoje?' },
+    { id: 'fora-da-meta', label: 'Pacientes fora da meta nutricional' },
+  ]);
+
+  protected readonly drawerChatValue = signal('');
+
   protected onCardPatientsClick(variant: string): void {
     this.cardPatientsLastClick.set(`card-patients (${variant}) — ${new Date().toLocaleTimeString()}`);
   }
@@ -131,5 +152,19 @@ export class DesignSystemGalleryComponent {
     // partir da primeira mensagem (spec.md § Diretrizes de Uso). Aqui só
     // registramos, para a faixa continuar visível durante o teste manual.
     this.sheetLastEvent.set(`shortcutSelect: ${shortcut.id} — "${shortcut.label}"`);
+  }
+
+  protected onDrawerClosed(): void {
+    this.drawerOpen.set(false);
+    this.drawerLastEvent.set(`closed — ${new Date().toLocaleTimeString()}`);
+  }
+
+  protected onDrawerSnapChange(snap: DrawerSnap): void {
+    this.drawerSnap.set(snap);
+    this.drawerLastEvent.set(`snapChange: ${snap} — ${new Date().toLocaleTimeString()}`);
+  }
+
+  protected onDrawerShortcut(shortcut: ChatShortcut): void {
+    this.drawerLastEvent.set(`shortcutSelect: ${shortcut.id} — "${shortcut.label}"`);
   }
 }
