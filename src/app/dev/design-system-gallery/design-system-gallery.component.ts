@@ -3,6 +3,11 @@ import { ChangeDetectionStrategy, Component, signal } from '@angular/core';
 import { AvatarComponent } from '../../shared/components/avatar/avatar.component';
 import { BackgroundMeshComponent } from '../../shared/components/background-mesh/background-mesh.component';
 import { BadgeComponent } from '../../shared/components/badge/badge.component';
+import {
+  BottomSheetComponent,
+  type BottomSheetSnap,
+  type ChatShortcut,
+} from '../../shared/components/bottom-sheet/bottom-sheet.component';
 import { ButtonComponent } from '../../shared/components/button/button.component';
 import { CardNotifyComponent } from '../../shared/components/card-notify/card-notify.component';
 import { CardPatientsComponent } from '../../shared/components/card-patients/card-patients.component';
@@ -25,6 +30,7 @@ import { TagComponent } from '../../shared/components/tag/tag.component';
     AvatarComponent,
     BackgroundMeshComponent,
     BadgeComponent,
+    BottomSheetComponent,
     ButtonComponent,
     CardNotifyComponent,
     CardPatientsComponent,
@@ -70,6 +76,26 @@ export class DesignSystemGalleryComponent {
   protected readonly chatDisabledValue = signal('Mensagem em campo desabilitado');
   protected readonly chatLastEvent = signal('nenhum evento ainda');
 
+  // --- bottom-sheet -----------------------------------------------------------
+  //
+  // O sheet é CONTROLADO: `open` e `snap` vivem aqui, e o componente só emite
+  // intenções (contracts/bottom-sheet-api.md § Obrigações do consumidor). Gravar
+  // `(snapChange)` não é opcional — sem isso o encaixe não persiste e a
+  // reabertura em `default` (FR-025) não acontece.
+  protected readonly sheetOpen = signal(false);
+  protected readonly sheetSnap = signal<BottomSheetSnap>('default');
+  protected readonly sheetLastEvent = signal('nenhum evento ainda');
+
+  // Os dois atalhos desenhados no Figma (`4412:5943`/`4412:5944`). São conteúdo
+  // de exemplo, contextuais por conversa — o componente não conhece atalho fixo
+  // nenhum (spec.md § Diretrizes de Uso).
+  protected readonly sheetShortcuts = signal<ChatShortcut[]>([
+    { id: 'pendencias', label: 'Quais são minhas pendências de hoje?' },
+    { id: 'fora-da-meta', label: 'Pacientes fora da meta nutricional' },
+  ]);
+
+  protected readonly sheetChatValue = signal('');
+
   protected onCardPatientsClick(variant: string): void {
     this.cardPatientsLastClick.set(`card-patients (${variant}) — ${new Date().toLocaleTimeString()}`);
   }
@@ -88,5 +114,22 @@ export class DesignSystemGalleryComponent {
 
   protected onChatAudioSend(blob: Blob): void {
     this.chatLastEvent.set(`audioSend: ${blob.size} bytes, type="${blob.type}"`);
+  }
+
+  protected onSheetClosed(): void {
+    this.sheetOpen.set(false);
+    this.sheetLastEvent.set(`closed — ${new Date().toLocaleTimeString()}`);
+  }
+
+  protected onSheetSnapChange(snap: BottomSheetSnap): void {
+    this.sheetSnap.set(snap);
+    this.sheetLastEvent.set(`snapChange: ${snap} — ${new Date().toLocaleTimeString()}`);
+  }
+
+  protected onSheetShortcut(shortcut: ChatShortcut): void {
+    // Um consumidor real mandaria isto para a IA e esvaziaria `shortcuts` a
+    // partir da primeira mensagem (spec.md § Diretrizes de Uso). Aqui só
+    // registramos, para a faixa continuar visível durante o teste manual.
+    this.sheetLastEvent.set(`shortcutSelect: ${shortcut.id} — "${shortcut.label}"`);
   }
 }

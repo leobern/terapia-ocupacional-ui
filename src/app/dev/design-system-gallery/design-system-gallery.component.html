@@ -829,4 +829,88 @@
       <code>specs/ds/DS-component-bottom-nav-bar/quickstart.md</code>.
     </p>
   </section>
+
+  <section class="gallery__section">
+    <h2>Menu — DS-component-menu</h2>
+    <p class="gallery__hint">
+      Mais uma entrada <strong>documental</strong>: o menu lateral já está
+      visível à esquerda desta própria página (breakpoint <code>md</code>,
+      &gt;=1200px), montado uma única vez pelo shell da aplicação
+      (<code>app.component.html</code>). Instanciá-lo aqui criaria um segundo
+      trilho lateral, o que o contrato do componente proíbe explicitamente
+      (<code>specs/ds/DS-component-menu/contracts/menu-api.md</code>).
+    </p>
+    <p class="gallery__hint">
+      Para conferir: comparar via <code>get_screenshot</code> contra os nós
+      Figma <code>4334:7400</code> (colapsado) e <code>4334:7402</code>
+      (expandido); passar o mouse ou dar Tab a partir de fora do componente
+      expande o trilho de 80px para 280px, revelando os rótulos dos 4 itens
+      (Hospitais, Pacientes, Ações da tela, Notificações), o nome/cargo do
+      profissional e o item Sair. Roteiro completo em
+      <code>specs/ds/DS-component-menu/quickstart.md</code>.
+    </p>
+  </section>
+
+  <section class="gallery__section">
+    <h2>Bottom Sheet — DS-component-bottom-sheet</h2>
+    <p class="gallery__hint">
+      Única superfície modal do produto em celular e tablet. É um
+      <strong>chassi</strong>: cabeçalho fixo de arraste, conteúdo rolável
+      projetado e rodapé projetado — quem monta a conversa é o consumidor. A
+      composição abaixo reproduz o nó Figma <code>4412:5973</code> (mensagem de
+      abertura + 2 atalhos + <code>input-chat</code>) e existe para a
+      verificação de fidelidade; ela <strong>não</strong> faz parte do design
+      system.
+    </p>
+    <p class="gallery__hint">
+      <strong
+        >Só renderiza em <code>xs</code>/<code>sm</code> (&lt;1200px).</strong
+      >
+      Em desktop ele não é montado — nem o elemento host existe no DOM (FR-014).
+      Para testar, estreite a janela para ~402px: o botão abaixo passa a abrir o
+      sheet.
+    </p>
+    <div class="gallery__row gallery__row--stack">
+      <app-button label="Abrir bottom sheet" (click)="sheetOpen.set(true)" />
+      <p class="gallery__hint">
+        Encaixe atual: <code>{{ sheetSnap() }}</code> — último evento:
+        <code>{{ sheetLastEvent() }}</code>
+      </p>
+    </div>
+    <p class="gallery__hint">
+      Arrastar o cabeçalho para baixo dispensa (o scrim clareia durante o
+      gesto); para cima expande para <code>full</code> sem deslocar o container
+      (FR-028). <code>Esc</code>, o <code>X</code> e o toque no scrim também
+      dispensam. Roteiro completo em
+      <code>specs/ds/DS-component-bottom-sheet/quickstart.md</code>.
+    </p>
+
+    <app-bottom-sheet
+      ariaLabel="Assistente de IA"
+      [open]="sheetOpen()"
+      [snap]="sheetSnap()"
+      [shortcuts]="sheetShortcuts()"
+      (closed)="onSheetClosed()"
+      (snapChange)="onSheetSnapChange($event)"
+      (shortcutSelect)="onSheetShortcut($event)"
+    >
+      <div bottomSheetContent class="sheet-demo">
+        <h3 class="sheet-demo__title">Como eu posso te ajudar?</h3>
+        <p class="sheet-demo__body">
+          Quer tirar uma dúvida, ou quer que eu faça um resumo de todas as suas
+          tarefas do dia?<br />
+          Eu posso fazer praticamente tudo, só me diz o que você precisa?
+        </p>
+        <p class="sheet-demo__hint">
+          Você pode conversar comigo via texto ou áudio.
+        </p>
+      </div>
+
+      <app-input-chat
+        bottomSheetFooter
+        placeholder="Escreva a sua mensagem"
+        [(value)]="sheetChatValue"
+      />
+    </app-bottom-sheet>
+  </section>
 </main>

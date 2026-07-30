@@ -55,6 +55,15 @@ $color-surface-2: #f4f6f6;
 $color-surface-glass-1: #ffffff;
 $color-surface-glass-2: #e3e8e8;
 
+// Scrim de superfícies modais (DS-component-bottom-sheet, 2026-07-28). NÃO vem do
+// Figma — o desenho entrega só o frame do sheet, isolado (spec.md Desvio 2). É
+// derivado de `content-1` a 50%, seguindo o precedente de `$color-input-focus-ring`
+// (rgba do mesmo content-1), para o escurecimento ficar na paleta do produto em vez
+// de um preto/cinza neutro estranho a ela. 50% escurece o suficiente sem apagar o
+// contexto — que importa porque o sheet em `default` deixa 30% da tela visível de
+// propósito.
+$color-scrim: rgba($color-content-1, 0.5);
+
 // communication/*
 // `comm-focus` — token dedicado dentro do próprio grupo comm (não reaproveita
 // comm-info), criado pelo usuário no Figma em 2026-07-23 especificamente para
@@ -133,7 +142,6 @@ $font-size-title: 40px;
 // type="default" da tag, Nunito Sans Bold 14px, distinto de `$font-size-interactive`
 // (16px, type="user") e `$font-size-label` (12px, type="status").
 $font-size-subsection: 14px;
-
 $font-weight-ultralight: fonts.$font-weight-ultralight;
 $font-weight-thin: fonts.$font-weight-thin;
 $font-weight-light: fonts.$font-weight-light;
@@ -158,10 +166,12 @@ $space-48: 48px;
 $space-56: 56px;
 $space-64: 64px;
 $space-80: 80px;
+
 // Container do avatar `size="big"` (DS-component-avatar, research.md §5) — 120px
 // medido via `get_metadata` dos nós Figma `4356:7109`/`4356:7110`/`4356:7112`, fora
 // do grid de 8px regular (não é múltiplo comum a outros componentes ainda).
 $space-120: 120px;
+
 // `max-width` do type="default" da tag (DS-component-tag, research.md §6) — 280px
 // medido via `get_design_context` do nó Figma `2218:5666` (`max-w-[280px]`), fora do
 // grid de 8px regular, mas uma restrição de design real, não um detalhe de
@@ -175,6 +185,7 @@ $space-280: 280px;
 $radius-sm: 16px;
 $radius-md: 24px;
 $radius-lg: 32px;
+
 // Canto superior-direito do container do DS-component-card-patients (nó Figma `4041:1472`) —
 // sem binding de variável no Figma (valor literal no nó), mas coincide com `$space-40` já
 // existente na escala de spacing — exposto como token de radius reutilizável em vez de
@@ -182,6 +193,11 @@ $radius-lg: 32px;
 $radius-xl: 40px;
 $radius-tag: 26px; // pílula de altura fixa (tag de hospital, tag de usuário)
 $radius-pill: 400px;
+
+// Raio dos itens de navegação do DS-component-menu (nó Figma `4334:7401`,
+// `rounded-[8px]` no código de referência) — degrau abaixo de `$radius-sm` (16px),
+// que a escala ainda não tinha (research.md §2).
+$radius-xs: 8px;
 
 // -----------------------------------------------------------------------------
 // Tamanho de ícone — nasce aqui com o icon-button (DS-component-icon-button,
@@ -191,6 +207,7 @@ $radius-pill: 400px;
 // -----------------------------------------------------------------------------
 $icon-size-lg: 32px;
 $icon-size-sm: 16px;
+
 // Glifo interno de `type="icon"` do badge (DS-component-badge, research.md §5) — 12px
 // medido via `get_metadata` do nó Figma `2188:4990`, não corresponde a nenhum dos 2
 // tamanhos acima.
@@ -234,6 +251,14 @@ $bottom-nav-bar-height: 104px;
 // o número.
 $content-max-width: 640px;
 
+// Effect Style do Figma "elvation-bottomsheet" (`Effect(DROP_SHADOW, color: #00446614,
+// offset: (0,-4), radius: 24, spread: 0)`), nomeado pelo estilo, não pelo componente
+// que o usa primeiro (DS-component-menu, research.md §3 — nenhum componente já
+// implementado consumia esse efeito: `DS-component-bottom-sheet` usa `<dialog>` com
+// `::backdrop`, sem `box-shadow` próprio). `#00446614` é `$color-primary` com alfa
+// ~0.08 — derivado via `rgba()` em vez de hex cru, mesmo padrão de `$color-scrim`.
+$shadow-elevation-bottomsheet: 0 -4px 24px rgba($color-primary, 0.08);
+
 // -----------------------------------------------------------------------------
 // 2. Semântico — o que os componentes consomem. Ver nota no topo do arquivo:
 // trocar de tema = sobrescrever só este bloco (ou o bloco dark abaixo).
@@ -260,6 +285,7 @@ $content-max-width: 640px;
   --color-surface-2: #{$color-surface-2};
   --color-surface-glass-1: #{$color-surface-glass-1};
   --color-surface-glass-2: #{$color-surface-glass-2};
+  --color-scrim: #{$color-scrim};
   --color-comm-info: #{$color-comm-info};
   --color-comm-alert: #{$color-comm-alert};
   --color-comm-success: #{$color-comm-success};
@@ -270,8 +296,8 @@ $content-max-width: 640px;
   --color-logo-3: #{$color-logo-3};
   --color-logo-4: #{$color-logo-4};
   --color-decorative-forest: #{$color-decorative-forest};
-
   --font-family-base: #{$font-family-base};
+
   // Compatibilidade com código existente que ainda referencia os nomes
   // antigos (heading/body) — ambos apontam para a mesma família única agora.
   --font-family-heading: #{$font-family-base};
@@ -281,7 +307,6 @@ $content-max-width: 640px;
   --font-size-label: #{$font-size-label};
   --font-size-title: #{$font-size-title};
   --font-size-subsection: #{$font-size-subsection};
-
   --space-0: #{$space-0};
   --space-4: #{$space-4};
   --space-8: #{$space-8};
@@ -295,18 +320,16 @@ $content-max-width: 640px;
   --space-80: #{$space-80};
   --space-120: #{$space-120};
   --space-280: #{$space-280};
-
   --radius-sm: #{$radius-sm};
   --radius-md: #{$radius-md};
   --radius-lg: #{$radius-lg};
   --radius-xl: #{$radius-xl};
   --radius-tag: #{$radius-tag};
   --radius-pill: #{$radius-pill};
-
+  --radius-xs: #{$radius-xs};
   --icon-size-lg: #{$icon-size-lg};
   --icon-size-sm: #{$icon-size-sm};
   --icon-size-xs: #{$icon-size-xs};
-
   --z-index-content: #{$z-index-content};
   --z-index-bottom-nav: #{$z-index-bottom-nav};
   --z-index-overlay: #{$z-index-overlay};
@@ -316,6 +339,7 @@ $content-max-width: 640px;
   --bottom-nav-bar-height: calc(
     #{$bottom-nav-bar-height} + env(safe-area-inset-bottom, 0px)
   );
+  --shadow-elevation-bottomsheet: #{$shadow-elevation-bottomsheet};
 }
 
 // Estrutura pronta para o tema escuro (ainda não especificado no Figma) —

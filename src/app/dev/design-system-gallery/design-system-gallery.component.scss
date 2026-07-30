@@ -12,13 +12,13 @@
 // (instância full-page acima do conteúdo) ser o único responsável pela cor
 // de fundo visível.
 .gallery {
-  position: relative;
   box-sizing: border-box;
-  max-width: 960px;
-  margin: 0 auto;
-  padding: tokens.$space-32;
-  font-family: tokens.$font-family-base;
   color: tokens.$color-content-1;
+  font-family: tokens.$font-family-base;
+  margin: 0 auto;
+  max-width: 960px;
+  padding: tokens.$space-32;
+  position: relative;
 }
 
 .gallery__title {
@@ -37,8 +37,8 @@
 }
 
 .gallery__section h3 {
-  margin-top: tokens.$space-32;
   margin-bottom: tokens.$space-16;
+  margin-top: tokens.$space-32;
 }
 
 .gallery__grid {
@@ -65,8 +65,51 @@
 // da página (ver `.gallery`/instância full-page da seção Background Mesh),
 // não ter chrome visual próprio.
 .gallery__background-mesh-frame {
-  position: relative;
-  overflow: hidden;
   height: 480px;
+  overflow: hidden;
+  position: relative;
   transform: translateZ(0);
+}
+
+// Composição de chat de REFERÊNCIA do bottom-sheet (nó Figma `4412:5937`).
+// Vive aqui, e não no componente, de propósito: o sheet é um chassi e a
+// tipografia da mensagem de abertura pertence ao conteúdo PROJETADO, não ao
+// design system (spec.md § Assumptions). É o alvo da verificação de fidelidade
+// de `specs/ds/DS-component-bottom-sheet` (SC-001).
+.sheet-demo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-8);
+}
+
+.sheet-demo__title {
+  color: var(--color-content-1);
+  font-family: var(--font-family-heading);
+  font-size: 24px;
+  font-weight: tokens.$font-weight-bold;
+  line-height: 1.2;
+
+  // Estilo Figma "Title": Helvetica Neue Bold 24px / 1.2, com 16px de folga
+  // abaixo (nó `4412:5938`, que é um wrapper com `padding-bottom`).
+  margin: 0 0 var(--space-16);
+}
+
+.sheet-demo__body {
+  color: var(--color-content-1);
+  font-family: var(--font-family-body);
+  font-size: 16px;
+  line-height: 1.35;
+
+  // Estilo Figma "Default": Helvetica Neue Regular 16px / 1.35.
+  margin: 0;
+}
+
+.sheet-demo__hint {
+  color: var(--color-content-2);
+  font-family: var(--font-family-body);
+  font-size: var(--font-size-subsection);
+  line-height: 1.35;
+
+  // Estilo Figma "Subsection": Helvetica Neue Regular 14px / 1.35, content-2.
+  margin: 0;
 }

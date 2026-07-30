@@ -29,10 +29,27 @@ const KEYBOARD_HEIGHT_THRESHOLD_PX = 150;
 export class ViewportKeyboardService {
   readonly isVirtualKeyboardOpen: Signal<boolean>;
 
+  /**
+   * Altura, em px, da faixa que o teclado virtual ocupa no rodapé.
+   *
+   * Complementa `isVirtualKeyboardOpen`: o booleano basta para quem só precisa
+   * SAIR do caminho (a `bottom-nav-bar` se esconde), mas não para quem precisa
+   * ANCORAR algo logo acima do teclado — caso do rodapé do `app-bottom-sheet`,
+   * que mantém o `input-chat` visível enquanto o usuário digita.
+   *
+   * Vale `0` sempre que `isVirtualKeyboardOpen` é `false`, inclusive sob pinch
+   * zoom e sem a API — a mesma degradação, para os dois sinais nunca se
+   * contradizerem.
+   */
+  readonly keyboardInsetPx: Signal<number>;
+
   private readonly isOpenSignal = signal(false);
+
+  private readonly insetSignal = signal(0);
 
   constructor() {
     this.isVirtualKeyboardOpen = this.isOpenSignal.asReadonly();
+    this.keyboardInsetPx = this.insetSignal.asReadonly();
 
     const viewport = window.visualViewport;
 
@@ -48,8 +65,15 @@ export class ViewportKeyboardService {
       // nenhum; sem esta checagem, dar zoom esconderia a navegação.
       const isZoomed = viewport.scale !== 1;
       const shrinkage = window.innerHeight - viewport.height;
+      const isOpen = !isZoomed && shrinkage > KEYBOARD_HEIGHT_THRESHOLD_PX;
 
-      this.isOpenSignal.set(!isZoomed && shrinkage > KEYBOARD_HEIGHT_THRESHOLD_PX);
+      this.isOpenSignal.set(isOpen);
+
+      // `offsetTop` entra na conta porque no iOS o teclado DESLOCA o visual
+      // viewport além de encolhê-lo — ignorá-lo deixaria o rodapé alguns pixels
+      // atrás do teclado. O piso em zero cobre o caso inverso, do visual viewport
+      // ficar maior que o layout viewport quando a barra de endereço recolhe.
+      this.insetSignal.set(isOpen ? Math.max(0, window.innerHeight - (viewport.height + viewport.offsetTop)) : 0);
     };
 
     // `scroll` além de `resize`: no iOS, abrir o teclado desloca o visual viewport
