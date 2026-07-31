@@ -15,6 +15,7 @@
       }
     ],
     "scss/comment-no-empty": null,
+    "scss/double-slash-comment-empty-line-before": null,
     "color-hex-length": "long",
     "value-keyword-case": null,
     "selector-max-id": 5,
@@ -32,7 +33,7 @@
       true,
       { "ignorePseudoElements": ["ng-deep"] }
     ],
-    "order/properties-alphabetical-order": true,
+    "order/properties-alphabetical-order": null,
     "@stylistic/function-parentheses-space-inside": "never-single-line"
   }
 }
