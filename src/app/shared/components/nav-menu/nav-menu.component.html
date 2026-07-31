@@ -1,0 +1,73 @@
+<!--
+  `:host` reserva só o trilho colapsado (72px, nunca muda) — o painel abaixo é
+  quem expande, `position: absolute`, flutuando POR CIMA do conteúdo da rota em
+  vez de empurrá-lo (feedback do usuário: a versão anterior "arrastava" o
+  conteúdo ao abrir).
+-->
+<div class="nav-menu__panel">
+  <div class="nav-menu__logo">
+    <!--
+      Mesma instância em qualquer estado — nunca troca de componente nem de
+      posição (feedback do usuário: a logo "pulava" de lugar ao abrir/fechar).
+      `--icon-logo-size: 40px` e a cor (primary→secondary) via
+      `--icon-logo-accent-override`, ambos definidos no SCSS — só o wordmark
+      ao lado aparece/some, com o mesmo fade dos rótulos dos itens.
+    -->
+    <span class="nav-menu__logo-slot">
+      <app-icon-logo-button
+        class="nav-menu__logo-badge"
+        ariaLabel="Condutia — página inicial"
+      />
+    </span>
+    <span class="nav-menu__wordmark">Condut<em>ia</em></span>
+  </div>
+
+  <nav class="nav-menu__links" aria-label="Navegação principal">
+    @for (item of items; track item.key) {
+      <button
+        type="button"
+        class="nav-menu__link"
+        [class.nav-menu__link--active]="activeItem() === item.key"
+        [class.keyboard-focus]="keyboardFocused()"
+        (click)="onItemClick(item.key)"
+        (focus)="onFocus()"
+        (blur)="onBlur()"
+      >
+        <ph-icon
+          class="nav-menu__icon"
+          weight="regular"
+          [name]="item.icon"
+          [size]="24"
+        />
+        <span class="nav-menu__label">{{ item.label }}</span>
+      </button>
+    }
+  </nav>
+
+  <div class="nav-menu__footer">
+    <div class="nav-menu__profile">
+      <app-avatar [name]="professionalName" [photoUrl]="null" [size]="32" />
+      <div class="nav-menu__profile-text">
+        <span class="nav-menu__profile-name">{{ professionalName }}</span>
+        <span class="nav-menu__profile-role">{{ professionalRole }}</span>
+      </div>
+    </div>
+
+    <button
+      type="button"
+      class="nav-menu__link nav-menu__link--logout"
+      [class.keyboard-focus]="keyboardFocused()"
+      (click)="logoutClick.emit()"
+      (focus)="onFocus()"
+      (blur)="onBlur()"
+    >
+      <ph-icon
+        class="nav-menu__icon"
+        name="power"
+        weight="regular"
+        [size]="24"
+      />
+      <span class="nav-menu__label">Sair</span>
+    </button>
+  </div>
+</div>

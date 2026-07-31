@@ -36,7 +36,17 @@
 
   // Cor de acento do estado: pinta borda, halo e traço da malha de uma vez.
   // A matriz completa está em data-model.md §2.
-  --icon-logo-accent: #{tokens.$color-secondary};
+  //
+  // `var(--icon-logo-accent-override, ...)` — escape hatch ADITIVO (DS-component-menu,
+  // 2026-07-29): permite a um consumidor externo (ex.: o menu lateral, que precisa
+  // transicionar a MESMA instância de `primary` para `secondary` ao expandir, sem
+  // trocar de `state`) sobrescrever a cor por herança de custom property, sem tocar
+  // no `data-state`. Sem a property setada por um ancestral, o fallback reproduz
+  // exatamente o comportamento anterior — nenhum consumidor existente muda.
+  --icon-logo-accent: var(
+    --icon-logo-accent-override,
+    #{tokens.$color-secondary}
+  );
 
   // A caixa inclui o transbordamento das luzes e do halo, para que nenhum
   // ancestral com `overflow: hidden` corte a auréola (FR-017).
@@ -49,11 +59,17 @@
 }
 
 :host([data-state='button']) {
-  --icon-logo-accent: #{tokens.$color-primary};
+  --icon-logo-accent: var(
+    --icon-logo-accent-override,
+    #{tokens.$color-primary}
+  );
 }
 
 :host([data-state='disabled']) {
-  --icon-logo-accent: #{tokens.$color-border-2};
+  --icon-logo-accent: var(
+    --icon-logo-accent-override,
+    #{tokens.$color-border-2}
+  );
 
   // 1px @48px — o Figma afina a borda no disabled.
   --icon-logo-border-width: calc(var(--icon-logo-resolved-size) / 48);
@@ -79,6 +95,13 @@
   box-sizing: border-box;
   inset: 0;
   position: absolute;
+  // Só entra em efeito quando `--icon-logo-accent-override` muda em runtime (ver
+  // nota acima) — sem override, o acento nunca muda depois do render inicial, e
+  // uma `transition` parada não tem custo. Só `border-color`, nunca `border-width`
+  // (o Figma não anima espessura entre estados). 400ms/`ease-out` — mais lento
+  // que um hover comum, para o câmbio de cor ler como suave, não um flash
+  // (DS-component-menu, feedback do usuário).
+  transition: border-color 400ms ease-out;
 }
 
 // Rebaixa levemente a luminosidade do miolo — sem ela o blend `color` das camadas
@@ -123,6 +146,7 @@ $mesh-fade-mask: radial-gradient(
   inset: calc(var(--icon-logo-resolved-size) / 48);
   -webkit-mask-image: $mesh-fade-mask;
   mask-image: $mesh-fade-mask;
+  transition: color 400ms ease-out;
   position: absolute;
   width: auto;
 }

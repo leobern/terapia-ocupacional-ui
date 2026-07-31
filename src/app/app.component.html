@@ -1,1 +1,13 @@
-<router-outlet />
+<div class="app-shell">
+  <app-nav-menu />
+  <router-outlet />
+  <!--
+    DEPOIS do <router-outlet /> por dois motivos, ambos normativos:
+    1. o seletor `router-outlet + *` (app.component.scss) dá `flex: 1 0 0` ao irmão
+       imediatamente seguinte do outlet — que é o conteúdo da rota. Montada ANTES,
+       a barra é que receberia o flex, quebrando o layout de desktop em silêncio;
+    2. assim a ordem de tabulação (conteúdo → barra) bate com a leitura visual.
+    A barra é `position: fixed`, então não é flex item e não disputa largura.
+  -->
+  <app-bottom-nav-bar />
+</div>

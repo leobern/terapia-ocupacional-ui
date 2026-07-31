@@ -8,8 +8,14 @@
 // partir de _tokens.scss: ver nota em _fonts.scss.
 @use 'app/shared/styles/fonts';
 
-// Phosphor Icons (research.md §1) — só o peso "bold" é usado no design system.
+// Phosphor Icons (research.md §1) — "bold" é o peso padrão do design system.
 @import '@phosphor-icons/web/bold';
+
+// "regular" — usado exclusivamente pelo DS-component-menu (spec.md § Clarifications:
+// ícones do menu lateral sempre em peso regular, não o bold padrão do resto do
+// design system). Sem este import, a classe `.ph-{name}` (peso `regular`, mapeado
+// pelo `ph-icon.component.ts`) não tem font-face carregada e o glifo não renderiza.
+@import '@phosphor-icons/web/regular';
 
 // Reset / base
 *,

@@ -1,3 +1,26 @@
 :host {
   display: block;
 }
+
+.app-shell {
+  display: flex;
+  min-height: 100vh;
+
+  // O <router-outlet> não gera elemento — o conteúdo da rota é o próximo
+  // irmão dele no DOM; para o menu de desktop dividir a tela corretamente
+  // com o container da página, o conteúdo roteado precisa ocupar o espaço
+  // restante.
+  //
+  // `::ng-deep` é OBRIGATÓRIO aqui: o componente da rota é criado pelo Router e
+  // não recebe o atributo `_ngcontent` de escopo do app-root, então o seletor
+  // encapsulado (`router-outlet + *`) nunca casava com ele — a regra ficava
+  // morta e a coluna de conteúdo colapsava para a largura do próprio conteúdo.
+  // Continua contido pelo `.app-shell`, que só existe neste componente.
+  // (Achado na verificação do breakpoint `sm` de DS-component-bottom-nav-bar:
+  // a barra ficava com 640px centralizados enquanto o `page-container` tinha
+  // 360px encostados à esquerda.)
+  ::ng-deep router-outlet + * {
+    flex: 1 0 0;
+    min-width: 0;
+  }
+}

@@ -158,6 +158,11 @@ $font-weight-black: fonts.$font-weight-black;
 $space-0: 0;
 $space-4: 4px;
 $space-8: 8px;
+// Gap entre o badge e o wordmark na linha da logo do DS-component-menu (nó Figma
+// `4414:6906`/`4424:7607`, `gap-[12px]`) — fora do grid de 8px regular, medido via
+// `get_metadata` (ícone termina em x=48, wordmark começa em x=60), mesma lógica já
+// usada para `$space-120`/`$space-280`.
+$space-12: 12px;
 $space-16: 16px;
 $space-24: 24px;
 $space-32: 32px;
@@ -165,6 +170,10 @@ $space-40: 40px;
 $space-48: 48px;
 $space-56: 56px;
 $space-64: 64px;
+// Largura do trilho colapsado do DS-component-menu (nó Figma `4334:7400`, reduzido
+// de 80px para 72px pelo usuário — `get_metadata`: 40px de caixa do ícone + 16px de
+// padding em cada lado). Múltiplo de 8, mas não fazia parte da escala nomeada ainda.
+$space-72: 72px;
 $space-80: 80px;
 
 // Container do avatar `size="big"` (DS-component-avatar, research.md §5) — 120px
@@ -310,6 +319,7 @@ $shadow-elevation-bottomsheet: 0 -4px 24px rgba($color-primary, 0.08);
   --space-0: #{$space-0};
   --space-4: #{$space-4};
   --space-8: #{$space-8};
+  --space-12: #{$space-12};
   --space-16: #{$space-16};
   --space-24: #{$space-24};
   --space-32: #{$space-32};
@@ -317,6 +327,7 @@ $shadow-elevation-bottomsheet: 0 -4px 24px rgba($color-primary, 0.08);
   --space-48: #{$space-48};
   --space-56: #{$space-56};
   --space-64: #{$space-64};
+  --space-72: #{$space-72};
   --space-80: #{$space-80};
   --space-120: #{$space-120};
   --space-280: #{$space-280};
