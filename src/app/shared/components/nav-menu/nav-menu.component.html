@@ -46,7 +46,13 @@
 
   <div class="nav-menu__footer">
     <div class="nav-menu__profile">
-      <app-avatar [name]="professionalName" [photoUrl]="null" [size]="32" />
+      <!--
+        API do avatar do design system: `size="small"` é o de 32px (o antigo
+        `[size]="32"` era da API do avatar de feature, que não existe aqui), e
+        `type="user"` resolve as iniciais a partir de `name` — sem foto de perfil
+        enquanto não houver serviço de sessão.
+      -->
+      <app-avatar size="small" type="user" [name]="professionalName" />
       <div class="nav-menu__profile-text">
         <span class="nav-menu__profile-name">{{ professionalName }}</span>
         <span class="nav-menu__profile-role">{{ professionalRole }}</span>

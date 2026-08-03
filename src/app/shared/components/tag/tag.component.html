@@ -1,6 +1,16 @@
 @switch (type()) {
   @case ('user') {
-    <app-avatar size="small" type="photo" [imageUrl]="avatarSrc()" />
+    <!--
+      `[name]` além de `[imageUrl]`: sem foto, o avatar cai nas iniciais, e sem
+      nome as iniciais seriam "--". O rótulo da tag JÁ é o nome da pessoa neste
+      type, então é a fonte certa para o fallback.
+    -->
+    <app-avatar
+      size="small"
+      type="photo"
+      [imageUrl]="avatarSrc()"
+      [name]="label()"
+    />
     <span class="tag__label">{{ label() }}</span>
     @if (iconRight()) {
       <ph-icon

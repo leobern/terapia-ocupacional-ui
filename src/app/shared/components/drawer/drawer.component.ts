@@ -29,6 +29,16 @@ const WIDTH_DEFAULT = '480px';
 const WIDTH_EXPANDED = 'calc(100vw - var(--space-80))';
 const WIDTH_CLOSED = '0px';
 
+/**
+ * Instâncias vivas de `app-drawer`. `--drawer-width` mora em
+ * `document.documentElement` (é a única forma de alcançar irmãos no DOM — ver
+ * docblock da classe), e propriedade global só tem um dono: com duas instâncias
+ * montadas, o `onDestroy` de uma removia a variável que a outra ainda usa,
+ * colapsando a margem do conteúdo sem nada ter fechado. O contador garante que a
+ * limpeza só acontece quando a ÚLTIMA instância morre.
+ */
+let liveDrawerCount = 0;
+
 const FOCUSABLE_SELECTOR =
   'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
@@ -213,8 +223,14 @@ export class DrawerComponent {
       document.documentElement.style.setProperty('--drawer-width', this.drawerWidthPx());
     });
 
+    liveDrawerCount += 1;
+
     inject(DestroyRef).onDestroy(() => {
-      document.documentElement.style.removeProperty('--drawer-width');
+      liveDrawerCount -= 1;
+
+      if (liveDrawerCount === 0) {
+        document.documentElement.style.removeProperty('--drawer-width');
+      }
     });
   }
 

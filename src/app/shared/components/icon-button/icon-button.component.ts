@@ -45,6 +45,16 @@ export class IconButtonComponent {
   readonly icon = input.required<string>();
   readonly ariaLabel = input.required<string>();
 
+  /**
+   * Repasse de `aria-expanded` ao `<button>` interno, para quando este botão abre
+   * uma superfície que o CONSUMIDOR monta (menu, bottom-sheet, drawer). `null`
+   * omite o atributo — o default correto para um botão que não controla nada.
+   *
+   * Existe porque `app-bottom-nav-bar` precisava anunciar o estado das três
+   * superfícies que abre e não tinha como (spec.md FR-016).
+   */
+  readonly ariaExpanded = input<boolean | null>(null);
+
   protected readonly variantClass = computed(
     () => `icon-button--${this.kind()} icon-button--${this.appearance()} icon-button--${this.size()}`,
   );

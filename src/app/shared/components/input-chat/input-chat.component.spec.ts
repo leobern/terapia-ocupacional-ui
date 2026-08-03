@@ -113,6 +113,29 @@ describe('InputChatComponent', () => {
     fixture.detectChanges();
   });
 
+  // Acessibilidade (Princípio X): o placeholder some ao focar, então ele não pode
+  // ser a única identificação do campo.
+  describe('nome acessível do campo', () => {
+    it('nomeia o <textarea> pelo placeholder quando não há ariaLabel explícito', () => {
+      expect(fieldEl().getAttribute('aria-label')).toBe('Escreva a sua mensagem');
+    });
+
+    it('mantém o nome acessível com o placeholder visual apagado pelo foco', () => {
+      fieldEl().dispatchEvent(new Event('focus'));
+      fixture.detectChanges();
+
+      expect(fieldEl().placeholder).toBe('');
+      expect(fieldEl().getAttribute('aria-label')).toBe('Escreva a sua mensagem');
+    });
+
+    it('ariaLabel explícito tem precedência sobre o placeholder', () => {
+      fixture.componentRef.setInput('ariaLabel', 'Mensagem para a assistente');
+      fixture.detectChanges();
+
+      expect(fieldEl().getAttribute('aria-label')).toBe('Mensagem para a assistente');
+    });
+  });
+
   describe('campo de texto (US1)', () => {
     it('renderiza um <textarea>, nao um <input> — o campo e multi-linha', () => {
       expect(fieldEl().tagName).toBe('TEXTAREA');

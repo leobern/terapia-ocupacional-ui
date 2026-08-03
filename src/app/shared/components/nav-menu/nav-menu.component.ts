@@ -1,8 +1,12 @@
 import { ChangeDetectionStrategy, Component, inject, input, output, signal } from '@angular/core';
 
-import { AvatarComponent } from '../../../features/home/components/avatar/avatar.component';
 import { PhIconComponent } from '../../icons/ph-icon/ph-icon.component';
 import { KeyboardFocusService } from '../../services/keyboard-focus.service';
+// Avatar do DESIGN SYSTEM (`shared/components/avatar`), não o local de uma feature:
+// `shared/` nunca importa de `features/` (Princípio IX). O import anterior apontava
+// para `features/home/components/avatar`, diretório que nunca existiu no repositório —
+// o build inteiro quebrava (achado do code review do PR #1).
+import { AvatarComponent } from '../avatar/avatar.component';
 import { IconLogoButtonComponent } from '../icon-logo/icon-logo-button.component';
 
 /** Mapeia as 5 chaves fixas dos itens de navegação (spec.md § Clarifications). */

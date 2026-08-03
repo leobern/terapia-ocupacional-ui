@@ -1,7 +1,14 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 
-/** Variante de tamanho do frame Figma `graph-meta` (4369:6239). */
-export type GraphMetaSize = 'Default' | 'Small';
+/**
+ * Variante de tamanho do frame Figma `graph-meta` (4369:6239).
+ *
+ * Em minúsculas, como TODO o resto do design system (`'default'`/`'small'` em
+ * `avatar`, `icon-button`, `drawer`, `bottom-sheet`). Os valores capitalizados
+ * originais vinham colados do nome da propriedade no Figma e faziam deste o único
+ * componente com convenção própria de API.
+ */
+export type GraphMetaSize = 'default' | 'small';
 
 function clamp(value: number): number {
   return Math.max(0, Math.min(100, value));
@@ -71,7 +78,7 @@ function colorForPercentage(value: number, normalColor: string): string {
 export class GraphMetaComponent {
   readonly topPercentage = input.required<number>();
   readonly bottomPercentage = input.required<number>();
-  readonly size = input<GraphMetaSize>('Default');
+  readonly size = input<GraphMetaSize>('default');
   readonly ariaLabel = input.required<string>();
 
   protected readonly clampedTop = computed(() => clamp(this.topPercentage()));
@@ -81,7 +88,7 @@ export class GraphMetaComponent {
   // traço proporcional (6 em 48) — não corresponde a nenhuma variável Figma
   // retornada por get_variable_defs (research.md §5), mantida como constante
   // derivada do diâmetro, não um token.
-  protected readonly diameter = computed(() => (this.size() === 'Small' ? 32 : 48));
+  protected readonly diameter = computed(() => (this.size() === 'small' ? 32 : 48));
   protected readonly strokeWidth = computed(() => this.diameter() / 8);
 
   protected readonly center = computed(() => this.diameter() / 2);

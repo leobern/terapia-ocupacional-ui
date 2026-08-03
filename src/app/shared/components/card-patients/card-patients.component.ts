@@ -3,9 +3,6 @@ import { ChangeDetectionStrategy, Component, computed, input, output } from '@an
 import { GraphMetaComponent } from '../graph-meta/graph-meta.component';
 import { IconButtonComponent } from '../icon-button/icon-button.component';
 
-/** Única variação suportada nesta v1 (nó Figma `4041:1472`). Variante `desktop` fica para uma evolução futura deste entry. */
-export type CardPatientsSize = 'mobile';
-
 /**
  * Card de resumo diário de carga de trabalho por profissional (DS-component-card-patients).
  * Composicional: renderiza `app-graph-meta` (médias calórica/protéica do dia) e
@@ -20,7 +17,10 @@ export type CardPatientsSize = 'mobile';
   templateUrl: './card-patients.component.html',
 })
 export class CardPatientsComponent {
-  readonly size = input<CardPatientsSize>('mobile');
+  // Sem prop `size`: só existe a variação `mobile` (nó Figma `4041:1472`), então
+  // uma união de um membro só é ruído de API — o consumidor não tem escolha a
+  // fazer. Quando a variante `desktop` for desenhada, a prop volta com dois
+  // valores reais.
   readonly patientCount = input.required<number>();
   readonly averageCaloricPercentage = input.required<number>();
   readonly averageProteinPercentage = input.required<number>();

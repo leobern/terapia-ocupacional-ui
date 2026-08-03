@@ -53,6 +53,52 @@ describe('InputSelectComponent', () => {
     fixture.detectChanges();
   });
 
+  // --- Acessibilidade (Princípio X) -----------------------------------------
+
+  describe('nome acessível e contrato do combobox', () => {
+    it('nomeia o <input> pelo placeholder quando não há ariaLabel explícito', () => {
+      fixture.componentRef.setInput('placeholder', 'Insira seu e-mail');
+      fixture.detectChanges();
+
+      expect(fieldEl().getAttribute('aria-label')).toBe('Insira seu e-mail');
+    });
+
+    it('mantém o nome acessível mesmo com o placeholder visual apagado pelo foco', () => {
+      fixture.componentRef.setInput('placeholder', 'Insira seu e-mail');
+      fieldEl().dispatchEvent(new FocusEvent('focus'));
+      fixture.detectChanges();
+
+      // O placeholder some ao focar (por decisão de produto) — é exatamente o
+      // momento em que o campo ficaria anônimo sem o aria-label.
+      expect((fieldEl() as HTMLInputElement).placeholder).toBe('');
+      expect(fieldEl().getAttribute('aria-label')).toBe('Insira seu e-mail');
+    });
+
+    it('ariaLabel explícito tem precedência sobre o placeholder', () => {
+      fixture.componentRef.setInput('ariaLabel', 'E-mail do responsável');
+      fixture.detectChanges();
+
+      expect(fieldEl().getAttribute('aria-label')).toBe('E-mail do responsável');
+    });
+
+    it('o combobox reflete o estado real do overlay do consumidor', () => {
+      fixture.componentRef.setInput('variant', 'select');
+      fixture.detectChanges();
+
+      expect(fieldEl().getAttribute('aria-expanded')).toBe('false');
+      expect(fieldEl().hasAttribute('aria-controls')).toBeFalse();
+
+      fixture.componentRef.setInput('expanded', true);
+      fixture.componentRef.setInput('controlsId', 'lista-hospitais');
+      fixture.componentRef.setInput('activeDescendantId', 'hospital-3');
+      fixture.detectChanges();
+
+      expect(fieldEl().getAttribute('aria-expanded')).toBe('true');
+      expect(fieldEl().getAttribute('aria-controls')).toBe('lista-hospitais');
+      expect(fieldEl().getAttribute('aria-activedescendant')).toBe('hospital-3');
+    });
+  });
+
   // --- User Story 1: shell + variantes + Default/Filled ---------------------
 
   describe('US1 — shell e variantes', () => {

@@ -42,6 +42,7 @@
           rows="1"
           [appAutoResizeTextarea]="value()"
           [class.input-chat__field--filled]="hasValue()"
+          [attr.aria-label]="effectiveAriaLabel()"
           [value]="value()"
           [placeholder]="displayPlaceholder()"
           [disabled]="disabled()"

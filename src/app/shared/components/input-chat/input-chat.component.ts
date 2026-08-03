@@ -74,6 +74,16 @@ export class InputChatComponent {
   readonly maxHeight = input<number>(160);
   readonly disabled = input<boolean>(false);
 
+  /**
+   * Nome acessível do `<textarea>` (Princípio X). Opcional porque cai no
+   * `placeholder`, que já é obrigatório — nenhuma instância fica anônima.
+   *
+   * Mesmo motivo do `input-select`: o placeholder visual some ao focar
+   * (`displayPlaceholder`), então sem isto o campo ficaria sem nome acessível
+   * justamente enquanto o usuário digita.
+   */
+  readonly ariaLabel = input<string>('');
+
   readonly send = output<string>();
   readonly audioModeStart = output();
   readonly audioModeStop = output();
@@ -92,6 +102,9 @@ export class InputChatComponent {
   // Mesmo comportamento do input-select: o placeholder some ao focar (mesmo
   // antes de digitar) e volta só ao perder o foco com o campo vazio.
   protected readonly displayPlaceholder = computed(() => (this.focused() ? '' : this.placeholder()));
+
+  // Nunca vazio: `placeholder` é obrigatório, então há sempre um nome acessível.
+  protected readonly effectiveAriaLabel = computed(() => this.ariaLabel() || this.placeholder());
 
   /**
    * As três faces do MESMO botão — nunca três instâncias em `@if`. Um único nó
@@ -210,11 +223,22 @@ export class InputChatComponent {
 
     this.captureHandle.set(null);
 
-    const blob = await handle.stopAndCollect();
+    // `try/finally`: se `stopAndCollect()` rejeitar, o handle já saiu do signal e
+    // ninguém mais chamaria `dispose()` — o microfone ficaria aberto com o
+    // indicador de gravação do navegador aceso (FR-011), e o componente travado em
+    // `mode="audio"` sem caminho de saída além do cancelar. O `finally` garante os
+    // dois: libera a captura e volta ao modo texto em qualquer desfecho.
+    try {
+      const blob = await handle.stopAndCollect();
 
-    this.mode.set('text');
-    this.value.set('');
-    this.audioSend.emit(blob);
+      this.audioSend.emit(blob);
+    } catch {
+      handle.dispose();
+      this.audioModeError.emit('unavailable');
+    } finally {
+      this.mode.set('text');
+      this.value.set('');
+    }
   }
 
   private releaseCapture(): void {

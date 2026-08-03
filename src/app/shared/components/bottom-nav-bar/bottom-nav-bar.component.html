@@ -10,12 +10,14 @@
     size="default"
     icon="list"
     [ariaLabel]="menuLabel"
+    [ariaExpanded]="menuOpen()"
     (click)="menuClick.emit()"
   />
 
   <div class="bottom-nav-bar__ai">
     <app-icon-logo-button
       [ariaLabel]="aiButtonLabel"
+      [ariaExpanded]="aiOpen()"
       (clicked)="aiClick.emit()"
     />
 
@@ -34,6 +36,7 @@
     size="default"
     icon="squares-four"
     [ariaLabel]="actionsLabel"
+    [ariaExpanded]="actionsOpen()"
     (click)="actionsClick.emit()"
   />
 </nav>

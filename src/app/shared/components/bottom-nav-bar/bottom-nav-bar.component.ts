@@ -55,11 +55,10 @@ export class BottomNavBarComponent {
    * monta é ele). Existem só para alimentar `aria-expanded` — nenhum efeito
    * visual.
    *
-   * PENDENTE: a reflexão para o DOM depende de `app-icon-button` e
-   * `app-icon-logo-button` aceitarem repassar atributos ARIA ao `<button>`
-   * interno, o que hoje nenhum dos dois faz. Fechar via `/speckit-design` nas
-   * duas entries antes de implementar spec.md FR-016. As props já existem para
-   * que o consumidor não precise mudar quando o passthrough chegar.
+   * O passthrough que faltava (`ariaExpanded` em `app-icon-button` e
+   * `app-icon-logo-button`) foi implementado no code review do PR #1: as três
+   * props agora chegam de fato ao `<button>` interno, fechando spec.md FR-016.
+   * Prop pública que não faz nada é pior que prop ausente (Princípio X).
    */
   readonly menuOpen = input<boolean>(false);
   readonly aiOpen = input<boolean>(false);

@@ -27,6 +27,13 @@ export class KeyboardFocusService {
     // `capture: true` para rodar antes de qualquer `stopPropagation()` de
     // componente filho — este rastreamento precisa ver TODA interação, sem
     // exceção.
+    //
+    // `mousedown` E `pointerdown` são de fato redundantes num navegador moderno
+    // (o mesmo clique dispara os dois e ambos escrevem `false`). Mantidos assim
+    // de propósito: o par cobre também eventos SINTÉTICOS de teste, onde só um
+    // dos dois costuma ser despachado — os specs deste projeto usam `mousedown`.
+    // Remover um deles seria um ganho nulo em runtime e reescreveria asserções em
+    // 7 arquivos de spec.
     document.addEventListener('mousedown', () => this.isKeyboardSignal.set(false), { capture: true });
     document.addEventListener('pointerdown', () => this.isKeyboardSignal.set(false), { capture: true });
     document.addEventListener('keydown', () => this.isKeyboardSignal.set(true), { capture: true });

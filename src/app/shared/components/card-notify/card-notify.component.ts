@@ -4,9 +4,6 @@ import { PhIconComponent } from '../../icons/ph-icon/ph-icon.component';
 import { AvatarComponent, AvatarType } from '../avatar/avatar.component';
 import { IconButtonComponent } from '../icon-button/icon-button.component';
 
-/** Única variação suportada nesta v1 (nó Figma `4041:1490`). Variante `desktop` fica para uma evolução futura deste entry. */
-export type CardNotifySize = 'mobile';
-
 /**
  * Card de resumo de notificação (DS-component-card-notify). Composicional: renderiza
  * `app-avatar` (autor) e `app-icon-button` (CTA) sem reimplementar nenhum dos dois
@@ -21,7 +18,8 @@ export type CardNotifySize = 'mobile';
   templateUrl: './card-notify.component.html',
 })
 export class CardNotifyComponent {
-  readonly size = input<CardNotifySize>('mobile');
+  // Sem prop `size`: só existe a variação `mobile` (nó Figma `4041:1490`) — mesmo
+  // motivo do `card-patients`. Volta quando a variante `desktop` for desenhada.
   readonly authorName = input.required<string>();
   readonly authorSpecialty = input.required<string>();
   readonly authorPhotoUrl = input<string | null>(null);

@@ -40,6 +40,31 @@ export class InputSelectComponent {
   readonly trailingIcon = input<string | null>(null);
   readonly disabled = input<boolean>(false);
 
+  /**
+   * Nome acessível do campo (Princípio X). Opcional porque cai no `placeholder`,
+   * que já é obrigatório — nenhuma instância fica anônima.
+   *
+   * O placeholder VISUAL não serve como nome acessível: além de `placeholder` não
+   * ser nome acessível para a maioria das ATs, este componente o apaga ao focar
+   * (`displayPlaceholder`), então o campo ficaria sem nome exatamente enquanto
+   * está em uso. Promover o texto a `aria-label` resolve os dois casos, e quem
+   * precisar de um nome diferente do texto de instrução sobrescreve aqui.
+   */
+  readonly ariaLabel = input<string>('');
+
+  /**
+   * Estado do overlay de opções, para `variant="select"` (Princípio X).
+   *
+   * O componente NÃO abre o dropdown — ele só emite `selectTrigger` e o overlay é
+   * do consumidor (spec.md § Assumptions). Como o `role="combobox"` vive aqui, o
+   * contrato do role também vive aqui: quem abre o popup informa `expanded`,
+   * o `id` do popup em `controlsId` e a opção ativa em `activeDescendantId`.
+   * Sem isso o combobox anunciaria "recolhido" com a listbox aberta.
+   */
+  readonly expanded = input<boolean>(false);
+  readonly controlsId = input<string | null>(null);
+  readonly activeDescendantId = input<string | null>(null);
+
   readonly valueChange = output<string>();
   readonly selectTrigger = output();
 
@@ -56,6 +81,9 @@ export class InputSelectComponent {
   // placeholder é uma mensagem de instrução, não deve conviver com o cursor
   // de edição para não parecer texto editável.
   protected readonly displayPlaceholder = computed(() => (this.focused() ? '' : this.placeholder()));
+
+  // Nunca vazio: `placeholder` é obrigatório, então há sempre um nome acessível.
+  protected readonly effectiveAriaLabel = computed(() => this.ariaLabel() || this.placeholder());
 
   // Mesma técnica do Button/IconButton — ver
   // shared/services/keyboard-focus.service.ts. Captura a modalidade no

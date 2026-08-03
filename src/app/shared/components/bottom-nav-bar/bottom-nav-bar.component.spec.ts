@@ -3,11 +3,10 @@ import { type ComponentFixture, TestBed } from '@angular/core/testing';
 import { BottomNavBarComponent } from './bottom-nav-bar.component';
 
 /**
- * NOTA DE COBERTURA: `aria-haspopup`/`aria-expanded` (spec.md FR-016) ainda não são
- * testados aqui porque ainda não são implementáveis — nem `app-icon-button` nem
- * `app-icon-logo-button` repassam atributos ARIA ao `<button>` interno. A lacuna
- * está registrada em specs/ds/DS-component-bottom-nav-bar/tasks.md (T010b) e no
- * docblock do componente; fecha com `/speckit-design` nas duas entries.
+ * `aria-expanded` (spec.md FR-016) passou a ser testável no code review do PR #1:
+ * `app-icon-button` e `app-icon-logo-button` ganharam a prop `ariaExpanded`, que
+ * repassa o atributo ao `<button>` interno. A lacuna registrada em
+ * specs/ds/DS-component-bottom-nav-bar/tasks.md (T010b) está fechada.
  */
 describe('BottomNavBarComponent', () => {
   let fixture: ComponentFixture<BottomNavBarComponent>;
@@ -114,5 +113,27 @@ describe('BottomNavBarComponent', () => {
     // barra chromeless — por isso a barra não expõe `disabled` por slot
     // (spec.md § Edge Cases).
     expect(buttons().every(button => !button.disabled)).toBeTrue();
+  });
+
+  describe('aria-expanded das superfícies que a barra abre (FR-016)', () => {
+    // Ordem do DOM = menu, IA, ações (a mesma da tabulação).
+    const controles: { indice: number; prop: 'menuOpen' | 'aiOpen' | 'actionsOpen'; nome: string }[] = [
+      { indice: 0, nome: 'menu', prop: 'menuOpen' },
+      { indice: 1, nome: 'IA', prop: 'aiOpen' },
+      { indice: 2, nome: 'ações', prop: 'actionsOpen' },
+    ];
+
+    for (const { indice, prop, nome } of controles) {
+      it(`o botão de ${nome} anuncia aria-expanded="false" por padrão`, () => {
+        expect(buttons()[indice].getAttribute('aria-expanded')).toBe('false');
+      });
+
+      it(`o botão de ${nome} anuncia aria-expanded="true" quando ${prop} é true`, () => {
+        fixture.componentRef.setInput(prop, true);
+        fixture.detectChanges();
+
+        expect(buttons()[indice].getAttribute('aria-expanded')).toBe('true');
+      });
+    }
   });
 });

@@ -89,4 +89,13 @@ export class AvatarComponent {
   // FR-006/FR-007: badge de edição nunca aparece em size="small", mesmo com
   // editable=true — regra do componente, não delegada ao consumidor.
   protected readonly showEditBadge = computed(() => this.editable() && this.size() !== 'small');
+
+  /**
+   * `type="photo"` só renderiza `<img>` quando há URL. Sem isto, um consumidor que
+   * passa `type="photo"` com `imageUrl` vazio (caso real: `app-tag type="user"`,
+   * que sempre pede `photo`) renderizava `<img src="">` — o navegador mostra o
+   * ícone de imagem quebrada. Sem URL, cai nas iniciais, que é o fallback que o
+   * componente já sabe desenhar.
+   */
+  protected readonly showPhoto = computed(() => this.type() === 'photo' && this.imageUrl().length > 0);
 }

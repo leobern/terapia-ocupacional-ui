@@ -31,6 +31,12 @@ export class IconLogoButtonComponent {
   readonly ariaLabel = input.required<string>();
   readonly disabled = input<boolean>(false);
 
+  /**
+   * Repasse de `aria-expanded` ao `<button>` interno — mesmo contrato do
+   * `app-icon-button`. `null` omite o atributo.
+   */
+  readonly ariaExpanded = input<boolean | null>(null);
+
   // `output()` sem argumento de tipo (e não `output<void>()`): o evento não carrega
   // payload, e escrever `void` como argumento genérico viola `no-invalid-void-type`.
   readonly clicked = output();

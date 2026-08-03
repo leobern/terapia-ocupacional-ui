@@ -15,7 +15,7 @@ describe('GraphMetaComponent', () => {
     fixture = TestBed.createComponent(GraphMetaComponent);
     fixture.componentRef.setInput('topPercentage', overrides.topPercentage ?? 80);
     fixture.componentRef.setInput('bottomPercentage', overrides.bottomPercentage ?? 70);
-    fixture.componentRef.setInput('size', overrides.size ?? 'Default');
+    fixture.componentRef.setInput('size', overrides.size ?? 'default');
     fixture.componentRef.setInput('ariaLabel', overrides.ariaLabel ?? 'Progresso: 80%, 70%');
     fixture.detectChanges();
   }
@@ -135,16 +135,16 @@ describe('GraphMetaComponent', () => {
     // ser cortada pelo viewBox — mesma decisão validada em produção, reaproveitada
     // aqui (research.md §1). Por isso a asserção é "é uma meia-circunferência"
     // (altura < largura), não um valor exato de altura.
-    it('size="Default" (ou omitido) produz largura 48, meia-circunferência (altura < largura)', async () => {
-      await createWith({ size: 'Default' });
+    it('size="default" (ou omitido) produz largura 48, meia-circunferência (altura < largura)', async () => {
+      await createWith({ size: 'default' });
       const svg = fixture.nativeElement.querySelector('svg');
 
       expect(Number(svg.getAttribute('width'))).toBe(48);
       expect(Number(svg.getAttribute('height'))).toBeLessThan(48);
     });
 
-    it('size="Small" produz largura 32, meia-circunferência (altura < largura)', async () => {
-      await createWith({ size: 'Small' });
+    it('size="small" produz largura 32, meia-circunferência (altura < largura)', async () => {
+      await createWith({ size: 'small' });
       const svg = fixture.nativeElement.querySelector('svg');
 
       expect(Number(svg.getAttribute('width'))).toBe(32);

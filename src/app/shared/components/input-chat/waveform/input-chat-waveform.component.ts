@@ -34,8 +34,12 @@ export const WAVEFORM_BARS_PER_GROUP = [0, 1, 2, 3, 4];
  * `smoothed` é lido E escrito: é o estado que carrega a suavização exponencial
  * entre quadros.
  */
-export function computeBarHeights(raw: Float32Array, smoothed: Float32Array): Float32Array {
-  const heights = new Float32Array(raw.length);
+export function computeBarHeights(raw: Float32Array, smoothed: Float32Array, out?: Float32Array): Float32Array {
+  // `out` opcional: o loop de animação passa um buffer de instância para não
+  // alocar 30 `Float32Array` por segundo — o mesmo motivo pelo qual
+  // `audio-capture.service` aloca `bins` uma única vez. Sem `out`, aloca (é o
+  // caminho dos testes, que comparam o retorno diretamente).
+  const heights = out ?? new Float32Array(raw.length);
 
   let energy = 0;
 
@@ -101,6 +105,8 @@ export class InputChatWaveformComponent {
 
   private readonly raw = new Float32Array(WAVEFORM_BAR_COUNT);
   private readonly smoothed = new Float32Array(WAVEFORM_BAR_COUNT);
+  // Buffer de saída reusado a cada quadro — ver nota em `computeBarHeights`.
+  private readonly heights = new Float32Array(WAVEFORM_BAR_COUNT);
 
   private frameId: number | null = null;
   private lastFrameAt = 0;
@@ -156,7 +162,7 @@ export class InputChatWaveformComponent {
 
   private paint(): void {
     const bars = this.bars();
-    const heights = computeBarHeights(this.raw, this.smoothed);
+    const heights = computeBarHeights(this.raw, this.smoothed, this.heights);
 
     for (let band = 0; band < WAVEFORM_BAR_COUNT; band += 1) {
       const bar = bars[mirroredIndex(band)];
