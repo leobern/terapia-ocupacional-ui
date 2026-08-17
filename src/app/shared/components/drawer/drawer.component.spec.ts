@@ -207,7 +207,7 @@ describe('DrawerComponent', () => {
 
     setSnap('expanded');
 
-    expect(readWidth()).toBe('calc(100vw - var(--space-80))');
+    expect(readWidth()).toBe('calc(100vw - var(--space-72))');
 
     fixture.componentRef.setInput('open', false);
     fixture.detectChanges();

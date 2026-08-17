@@ -108,38 +108,43 @@ $color-logo-4: #e6e4df;
 $color-decorative-forest: #0d7742;
 
 // -----------------------------------------------------------------------------
-// Tipografia — duas famílias: Helvetica Neue (texto geral) e Nunito Sans
-// (elementos interativos — botões, tags, inputs — grupo criado pelo usuário
-// no Figma em 2026-07-23). Nunito Sans é auto-hospedada (só o peso Bold/700,
-// único usado até agora — ver _fonts.scss) com fallback para Helvetica Neue,
-// nunca para uma fonte não carregada.
+// Tipografia — Inter para TODO o sistema (substitui Helvetica Neue e Nunito
+// Sans, unificadas em uma família só — decisão do usuário, 2026-07-30) e Lora
+// só para o conteúdo de chat com a IA (Bottom-sheet/Drawer — texto das
+// mensagens da IA, nunca chrome/botões desses componentes, que continuam
+// Inter — ver estilos Figma "Chat/Title - Chat", "Chat/Default - Chat",
+// "Chat/Subsection - Chat" vs. os estilos "Default"/"Title" comuns).
 // -----------------------------------------------------------------------------
-$font-family-base: 'Helvetica Neue', Arial, sans-serif;
-$font-family-interactive: 'Nunito Sans', 'Helvetica Neue', Arial, sans-serif;
+$font-family-base: 'Inter', Arial, sans-serif;
+$font-family-interactive: 'Inter', Arial, sans-serif;
+$font-family-chat: 'Lora', Georgia, serif;
 
 // Escala de tamanho ainda não existe de forma genérica no projeto — nasce
 // nomeada pelo estilo Figma "Interactive/Default - Bold" (DS-component-button)
 // e renomeada de `$font-size-button` para `$font-size-interactive` em
 // DS-component-input-select/research.md, já que o mesmo 16px agora é
-// compartilhado por Button e Input/Select (ambos elementos interativos,
-// mesma família Nunito Sans). Generalizar para uma escala completa fica para
-// quando outro componente precisar de um tamanho diferente. Altura de linha
-// não é tokenizada — o Figma especifica 100%/normal, não um valor numérico
-// fixo.
+// compartilhado por Button e Input/Select (ambos elementos interativos).
+// Generalizar para uma escala completa fica para quando outro componente
+// precisar de um tamanho diferente. Altura de linha não é tokenizada — o
+// Figma especifica 100%/normal, não um valor numérico fixo.
 $font-size-interactive: 16px;
 
 // Estilo Figma "Interactive/Label - Bold" (DS-component-badge) — texto do numeral do
-// badge, Nunito Sans Bold 12px, distinto do `$font-size-interactive` (16px, Button/
-// Input). Mesma família/peso, só o tamanho muda.
+// badge, Inter Bold 12px, distinto do `$font-size-interactive` (16px, Button/
+// Input). Reusado por `DS-component-avatar` `size="small"` (Figma "Label -
+// SemiBold" — mesmo tamanho 12px, peso próprio via `$font-weight-semibold`, não
+// duplicado aqui).
 $font-size-label: 12px;
 
-// Estilo Figma "Interactive/Title - Bold" (DS-component-avatar) — iniciais do avatar
-// `size="big"`, Nunito Sans Bold 40px. `size="small"`/`"default"` reusam
-// `$font-size-interactive` (16px) sem token novo.
+// Estilo Figma "Section" (DS-component-avatar) — iniciais do avatar `size="big"`,
+// Inter Medium (500) 40px, line-height 100% — reconfirmado via `get_design_context`
+// em 2026-07-30 (era documentado como Bold; o Figma foi ajustado para Medium).
+// `size="small"`/`"default"` reusam `$font-size-label`/`$font-size-interactive`
+// (12px/16px) com peso `$font-weight-semibold`, sem token de tamanho novo.
 $font-size-title: 40px;
 
 // Estilo Figma "Interactive/Subsection - Bold" (DS-component-tag) — texto do
-// type="default" da tag, Nunito Sans Bold 14px, distinto de `$font-size-interactive`
+// type="default" da tag, Inter Bold 14px, distinto de `$font-size-interactive`
 // (16px, type="user") e `$font-size-label` (12px, type="status").
 $font-size-subsection: 14px;
 $font-weight-ultralight: fonts.$font-weight-ultralight;
@@ -147,6 +152,7 @@ $font-weight-thin: fonts.$font-weight-thin;
 $font-weight-light: fonts.$font-weight-light;
 $font-weight-roman: fonts.$font-weight-roman;
 $font-weight-medium: fonts.$font-weight-medium;
+$font-weight-semibold: fonts.$font-weight-semibold;
 $font-weight-bold: fonts.$font-weight-bold;
 $font-weight-heavy: fonts.$font-weight-heavy;
 $font-weight-black: fonts.$font-weight-black;
@@ -312,6 +318,7 @@ $shadow-elevation-bottomsheet: 0 -4px 24px rgba($color-primary, 0.08);
   --font-family-heading: #{$font-family-base};
   --font-family-body: #{$font-family-base};
   --font-family-interactive: #{$font-family-interactive};
+  --font-family-chat: #{$font-family-chat};
   --font-size-interactive: #{$font-size-interactive};
   --font-size-label: #{$font-size-label};
   --font-size-title: #{$font-size-title};

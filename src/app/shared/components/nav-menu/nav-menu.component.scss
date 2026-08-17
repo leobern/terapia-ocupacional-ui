@@ -4,19 +4,22 @@
 
 // -----------------------------------------------------------------------------
 // DS-component-menu — nó Figma `4334:7401` (variantes `4334:7400` colapsado /
-// `4334:7402` expandido).
+// `4334:7402` expandido) no desktop; nó `4367:11591` ("menu aberto") no
+// mobile/tablet.
 //
-// Só existe no breakpoint-md (desktop, >=1200px) — a navegação mobile/tablet é
-// a bottom-nav-bar.
-//
-// Arquitetura de duas camadas (feedback do usuário: a versão anterior mudava o
-// `flex-basis` do próprio `:host`, o que redimensionava o item do flex container
-// `.app-shell` e "arrastava" o conteúdo da rota junto):
-//   - `:host` reserva SEMPRE `--space-72` (72px) no layout — nunca muda de
-//     tamanho, então o conteúdo ao lado nunca se move.
-//   - `.nav-menu__panel` é quem expande, `position: absolute` dentro do host
-//     (que já é `position: sticky`, servindo de bloco de posicionamento),
-//     flutuando por cima do conteúdo em vez de empurrá-lo.
+// Mesmo componente nos dois mundos, dois mecanismos de acionamento:
+//   - Desktop (md, >=1200px): hover/`:focus-within` no trilho — `:host`
+//     reserva SEMPRE `--space-72` no layout (nunca muda de tamanho, então o
+//     conteúdo da rota ao lado nunca se move) e `.nav-menu__panel` expande
+//     por `width`, `position: absolute` dentro do host (que já é
+//     `position: sticky`, servindo de bloco de posicionamento).
+//   - Mobile/tablet (<md): `:host` não gera caixa (`display: contents`) — a
+//     navegação daí é a bottom-nav-bar, este componente não deve disputar
+//     espaço nenhum no `.app-shell`. `.nav-menu__panel` é `position: fixed`,
+//     fora da tela por padrão (`translate: -100% 0`) e desliza para dentro
+//     quando o host recebe a classe `.nav-menu--open` (`open()`, controlado
+//     pelo consumidor via botão "Menu" da bottom-nav-bar) — mesma dupla
+//     easing/duração do desktop, só que acionada por classe em vez de hover.
 //
 // Curva de easing compartilhada — "standard" (acelera e desacelera suave, sem
 // ricochete).
@@ -27,7 +30,41 @@ $ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
 $duration-expand: 380ms;
 
 :host {
-  display: none;
+  display: contents;
+}
+
+.nav-menu__panel {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$space-32;
+  padding: tokens.$space-16;
+  align-items: flex-start;
+  // NÃO `overflow: hidden` (diferente do legado): `app-icon-logo-button`
+  // reserva uma caixa de 1.75× `--icon-logo-size` para o transbordo do halo/
+  // luzes de hover — clipar aqui cortaria essa caixa. O recorte dos rótulos
+  // (`max-width`/`opacity`) já é feito localmente em cada `.nav-menu__label`/
+  // `.nav-menu__wordmark`/`.nav-menu__profile-text`.
+  overflow: visible;
+
+  // Mobile/tablet (<md): painel de tela cheia (altura) fixo, fora da tela por
+  // padrão, deslizando a partir da esquerda — Figma `4367:11591`.
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: min(340px, calc(100vw - #{tokens.$space-16}));
+  background: var(--color-surface);
+  border-top-right-radius: var(--radius-md);
+  border-bottom-right-radius: var(--radius-md);
+  box-shadow: var(--shadow-elevation-bottomsheet);
+  z-index: var(--z-index-overlay);
+  translate: -100% 0;
+  transition: translate $duration-expand $ease-standard;
+
+  :host(.nav-menu--open) & {
+    translate: 0 0;
+  }
 }
 
 @include breakpoints.md {
@@ -59,47 +96,44 @@ $duration-expand: 380ms;
       z-index: var(--z-index-overlay);
     }
   }
-}
 
-.nav-menu__panel {
-  box-sizing: border-box;
-  position: absolute;
-  top: 0;
-  left: 0;
-  bottom: 0;
-  // Sem `right: 0` de propósito — a largura é controlada só por `width`
-  // (100% colapsado, `--space-280` expandido). Combinar `left`/`right`/
-  // `width` ao mesmo tempo deixaria o cálculo sobre-restringido.
-  display: flex;
-  flex-direction: column;
-  gap: tokens.$space-32;
-  padding: tokens.$space-24 tokens.$space-16;
-  align-items: flex-start;
-  width: 100%;
-  border-right: 1px solid var(--color-border);
-  // NÃO `overflow: hidden` (diferente do legado): `app-icon-logo-button`
-  // reserva uma caixa de 1.75× `--icon-logo-size` para o transbordo do halo/
-  // luzes de hover — clipar aqui cortaria essa caixa. O recorte dos rótulos
-  // (`max-width`/`opacity`) já é feito localmente em cada `.nav-menu__label`/
-  // `.nav-menu__wordmark`/`.nav-menu__profile-text`.
-  overflow: visible;
-  transition:
-    width $duration-expand $ease-standard,
-    background-color $duration-expand $ease-standard,
-    box-shadow $duration-expand $ease-standard;
+  .nav-menu__panel {
+    // Reset das propriedades mobile (fixed/translate/sombra sempre visível)
+    // para o mecanismo de desktop (absolute + width, sem slide).
+    position: absolute;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: 100%;
+    background: transparent;
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+    box-shadow: none;
+    z-index: auto;
+    translate: 0 0;
+    border-right: 1px solid var(--color-border);
+    // Sem `right: 0` de propósito — a largura é controlada só por `width`
+    // (100% colapsado, `--space-280` expandido). Combinar `left`/`right`/
+    // `width` ao mesmo tempo deixaria o cálculo sobre-restringido.
+    transition:
+      width $duration-expand $ease-standard,
+      background-color $duration-expand $ease-standard,
+      box-shadow $duration-expand $ease-standard;
 
-  :host(:hover) &,
-  :host(:focus-within) & {
-    width: var(--space-280);
-    background: var(--color-surface);
-    box-shadow: var(--shadow-elevation-bottomsheet);
-    border-right: none;
-    border-top-right-radius: var(--radius-md);
-    border-bottom-right-radius: var(--radius-md);
-    // Acima do conteúdo da rota — o painel flutua por cima em vez de
-    // compartilhar espaço com ele (feedback do usuário: comportamento de
-    // sobreposição, não de "arrastar" os elementos da tela).
-    z-index: var(--z-index-overlay);
+    :host(:hover) &,
+    :host(:focus-within) &,
+    :host(.nav-menu--open) & {
+      width: var(--space-280);
+      background: var(--color-surface);
+      box-shadow: var(--shadow-elevation-bottomsheet);
+      border-right: none;
+      border-top-right-radius: var(--radius-md);
+      border-bottom-right-radius: var(--radius-md);
+      // Acima do conteúdo da rota — o painel flutua por cima em vez de
+      // compartilhar espaço com ele (feedback do usuário: comportamento de
+      // sobreposição, não de "arrastar" os elementos da tela).
+      z-index: var(--z-index-overlay);
+    }
   }
 }
 
@@ -132,7 +166,8 @@ $duration-expand: 380ms;
 }
 
 :host(:hover),
-:host(:focus-within) {
+:host(:focus-within),
+:host(.nav-menu--open) {
   .nav-menu__wordmark,
   .nav-menu__label,
   .nav-menu__profile-text {
@@ -146,14 +181,10 @@ $duration-expand: 380ms;
 .nav-menu__logo {
   display: flex;
   align-items: center;
-  // Altura FIXA de 48px (`get_metadata`: frame "logo" tem h=48 nos dois
-  // estados, com o ícone de 40px a y=4 e o wordmark de 36px a y=6 —
-  // ambos centralizados dentro da faixa de 48px, não colados ao topo). Sem
-  // essa altura explícita, a linha encolhe para 40px (o filho mais alto) e o
-  // ícone perde os 4px de centralização vertical que o Figma desenha —
-  // achado do usuário: a logo ficava desalinhada em relação aos outros
-  // elementos do menu.
-  height: tokens.$space-48;
+  // Altura FIXA de 56px (ajuste do usuário) — centraliza o ícone de 40px e o
+  // wordmark de 36px dentro da faixa, sem colar ao topo. Sem essa altura
+  // explícita, a linha encolhe para o filho mais alto.
+  height: tokens.$space-56;
   // SEMPRE `flex-start` — nunca centraliza. O badge é o primeiro (e, quando
   // colapsado, único) filho: com `flex-start` fixo, ele fica sempre na mesma
   // posição relativa à borda esquerda do painel, colapsado ou expandido
@@ -199,7 +230,8 @@ $duration-expand: 380ms;
 }
 
 :host(:hover),
-:host(:focus-within) {
+:host(:focus-within),
+:host(.nav-menu--open) {
   .nav-menu__logo-badge {
     // Muda de forma sutil: só a cor de acento (borda + traço da malha)
     // transiciona de `primary` para `secondary` — sem trocar de componente,
@@ -220,6 +252,15 @@ $duration-expand: 380ms;
     font-style: normal;
     color: var(--color-secondary);
   }
+}
+
+// Só existe fora do desktop (`showCloseButton()`, ver .ts) — no trilho de
+// desktop quem fecha é o mouse saindo, sem botão dedicado. Empurrado para o
+// fim da linha da logo (Figma `4367:11591`: "X" no canto superior direito
+// do painel).
+.nav-menu__close {
+  margin-left: auto;
+  flex-shrink: 0;
 }
 
 .nav-menu__links {
@@ -296,20 +337,15 @@ $duration-expand: 380ms;
 }
 
 :host(:hover),
-:host(:focus-within) {
+:host(:focus-within),
+:host(.nav-menu--open) {
   .nav-menu__link {
     // Expandido: largura cheia (o fundo de hover/ativo cobre a linha
-    // inteira, `get_metadata`: `bt` w=248) e o gap real entre ícone e
-    // rótulo — `$space-8` nos itens de navegação (`get_metadata`: ícone
-    // termina em x=32, rótulo começa em x=40), `$space-16` no Sair (ícone
-    // termina em x=32, rótulo começa em x=48 — o Figma manteve esse item com
-    // um gap maior, não é inconsistência de implementação).
+    // inteira, `get_metadata`: `bt` w=248) e o gap entre ícone e rótulo —
+    // ajustado pelo usuário para `$space-16` uniformemente (itens de
+    // navegação e Sair já usavam o mesmo valor).
     width: 100%;
-    gap: tokens.$space-8;
-
-    &.nav-menu__link--logout {
-      gap: tokens.$space-16;
-    }
+    gap: tokens.$space-16;
 
     // Atraso só na ENTRADA do hover (mouse chegando no item), casando com o
     // mesmo atraso do rótulo — a saída (regra base, sem atraso) continua
@@ -336,7 +372,8 @@ $duration-expand: 380ms;
 }
 
 :host(:hover),
-:host(:focus-within) {
+:host(:focus-within),
+:host(.nav-menu--open) {
   // `:not(--logout)` e `:not(--active)` evitam que a troca de cor por estado
   // (colapsado/expandido) sobreponha as cores fixas do item Sair e do item
   // ativo, que têm regra própria acima.
@@ -348,7 +385,9 @@ $duration-expand: 380ms;
 
 .nav-menu__label {
   font-family: tokens.$font-family-interactive;
-  font-weight: tokens.$font-weight-bold;
+  // Ajustado pelo usuário: medium (500) em vez do bold (700) padrão do
+  // design system para elementos interativos.
+  font-weight: tokens.$font-weight-medium;
   font-size: tokens.$font-size-interactive;
 }
 
@@ -363,7 +402,8 @@ $duration-expand: 380ms;
 .nav-menu__profile {
   display: flex;
   align-items: center;
-  gap: tokens.$space-8;
+  gap: tokens.$space-16;
+  padding: 0 tokens.$space-4;
 }
 
 .nav-menu__profile-text {

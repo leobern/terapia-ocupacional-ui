@@ -1,0 +1,11 @@
+<div class="home-skeleton" aria-hidden="true">
+  <div class="home-skeleton__tag-row">
+    <p-skeleton borderRadius="26px" height="40px" width="200px" />
+  </div>
+
+  <div class="home-skeleton__grid">
+    @for (card of placeholderCards; track card) {
+      <p-skeleton borderRadius="24px" height="168px" width="180px" />
+    }
+  </div>
+</div>

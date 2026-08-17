@@ -17,24 +17,39 @@
 }
 
 // --- size ----------------------------------------------------------------------------
-// small/default reusam $font-size-interactive (16px, já tokenizado por
-// Button/Input/Badge) — só "big" precisa do token novo $font-size-title (40px).
+// Tipografia das iniciais por tamanho (Figma, reconfirmado via get_design_context em
+// 2026-07-30 — nó 4046:2289): 3 estilos de texto distintos, não um único peso/altura
+// de linha compartilhado.
+// - small:   Figma "Label - SemiBold"   → Inter, SemiBold (600), 12px, line-height 135%
+// - default: Figma "Default - SemiBold" → Inter, SemiBold (600), 16px, line-height 135%
+// - big:     Figma "Section"            → Inter, Medium (500),   40px, line-height 100% (normal)
+// `$font-size-label` (12px) é reusado do Badge — mesmo valor numérico, agora também a
+// fonte das iniciais em `small`. `$font-weight-semibold`/`$font-weight-medium` já
+// existem como tokens (DS-component-tag). `line-height` segue o padrão do resto do
+// design system (Button, Tag, CardNotify): valor literal, não tokenizado — ver
+// comentário em button.component.scss.
 :host(.avatar--small) {
   width: tokens.$space-32;
   height: tokens.$space-32;
-  font-size: tokens.$font-size-interactive;
+  font-size: tokens.$font-size-label;
+  font-weight: tokens.$font-weight-semibold;
+  line-height: 1.35;
 }
 
 :host(.avatar--default) {
   width: tokens.$space-56;
   height: tokens.$space-56;
   font-size: tokens.$font-size-interactive;
+  font-weight: tokens.$font-weight-semibold;
+  line-height: 1.35;
 }
 
 :host(.avatar--big) {
   width: tokens.$space-120;
   height: tokens.$space-120;
   font-size: tokens.$font-size-title;
+  font-weight: tokens.$font-weight-medium;
+  line-height: normal;
 }
 
 // Wrapper que recorta o conteúdo (foto/iniciais) em círculo — o host em si não
@@ -73,9 +88,9 @@
 .avatar__initials {
   color: tokens.$color-content-1;
   font-family: tokens.$font-family-interactive;
-  font-weight: tokens.$font-weight-bold;
+  font-weight: inherit;
   font-size: inherit;
-  line-height: normal;
+  line-height: inherit;
   text-align: center;
 }
 
@@ -85,7 +100,7 @@
 // sobreposto, sem alvo de clique próprio (`pointer-events: none` abaixo).
 .avatar__edit-trigger {
   padding: 0;
-  border: none;
+  border: 0;
   background: transparent;
   cursor: pointer;
   font: inherit;

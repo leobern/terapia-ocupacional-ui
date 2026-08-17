@@ -4,7 +4,7 @@
 // Design tokens (Color Styles do Figma "Conductia" — specs/003-home)
 @use 'app/shared/styles/tokens';
 
-// @font-face do Helvetica Neue — só aqui (folha de estilo global), nunca a
+// @font-face do Inter/Lora — só aqui (folha de estilo global), nunca a
 // partir de _tokens.scss: ver nota em _fonts.scss.
 @use 'app/shared/styles/fonts';
 
@@ -32,5 +32,9 @@ body {
 }
 
 body {
+  // Cor de base de toda tela — o background-mesh (z-index 0, ver seu SCSS)
+  // desenha por cima disso; sem essa cor aqui o mesh some atrás do canvas
+  // branco padrão do navegador (o body nunca pinta um background sozinho).
+  background: tokens.$color-surface-2;
   font-family: var(--font-family-base);
 }

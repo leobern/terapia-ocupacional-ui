@@ -1,17 +1,14 @@
 import { Routes } from '@angular/router';
+import { provideEffects } from '@ngrx/effects';
+import { provideState } from '@ngrx/store';
 
-/**
- * Rotas da feature Home.
- *
- * STUB deliberado. `app.routing.ts` já apontava para `HOME_ROUTES` antes desta
- * feature existir — import quebrado que derrubava `ng build` e `ng test` inteiros
- * (achado do code review do PR #1, Princípio IX). O stub existe para tornar a
- * referência verdadeira; a tela real entra por uma entry `/speckit-specify`
- * própria, com nó Figma de origem (Princípio VIII).
- */
+import * as HomeEffects from './state/home.effects';
+import { homeFeature } from './state/home.reducer';
+
 export const HOME_ROUTES: Routes = [
   {
     path: '',
+    providers: [provideState(homeFeature), provideEffects(HomeEffects)],
     loadComponent: () => import('./home.component').then(m => m.HomeComponent),
   },
 ];

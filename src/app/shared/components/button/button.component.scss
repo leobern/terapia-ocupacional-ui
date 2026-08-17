@@ -25,9 +25,7 @@
   padding: tokens.$space-8 tokens.$space-16;
   border-style: solid;
   border-radius: tokens.$radius-sm;
-  // Nunito Sans (elementos interativos) — grupo de fonte criado no Figma em
-  // 2026-07-23, ver _tokens.scss. Fallback para Helvetica Neue enquanto/se o
-  // arquivo auto-hospedado não carregar.
+  // Inter (elementos interativos) — ver _tokens.scss.
   font-family: tokens.$font-family-interactive;
   font-weight: tokens.$font-weight-bold;
   font-size: tokens.$font-size-interactive;

@@ -89,7 +89,7 @@
   font-weight: tokens.$font-weight-bold;
   line-height: 1.2;
 
-  // Estilo Figma "Title": Helvetica Neue Bold 24px / 1.2, com 16px de folga
+  // Estilo Figma "Title": Inter Bold 24px / 1.2, com 16px de folga
   // abaixo (nó `4412:5938`, que é um wrapper com `padding-bottom`).
   margin: 0 0 var(--space-16);
 }
@@ -100,7 +100,7 @@
   font-size: 16px;
   line-height: 1.35;
 
-  // Estilo Figma "Default": Helvetica Neue Regular 16px / 1.35.
+  // Estilo Figma "Default": Inter Regular 16px / 1.35.
   margin: 0;
 }
 
@@ -110,7 +110,7 @@
   font-size: var(--font-size-subsection);
   line-height: 1.35;
 
-  // Estilo Figma "Subsection": Helvetica Neue Regular 14px / 1.35, content-2.
+  // Estilo Figma "Subsection": Inter Regular 14px / 1.35, content-2.
   margin: 0;
 }
 

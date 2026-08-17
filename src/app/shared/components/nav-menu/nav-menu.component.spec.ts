@@ -162,4 +162,41 @@ describe('NavMenuComponent', () => {
       expect(link.className).not.toContain('keyboard-focus');
     });
   });
+
+  describe('painel mobile (open/closed)', () => {
+    it('shows the close button when not on desktop (default jsdom width, <1200px)', () => {
+      const closeButton = fixture.nativeElement.querySelector('.nav-menu__close');
+
+      expect(closeButton).toBeTruthy();
+    });
+
+    it('applies the nav-menu--open host class when open is true', () => {
+      fixture.componentRef.setInput('open', true);
+      fixture.detectChanges();
+
+      expect(fixture.nativeElement.classList).toContain('nav-menu--open');
+    });
+
+    it('does not apply the nav-menu--open host class when open is false (default)', () => {
+      expect(fixture.nativeElement.classList).not.toContain('nav-menu--open');
+    });
+
+    it('emits closed when the close button is clicked', () => {
+      const closed = jasmine.createSpy('closed');
+
+      fixture.componentInstance.closed.subscribe(closed);
+      (fixture.nativeElement.querySelector('.nav-menu__close') as HTMLButtonElement).click();
+
+      expect(closed).toHaveBeenCalledWith(undefined);
+    });
+  });
+
+  it('emits logoClick when the logo is clicked (abre o assistente de IA)', () => {
+    const logoClick = jasmine.createSpy('logoClick');
+
+    fixture.componentInstance.logoClick.subscribe(logoClick);
+    (fixture.nativeElement.querySelector('.nav-menu__logo-badge button') as HTMLButtonElement).click();
+
+    expect(logoClick).toHaveBeenCalledWith(undefined);
+  });
 });

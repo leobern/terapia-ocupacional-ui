@@ -1,3 +1,4 @@
+@use '../../styles/breakpoints';
 @use '../../styles/tokens';
 
 // Dimensões e cantos exatos do card "mobile" do Figma (nó 4041:1490). Card de
@@ -19,6 +20,18 @@
   // o icon-button — cursor comunica isso visualmente (mouse); o estado
   // desabilitado volta ao cursor padrão. Mesmo padrão de card-patients.
   cursor: pointer;
+
+  // Ajuste de responsividade (2026-07-26, pedido do usuário): em desktop o
+  // card deixa de ser um quadrado fixo de 180px e passa a ocupar a largura
+  // disponível do container, entre 320px e 656px — a altura permanece
+  // dirigida pelo conteúdo (180px em mobile continua o mínimo visual, mas
+  // não é mais travada, já que o nome agora pode ocupar 2 linhas).
+  @include breakpoints.md {
+    width: 100%;
+    height: auto;
+    min-width: 320px;
+    max-width: 656px;
+  }
 
   &--disabled {
     cursor: default;
@@ -46,10 +59,16 @@
   font-weight: tokens.$font-weight-heavy;
   font-size: tokens.$font-size-subsection;
   line-height: 1.2;
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
   color: tokens.$color-content-1;
+  // Trunca em 2 linhas com reticências (2026-07-26, pedido do usuário) — antes
+  // truncava em 1 linha (`white-space: nowrap`); nomes longos agora ocupam a
+  // 2ª linha antes de cortar, mesma técnica já usada em `__description`.
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  word-break: break-word;
 }
 
 .card-notify__specialty {

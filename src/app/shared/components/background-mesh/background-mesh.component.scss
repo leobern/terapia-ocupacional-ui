@@ -15,7 +15,14 @@
 :host {
   position: fixed;
   inset: 0;
-  z-index: -1;
+  // Zero, não negativo: um z-index negativo pinta ATRÁS do canvas do próprio
+  // `body` (o "background do elemento raiz" vira o fundo da viewport inteira,
+  // por cima de qualquer descendente com z-index < 0 — regra do CSS 2.1 §
+  // E.2). Como o `body` agora sempre pinta `surface-2` (ver styles.scss), um
+  // z-index negativo aqui deixava o mesh permanentemente invisível. Em 0, ele
+  // pinta acima desse canvas e abaixo de todo conteúdo normal (que vem depois
+  // dele no DOM, ver app.component.html).
+  z-index: 0;
   overflow: hidden;
   pointer-events: none;
 }
@@ -33,6 +40,14 @@
 // já usado no mesh estático abaixo (`bottom`+`right`, nunca 2 insets opostos).
 // Sem animação (removida pelo usuário, 2026-07-26).
 // -----------------------------------------------------------------------------
+// Breakpoint de desktop replicado aqui como valor literal (não via
+// `@use '../../styles/breakpoints'`) porque esse arquivo pertence a outra
+// sessão/trabalho ainda não commitado neste branch no momento em que este
+// componente foi escrito — evita depender de um arquivo que pode não existir
+// no histórico do git ainda. Migrar para `breakpoints.md` (1200px, mesmo
+// valor) quando esse arquivo estiver commitado e disponível para import.
+$background-mesh-desktop-breakpoint: 1200px;
+
 .background-mesh__blob {
   position: absolute;
   top: 0;
@@ -42,14 +57,34 @@
   filter: blur(160px);
   mix-blend-mode: color;
 
+  // Ajuste de posicionamento mobile × desktop (2026-07-26) — valores
+  // ajustados manualmente pelo usuário via DevTools, olhando os dois
+  // dispositivos separadamente. Continua valendo a regra de FR-001/FR-006:
+  // círculo sempre perfeito, só `max-width` (e aqui também `left`/`top`)
+  // mudam por breakpoint — nunca `width`/`height` explícitos.
   &--1 {
-    left: 0;
-    max-width: 680px;
+    top: -40px;
+    left: -60px;
+    max-width: 320px;
+
+    @media (min-width: $background-mesh-desktop-breakpoint) {
+      top: 0;
+      left: 0;
+      max-width: 560px;
+    }
   }
 
   &--2 {
     left: 200px;
-    max-width: 960px;
+    max-width: 360px;
+
+    @media (min-width: $background-mesh-desktop-breakpoint) {
+      // Offset de `left` removido no desktop (não apenas trocado de valor) —
+      // ajuste do usuário; `left: 0` deixa o comportamento determinístico
+      // (mesma âncora do blob-1) em vez de depender do fallback `auto`.
+      left: 0;
+      max-width: 800px;
+    }
   }
 }
 

@@ -1,0 +1,176 @@
+openapi: 3.0.3
+info:
+  title: Home API
+  version: 1.0.0
+  description: >
+    Contrato da tela Home (specs/003-home). Consumido pelo frontend via
+    openapi-generator-cli (typescript-angular) — ver
+    terapia-ocupacional-ui/openapitools.json. Servido pelo módulo
+    pt.terapiaocupacional.home (backend).
+paths:
+  /home/summary:
+    get:
+      operationId: getHomeSummary
+      summary: Contagem de pacientes do dia + Indicador de Meta Nutricional agregado
+      parameters:
+        - name: hospitalId
+          in: query
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        "200":
+          description: Resumo do dia para o hospital em contexto
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HomeSummary"
+        "401":
+          description: Não autenticado
+        "403":
+          description: Profissional sem vínculo com o hospital informado
+
+  /home/notifications:
+    get:
+      operationId: getHomeNotifications
+      summary: Feed paginado de notificações direcionadas ao profissional autenticado
+      parameters:
+        - name: hospitalId
+          in: query
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: cursor
+          in: query
+          required: false
+          description: Cursor opaco do último item carregado (ausente = primeiro lote)
+          schema:
+            type: string
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 10
+            maximum: 10
+      responses:
+        "200":
+          description: Lote de até 10 notificações, ordenadas da mais recente para a mais antiga
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotificationPage"
+        "401":
+          description: Não autenticado
+        "403":
+          description: Profissional sem vínculo com o hospital informado
+
+  /home/hospitals:
+    get:
+      operationId: getProfissionalHospitals
+      summary: Hospitais vinculados ao profissional autenticado (para o seletor)
+      responses:
+        "200":
+          description: Lista de hospitais vinculados
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Hospital"
+
+components:
+  schemas:
+    HomeSummary:
+      type: object
+      required: [patientCount, nutritionalGoalIndicator, unreadNotificationCount]
+      properties:
+        patientCount:
+          type: integer
+          description: 0 quando não há pacientes agendados ou todos já foram atendidos (FR-011)
+        nutritionalGoalIndicator:
+          $ref: "#/components/schemas/NutritionalGoalIndicator"
+        unreadNotificationCount:
+          type: integer
+          description: >
+            Contagem de notificações não lidas direcionadas ao profissional autenticado
+            neste hospital (FR-008) — exibida como badge no ícone de sino do cabeçalho.
+            Calculada como COUNT(*) sobre Notificacao onde destinatarioId = profissional
+            autenticado e lida = false; não é uma coluna persistida.
+
+    NutritionalGoalIndicator:
+      type: object
+      required: [caloricPercentage, caloricStatus, proteinPercentage, proteinStatus]
+      properties:
+        caloricPercentage:
+          type: number
+          format: double
+        caloricStatus:
+          $ref: "#/components/schemas/GoalStatus"
+        proteinPercentage:
+          type: number
+          format: double
+        proteinStatus:
+          $ref: "#/components/schemas/GoalStatus"
+
+    GoalStatus:
+      type: string
+      enum: [NORMAL, ALERTA, CRITICO]
+
+    NotificationPage:
+      type: object
+      required: [items, nextCursor]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/Notification"
+        nextCursor:
+          type: string
+          nullable: true
+          description: null quando não há mais notificações a carregar (edge case "fim real da lista")
+
+    Notification:
+      type: object
+      required: [id, author, description, createdAt, read]
+      properties:
+        id:
+          type: integer
+          format: int64
+        author:
+          $ref: "#/components/schemas/ProfessionalRef"
+        description:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        read:
+          type: boolean
+
+    ProfessionalRef:
+      type: object
+      required: [id, name, specialty]
+      properties:
+        id:
+          type: integer
+          format: int64
+        name:
+          type: string
+        specialty:
+          type: string
+        photoUrl:
+          type: string
+          nullable: true
+          description: Ausente/nulo → frontend renderiza avatar de iniciais (FR-005b)
+
+    Hospital:
+      type: object
+      required: [id, name]
+      properties:
+        id:
+          type: integer
+          format: int64
+        name:
+          type: string

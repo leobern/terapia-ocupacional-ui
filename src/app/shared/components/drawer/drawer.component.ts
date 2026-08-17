@@ -23,10 +23,12 @@ export type DrawerSnap = 'default' | 'expanded';
 /** Teto de atalhos renderizados (spec.md FR-012). Excedentes são ignorados. */
 const MAX_SHORTCUTS = 3;
 
-/** Reproduz o nó Figma `4412:5749`. Sem origem no Figma: `calc(100vw - var(--space-80))`
- *  (Desvio 2 — tela cheia menos o rail de navegação, `app-nav-menu`). */
+/** Reproduz o nó Figma `4412:5749`. Sem origem no Figma: `calc(100vw - var(--space-72))`
+ *  (Desvio 2 — tela cheia menos o rail de navegação, `app-nav-menu`). `--space-72`, não
+ *  `--space-80`: o rail encolheu para 72px (DS-component-menu, ajuste do usuário no Figma) —
+ *  a referência antiga aqui tinha ficado desatualizada. */
 const WIDTH_DEFAULT = '480px';
-const WIDTH_EXPANDED = 'calc(100vw - var(--space-80))';
+const WIDTH_EXPANDED = 'calc(100vw - var(--space-72))';
 const WIDTH_CLOSED = '0px';
 
 /**
@@ -49,16 +51,23 @@ type DialogMode = 'closed' | 'non-modal' | 'modal';
  * nó Figma `4412:5749`). Mesma proposta de produto (chat da IA + atalhos rápidos), mas
  * painel fixo ancorado à direita em vez de superfície modal do rodapé.
  *
- * ## Por que `<dialog>` alternando `show()`/`showModal()` em vez de sempre modal
+ * ## Por que `<dialog>` sempre com `show()`, nunca `showModal()` (mudou — ver nota abaixo)
  *
- * Ao contrário do `bottom-sheet` (sempre `showModal()`), o drawer tem dois modos:
- * `snap="default"` é um painel complementar NÃO-modal (conteúdo por trás continua
- * interativo, sem scrim) e `snap="expanded"` é modal completo (foco preso, `aria-modal`,
- * conteúdo por trás inerte) — só faz sentido bloquear a interação quando o conteúdo já
- * está fora da área visível (largura `expanded` = tela cheia menos o rail de navegação).
- * `showModal()` entrega o segundo caso de graça: o algoritmo nativo do HTML Standard já
- * torna todo o resto do `document` inerte enquanto o dialog é modal — nenhum `FocusTrap`
- * nem `inert` manual (research.md §1).
+ * Versão anterior: `snap="expanded"` usava `showModal()` para ganhar de graça o foco
+ * preso e o resto do documento inerte, via algoritmo nativo do `<dialog>`. Isso quebrou
+ * um requisito real descoberto depois: `showModal()` promove o dialog ao TOP LAYER e
+ * torna **absolutamente tudo fora dele** inerte — inclusive `app-nav-menu`, que precisa
+ * continuar respondendo a `:hover`/`:focus-within` e abrir POR CIMA do drawer mesmo com
+ * ele expandido (achado do usuário, DS-component-menu). Não existe opt-out por elemento
+ * para essa inertização nativa — a única saída é não usar `showModal()`.
+ *
+ * Agora: sempre `.show()` (nunca modal nativo). O foco preso (FR-017) é implementado à
+ * mão (`onKeydown`, Tab/Shift+Tab cicla dentro do dialog quando `isModal()`), e o
+ * `inert` do conteúdo principal é aplicado pelo CONSUMIDOR só ao conteúdo roteado
+ * (`app.component.ts`), nunca ao `app-nav-menu` — exatamente o que FR-019 já pedia
+ * ("aplicar `inert` ao conteúdo principal da página", não ao documento inteiro). O
+ * `z-index` do dialog (ver .scss) fica abaixo do `--z-index-overlay` do menu expandido,
+ * de propósito, para o menu sempre ganhar a sobreposição visual.
  *
  * ## Por que o foco é capturado/restaurado à mão na troca de modo
  *
@@ -169,9 +178,9 @@ export class DrawerComponent {
   private preExpandFocusTarget: HTMLElement | null = null;
 
   constructor() {
-    // Espelha `open`/`snap` no <dialog>, alternando `show()`/`showModal()`. O guard de
-    // desktop é a segunda camada de FR-013: o template já não renderiza nada fora de
-    // `md`, mas se renderizasse, não abriria.
+    // Espelha `open`/`snap` no <dialog>, sempre via `.show()` (nunca `showModal()` — ver
+    // docblock). O guard de desktop é a segunda camada de FR-013: o template já não
+    // renderiza nada fora de `md`, mas se renderizasse, não abriria.
     effect(() => {
       const element = this.dialogRef()?.nativeElement;
       const shouldOpen = this.open() && this.viewportBreakpoint.isDesktop();
@@ -197,17 +206,17 @@ export class DrawerComponent {
         return;
       }
 
-      if (this.dialogMode !== 'closed') {
-        element.close();
+      // `.show()` nos dois modos — a diferença entre `non-modal`/`modal` agora é só
+      // semântica (foco preso a mão + `role`/`aria-modal`), não mecanismo do <dialog>.
+      if (this.dialogMode === 'closed') {
+        element.show();
       }
 
       if (wantMode === 'modal') {
         this.preExpandFocusTarget = document.activeElement instanceof HTMLElement ? document.activeElement : null;
-        element.showModal();
         this.dialogMode = 'modal';
         this.focusFirstFocusable(element);
       } else {
-        element.show();
         this.dialogMode = 'non-modal';
 
         const target = this.preExpandFocusTarget;
@@ -235,12 +244,43 @@ export class DrawerComponent {
   }
 
   /**
-   * `Esc` nativo (evento `cancel`, disparado só quando o `<dialog>` é modal): sempre
-   * cancelado — o drawer não tem caminho de dispensa por teclado além do botão de
-   * fechar, em nenhum `snap` (spec.md § Clarifications).
+   * Foco preso manual (FR-017) — só entra em efeito com `isModal()`. Sem `showModal()`
+   * não há mais captura nativa de `Tab`, então isso precisa ser feito à mão: `Tab` no
+   * último focável volta pro primeiro, `Shift+Tab` no primeiro vai pro último. `Esc`
+   * deliberadamente NÃO tem handler nenhum aqui — sem `showModal()` o browser não gera
+   * nenhum evento especial para ele, e o drawer não tem caminho de dispensa por teclado
+   * além do botão de fechar (spec.md § Clarifications) — já não é mais preciso cancelar
+   * nada explicitamente.
    */
-  protected onCancel(event: Event): void {
-    event.preventDefault();
+  protected onKeydown(event: KeyboardEvent): void {
+    if (event.key !== 'Tab' || !this.isModal()) {
+      return;
+    }
+
+    const dialogEl = this.dialogRef()?.nativeElement;
+
+    if (!dialogEl) {
+      return;
+    }
+
+    const focusables = Array.from(dialogEl.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR)).filter(
+      el => el.offsetParent !== null,
+    );
+
+    if (focusables.length === 0) {
+      return;
+    }
+
+    const first = focusables[0];
+    const last = focusables[focusables.length - 1];
+
+    if (event.shiftKey && document.activeElement === first) {
+      event.preventDefault();
+      last.focus();
+    } else if (!event.shiftKey && document.activeElement === last) {
+      event.preventDefault();
+      first.focus();
+    }
   }
 
   protected onCloseClick(): void {

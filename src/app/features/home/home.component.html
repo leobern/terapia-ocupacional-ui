@@ -1,8 +1,117 @@
-<main class="home">
-  <h1 class="home__title">Conductia</h1>
-  <p class="home__message">
-    Tela inicial ainda não implementada. Os componentes do design system estão
-    disponíveis para inspeção em <code>/dev/design-system</code> durante o
-    desenvolvimento.
-  </p>
-</main>
+<app-page-container>
+  <div class="home">
+    <header class="home__header">
+      <app-avatar
+        [type]="professionalAvatarType()"
+        [name]="professionalName"
+        [imageUrl]="professionalPhotoUrl ?? ''"
+      />
+      <div class="home__header-text">
+        <p class="home__header-title">{{ professionalTitle }}</p>
+        <h1 class="home__header-name">{{ professionalName }}</h1>
+      </div>
+
+      <span class="home__notify-wrapper">
+        <app-icon-button
+          kind="primary"
+          appearance="icon"
+          icon="bell"
+          ariaLabel="Ver notificações"
+          (click)="onViewAllNotifications()"
+        />
+        @if (summary()?.unreadNotificationCount; as unread) {
+          @if (unread > 0) {
+            <app-badge
+              class="home__notify-badge"
+              type="numeral"
+              [value]="unread"
+            />
+          }
+        }
+      </span>
+
+      <!--
+        Só no desktop: no mobile/tablet o mesmo destino (abrir o assistente de
+        IA) já é o botão central da bottom-nav-bar — duplicar aqui criaria dois
+        acionadores para a mesma ação na mesma tela. Wrapper `<span>` (não a
+        classe direto no host do `app-icon-button`) porque o host do botão é
+        `display: contents` — esconder um `display: contents` com
+        `display: none` externo depende de qual dos dois vence a cascata;
+        escondendo o wrapper em vez disso, o resultado não depende disso.
+      -->
+      <span class="home__shortcuts-wrapper">
+        <app-icon-button
+          kind="primary"
+          appearance="icon"
+          icon="squares-four"
+          ariaLabel="Ações da tela"
+          (click)="aiAssistant.openPanel()"
+        />
+      </span>
+    </header>
+
+    @if (stale()) {
+      <p class="home__stale-banner">
+        Os dados podem estar desatualizados — sem conexão no momento.
+      </p>
+    }
+
+    @switch (status()) {
+      @case ('loading-initial') {
+        <app-home-skeleton />
+      }
+      @case ('error') {
+        <app-home-error (retry)="onRetry()" />
+      }
+      @default {
+        <div class="home__local">
+          <div class="home__local-col">
+            <app-tag
+              type="default"
+              iconLeftName="map-pin"
+              [label]="selectedHospitalName()"
+            />
+            <p class="home__headline">Tarefas diárias do hospital</p>
+          </div>
+          <p class="home__date">{{ todayLabel() }}</p>
+        </div>
+
+        <div class="home__grid">
+          @if (summary(); as s) {
+            <app-card-patients
+              actionAriaLabel="Ver listagem de pacientes (em breve)"
+              [patientCount]="s.patientCount"
+              [averageCaloricPercentage]="
+                s.nutritionalGoalIndicator.caloricPercentage
+              "
+              [averageProteinPercentage]="
+                s.nutritionalGoalIndicator.proteinPercentage
+              "
+              [actionDisabled]="true"
+              (cardClick)="onViewPatients()"
+            />
+          }
+
+          @for (notification of notifications(); track notification.id) {
+            <app-card-notify
+              actionAriaLabel="Ver detalhes da notificação (em breve)"
+              [authorName]="notification.author.name"
+              [authorSpecialty]="notification.author.specialty"
+              [authorPhotoUrl]="notification.author.photoUrl"
+              [description]="notification.description"
+              [time]="formatTime(notification.createdAt)"
+              [actionDisabled]="true"
+              (cardClick)="onViewNotificationDetail(notification.id)"
+            />
+          }
+        </div>
+
+        <div #scrollSentinel class="home__scroll-sentinel"></div>
+
+        @if (status() === 'loading-more') {
+          <p class="home__loading-more">Carregando mais notificações…</p>
+        }
+      }
+    }
+  </div>
+</app-page-container>
