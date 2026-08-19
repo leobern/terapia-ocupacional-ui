@@ -1,11 +1,15 @@
-<span
-  class="background-mesh__blob background-mesh__blob--2"
-  [style.background-color]="color2()"
-></span>
-<span
-  class="background-mesh__blob background-mesh__blob--1"
-  [style.background-color]="color1()"
-></span>
+@if (showColor2()) {
+  <span
+    class="background-mesh__blob background-mesh__blob--2"
+    [style.background-color]="color2()"
+  ></span>
+}
+@if (showColor1()) {
+  <span
+    class="background-mesh__blob background-mesh__blob--1"
+    [style.background-color]="color1()"
+  ></span>
+}
 
 <svg
   class="background-mesh__static"

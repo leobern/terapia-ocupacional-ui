@@ -29,5 +29,16 @@ export const routes: Routes = [
     path: 'home',
     loadChildren: () => import('./features/home/home.routes').then(m => m.HOME_ROUTES),
   },
+  {
+    path: 'notifications',
+    loadChildren: () => import('./features/notifications/notifications.routes').then(m => m.NOTIFICATIONS_ROUTES),
+  },
+  // TODO (specs/004-notificacoes research.md §8): placeholder até a feature
+  // "Detalhe do Paciente" existir — destino real de FR-006 (US2).
+  {
+    path: 'patients/:id',
+    loadComponent: () =>
+      import('./features/patients/patient-detail-placeholder.component').then(m => m.PatientDetailPlaceholderComponent),
+  },
   { path: '', pathMatch: 'full', redirectTo: 'home' },
 ];

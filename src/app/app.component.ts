@@ -1,5 +1,7 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
-import { RouterOutlet } from '@angular/router';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { NavigationEnd, Router, RouterOutlet } from '@angular/router';
+import { filter, map } from 'rxjs';
 
 import { BackgroundMeshComponent } from './shared/components/background-mesh/background-mesh.component';
 import { BottomNavBarComponent } from './shared/components/bottom-nav-bar/bottom-nav-bar.component';
@@ -46,6 +48,12 @@ export class AppComponent {
   protected readonly aiAssistant = inject(AiAssistantService);
 
   protected readonly menuOpen = signal(false);
+
+  protected readonly isNotificationsRoute = computed(() => this.currentUrl().startsWith('/notifications'));
+  // '#D3FFE9' é o default do próprio app-background-mesh — repetido aqui só
+  // porque o binding precisa de um valor concreto nas duas pontas do ternário.
+  protected readonly backgroundColor1 = computed(() => (this.isNotificationsRoute() ? '#a6fbfb' : '#D3FFE9'));
+  protected readonly backgroundShowColor2 = computed(() => !this.isNotificationsRoute());
   protected readonly aiSheetSnap = signal<BottomSheetSnap>('default');
   protected readonly aiDrawerSnap = signal<DrawerSnap>('default');
 
@@ -54,6 +62,20 @@ export class AppComponent {
     { id: 'meta-nutricional', label: 'Pacientes fora da meta nutricional' },
   ];
 
+  private readonly router = inject(Router);
+
+  // O fundo decorativo (app-background-mesh) tem UMA instância global aqui no
+  // shell (não uma por tela) — specs/004-notificacoes FR-015 exige 1 blob
+  // oculto + cor diferente da Home só nessa rota, então a instância global
+  // reage à URL atual em vez de cada feature montar a sua própria.
+  private readonly currentUrl = toSignal(
+    this.router.events.pipe(
+      filter((event): event is NavigationEnd => event instanceof NavigationEnd),
+      map(event => event.urlAfterRedirects),
+    ),
+    { initialValue: this.router.url },
+  );
+
   protected onAiShortcut(_: ChatShortcut): void {
     // Conduzir a conversa com a IA fica para quando o serviço de chat existir
     // — por enquanto só fecha o atalho selecionado, sem enviar nada de verdade.
@@ -61,5 +83,14 @@ export class AppComponent {
 
   protected onAiSend(_: string): void {
     // Ver onAiShortcut — mesma justificativa.
+  }
+
+  // specs/004-notificacoes FR-001/FR-002/research.md §8 — o Menu é global (montado
+  // aqui, fora de qualquer feature), então não conhece o hospital em contexto; a
+  // tela de Notificações resolve isso sozinha (GET /api/v1/home/hospitals, mesmo
+  // default da Home) quando entra sem `hospitalId` na query.
+  protected onNotificacoesClick(): void {
+    this.menuOpen.set(false);
+    this.router.navigate(['/notifications']);
   }
 }

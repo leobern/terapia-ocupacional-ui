@@ -36,6 +36,110 @@
   &--disabled {
     cursor: default;
   }
+
+  // Variantes detail/answer-open/answering (2026-08-17, specs/004-notificacoes) — nó
+  // Figma 4495:9318: o card vira uma linha (col principal + coluna lateral do botão de
+  // ação), largura mínima 361px, altura livre. Cursor volta ao padrão — não há mais
+  // área de toque estendida (DS spec FR-015: só `resume` clica no corpo inteiro).
+  &--expanded {
+    flex-direction: row;
+    align-items: stretch;
+    width: 100%;
+    height: auto;
+    min-width: 361px;
+    max-width: none;
+    cursor: default;
+
+    @include breakpoints.md {
+      width: 100%;
+      height: auto;
+      min-width: 361px;
+      max-width: none;
+    }
+  }
+}
+
+.card-notify__col {
+  display: flex;
+  flex: 1 0 0;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.card-notify__patient {
+  display: flex;
+  align-items: flex-end;
+  gap: tokens.$space-4;
+  padding: tokens.$space-8;
+  border-bottom: 1px solid tokens.$color-border;
+  color: tokens.$color-content-4;
+}
+
+.card-notify__patient-text {
+  display: flex;
+  flex-direction: column;
+}
+
+.card-notify__patient-label {
+  font-family: tokens.$font-family-base;
+  font-weight: tokens.$font-weight-roman;
+  font-size: tokens.$font-size-label;
+  color: tokens.$color-content-5;
+}
+
+.card-notify__patient-name {
+  font-family: tokens.$font-family-base;
+  font-weight: tokens.$font-weight-heavy;
+  font-size: tokens.$font-size-subsection;
+  color: tokens.$color-content-4;
+}
+
+.card-notify__reply-tag,
+.card-notify__collapse {
+  display: flex;
+  align-items: center;
+  gap: tokens.$space-8;
+  flex-shrink: 0;
+  height: 40px;
+  padding: tokens.$space-4 tokens.$space-16;
+  border: none;
+  background: transparent;
+  font-family: tokens.$font-family-base;
+  font-weight: tokens.$font-weight-semibold;
+  font-size: tokens.$font-size-interactive;
+  color: tokens.$color-content-1;
+  cursor: pointer;
+}
+
+.card-notify__reply-tag {
+  border: 1px solid tokens.$color-border-2;
+  border-radius: tokens.$radius-tag;
+  background: tokens.$color-surface;
+}
+
+.card-notify__side {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  justify-content: flex-end;
+  flex-shrink: 0;
+  padding: tokens.$space-4 tokens.$space-8;
+  border-left: 1px solid tokens.$color-border;
+}
+
+.card-notify__reply {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  border-top: 1px solid tokens.$color-border;
+
+  &--draft .card-notify__description {
+    padding-bottom: tokens.$space-16;
+  }
+}
+
+.card-notify__description--placeholder {
+  color: tokens.$color-content-5;
 }
 
 .card-notify__row {

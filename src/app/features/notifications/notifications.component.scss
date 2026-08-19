@@ -1,0 +1,73 @@
+@use '../../shared/styles/tokens';
+
+.notifications {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  padding: 0 tokens.$space-16;
+}
+
+.notifications__header {
+  display: flex;
+  align-items: center;
+  gap: tokens.$space-8;
+  padding: tokens.$space-24 0 tokens.$space-16;
+  color: tokens.$color-content-1;
+}
+
+.notifications__title {
+  margin: 0;
+  font-family: tokens.$font-family-base;
+  font-weight: tokens.$font-weight-heavy;
+  font-size: 24px;
+  line-height: 1.2;
+}
+
+.notifications__local {
+  display: flex;
+  padding: tokens.$space-24 0;
+  border-top: 1px solid tokens.$color-border;
+}
+
+.notifications__error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: tokens.$space-16;
+  padding: tokens.$space-16;
+  text-align: center;
+  color: tokens.$color-content-4;
+}
+
+.notifications__error-title {
+  margin: 0;
+  font-family: tokens.$font-family-base;
+  font-weight: tokens.$font-weight-heavy;
+  font-size: tokens.$font-size-subsection;
+  color: tokens.$color-content-1;
+}
+
+.notifications__list {
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$space-8;
+  padding-bottom: tokens.$space-24;
+}
+
+.notifications__empty {
+  padding: tokens.$space-24 0;
+  text-align: center;
+  color: tokens.$color-content-4;
+}
+
+.notifications__scroll-sentinel {
+  height: 1px;
+}
+
+.notifications__loading-more {
+  padding: tokens.$space-16;
+  text-align: center;
+  font-family: tokens.$font-family-base;
+  font-size: 12px;
+  color: tokens.$color-content-4;
+}

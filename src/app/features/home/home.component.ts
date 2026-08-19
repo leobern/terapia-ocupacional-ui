@@ -10,6 +10,7 @@ import {
   viewChild,
 } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
+import { Router } from '@angular/router';
 import { Store } from '@ngrx/store';
 
 import { AvatarComponent, type AvatarType } from '../../shared/components/avatar/avatar.component';
@@ -110,6 +111,7 @@ export class HomeComponent implements OnDestroy {
     () => this.hospitals().find(hospital => hospital.id === this.selectedHospitalId())?.name ?? '',
   );
 
+  private readonly router = inject(Router);
   private readonly injector = inject(Injector);
   private readonly scrollSentinel = viewChild<ElementRef<HTMLElement>>('scrollSentinel');
   private intersectionObserver?: IntersectionObserver;
@@ -153,7 +155,14 @@ export class HomeComponent implements OnDestroy {
   }
 
   protected onViewAllNotifications(): void {
-    // FR-008: navega para a tela "Notificações" — especificação independente, fora de escopo.
+    // specs/004-notificacoes FR-001 — a Home já conhece o hospital em contexto,
+    // então passa como query param (a tela de Notificações também aceita entrar
+    // sem ele, ex.: vindo do Menu — resolve via GET /api/v1/home/hospitals).
+    const hospitalId = this.selectedHospitalId();
+
+    this.router.navigate(['/notifications'], {
+      queryParams: hospitalId != null ? { hospitalId } : {},
+    });
   }
 
   protected onViewPatients(): void {

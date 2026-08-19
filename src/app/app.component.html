@@ -1,10 +1,14 @@
-<app-background-mesh />
+<app-background-mesh
+  [color1]="backgroundColor1()"
+  [showColor2]="backgroundShowColor2()"
+/>
 
 <div class="app-shell">
   <app-nav-menu
     [open]="menuOpen()"
     (closed)="menuOpen.set(false)"
     (logoClick)="aiAssistant.openPanel()"
+    (notificacoesClick)="onNotificacoesClick()"
   />
   <router-outlet />
   <!--

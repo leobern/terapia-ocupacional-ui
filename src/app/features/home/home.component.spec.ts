@@ -1,4 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { provideRouter, Router } from '@angular/router';
 import { MockStore, provideMockStore } from '@ngrx/store/testing';
 
 import { HomeComponent } from './home.component';
@@ -8,13 +9,22 @@ import { HomeState, initialHomeState } from './state/home.reducer';
 describe('HomeComponent', () => {
   let fixture: ComponentFixture<HomeComponent>;
   let store: MockStore;
+  let router: Router;
 
   async function configureStore(overrides: Partial<HomeState> = {}): Promise<void> {
     await TestBed.configureTestingModule({
       imports: [HomeComponent],
-      providers: [provideMockStore({ initialState: { home: { ...initialHomeState, ...overrides } } })],
+      providers: [
+        provideMockStore({ initialState: { home: { ...initialHomeState, ...overrides } } }),
+        // Convergence T055 — onViewAllNotifications passou a chamar Router.navigate
+        // (FR-001 de specs/004-notificacoes, T020); sem isto, inject(Router) falhava
+        // na própria construção do componente, quebrando TODOS os testes deste
+        // arquivo (não só o teste de onViewAllNotifications).
+        provideRouter([]),
+      ],
     }).compileComponents();
     store = TestBed.inject(MockStore);
+    router = TestBed.inject(Router);
   }
 
   function createComponent(): void {
@@ -138,13 +148,22 @@ describe('HomeComponent', () => {
     expect(fixture.nativeElement.querySelector('.home__loading-more')).toBeTruthy();
   });
 
-  it('onViewNotificationDetail, onViewAllNotifications e onViewPatients não lançam erro (rotas fora de escopo)', async () => {
+  it('onViewNotificationDetail e onViewPatients não lançam erro (rotas fora de escopo)', async () => {
     await configureStore({ status: 'success' });
     createComponent();
 
     expect(() => fixture.componentInstance.onViewNotificationDetail(1)).not.toThrow();
-    expect(() => fixture.componentInstance.onViewAllNotifications()).not.toThrow();
     expect(() => fixture.componentInstance.onViewPatients()).not.toThrow();
+  });
+
+  it('onViewAllNotifications navega para /notifications com o hospitalId em contexto (specs/004-notificacoes FR-001)', async () => {
+    await configureStore({ status: 'success', selectedHospitalId: 7 });
+    createComponent();
+    spyOn(router, 'navigate');
+
+    fixture.componentInstance.onViewAllNotifications();
+
+    expect(router.navigate).toHaveBeenCalledWith(['/notifications'], { queryParams: { hospitalId: 7 } });
   });
 
   it('abre o assistente de IA ao clicar no botão de atalhos do cabeçalho (desktop)', async () => {

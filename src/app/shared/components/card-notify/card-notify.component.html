@@ -1,36 +1,148 @@
+<!-- eslint-disable-next-line @angular-eslint/template/click-events-have-key-events, @angular-eslint/template/interactive-supports-focus -->
 <article
   class="card-notify"
+  [class.card-notify--expanded]="!isResume()"
   [class.card-notify--disabled]="actionDisabled()"
   (click)="onCardClick()"
 >
-  <div class="card-notify__row">
-    <app-avatar
-      [name]="authorName()"
-      [imageUrl]="authorPhotoUrl() ?? ''"
-      [type]="avatarType()"
-    />
-    <div class="card-notify__text">
-      <p class="card-notify__name">{{ authorName() }}</p>
-      <p class="card-notify__specialty">{{ authorSpecialty() }}</p>
+  <div class="card-notify__col">
+    <div class="card-notify__row">
+      <app-avatar
+        [name]="authorName()"
+        [imageUrl]="authorPhotoUrl() ?? ''"
+        [type]="avatarType()"
+      />
+      <div class="card-notify__text">
+        <p class="card-notify__name">{{ authorName() }}</p>
+        <p class="card-notify__specialty">{{ authorSpecialty() }}</p>
+      </div>
+    </div>
+
+    @if (showPatientHeader()) {
+      <div class="card-notify__patient" [attr.aria-label]="patientAriaLabel()">
+        <ph-icon name="user" [size]="16" />
+        <div class="card-notify__patient-text">
+          <span class="card-notify__patient-label">{{
+            patientAriaLabel()
+          }}</span>
+          <span class="card-notify__patient-name">{{ patientName() }}</span>
+        </div>
+      </div>
+    }
+
+    <div class="card-notify__content">
+      <p class="card-notify__description">{{ description() }}</p>
+    </div>
+
+    <div class="card-notify__footer">
+      <div class="card-notify__time">
+        <ph-icon name="bell" [size]="16" />
+        <span>{{ time() }}</span>
+      </div>
+
+      @if (isResume()) {
+        <app-icon-button
+          kind="secondary"
+          appearance="outlined"
+          size="small"
+          icon="arrow-right"
+          [ariaLabel]="actionAriaLabel()"
+          [disabled]="actionDisabled()"
+        />
+      }
+
+      @if (showReplyTag()) {
+        <button
+          type="button"
+          class="card-notify__reply-tag"
+          (click)="onViewRepliesClick($event)"
+        >
+          <app-avatar
+            size="small"
+            [name]="replies()[replies().length - 1].authorName"
+            [imageUrl]="replies()[replies().length - 1].authorPhotoUrl ?? ''"
+            [type]="
+              replies()[replies().length - 1].authorPhotoUrl ? 'photo' : 'user'
+            "
+          />
+          <span>{{ replies().length }} Respostas</span>
+          <ph-icon name="caret-down" [size]="16" />
+        </button>
+      }
+
+      @if (isAnswerOpen()) {
+        <button
+          type="button"
+          class="card-notify__collapse"
+          (click)="onCollapseClick($event)"
+        >
+          <span>Ver menos</span>
+          <ph-icon name="caret-up" [size]="16" />
+        </button>
+      }
     </div>
   </div>
 
-  <div class="card-notify__content">
-    <p class="card-notify__description">{{ description() }}</p>
-  </div>
-
-  <div class="card-notify__footer">
-    <div class="card-notify__time">
-      <ph-icon name="bell" [size]="16" />
-      <span>{{ time() }}</span>
+  @if (showActionButton()) {
+    <div class="card-notify__side">
+      <app-icon-button
+        appearance="icon"
+        icon="arrow-right"
+        [ariaLabel]="actionAriaLabel()"
+        [disabled]="actionDisabled()"
+        (click)="onActionClick($event)"
+      />
     </div>
-    <app-icon-button
-      kind="secondary"
-      appearance="outlined"
-      size="small"
-      icon="arrow-right"
-      [ariaLabel]="actionAriaLabel()"
-      [disabled]="actionDisabled()"
-    />
-  </div>
+  }
+
+  @if (showReplyBlocks()) {
+    @for (reply of replies(); track reply.time + reply.authorName) {
+      <div class="card-notify__reply">
+        <div class="card-notify__row">
+          <app-avatar
+            [name]="reply.authorName"
+            [imageUrl]="reply.authorPhotoUrl ?? ''"
+            [type]="reply.authorPhotoUrl ? 'photo' : 'user'"
+          />
+          <div class="card-notify__text">
+            <p class="card-notify__name">{{ reply.authorName }}</p>
+            <p class="card-notify__specialty">{{ reply.authorSpecialty }}</p>
+          </div>
+        </div>
+        <div class="card-notify__content">
+          <p class="card-notify__description">{{ reply.text }}</p>
+        </div>
+        <div class="card-notify__footer">
+          <div class="card-notify__time">
+            <ph-icon name="bell" [size]="16" />
+            <span>{{ reply.time }}</span>
+          </div>
+        </div>
+      </div>
+    }
+
+    @if (isAnswering()) {
+      <div class="card-notify__reply card-notify__reply--draft">
+        <div class="card-notify__row">
+          <app-avatar
+            [name]="draftAuthorName()"
+            [imageUrl]="draftAuthorPhotoUrl() ?? ''"
+            [type]="draftAvatarType()"
+          />
+          <div class="card-notify__text">
+            <p class="card-notify__name">{{ draftAuthorName() }}</p>
+            <p class="card-notify__specialty">{{ draftAuthorSpecialty() }}</p>
+          </div>
+        </div>
+        <div class="card-notify__content">
+          <p
+            class="card-notify__description"
+            [class.card-notify__description--placeholder]="!draftText()"
+          >
+            {{ draftText() || 'Escreva a sua mensagem...' }}
+          </p>
+        </div>
+      </div>
+    }
+  }
 </article>

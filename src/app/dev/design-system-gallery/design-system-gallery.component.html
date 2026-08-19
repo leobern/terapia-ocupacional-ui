@@ -679,6 +679,83 @@
       />
     </div>
     <p class="gallery__hint">Último clique: {{ cardNotifyLastClick() }}</p>
+
+    <p class="gallery__hint">
+      Variantes <code>detail</code>/<code>answer-open</code>/<code
+        >answering</code
+      >
+      (2026-08-17, specs/004-notificacoes) — comparar contra os nós Figma
+      <code>4495:9319</code>, <code>4495:9564</code> e <code>4495:10551</code>.
+    </p>
+    <div class="gallery__grid">
+      <app-card-notify
+        type="detail"
+        authorName="Jairo Nepomuceno"
+        authorSpecialty="Enfermeiro"
+        patientName="José da Silva"
+        description="Identificada exteriorização acidental da SNE."
+        time="19:27"
+        actionAriaLabel="Responder"
+        (answerClick)="onCardNotifyClick('detail/answerClick')"
+      />
+      <app-card-notify
+        type="detail"
+        authorName="Filippa Martins"
+        authorSpecialty="Nutricionista"
+        patientName="Samuel Lima Rocha"
+        description="Paciente em uso de GTT, internado devido à erisipela. Aguarda início de TNE"
+        time="20:27"
+        actionAriaLabel="Responder"
+        [replies]="[
+          {
+            authorName: 'Renata Martins Silva',
+            authorSpecialty: 'Nutricionista',
+            authorPhotoUrl: null,
+            text: 'Alinhado com a equipe.',
+            time: '20:40',
+          },
+        ]"
+        (viewRepliesClick)="onCardNotifyClick('detail/viewRepliesClick')"
+      />
+      <app-card-notify
+        type="answer-open"
+        authorName="Jairo Nepomuceno"
+        authorSpecialty="Enfermeiro"
+        patientName="José da Silva"
+        description="Suspendemos a formula XYZ do paciente Renato Lemos Santos"
+        time="19:27"
+        actionAriaLabel="Responder"
+        [replies]="[
+          {
+            authorName: 'Dra. Michelle Franklin',
+            authorSpecialty: 'Nutróloga',
+            authorPhotoUrl: 'https://i.pravatar.cc/112?img=47',
+            text: 'Alinhado com a equipe manter VO exclusivo por hora',
+            time: '20:27',
+          },
+          {
+            authorName: 'Renata Martins Silva',
+            authorSpecialty: 'Nutricionista',
+            authorPhotoUrl: null,
+            text: 'Paciente em uso de GTT, internado devido à erisipela. Aguarda início de TNE',
+            time: '9:13',
+          },
+        ]"
+        (collapseClick)="onCardNotifyClick('answer-open/collapseClick')"
+      />
+      <app-card-notify
+        type="answering"
+        authorName="Jairo Nepomuceno"
+        authorSpecialty="Enfermeiro"
+        patientName="José da Silva"
+        description="Suspendemos a formula XYZ do paciente Renato Lemos Santos"
+        time="19:27"
+        actionAriaLabel="Responder"
+        draftAuthorName="Michelle Franklin"
+        draftAuthorSpecialty="Nutróloga"
+        draftText="Alinhado com a equipe, seguimos com a suspensão."
+      />
+    </div>
   </section>
 
   <section class="gallery__section">
