@@ -8,7 +8,16 @@
     "@stylistic/indentation": null,
     "font-family-no-missing-generic-family-keyword": null,
     "no-descending-specificity": null,
-    "selector-class-pattern": ["^[a-z0-9-]+$"],
+    "selector-class-pattern": [
+      "^[a-z][a-z0-9]*(-[a-z0-9]+)*(__[a-z][a-z0-9]*(-[a-z0-9]+)*)?(--[a-z][a-z0-9]*(-[a-z0-9]+)*)?$",
+      {
+        "message": "Classe deve seguir BEM em kebab-case: bloco, bloco__elemento, bloco--modificador ou bloco__elemento--modificador"
+      }
+    ],
+    "scss/comment-no-empty": null,
+    "scss/double-slash-comment-empty-line-before": null,
+    "color-hex-length": "long",
+    "value-keyword-case": null,
     "selector-max-id": 5,
     "selector-no-qualifying-type": [
       true,
@@ -24,7 +33,7 @@
       true,
       { "ignorePseudoElements": ["ng-deep"] }
     ],
-    "order/properties-alphabetical-order": true,
+    "order/properties-alphabetical-order": null,
     "@stylistic/function-parentheses-space-inside": "never-single-line"
   }
 }

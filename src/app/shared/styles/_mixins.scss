@@ -1,0 +1,35 @@
+@use 'tokens';
+
+// -----------------------------------------------------------------------------
+// Padrão único de foco por teclado para todo elemento clicável do design
+// system (decisão do usuário, 2026-07-23 — convenção de acessibilidade
+// transversal, não vinculada a nenhum nó Figma específico): anel sólido de
+// 2px na cor `comm-focus` (token próprio dentro do grupo comm, isolado de
+// comm-info de propósito), afastado 4px do componente.
+//
+// `outline`/`outline-offset` (não `box-shadow`) de propósito: outline
+// acompanha automaticamente o `border-radius` do elemento em todos os
+// navegadores evergreen, sem precisar replicar o raio manualmente, e não
+// afeta o box model (não empurra layout, ao contrário de um `border` extra).
+//
+// `.keyboard-focus:focus` (não `:focus-visible` puro) — o heurístico nativo
+// de `:focus-visible` trata `<input>`/`<textarea>` como categoria especial
+// que casa mesmo em clique de mouse (diferente de `<button>`/`<div
+// tabindex>`), o que fazia o anel aparecer ao clicar num campo de texto. A
+// classe `.keyboard-focus` é controlada via `KeyboardFocusService`
+// (`shared/services/keyboard-focus.service.ts`), que rastreia manualmente se
+// a última interação foi teclado ou ponteiro — mesmo comportamento
+// garantido para QUALQUER elemento, independente do heurístico da tag.
+// -----------------------------------------------------------------------------
+@mixin focus-ring {
+  // Reseta o outline padrão do navegador (`outline: auto` em `:focus`) —
+  // sem isso, um foco por CLIQUE (sem `.keyboard-focus`) ainda mostraria o
+  // anel azul nativo do browser, já que `:focus` continua verdadeiro mesmo
+  // quando não é navegação por teclado.
+  outline: none;
+
+  &.keyboard-focus:focus {
+    outline: tokens.$focus-ring-width solid tokens.$color-focus-ring;
+    outline-offset: tokens.$focus-ring-offset;
+  }
+}

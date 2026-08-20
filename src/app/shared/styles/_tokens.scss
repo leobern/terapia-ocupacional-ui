@@ -1,0 +1,371 @@
+// =============================================================================
+// Design tokens — fonte única de verdade para cor, tipografia, espaçamento e
+// raio de borda. Dois níveis, para permitir tema claro/escuro sem tocar em
+// componente nenhum:
+//
+//   1. "Paleta" ($color-*): os hex crus, extraídos 1:1 dos Color Styles do
+//      Figma "Conductia" (zhRV09hpYhPYLp9UV8ojYc) via get_design_context /
+//      inspeção direta de fills — nunca estimados de screenshot.
+//   2. "Semântico" (--*, custom properties em :root): o que os componentes
+//      de fato consomem (ex.: var(--surface), não $color-surface). Trocar de
+//      tema é sobrescrever este bloco para um seletor de tema — nada muda no
+//      SCSS de paleta nem nos componentes.
+//
+// Hoje só existe o tema claro (é o único especificado no Figma). O bloco
+// `:root[data-theme='dark']` já está com a mesma lista de propriedades — só
+// falta preencher os hex reais quando o dark mode for especificado.
+// =============================================================================
+
+// `font-weights` (não `fonts`!) — não emite @font-face, só variáveis; ver
+// nota em _fonts.scss sobre por que os dois ficam em arquivos separados.
+@use 'font-weights' as fonts;
+
+// -----------------------------------------------------------------------------
+// 1. Paleta — hex crus (Color Styles do Figma)
+// -----------------------------------------------------------------------------
+
+// default/*
+$color-primary: #004466;
+$color-secondary: #00aaff; // era #0088cc — redefinido no Figma (DS-component-button, 2026-07-23)
+$color-tertiary: #85e0e0;
+
+// content/*
+// Numeração segue o Figma "Conductia" como fonte de verdade — o usuário reorganizou a
+// escala content/* na origem (inseriu um novo degrau), deslocando os nomes que antes eram
+// content-4/content-5 para content-5/content-6. Nomes e hex abaixo refletem o Figma atual,
+// não a numeração histórica deste arquivo.
+$color-content-1: #002233;
+$color-content-2: #006da3;
+$color-content-3: #218383;
+$color-content-4: #73848c; // preenche o slot deixado vago pela renumeração acima (DS-component-card-notify, 2026-07-24)
+$color-content-5: #94acb8; // era content-4 neste arquivo; Figma atual chama de content-5
+$color-content-6: #ffffff; // era content-5 neste arquivo; Figma atual chama de content-6
+
+// state/*
+$color-state-disabled: #c7ccd1;
+$color-state-disabled-2: #4e585f;
+
+// border/*
+$color-border: #e8eff2;
+$color-border-2: #cedde3;
+
+// surface/*
+$color-surface: #ffffff;
+$color-surface-2: #f4f6f6;
+$color-surface-glass-1: #ffffff;
+$color-surface-glass-2: #e3e8e8;
+
+// Scrim de superfícies modais (DS-component-bottom-sheet, 2026-07-28). NÃO vem do
+// Figma — o desenho entrega só o frame do sheet, isolado (spec.md Desvio 2). É
+// derivado de `content-1` a 50%, seguindo o precedente de `$color-input-focus-ring`
+// (rgba do mesmo content-1), para o escurecimento ficar na paleta do produto em vez
+// de um preto/cinza neutro estranho a ela. 50% escurece o suficiente sem apagar o
+// contexto — que importa porque o sheet em `default` deixa 30% da tela visível de
+// propósito.
+$color-scrim: rgba($color-content-1, 0.5);
+
+// communication/*
+// `comm-focus` — token dedicado dentro do próprio grupo comm (não reaproveita
+// comm-info), criado pelo usuário no Figma em 2026-07-23 especificamente para
+// ficar isolado caso a cor do anel de foco precise mudar no futuro sem afetar
+// nada mais que usa comm-info.
+$color-comm-info: #990099;
+$color-comm-alert: #ff002a;
+$color-comm-success: #19e63b;
+$color-comm-warning: #ffd400;
+$color-comm-focus: #ff33bb;
+
+// focus/* — padrão único de foco por teclado para TODO elemento clicável do
+// design system (decisão do usuário, 2026-07-23, não vem de nenhum nó Figma
+// específico — é uma convenção de acessibilidade transversal): anel sólido de
+// `$focus-ring-width` na cor `comm-focus`, afastado `$focus-ring-offset` do
+// componente. Usar via `mixins.focus-ring` (_mixins.scss) — nunca declarar
+// `outline`/`outline-offset` manualmente em cada componente.
+$color-focus-ring: $color-comm-focus;
+$focus-ring-width: 2px;
+$focus-ring-offset: 4px;
+
+// `$color-input-focus-ring` — anel de foco EMBUTIDO no próprio desenho do
+// DS-component-input-select (nó Figma `4344:6952`, `State=Focus`), distinto do
+// `$color-focus-ring`/`mixins.focus-ring` acima: aquele é um `outline` de
+// `:focus-visible` só-teclado para elementos clicáveis sem foco visual
+// próprio (Button, IconButton); este é um `box-shadow` sempre visível em
+// `:focus` (clique ou teclado), pois campos de texto tradicionalmente marcam
+// foco em qualquer método de interação. Os dois nunca se aplicam ao mesmo
+// componente — ver DS-component-input-select/research.md. Opacidade 60% —
+// ajustada pelo usuário no Figma nesta sessão (era 40%; reconfirmado via
+// get_design_context em 4344:6952: `shadow-[...rgba(0,34,51,0.6)]`).
+$color-input-focus-ring: rgba($color-content-1, 0.6);
+
+// logo/*
+$color-logo-1: #f3d4f3;
+$color-logo-2: #a6fbfb;
+$color-logo-3: #b3fcd7;
+$color-logo-4: #e6e4df;
+
+// decorative/* — usados só no background animado das telas (não são Color
+// Style nomeado no Figma, só um fill solto nos blobs de fundo).
+$color-decorative-forest: #0d7742;
+
+// -----------------------------------------------------------------------------
+// Tipografia — Inter para TODO o sistema (substitui Helvetica Neue e Nunito
+// Sans, unificadas em uma família só — decisão do usuário, 2026-07-30) e Lora
+// só para o conteúdo de chat com a IA (Bottom-sheet/Drawer — texto das
+// mensagens da IA, nunca chrome/botões desses componentes, que continuam
+// Inter — ver estilos Figma "Chat/Title - Chat", "Chat/Default - Chat",
+// "Chat/Subsection - Chat" vs. os estilos "Default"/"Title" comuns).
+// -----------------------------------------------------------------------------
+$font-family-base: 'Inter', Arial, sans-serif;
+$font-family-interactive: 'Inter', Arial, sans-serif;
+$font-family-chat: 'Lora', Georgia, serif;
+
+// Escala de tamanho ainda não existe de forma genérica no projeto — nasce
+// nomeada pelo estilo Figma "Interactive/Default - Bold" (DS-component-button)
+// e renomeada de `$font-size-button` para `$font-size-interactive` em
+// DS-component-input-select/research.md, já que o mesmo 16px agora é
+// compartilhado por Button e Input/Select (ambos elementos interativos).
+// Generalizar para uma escala completa fica para quando outro componente
+// precisar de um tamanho diferente. Altura de linha não é tokenizada — o
+// Figma especifica 100%/normal, não um valor numérico fixo.
+$font-size-interactive: 16px;
+
+// Estilo Figma "Interactive/Label - Bold" (DS-component-badge) — texto do numeral do
+// badge, Inter Bold 12px, distinto do `$font-size-interactive` (16px, Button/
+// Input). Reusado por `DS-component-avatar` `size="small"` (Figma "Label -
+// SemiBold" — mesmo tamanho 12px, peso próprio via `$font-weight-semibold`, não
+// duplicado aqui).
+$font-size-label: 12px;
+
+// Estilo Figma "Section" (DS-component-avatar) — iniciais do avatar `size="big"`,
+// Inter Medium (500) 40px, line-height 100% — reconfirmado via `get_design_context`
+// em 2026-07-30 (era documentado como Bold; o Figma foi ajustado para Medium).
+// `size="small"`/`"default"` reusam `$font-size-label`/`$font-size-interactive`
+// (12px/16px) com peso `$font-weight-semibold`, sem token de tamanho novo.
+$font-size-title: 40px;
+
+// Estilo Figma "Interactive/Subsection - Bold" (DS-component-tag) — texto do
+// type="default" da tag, Inter Bold 14px, distinto de `$font-size-interactive`
+// (16px, type="user") e `$font-size-label` (12px, type="status").
+$font-size-subsection: 14px;
+$font-weight-ultralight: fonts.$font-weight-ultralight;
+$font-weight-thin: fonts.$font-weight-thin;
+$font-weight-light: fonts.$font-weight-light;
+$font-weight-roman: fonts.$font-weight-roman;
+$font-weight-medium: fonts.$font-weight-medium;
+$font-weight-semibold: fonts.$font-weight-semibold;
+$font-weight-bold: fonts.$font-weight-bold;
+$font-weight-heavy: fonts.$font-weight-heavy;
+$font-weight-black: fonts.$font-weight-black;
+
+// -----------------------------------------------------------------------------
+// Espaçamento — grid de 8px (spec: todo padding/gap/margin nasce daqui),
+// com 0 e 4px como únicas exceções ao grid.
+// -----------------------------------------------------------------------------
+$space-0: 0;
+$space-4: 4px;
+$space-8: 8px;
+// Gap entre o badge e o wordmark na linha da logo do DS-component-menu (nó Figma
+// `4414:6906`/`4424:7607`, `gap-[12px]`) — fora do grid de 8px regular, medido via
+// `get_metadata` (ícone termina em x=48, wordmark começa em x=60), mesma lógica já
+// usada para `$space-120`/`$space-280`.
+$space-12: 12px;
+$space-16: 16px;
+$space-24: 24px;
+$space-32: 32px;
+$space-40: 40px;
+$space-48: 48px;
+$space-56: 56px;
+$space-64: 64px;
+// Largura do trilho colapsado do DS-component-menu (nó Figma `4334:7400`, reduzido
+// de 80px para 72px pelo usuário — `get_metadata`: 40px de caixa do ícone + 16px de
+// padding em cada lado). Múltiplo de 8, mas não fazia parte da escala nomeada ainda.
+$space-72: 72px;
+$space-80: 80px;
+
+// Container do avatar `size="big"` (DS-component-avatar, research.md §5) — 120px
+// medido via `get_metadata` dos nós Figma `4356:7109`/`4356:7110`/`4356:7112`, fora
+// do grid de 8px regular (não é múltiplo comum a outros componentes ainda).
+$space-120: 120px;
+
+// `max-width` do type="default" da tag (DS-component-tag, research.md §6) — 280px
+// medido via `get_design_context` do nó Figma `2218:5666` (`max-w-[280px]`), fora do
+// grid de 8px regular, mas uma restrição de design real, não um detalhe de
+// implementação — mesma lógica já usada para `$space-120`.
+$space-280: 280px;
+
+// -----------------------------------------------------------------------------
+// Raio de borda — os valores de canto usados nos componentes do Figma.
+// "-pill" é o valor "infinito" (400px) usado em badges/avatares circulares.
+// -----------------------------------------------------------------------------
+$radius-sm: 16px;
+$radius-md: 24px;
+$radius-lg: 32px;
+
+// Canto superior-direito do container do DS-component-card-patients (nó Figma `4041:1472`) —
+// sem binding de variável no Figma (valor literal no nó), mas coincide com `$space-40` já
+// existente na escala de spacing — exposto como token de radius reutilizável em vez de
+// hardcode (specs/ds/DS-component-card-patients/research.md §4).
+$radius-xl: 40px;
+$radius-tag: 26px; // pílula de altura fixa (tag de hospital, tag de usuário)
+$radius-pill: 400px;
+
+// Raio dos itens de navegação do DS-component-menu (nó Figma `4334:7401`,
+// `rounded-[8px]` no código de referência) — degrau abaixo de `$radius-sm` (16px),
+// que a escala ainda não tinha (research.md §2).
+$radius-xs: 8px;
+
+// -----------------------------------------------------------------------------
+// Tamanho de ícone — nasce aqui com o icon-button (DS-component-icon-button,
+// research.md §6), primeiro componente a tokenizar isso; sem estilo Figma
+// nomeado para generalizar, então os 2 tamanhos observados (32px/16px) bastam
+// por ora.
+// -----------------------------------------------------------------------------
+$icon-size-lg: 32px;
+$icon-size-sm: 16px;
+
+// Glifo interno de `type="icon"` do badge (DS-component-badge, research.md §5) — 12px
+// medido via `get_metadata` do nó Figma `2188:4990`, não corresponde a nenhum dos 2
+// tamanhos acima.
+$icon-size-xs: 12px;
+
+// -----------------------------------------------------------------------------
+// Empilhamento — escala mínima de 3 degraus, criada com o DS-component-bottom-nav-bar
+// (research.md §3), primeiro elemento `position: fixed` do produto. Antes disso o
+// projeto só tinha números soltos (`page-container` usava `z-index: 1` literal).
+//
+// A regra por trás dos valores: a barra inferior fica SEMPRE abaixo de qualquer
+// overlay — um botão clicável flutuando sobre um diálogo modal quebra o focus trap
+// (spec.md § Clarifications, 2026-07-26). Os degraus são bem espaçados para caber
+// camadas intermediárias sem renumerar nada.
+//
+// Fora desta escala continuam valores locais ao próprio contexto de empilhamento e
+// que não competem com a barra: o `-1` do background-mesh e o `0` do
+// `.page-background`.
+// -----------------------------------------------------------------------------
+$z-index-content: 1;
+$z-index-bottom-nav: 10;
+$z-index-overlay: 100;
+
+// -----------------------------------------------------------------------------
+// Altura ocupada pela barra de navegação inferior (DS-component-bottom-nav-bar).
+// 104px = $space-16 (topo) + 48px (icon-button) + $space-40 (base), medidos no nó
+// Figma `2265:1390`.
+//
+// Existe como token GLOBAL, e não como custom property publicada pelo `:host` da
+// barra, porque quem precisa dela é o `page-container` — irmão da barra, não
+// descendente, que nunca enxergaria uma property declarada no host dela
+// (research.md §4). A alternativa (medir com ResizeObserver e escrever no :root)
+// acoplaria layout a JS e criaria salto no primeiro frame.
+// -----------------------------------------------------------------------------
+$bottom-nav-bar-height: 104px;
+
+// Largura máxima da coluna de conteúdo no breakpoint-sm (tablet). Nasceu literal
+// no `page-container`; virou token quando a `bottom-nav-bar` passou a ter que
+// acompanhar exatamente a mesma largura (spec.md § Clarifications, 2026-07-26) —
+// dois arquivos que precisam ficar em sincronia por definição não podem repetir
+// o número.
+$content-max-width: 640px;
+
+// Effect Style do Figma "elvation-bottomsheet" (`Effect(DROP_SHADOW, color: #00446614,
+// offset: (0,-4), radius: 24, spread: 0)`), nomeado pelo estilo, não pelo componente
+// que o usa primeiro (DS-component-menu, research.md §3 — nenhum componente já
+// implementado consumia esse efeito: `DS-component-bottom-sheet` usa `<dialog>` com
+// `::backdrop`, sem `box-shadow` próprio). `#00446614` é `$color-primary` com alfa
+// ~0.08 — derivado via `rgba()` em vez de hex cru, mesmo padrão de `$color-scrim`.
+$shadow-elevation-bottomsheet: 0 -4px 24px rgba($color-primary, 0.08);
+
+// -----------------------------------------------------------------------------
+// 2. Semântico — o que os componentes consomem. Ver nota no topo do arquivo:
+// trocar de tema = sobrescrever só este bloco (ou o bloco dark abaixo).
+// -----------------------------------------------------------------------------
+:root {
+  --color-primary: #{$color-primary};
+  --color-secondary: #{$color-secondary};
+  --color-tertiary: #{$color-tertiary};
+  --color-content-1: #{$color-content-1};
+  --color-content-2: #{$color-content-2};
+  --color-content-3: #{$color-content-3};
+  --color-content-4: #{$color-content-4};
+  --color-content-5: #{$color-content-5};
+  --color-content-6: #{$color-content-6};
+  --color-state-disabled: #{$color-state-disabled};
+  --color-state-disabled-2: #{$color-state-disabled-2};
+  --color-border: #{$color-border};
+  --color-border-2: #{$color-border-2};
+  --color-focus-ring: #{$color-focus-ring};
+  --focus-ring-width: #{$focus-ring-width};
+  --focus-ring-offset: #{$focus-ring-offset};
+  --color-input-focus-ring: #{$color-input-focus-ring};
+  --color-surface: #{$color-surface};
+  --color-surface-2: #{$color-surface-2};
+  --color-surface-glass-1: #{$color-surface-glass-1};
+  --color-surface-glass-2: #{$color-surface-glass-2};
+  --color-scrim: #{$color-scrim};
+  --color-comm-info: #{$color-comm-info};
+  --color-comm-alert: #{$color-comm-alert};
+  --color-comm-success: #{$color-comm-success};
+  --color-comm-warning: #{$color-comm-warning};
+  --color-comm-focus: #{$color-comm-focus};
+  --color-logo-1: #{$color-logo-1};
+  --color-logo-2: #{$color-logo-2};
+  --color-logo-3: #{$color-logo-3};
+  --color-logo-4: #{$color-logo-4};
+  --color-decorative-forest: #{$color-decorative-forest};
+  --font-family-base: #{$font-family-base};
+
+  // Compatibilidade com código existente que ainda referencia os nomes
+  // antigos (heading/body) — ambos apontam para a mesma família única agora.
+  --font-family-heading: #{$font-family-base};
+  --font-family-body: #{$font-family-base};
+  --font-family-interactive: #{$font-family-interactive};
+  --font-family-chat: #{$font-family-chat};
+  --font-size-interactive: #{$font-size-interactive};
+  --font-size-label: #{$font-size-label};
+  --font-size-title: #{$font-size-title};
+  --font-size-subsection: #{$font-size-subsection};
+  --space-0: #{$space-0};
+  --space-4: #{$space-4};
+  --space-8: #{$space-8};
+  --space-12: #{$space-12};
+  --space-16: #{$space-16};
+  --space-24: #{$space-24};
+  --space-32: #{$space-32};
+  --space-40: #{$space-40};
+  --space-48: #{$space-48};
+  --space-56: #{$space-56};
+  --space-64: #{$space-64};
+  --space-72: #{$space-72};
+  --space-80: #{$space-80};
+  --space-120: #{$space-120};
+  --space-280: #{$space-280};
+  --radius-sm: #{$radius-sm};
+  --radius-md: #{$radius-md};
+  --radius-lg: #{$radius-lg};
+  --radius-xl: #{$radius-xl};
+  --radius-tag: #{$radius-tag};
+  --radius-pill: #{$radius-pill};
+  --radius-xs: #{$radius-xs};
+  --icon-size-lg: #{$icon-size-lg};
+  --icon-size-sm: #{$icon-size-sm};
+  --icon-size-xs: #{$icon-size-xs};
+  --z-index-content: #{$z-index-content};
+  --z-index-bottom-nav: #{$z-index-bottom-nav};
+  --z-index-overlay: #{$z-index-overlay};
+
+  // Inclui a área segura do aparelho (indicador de home do iOS) para que o
+  // consumidor reserve o espaço REAL ocupado, não só os 104px do desenho.
+  --bottom-nav-bar-height: calc(
+    #{$bottom-nav-bar-height} + env(safe-area-inset-bottom, 0px)
+  );
+  --shadow-elevation-bottomsheet: #{$shadow-elevation-bottomsheet};
+}
+
+// Estrutura pronta para o tema escuro (ainda não especificado no Figma) —
+// mesma lista de propriedades de :root, valores a preencher quando existir
+// spec de dark mode. Nenhum componente precisa mudar quando isso acontecer.
+:root[data-theme='dark'] {
+  // --color-surface: TODO;
+  // --color-surface-2: TODO;
+  // --color-content-1: TODO;
+  // ...
+}

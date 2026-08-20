@@ -48,6 +48,11 @@ export default defineConfig(
       importPlugin.flatConfigs.typescript,
       sonarjs.configs.recommended,
       ...ngrx.configs.allTypeChecked,
+      // `@smarttools/eslint-plugin-rxjs` é o fork MANTIDO do antigo
+      // `eslint-plugin-rxjs` (cartant, último release em 03/2023, peer
+      // `eslint: ^8`): já vem em flat config e usa `@typescript-eslint/utils@^8`,
+      // a mesma major do `typescript-eslint` deste projeto — por isso as regras
+      // tipadas funcionam sem workaround (Princípio XI).
       rxjs.configs.recommended,
       ...tseslint.configs.strict,
       ...tseslint.configs.stylistic,
@@ -156,7 +161,11 @@ export default defineConfig(
         'error',
         { blankLine: 'always', next: 'return', prev: '*' },
         { blankLine: 'always', next: '*', prev: ['const', 'let', 'var'] },
-        { blankLine: 'any', next: ['const', 'let', 'var'], prev: ['const', 'let', 'var'] },
+        {
+          blankLine: 'any',
+          next: ['const', 'let', 'var'],
+          prev: ['const', 'let', 'var'],
+        },
       ],
     },
   },
@@ -173,7 +182,12 @@ export default defineConfig(
       'jasmine/named-spy': 2,
       'jasmine/no-assign-spyon': 2,
       'jasmine/prefer-toBeUndefined': 2,
-      'jasmine/missing-expect': [2, 'expectObservable()', 'expect()', 'expectAsync()'],
+      'jasmine/missing-expect': [
+        2,
+        'expectObservable()',
+        'expect()',
+        'expectAsync()',
+      ],
       'jasmine/no-disabled-tests': 2,
       'jasmine/no-spec-dupes': [2, 'branch'],
       'jasmine/no-suite-dupes': [2, 'branch'],
@@ -199,7 +213,14 @@ export default defineConfig(
   // --- Templates HTML ---
   {
     files: ['**/*.html'],
-    extends: [...angular.configs.templateRecommended],
+    extends: [
+      ...angular.configs.templateRecommended,
+      // Acessibilidade é critério de aceite (Princípio X): `templateRecommended`
+      // NÃO inclui as regras de a11y — elas vivem só em `templateAccessibility`.
+      // Sem este bloco, campo sem nome acessível, clique sem handler de teclado e
+      // `alt` ausente passam batido no lint.
+      ...angular.configs.templateAccessibility,
+    ],
     rules: {
       '@angular-eslint/template/prefer-self-closing-tags': 'error',
       '@angular-eslint/template/prefer-control-flow': 'error',

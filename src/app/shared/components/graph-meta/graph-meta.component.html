@@ -1,0 +1,51 @@
+<svg
+  role="img"
+  [attr.width]="diameter()"
+  [attr.height]="viewBoxHeight()"
+  [attr.viewBox]="'0 0 ' + diameter() + ' ' + viewBoxHeight()"
+  [attr.aria-label]="ariaLabel()"
+>
+  <circle
+    fill="none"
+    stroke="var(--color-border)"
+    [attr.cx]="center()"
+    [attr.cy]="cy()"
+    [attr.r]="outerRadius()"
+    [attr.stroke-width]="strokeWidth()"
+    [attr.stroke-dasharray]="outerTrackDasharray()"
+    [attr.transform]="rotation()"
+  />
+  <circle
+    class="progress"
+    fill="none"
+    [attr.cx]="center()"
+    [attr.cy]="cy()"
+    [attr.r]="outerRadius()"
+    [attr.stroke-width]="strokeWidth()"
+    [attr.stroke]="outerColor()"
+    [attr.stroke-dasharray]="outerProgressDasharray()"
+    [attr.transform]="rotation()"
+  />
+
+  <circle
+    fill="none"
+    stroke="var(--color-border)"
+    [attr.cx]="center()"
+    [attr.cy]="cy()"
+    [attr.r]="innerRadius()"
+    [attr.stroke-width]="strokeWidth()"
+    [attr.stroke-dasharray]="innerTrackDasharray()"
+    [attr.transform]="rotation()"
+  />
+  <circle
+    class="progress"
+    fill="none"
+    [attr.cx]="center()"
+    [attr.cy]="cy()"
+    [attr.r]="innerRadius()"
+    [attr.stroke-width]="strokeWidth()"
+    [attr.stroke]="innerColor()"
+    [attr.stroke-dasharray]="innerProgressDasharray()"
+    [attr.transform]="rotation()"
+  />
+</svg>

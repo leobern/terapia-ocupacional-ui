@@ -1,0 +1,1181 @@
+<main class="gallery">
+  <app-background-mesh />
+
+  <h1 class="gallery__title">Design System — Preview de componentes</h1>
+  <p class="gallery__note">
+    Página de desenvolvimento, fora do produto — usada para testar visualmente e
+    por teclado os componentes do design system antes de uma feature
+    consumi-los.
+  </p>
+
+  <section class="gallery__section">
+    <h2>Button — DS-component-button</h2>
+
+    <h3>Habilitado</h3>
+    <div class="gallery__grid">
+      <app-button kind="primary" appearance="solid" label="Primary Solid" />
+      <app-button
+        kind="primary"
+        appearance="outlined"
+        label="Primary Outlined"
+      />
+      <app-button kind="secondary" appearance="solid" label="Secondary Solid" />
+      <app-button
+        kind="secondary"
+        appearance="outlined"
+        label="Secondary Outlined"
+      />
+      <app-button kind="tertiary" appearance="solid" label="Tertiary Solid" />
+      <app-button
+        kind="tertiary"
+        appearance="outlined"
+        label="Tertiary Outlined"
+      />
+    </div>
+
+    <h3>Desabilitado (aparência única, independente de kind/appearance)</h3>
+    <div class="gallery__grid">
+      <app-button
+        kind="primary"
+        appearance="solid"
+        label="Disabled Solid"
+        [disabled]="true"
+      />
+      <app-button
+        kind="tertiary"
+        appearance="outlined"
+        label="Disabled Outlined"
+        [disabled]="true"
+      />
+    </div>
+
+    <h3>Com ícones opcionais</h3>
+    <div class="gallery__grid">
+      <app-button
+        kind="primary"
+        appearance="solid"
+        iconLeft="check-circle"
+        label="Ícone à esquerda"
+      />
+      <app-button
+        kind="primary"
+        appearance="solid"
+        iconRight="pencil-simple"
+        label="Ícone à direita"
+      />
+      <app-button
+        kind="primary"
+        appearance="solid"
+        iconLeft="check-circle"
+        iconRight="pencil-simple"
+        label="Os dois ícones"
+      />
+    </div>
+
+    <h3>Truncamento e fullWidth</h3>
+    <div class="gallery__stack">
+      <div class="gallery__narrow">
+        <app-button
+          kind="primary"
+          appearance="solid"
+          label="Um label bem mais longo do que o espaço disponível"
+        />
+      </div>
+      <app-button
+        kind="primary"
+        appearance="solid"
+        label="Ocupa 100% do container"
+        [fullWidth]="true"
+      />
+    </div>
+
+    <h3>Navegação por teclado</h3>
+    <p class="gallery__hint">
+      Use Tab para navegar entre os botões abaixo e veja o anel de foco (2px,
+      <code>comm-focus</code>, 4px de distância). Passe o mouse pra ver o hover
+      (escurece + levanta) e clique pra ver o active (escurece mais + afunda).
+    </p>
+    <div class="gallery__grid">
+      <app-button kind="primary" appearance="solid" label="Foco 1" />
+      <app-button kind="secondary" appearance="outlined" label="Foco 2" />
+      <app-button kind="tertiary" appearance="solid" label="Foco 3" />
+    </div>
+  </section>
+
+  <section class="gallery__section">
+    <h2>IconButton — DS-component-icon-button</h2>
+
+    <h3>Habilitado — size="default" (48×48px)</h3>
+    <div class="gallery__grid">
+      <app-icon-button
+        kind="primary"
+        appearance="solid"
+        icon="arrow-left"
+        ariaLabel="Voltar"
+      />
+      <app-icon-button
+        kind="primary"
+        appearance="outlined"
+        icon="arrow-left"
+        ariaLabel="Voltar"
+      />
+      <app-icon-button
+        kind="primary"
+        appearance="icon"
+        icon="arrow-left"
+        ariaLabel="Voltar"
+      />
+      <app-icon-button
+        kind="secondary"
+        appearance="solid"
+        icon="arrow-left"
+        ariaLabel="Voltar"
+      />
+      <app-icon-button
+        kind="secondary"
+        appearance="outlined"
+        icon="arrow-left"
+        ariaLabel="Voltar"
+      />
+      <app-icon-button
+        kind="secondary"
+        appearance="icon"
+        icon="arrow-left"
+        ariaLabel="Voltar"
+      />
+      <app-icon-button
+        kind="tertiary"
+        appearance="solid"
+        icon="arrow-left"
+        ariaLabel="Voltar"
+      />
+      <app-icon-button
+        kind="tertiary"
+        appearance="outlined"
+        icon="arrow-left"
+        ariaLabel="Voltar"
+      />
+      <app-icon-button
+        kind="tertiary"
+        appearance="icon"
+        icon="arrow-left"
+        ariaLabel="Voltar"
+      />
+    </div>
+
+    <h3>Habilitado — size="small" (32×32px)</h3>
+    <div class="gallery__grid">
+      <app-icon-button
+        kind="primary"
+        appearance="solid"
+        size="small"
+        icon="arrow-left"
+        ariaLabel="Voltar"
+      />
+      <app-icon-button
+        kind="primary"
+        appearance="outlined"
+        size="small"
+        icon="arrow-left"
+        ariaLabel="Voltar"
+      />
+      <app-icon-button
+        kind="primary"
+        appearance="icon"
+        size="small"
+        icon="arrow-left"
+        ariaLabel="Voltar"
+      />
+      <app-icon-button
+        kind="secondary"
+        appearance="solid"
+        size="small"
+        icon="arrow-left"
+        ariaLabel="Voltar"
+      />
+      <app-icon-button
+        kind="secondary"
+        appearance="outlined"
+        size="small"
+        icon="arrow-left"
+        ariaLabel="Voltar"
+      />
+      <app-icon-button
+        kind="secondary"
+        appearance="icon"
+        size="small"
+        icon="arrow-left"
+        ariaLabel="Voltar"
+      />
+      <app-icon-button
+        kind="tertiary"
+        appearance="solid"
+        size="small"
+        icon="arrow-left"
+        ariaLabel="Voltar"
+      />
+      <app-icon-button
+        kind="tertiary"
+        appearance="outlined"
+        size="small"
+        icon="arrow-left"
+        ariaLabel="Voltar"
+      />
+      <app-icon-button
+        kind="tertiary"
+        appearance="icon"
+        size="small"
+        icon="arrow-left"
+        ariaLabel="Voltar"
+      />
+    </div>
+
+    <h3>
+      Desabilitado (aparência única, independente de kind/appearance/size)
+    </h3>
+    <div class="gallery__grid">
+      <app-icon-button
+        kind="primary"
+        appearance="solid"
+        icon="arrow-left"
+        ariaLabel="Voltar"
+        [disabled]="true"
+      />
+      <app-icon-button
+        kind="tertiary"
+        appearance="solid"
+        size="small"
+        icon="arrow-left"
+        ariaLabel="Voltar"
+        [disabled]="true"
+      />
+    </div>
+
+    <h3>Qualquer ícone Phosphor (icon é livre, não fixo no componente)</h3>
+    <div class="gallery__grid">
+      <app-icon-button
+        kind="primary"
+        appearance="solid"
+        icon="x"
+        ariaLabel="Fechar"
+      />
+      <app-icon-button
+        kind="secondary"
+        appearance="outlined"
+        icon="pencil-simple"
+        ariaLabel="Editar"
+      />
+      <app-icon-button
+        kind="tertiary"
+        appearance="icon"
+        icon="trash"
+        ariaLabel="Excluir"
+      />
+    </div>
+
+    <h3>Navegação por teclado</h3>
+    <p class="gallery__hint">
+      Use Tab para navegar entre os botões abaixo e veja o mesmo anel de foco do
+      Button (2px, <code>comm-focus</code>, 4px de distância). Passe o mouse pra
+      ver o hover (levanta) e clique pra ver o active (escurece + afunda).
+    </p>
+    <div class="gallery__grid">
+      <app-icon-button
+        kind="primary"
+        appearance="solid"
+        icon="arrow-left"
+        ariaLabel="Foco 1"
+      />
+      <app-icon-button
+        kind="secondary"
+        appearance="outlined"
+        icon="arrow-left"
+        ariaLabel="Foco 2"
+      />
+      <app-icon-button
+        kind="tertiary"
+        appearance="icon"
+        icon="arrow-left"
+        ariaLabel="Foco 3"
+      />
+    </div>
+  </section>
+
+  <section class="gallery__section">
+    <h2>Badge — DS-component-badge</h2>
+
+    <h3>type="numeral" — formatação (1 dígito, 3 dígitos, estouro "+999")</h3>
+    <div class="gallery__grid">
+      <app-badge type="numeral" [value]="1" />
+      <app-badge type="numeral" [value]="42" />
+      <app-badge type="numeral" [value]="999" />
+      <app-badge type="numeral" [value]="1000" />
+      <app-badge type="numeral" [value]="9999" />
+    </div>
+
+    <h3>type="icon" — qualquer ícone, qualquer cor de fundo/ícone</h3>
+    <div class="gallery__grid">
+      <app-badge type="icon" icon="check" />
+      <app-badge
+        type="icon"
+        icon="x"
+        backgroundColor="var(--color-comm-alert)"
+        iconColor="var(--color-content-6)"
+      />
+      <app-badge
+        type="icon"
+        icon="star"
+        backgroundColor="var(--color-comm-warning)"
+        iconColor="var(--color-content-1)"
+      />
+    </div>
+
+    <h3>type="color" — indicador simples, qualquer cor</h3>
+    <div class="gallery__grid">
+      <app-badge type="color" />
+      <app-badge type="color" color="var(--color-comm-success)" />
+      <app-badge type="color" color="var(--color-secondary)" />
+    </div>
+
+    <h3>Composição — badge flutuando sobre um icon-button (uso pretendido)</h3>
+    <p class="gallery__hint">
+      O badge não define sua própria ancoragem — o wrapper abaixo (<code
+        >position: relative</code
+      >
+      + <code>position: absolute</code> no badge) é responsabilidade do
+      consumidor, exatamente como documentado em spec.md § Diretrizes de Uso.
+    </p>
+    <div class="gallery__grid">
+      <span style="position: relative; display: inline-block">
+        <app-icon-button icon="bell" ariaLabel="Notificações" />
+        <app-badge
+          type="numeral"
+          style="position: absolute; top: -4px; right: -4px"
+          [value]="3"
+        />
+      </span>
+    </div>
+  </section>
+
+  <section class="gallery__section">
+    <h2>Avatar — DS-component-avatar</h2>
+
+    <h3>type="photo" — 3 tamanhos, sem iniciais</h3>
+    <div class="gallery__grid">
+      <app-avatar
+        size="small"
+        type="photo"
+        imageUrl="https://picsum.photos/id/64/200"
+      />
+      <app-avatar
+        size="default"
+        type="photo"
+        imageUrl="https://picsum.photos/id/64/200"
+      />
+      <app-avatar
+        size="big"
+        type="photo"
+        imageUrl="https://picsum.photos/id/64/200"
+      />
+    </div>
+
+    <h3>type="user" — fundo var(--color-tertiary), iniciais</h3>
+    <div class="gallery__grid">
+      <app-avatar size="small" type="user" name="Julia Nogueira" />
+      <app-avatar size="default" type="user" name="Julia Nogueira" />
+      <app-avatar size="big" type="user" name="Julia Nogueira" />
+    </div>
+
+    <h3>type="patient" — fundo var(--color-state-disabled), iniciais</h3>
+    <div class="gallery__grid">
+      <app-avatar size="small" type="patient" name="Julia Nogueira" />
+      <app-avatar size="default" type="patient" name="Julia Nogueira" />
+      <app-avatar size="big" type="patient" name="Julia Nogueira" />
+    </div>
+
+    <h3>Regra de iniciais — nome único, vazio/erro, múltiplos sobrenomes</h3>
+    <div class="gallery__grid">
+      <app-avatar type="user" name="Julia" />
+      <app-avatar type="user" [name]="null" />
+      <app-avatar type="user" name="Ana Paula da Silva Nogueira" />
+    </div>
+
+    <h3>Badge de edição — presente em "default"/"big", ausente em "small"</h3>
+    <p class="gallery__hint">
+      <code>editable="true"</code> nunca exibe o badge em
+      <code>size="small"</code> — regra do próprio componente (FR-007), não uma
+      opção do consumidor.
+    </p>
+    <div class="gallery__grid">
+      <app-avatar
+        size="small"
+        type="user"
+        name="Julia Nogueira"
+        [editable]="true"
+      />
+      <app-avatar
+        size="default"
+        type="user"
+        name="Julia Nogueira"
+        [editable]="true"
+      />
+      <app-avatar
+        size="big"
+        type="user"
+        name="Julia Nogueira"
+        [editable]="true"
+      />
+    </div>
+  </section>
+
+  <section class="gallery__section">
+    <h2>Input/Select — DS-component-input-select</h2>
+
+    <h3>variant="text" — Default / Filled</h3>
+    <p class="gallery__hint">
+      Todas as instâncias abaixo são interativas (dois-vias com um signal da
+      galeria) — digite, apague, clique no clear, tudo deve refletir de verdade,
+      não é só um mock estático.
+    </p>
+    <div class="gallery__stack">
+      <app-input-select
+        iconLeft="envelope-simple"
+        placeholder="Insira seu e-mail"
+      />
+      <app-input-select
+        iconLeft="envelope-simple"
+        placeholder="Insira seu e-mail"
+        [value]="demoTextFilledValue()"
+        (valueChange)="demoTextFilledValue.set($event)"
+      />
+    </div>
+
+    <h3>variant="select" — chevron sempre presente, Default / Filled</h3>
+    <div class="gallery__stack">
+      <app-input-select
+        variant="select"
+        iconLeft="file-text"
+        placeholder="Selecione o hospital"
+      />
+      <app-input-select
+        variant="select"
+        iconLeft="file-text"
+        placeholder="Selecione o hospital"
+        [value]="demoSelectFilledValue()"
+        (valueChange)="demoSelectFilledValue.set($event)"
+      />
+    </div>
+
+    <h3>Truncamento com reticências</h3>
+    <div class="gallery__narrow">
+      <app-input-select
+        iconLeft="envelope-simple"
+        placeholder="Insira seu e-mail"
+        [value]="demoTruncatedValue()"
+        (valueChange)="demoTruncatedValue.set($event)"
+      />
+    </div>
+
+    <h3>Desabilitado</h3>
+    <div class="gallery__stack">
+      <app-input-select
+        iconLeft="envelope-simple"
+        placeholder="Campo bloqueado"
+        [value]="demoSelectFocusValue()"
+        [disabled]="true"
+        (valueChange)="demoSelectFocusValue.set($event)"
+        (selectTrigger)="
+          demoSelectFocusValue.set('Hospital Demo (clique simulou selecionar)')
+        "
+      />
+    </div>
+
+    <h3>
+      Navegação por teclado (foco, box-shadow + anel rosa, ícone de limpar)
+    </h3>
+    <p class="gallery__hint">
+      Clique nos campos abaixo: a borda escura + <code>box-shadow</code>
+      translúcido aparecem (qualquer método de foco), mas o anel rosa
+      (<code>comm-focus</code>) NÃO aparece — só teclado mostra o rosa. Use Tab
+      para navegar entre eles e comparar. No segundo campo (e no terceiro, após
+      "selecionar"), digite/apague para ver o clear (X) — só aparece com foco +
+      valor preenchido.
+    </p>
+    <div class="gallery__stack">
+      <app-input-select iconLeft="envelope-simple" placeholder="Foco vazio" />
+      <app-input-select
+        iconLeft="envelope-simple"
+        placeholder="Insira seu e-mail"
+        [value]="demoEmailFocusValue()"
+        (valueChange)="demoEmailFocusValue.set($event)"
+      />
+      <app-input-select
+        variant="select"
+        iconLeft="file-text"
+        placeholder="Foco — select"
+      />
+    </div>
+  </section>
+
+  <section class="gallery__section">
+    <h2>Graph Meta — DS-component-graph-meta</h2>
+    <p class="gallery__hint">
+      Comparar cada combinação abaixo via <code>get_screenshot</code> contra a
+      variante Figma equivalente (quickstart.md § Validação 2) — arco externo
+      (topo) e interno (base) resolvem cor de forma totalmente independente.
+    </p>
+
+    <h3>
+      size="default" — as 5 faixas de cor
+      (State=0%/&lt;10%/&lt;50%/&gt;50%/100%)
+    </h3>
+    <div class="gallery__grid">
+      <app-graph-meta
+        ariaLabel="0%, 0%"
+        [topPercentage]="0"
+        [bottomPercentage]="0"
+      />
+      <app-graph-meta
+        ariaLabel="5%, 0%"
+        [topPercentage]="5"
+        [bottomPercentage]="0"
+      />
+      <app-graph-meta
+        ariaLabel="35%, 0%"
+        [topPercentage]="35"
+        [bottomPercentage]="0"
+      />
+      <app-graph-meta
+        ariaLabel="81%, 65%"
+        [topPercentage]="81"
+        [bottomPercentage]="65"
+      />
+      <app-graph-meta
+        ariaLabel="100%, 100%"
+        [topPercentage]="100"
+        [bottomPercentage]="100"
+      />
+    </div>
+
+    <h3>size="small" — mesmas 5 faixas</h3>
+    <div class="gallery__grid">
+      <app-graph-meta
+        size="small"
+        ariaLabel="0%, 0%"
+        [topPercentage]="0"
+        [bottomPercentage]="0"
+      />
+      <app-graph-meta
+        size="small"
+        ariaLabel="5%, 0%"
+        [topPercentage]="5"
+        [bottomPercentage]="0"
+      />
+      <app-graph-meta
+        size="small"
+        ariaLabel="35%, 0%"
+        [topPercentage]="35"
+        [bottomPercentage]="0"
+      />
+      <app-graph-meta
+        size="small"
+        ariaLabel="81%, 65%"
+        [topPercentage]="81"
+        [bottomPercentage]="65"
+      />
+      <app-graph-meta
+        size="small"
+        ariaLabel="100%, 100%"
+        [topPercentage]="100"
+        [bottomPercentage]="100"
+      />
+    </div>
+
+    <h3>
+      Independência entre os dois arcos (combinação livre, fora das 5 variantes
+      Figma)
+    </h3>
+    <div class="gallery__grid">
+      <app-graph-meta
+        ariaLabel="topo 81% verde, base 35% amarelo"
+        [topPercentage]="81"
+        [bottomPercentage]="35"
+      />
+      <app-graph-meta
+        ariaLabel="topo 5% vermelho, base 90% azul"
+        [topPercentage]="5"
+        [bottomPercentage]="90"
+      />
+      <app-graph-meta
+        ariaLabel="topo 0% disabled, base 100% azul"
+        [topPercentage]="0"
+        [bottomPercentage]="100"
+      />
+    </div>
+  </section>
+
+  <section class="gallery__section">
+    <h2>Card Patients — DS-component-card-patients</h2>
+    <p class="gallery__hint">
+      Comparar cada estado abaixo via <code>get_screenshot</code> contra o nó
+      Figma (quickstart.md § Validação 2) — default: nó <code>4041:1472</code>;
+      zerado: nó <code>4310:8272</code> (consultado, não encontrado no Figma —
+      spec.md § Fidelidade ao Design System). O graph-meta sempre exibe a média
+      (mesmo com <code>patientCount = 0</code> — é a média dos pacientes já
+      atendidos, não zera junto com o contador). Clique em qualquer ponto do
+      card (não só no ícone) — área de toque estendida; o texto abaixo do grid
+      mostra o último <code>cardClick</code>
+      disparado (o card zerado não deve atualizar, CTA desabilitado).
+    </p>
+    <div class="gallery__grid">
+      <app-card-patients
+        actionAriaLabel="Ver listagem de pacientes"
+        [patientCount]="10"
+        [averageCaloricPercentage]="62"
+        [averageProteinPercentage]="48"
+        (cardClick)="onCardPatientsClick('default')"
+      />
+      <app-card-patients
+        actionAriaLabel="Ver listagem de pacientes"
+        [patientCount]="0"
+        [averageCaloricPercentage]="81"
+        [averageProteinPercentage]="74"
+        (cardClick)="onCardPatientsClick('zerado')"
+      />
+    </div>
+    <p class="gallery__hint">Último clique: {{ cardPatientsLastClick() }}</p>
+  </section>
+
+  <section class="gallery__section">
+    <h2>Card Notify — DS-component-card-notify</h2>
+    <p class="gallery__hint">
+      Comparar cada variante abaixo via <code>get_screenshot</code> contra o nó
+      Figma <code>4041:1490</code> (quickstart.md § Validação 2) — único estado
+      definido no Figma de origem. A segunda instância varia
+      <code>authorPhotoUrl</code> (avatar com foto) e uma descrição mais longa,
+      para validar o truncamento em 2 linhas. Clique em qualquer ponto do card
+      (não só no ícone) — área de toque estendida; o texto abaixo do grid mostra
+      o último <code>cardClick</code> disparado (a instância com
+      <code>actionDisabled</code> não deve atualizar).
+    </p>
+    <div class="gallery__grid">
+      <app-card-notify
+        authorName="Jairo Nepomuceno"
+        authorSpecialty="Enfermeiro"
+        description="Suspendemos a formula XYZ do paciente Renato Lemos Santos"
+        time="19:27"
+        actionAriaLabel="Ver detalhes da notificação"
+        (cardClick)="onCardNotifyClick('default')"
+      />
+      <app-card-notify
+        authorName="Michelle Franklin"
+        authorSpecialty="Nutricionista"
+        authorPhotoUrl="https://i.pravatar.cc/112?img=47"
+        description="Paciente relatou desconforto abdominal após a última refeição registrada no plano alimentar"
+        time="Ontem"
+        actionAriaLabel="Ver detalhes da notificação"
+        [actionDisabled]="true"
+        (cardClick)="onCardNotifyClick('actionDisabled')"
+      />
+    </div>
+    <p class="gallery__hint">Último clique: {{ cardNotifyLastClick() }}</p>
+
+    <p class="gallery__hint">
+      Variantes <code>detail</code>/<code>answer-open</code>/<code
+        >answering</code
+      >
+      (2026-08-17, specs/004-notificacoes) — comparar contra os nós Figma
+      <code>4495:9319</code>, <code>4495:9564</code> e <code>4495:10551</code>.
+    </p>
+    <div class="gallery__grid">
+      <app-card-notify
+        type="detail"
+        authorName="Jairo Nepomuceno"
+        authorSpecialty="Enfermeiro"
+        patientName="José da Silva"
+        description="Identificada exteriorização acidental da SNE."
+        time="19:27"
+        actionAriaLabel="Responder"
+        (answerClick)="onCardNotifyClick('detail/answerClick')"
+      />
+      <app-card-notify
+        type="detail"
+        authorName="Filippa Martins"
+        authorSpecialty="Nutricionista"
+        patientName="Samuel Lima Rocha"
+        description="Paciente em uso de GTT, internado devido à erisipela. Aguarda início de TNE"
+        time="20:27"
+        actionAriaLabel="Responder"
+        [replies]="[
+          {
+            authorName: 'Renata Martins Silva',
+            authorSpecialty: 'Nutricionista',
+            authorPhotoUrl: null,
+            text: 'Alinhado com a equipe.',
+            time: '20:40',
+          },
+        ]"
+        (viewRepliesClick)="onCardNotifyClick('detail/viewRepliesClick')"
+      />
+      <app-card-notify
+        type="answer-open"
+        authorName="Jairo Nepomuceno"
+        authorSpecialty="Enfermeiro"
+        patientName="José da Silva"
+        description="Suspendemos a formula XYZ do paciente Renato Lemos Santos"
+        time="19:27"
+        actionAriaLabel="Responder"
+        [replies]="[
+          {
+            authorName: 'Dra. Michelle Franklin',
+            authorSpecialty: 'Nutróloga',
+            authorPhotoUrl: 'https://i.pravatar.cc/112?img=47',
+            text: 'Alinhado com a equipe manter VO exclusivo por hora',
+            time: '20:27',
+          },
+          {
+            authorName: 'Renata Martins Silva',
+            authorSpecialty: 'Nutricionista',
+            authorPhotoUrl: null,
+            text: 'Paciente em uso de GTT, internado devido à erisipela. Aguarda início de TNE',
+            time: '9:13',
+          },
+        ]"
+        (collapseClick)="onCardNotifyClick('answer-open/collapseClick')"
+      />
+      <app-card-notify
+        type="answering"
+        authorName="Jairo Nepomuceno"
+        authorSpecialty="Enfermeiro"
+        patientName="José da Silva"
+        description="Suspendemos a formula XYZ do paciente Renato Lemos Santos"
+        time="19:27"
+        actionAriaLabel="Responder"
+        draftAuthorName="Michelle Franklin"
+        draftAuthorSpecialty="Nutróloga"
+        draftText="Alinhado com a equipe, seguimos com a suspensão."
+      />
+    </div>
+  </section>
+
+  <section class="gallery__section">
+    <h2>Tag — DS-component-tag</h2>
+
+    <h3>type="user" — nome curto e nome longo (truncamento), com/sem ícone</h3>
+    <div class="gallery__stack">
+      <app-tag
+        type="user"
+        label="Dra. Michelle Franklin"
+        avatarSrc="https://i.pravatar.cc/64?img=47"
+      />
+      <app-tag
+        type="user"
+        label="Dr. Alexandre Bartholomeu de Vasconcelos Neto"
+        avatarSrc="https://i.pravatar.cc/64?img=12"
+      />
+      <app-tag
+        type="user"
+        label="Dra. Michelle Franklin"
+        avatarSrc="https://i.pravatar.cc/64?img=47"
+        [iconRight]="false"
+      />
+      <app-tag
+        type="user"
+        label="Dra. Michelle Franklin"
+        avatarSrc="https://i.pravatar.cc/64?img=47"
+        iconRightName="check"
+        iconRightColor="var(--color-comm-success)"
+      />
+    </div>
+
+    <h3>
+      type="default" — nome curto e nome longo (max-width 280px), cor livre
+    </h3>
+    <div class="gallery__stack">
+      <app-tag type="default" label="Hospital Vila Nova Star" />
+      <app-tag
+        type="default"
+        label="Hospital Universitário Professor Doutor Vila Nova Star da Silva"
+      />
+      <app-tag
+        type="default"
+        label="Ala Pediátrica"
+        iconLeftName="building"
+        backgroundColor="var(--color-secondary)"
+      />
+      <app-tag
+        type="default"
+        label="Sem ícones"
+        [iconLeft]="false"
+        [iconRight]="false"
+      />
+    </div>
+
+    <h3>type="status" — sem ícone, cor livre</h3>
+    <div class="gallery__grid">
+      <app-tag type="status" label="Ideal" />
+      <app-tag
+        type="status"
+        label="Atenção"
+        backgroundColor="var(--color-comm-warning)"
+      />
+      <app-tag
+        type="status"
+        label="Crítico"
+        backgroundColor="var(--color-comm-alert)"
+      />
+    </div>
+  </section>
+
+  <section class="gallery__section">
+    <h2>Background Mesh — DS-component-background-mesh</h2>
+    <p class="gallery__hint">
+      Comparar via <code>get_screenshot</code> contra os nós Figma mobile
+      (<code>4360:7158</code>/<code>4360:7165</code>) e desktop
+      (<code>4366:9534</code>) (quickstart.md § Validação 2). O componente usa
+      <code>position: fixed</code> — o quadro abaixo tem
+      <code>transform: translateZ(0)</code>, que por spec do CSS cria um novo
+      containing block para elementos <code>fixed</code> descendentes,
+      confinando a pré-visualização ao quadro em vez de cobrir a página inteira
+      (a implementação real do componente continua fixa à viewport quando usada
+      sem esse wrapper). Redimensionar o quadro/navegador para conferir o
+      comportamento responsivo; emular
+      <code>prefers-reduced-motion: reduce</code> no DevTools para conferir que
+      os 3 blobs param de se mover.
+    </p>
+    <div class="gallery__background-mesh-frame">
+      <app-background-mesh />
+    </div>
+  </section>
+
+  <section class="gallery__section">
+    <h2>Input Chat — DS-component-input-chat</h2>
+    <p class="gallery__hint">
+      Campo de mensagem da assistente de IA. Digitar até passar de uma linha: o
+      campo cresce <strong>para cima</strong> e o botão permanece colado na
+      base. A partir de ~7 linhas ele trava em 160px e ganha barra de rolagem
+      <strong>dentro</strong> da borda arredondada, sem cobrir o texto. Ao
+      digitar o primeiro caractere o botão troca de face (gravar → enviar)
+      <strong>sem mudar de posição</strong>.
+    </p>
+    <div class="gallery__row gallery__row--stack">
+      <app-input-chat
+        placeholder="Escreva a sua mensagem"
+        [(value)]="chatValue"
+        (send)="onChatSend($event)"
+        (audioModeStart)="onChatAudioEvent('audioModeStart')"
+        (audioModeStop)="onChatAudioEvent('audioModeStop')"
+        (audioSend)="onChatAudioSend($event)"
+        (audioModeError)="onChatAudioEvent('audioModeError: ' + $event)"
+      />
+      <p class="gallery__hint">
+        Último evento: <code>{{ chatLastEvent() }}</code>
+      </p>
+    </div>
+    <p class="gallery__hint">
+      Instância <code>disabled</code> — toda cor MUST vir de
+      <code>state-disabled*</code>, sem vazamento parcial (Princípio VIII):
+    </p>
+    <div class="gallery__row gallery__row--stack">
+      <app-input-chat
+        placeholder="Escreva a sua mensagem"
+        [disabled]="true"
+        [(value)]="chatDisabledValue"
+      />
+    </div>
+  </section>
+
+  <section class="gallery__section">
+    <h2>Bottom Nav Bar — DS-component-bottom-nav-bar</h2>
+    <p class="gallery__hint">
+      Esta é a única entrada <strong>documental</strong> da galeria: o
+      componente já está visível no rodapé desta própria página, montado uma
+      única vez pelo shell da aplicação (<code>app.component.html</code>).
+      Instanciá-lo aqui criaria uma segunda barra fixa sobreposta à primeira, o
+      que o contrato do componente proíbe explicitamente
+      (<code>specs/ds/DS-component-bottom-nav-bar/contracts/bottom-nav-bar-api.md</code>).
+    </p>
+    <p class="gallery__hint">
+      Para conferir: comparar via <code>get_screenshot</code> contra o nó Figma
+      <code>2265:1390</code>; redimensionar o navegador nas larguras 671px (100%
+      da largura), 672px e 1199px (640px centralizada, acompanhando o
+      <code>page-container</code>) e 1200px (a barra some e o
+      <code>nav-menu</code> lateral assume). O símbolo da IA transborda 8px
+      acima da barra de propósito — nenhum ancestral pode ter
+      <code>overflow: hidden</code>. Roteiro completo em
+      <code>specs/ds/DS-component-bottom-nav-bar/quickstart.md</code>.
+    </p>
+  </section>
+
+  <section class="gallery__section">
+    <h2>Menu — DS-component-menu</h2>
+    <p class="gallery__hint">
+      Mais uma entrada <strong>documental</strong>: o menu lateral já está
+      visível à esquerda desta própria página (breakpoint <code>md</code>,
+      &gt;=1200px), montado uma única vez pelo shell da aplicação
+      (<code>app.component.html</code>). Instanciá-lo aqui criaria um segundo
+      trilho lateral, o que o contrato do componente proíbe explicitamente
+      (<code>specs/ds/DS-component-menu/contracts/menu-api.md</code>).
+    </p>
+    <p class="gallery__hint">
+      Para conferir: comparar via <code>get_screenshot</code> contra os nós
+      Figma <code>4334:7400</code> (colapsado) e <code>4334:7402</code>
+      (expandido); passar o mouse ou dar Tab a partir de fora do componente
+      expande o trilho de 80px para 280px, revelando os rótulos dos 4 itens
+      (Hospitais, Pacientes, Ações da tela, Notificações), o nome/cargo do
+      profissional e o item Sair. Roteiro completo em
+      <code>specs/ds/DS-component-menu/quickstart.md</code>.
+    </p>
+  </section>
+
+  <section class="gallery__section">
+    <h2>Accordion — DS-component-accordion</h2>
+    <p class="gallery__hint">
+      Componente de "pergunta única" reutilizável em qualquer fluxo de
+      criação/edição via bottom-sheet/drawer (primeiro consumidor:
+      <code>005-criar-notificacao</code>). Cada grupo abaixo reproduz um dos 3
+      nós Figma de origem para comparação via <code>get_screenshot</code>.
+    </p>
+
+    <h3>
+      state="collapsed-empty" — nó
+      <code>4499:12360</code>
+    </h3>
+    <div class="gallery__stack gallery__narrow">
+      <app-accordion title="Quem será notificado:" state="collapsed-empty" />
+      <app-accordion
+        title="Qual é a mensagem da notificação?"
+        state="collapsed-empty"
+      />
+      <app-accordion
+        title="Data para resolução?"
+        state="collapsed-empty"
+        emptyPlaceholder="Opcional"
+      />
+    </div>
+
+    <h3>
+      state="expanded" — nó
+      <code>4499:12525</code>
+    </h3>
+    <div class="gallery__stack gallery__narrow">
+      <app-accordion title="Quem será notificado:" state="expanded">
+        <input
+          accordionInput
+          type="text"
+          placeholder="@nome da pessoa"
+          class="accordion-demo__input"
+        />
+      </app-accordion>
+      <app-accordion title="Qual é a mensagem da notificação?" state="expanded">
+        <textarea
+          accordionInput
+          placeholder="Escreva a mensagem"
+          class="accordion-demo__input"
+        ></textarea>
+      </app-accordion>
+      <app-accordion title="Data para resolução?" state="expanded">
+        <input accordionInput type="date" class="accordion-demo__input" />
+      </app-accordion>
+    </div>
+
+    <h3>
+      state="collapsed-filled" — nó
+      <code>4500:12713</code>
+      (os 3 <code>viewType</code>s)
+    </h3>
+    <div class="gallery__stack gallery__narrow">
+      <app-accordion
+        title="Quem será notificado:"
+        state="collapsed-filled"
+        viewType="tag"
+      >
+        <span accordionAnswer class="accordion-demo__tag">
+          <app-avatar
+            size="small"
+            type="photo"
+            imageUrl="https://i.pravatar.cc/64?img=47"
+          />
+          Dra. Michelle Franklin
+        </span>
+      </app-accordion>
+      <app-accordion
+        title="Mensagem:"
+        state="collapsed-filled"
+        viewType="texto"
+      >
+        <span accordionAnswer class="accordion-demo__value"
+          >Alinhado com a equipe manter VO exclusivo por hora</span
+        >
+      </app-accordion>
+      <app-accordion title="Data:" state="collapsed-filled" viewType="data">
+        <span accordionAnswer class="accordion-demo__value">23/04/2027</span>
+      </app-accordion>
+    </div>
+
+    <h3>
+      Interativo — motion, teclado, independência entre instâncias (SC-003)
+    </h3>
+    <p class="gallery__hint">
+      Clique no cabeçalho (ou dê Tab até ele e aperte Enter/Espaço) para
+      alternar de verdade entre os 3 estados — observe a transição de 200ms na
+      altura do slot. As duas instâncias abaixo são independentes: alternar a
+      primeira não deve afetar a segunda (já coberto por teste automatizado em
+      <code>accordion.component.spec.ts</code>; isto é a checagem visual
+      complementar).
+    </p>
+    <div class="gallery__stack gallery__narrow">
+      <app-accordion
+        title="Quem será notificado:"
+        viewType="tag"
+        [state]="accordionInteractiveState()"
+        (toggled)="onAccordionInteractiveToggle()"
+      >
+        <input
+          accordionInput
+          type="text"
+          placeholder="@nome da pessoa"
+          class="accordion-demo__input"
+          [value]="accordionInteractiveValue()"
+          (input)="onAccordionInteractiveInput($event)"
+        />
+        <span accordionAnswer>{{ accordionInteractiveValue() }}</span>
+      </app-accordion>
+      <app-accordion
+        title="Instância independente (não deve reagir ao clique acima)"
+        [state]="accordionSecondState()"
+        (toggled)="onAccordionSecondToggle()"
+      >
+        <input
+          accordionInput
+          type="text"
+          placeholder="Campo de teste"
+          class="accordion-demo__input"
+        />
+      </app-accordion>
+    </div>
+  </section>
+
+  <section class="gallery__section">
+    <h2>Bottom Sheet — DS-component-bottom-sheet</h2>
+    <p class="gallery__hint">
+      Única superfície modal do produto em celular e tablet. É um
+      <strong>chassi</strong>: cabeçalho fixo de arraste, conteúdo rolável
+      projetado e rodapé projetado — quem monta a conversa é o consumidor. A
+      composição abaixo reproduz o nó Figma <code>4412:5973</code> (mensagem de
+      abertura + 2 atalhos + <code>input-chat</code>) e existe para a
+      verificação de fidelidade; ela <strong>não</strong> faz parte do design
+      system.
+    </p>
+    <p class="gallery__hint">
+      <strong
+        >Só renderiza em <code>xs</code>/<code>sm</code> (&lt;1200px).</strong
+      >
+      Em desktop ele não é montado — nem o elemento host existe no DOM (FR-014).
+      Para testar, estreite a janela para ~402px: o botão abaixo passa a abrir o
+      sheet.
+    </p>
+    <div class="gallery__row gallery__row--stack">
+      <app-button label="Abrir bottom sheet" (click)="sheetOpen.set(true)" />
+      <p class="gallery__hint">
+        Encaixe atual: <code>{{ sheetSnap() }}</code> — último evento:
+        <code>{{ sheetLastEvent() }}</code>
+      </p>
+    </div>
+    <p class="gallery__hint">
+      Arrastar o cabeçalho para baixo dispensa (o scrim clareia durante o
+      gesto); para cima expande para <code>full</code> sem deslocar o container
+      (FR-028). <code>Esc</code>, o <code>X</code> e o toque no scrim também
+      dispensam. Roteiro completo em
+      <code>specs/ds/DS-component-bottom-sheet/quickstart.md</code>.
+    </p>
+
+    <app-bottom-sheet
+      ariaLabel="Assistente de IA"
+      [open]="sheetOpen()"
+      [snap]="sheetSnap()"
+      [shortcuts]="sheetShortcuts()"
+      (closed)="onSheetClosed()"
+      (snapChange)="onSheetSnapChange($event)"
+      (shortcutSelect)="onSheetShortcut($event)"
+    >
+      <div bottomSheetContent class="sheet-demo">
+        <h3 class="sheet-demo__title">Como eu posso te ajudar?</h3>
+        <p class="sheet-demo__body">
+          Quer tirar uma dúvida, ou quer que eu faça um resumo de todas as suas
+          tarefas do dia?<br />
+          Eu posso fazer praticamente tudo, só me diz o que você precisa?
+        </p>
+        <p class="sheet-demo__hint">
+          Você pode conversar comigo via texto ou áudio.
+        </p>
+      </div>
+
+      <app-input-chat
+        bottomSheetFooter
+        placeholder="Escreva a sua mensagem"
+        [(value)]="sheetChatValue"
+      />
+    </app-bottom-sheet>
+  </section>
+
+  <section class="gallery__section">
+    <h2>Drawer — DS-component-drawer</h2>
+    <p class="gallery__hint">
+      Par de <strong>desktop</strong> do bottom-sheet: mesma proposta (chat da
+      IA + atalhos), mas painel fixo ancorado à direita, sem scrim, que reserva
+      espaço do conteúdo em vez de sobrepô-lo. A composição abaixo reproduz o nó
+      Figma <code>4412:5749</code> (mensagem de abertura + 2 atalhos +
+      <code>input-chat</code>) e existe para a verificação de fidelidade; ela
+      <strong>não</strong> faz parte do design system.
+    </p>
+    <p class="gallery__hint">
+      <strong>Só renderiza em <code>md</code> (&ge;1200px).</strong> Em
+      celular/tablet ele não é montado — nem o elemento host existe no DOM
+      (FR-013). Alargue a janela para testar.
+    </p>
+    <div class="gallery__row gallery__row--stack">
+      <app-button label="Abrir drawer" (click)="drawerOpen.set(true)" />
+      <p class="gallery__hint">
+        Largura atual: <code>{{ drawerSnap() }}</code> — último evento:
+        <code>{{ drawerLastEvent() }}</code>
+      </p>
+    </div>
+    <p class="gallery__hint">
+      O botão de expandir alterna a largura entre <code>default</code> (480px) e
+      <code>expanded</code> (tela cheia menos o rail de navegação) — sem nenhuma
+      animação. Em <code>expanded</code> ele vira modal (foco preso, conteúdo
+      por trás inerte); em <code>default</code> a página continua totalmente
+      interativa. <code>Esc</code> nunca fecha nem recolhe. Roteiro completo em
+      <code>specs/ds/DS-component-drawer/quickstart.md</code>.
+    </p>
+
+    <app-drawer
+      ariaLabel="Assistente de IA"
+      [open]="drawerOpen()"
+      [snap]="drawerSnap()"
+      [shortcuts]="drawerShortcuts()"
+      (closed)="onDrawerClosed()"
+      (snapChange)="onDrawerSnapChange($event)"
+      (shortcutSelect)="onDrawerShortcut($event)"
+    >
+      <div drawerContent class="drawer-demo">
+        <h3 class="drawer-demo__title">Como eu posso te ajudar?</h3>
+        <p class="drawer-demo__body">
+          Quer tirar uma dúvida, ou quer que eu faça um resumo de todas as suas
+          tarefas do dia?<br />
+          Eu posso fazer praticamente tudo, só me diz o que você precisa?
+        </p>
+        <p class="drawer-demo__hint">
+          Você pode conversar comigo via texto ou áudio.
+        </p>
+      </div>
+
+      <app-input-chat
+        drawerFooter
+        placeholder="Escreva a sua mensagem"
+        [(value)]="drawerChatValue"
+      />
+    </app-drawer>
+  </section>
+</main>

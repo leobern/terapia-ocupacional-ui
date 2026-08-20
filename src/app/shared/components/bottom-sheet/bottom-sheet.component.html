@@ -1,0 +1,82 @@
+@if (!viewportBreakpoint.isDesktop()) {
+  <dialog
+    #dialogEl
+    class="bottom-sheet"
+    role="dialog"
+    aria-modal="true"
+    [class.bottom-sheet--full]="effectiveSnap() === 'full'"
+    [class.bottom-sheet--dragging]="isDragging()"
+    [attr.aria-label]="ariaLabel()"
+    [style.translate]="dragTranslate()"
+    [style.margin-bottom.px]="keyboardInsetPx()"
+    [style.--bottom-sheet-scrim-opacity]="scrimOpacity()"
+    (click)="onDialogClick($event)"
+    (cancel)="onCancel($event)"
+  >
+    <!--
+      A área de arraste é o cabeçalho INTEIRO, não a alça de 80x8: 8px de altura é
+      alvo pequeno demais para o dedo. `touch-action: none` vive só aqui (ver SCSS)
+      — é o que impede a rolagem do conteúdo de virar arraste (FR-022).
+    -->
+    <div
+      class="bottom-sheet__header"
+      (pointerdown)="onPointerDown($event)"
+      (pointermove)="onPointerMove($event)"
+      (pointerup)="onPointerUp($event)"
+      (pointercancel)="onPointerCancel()"
+    >
+      @if (showLogo()) {
+        <app-icon-logo class="bottom-sheet__logo" state="default" />
+      } @else {
+        <!-- Mantém o `space-between` do Figma com três colunas mesmo sem o logo. -->
+        <span class="bottom-sheet__logo-placeholder" aria-hidden="true"></span>
+      }
+
+      <span class="bottom-sheet__handle" aria-hidden="true"></span>
+
+      @if (dismissible()) {
+        <!--
+          O `<span>` existe porque o host do `app-icon-button` é `display: contents`
+          e portanto NÃO gera caixa: largura, altura e padding aplicados nele são
+          inertes. É este wrapper que carrega a caixa de conteúdo de 32x32, o
+          padding que leva o alvo de toque a 44x44 (FR-017) e o `(click)` — sem ele
+          o alvo ampliado simplesmente não existiria. Ver o SCSS para as duas
+          alternativas com `::after` que foram testadas e falharam.
+        -->
+        <span class="bottom-sheet__close" (click)="onCloseClick()">
+          <app-icon-button
+            kind="secondary"
+            appearance="icon"
+            size="small"
+            icon="x"
+            ariaLabel="Fechar"
+          />
+        </span>
+      } @else {
+        <span class="bottom-sheet__close-placeholder" aria-hidden="true"></span>
+      }
+    </div>
+
+    <div class="bottom-sheet__content">
+      <ng-content select="[bottomSheetContent]" />
+    </div>
+
+    @if (hasShortcuts()) {
+      <div class="bottom-sheet__actions">
+        @for (shortcut of visibleShortcuts(); track shortcut.id) {
+          <app-button
+            class="bottom-sheet__shortcut"
+            kind="secondary"
+            appearance="outlined"
+            [label]="shortcut.label"
+            (click)="onShortcut(shortcut)"
+          />
+        }
+      </div>
+    }
+
+    <div class="bottom-sheet__footer">
+      <ng-content select="[bottomSheetFooter]" />
+    </div>
+  </dialog>
+}

@@ -1,0 +1,185 @@
+@use '../../shared/styles/tokens';
+
+// Host cobre a página inteira (não só a coluna central de 960px). Sem
+// background próprio (removido pelo usuário, 2026-07-26).
+:host {
+  display: block;
+  min-height: 100vh;
+}
+
+// Sem background próprio (removido pelo usuário, 2026-07-26) — a página
+// mostra o fundo real (branco/transparente), deixando o background-mesh
+// (instância full-page acima do conteúdo) ser o único responsável pela cor
+// de fundo visível.
+.gallery {
+  box-sizing: border-box;
+  color: tokens.$color-content-1;
+  font-family: tokens.$font-family-base;
+  margin: 0 auto;
+  max-width: 960px;
+  padding: tokens.$space-32;
+  position: relative;
+}
+
+.gallery__title {
+  font-size: 24px;
+  margin-bottom: tokens.$space-8;
+}
+
+.gallery__note,
+.gallery__hint {
+  color: tokens.$color-content-2;
+  margin-bottom: tokens.$space-24;
+}
+
+.gallery__section {
+  margin-top: tokens.$space-40;
+}
+
+.gallery__section h3 {
+  margin-bottom: tokens.$space-16;
+  margin-top: tokens.$space-32;
+}
+
+.gallery__grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: tokens.$space-16;
+}
+
+.gallery__stack {
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$space-16;
+}
+
+.gallery__narrow {
+  max-width: 200px;
+}
+
+// Quadro de pré-visualização do background-mesh (`position: fixed` por
+// natureza) — `transform` aqui cria um novo containing block para
+// descendentes `fixed` (spec CSS), confinando a prévia a este quadro em vez
+// de cobrir a página inteira. Sem border-radius/background própria (ajuste
+// visual do usuário, 2026-07-26) — o quadro deve se misturar ao fundo real
+// da página (ver `.gallery`/instância full-page da seção Background Mesh),
+// não ter chrome visual próprio.
+.gallery__background-mesh-frame {
+  height: 480px;
+  overflow: hidden;
+  position: relative;
+  transform: translateZ(0);
+}
+
+// Composição de chat de REFERÊNCIA do bottom-sheet (nó Figma `4412:5937`).
+// Vive aqui, e não no componente, de propósito: o sheet é um chassi e a
+// tipografia da mensagem de abertura pertence ao conteúdo PROJETADO, não ao
+// design system (spec.md § Assumptions). É o alvo da verificação de fidelidade
+// de `specs/ds/DS-component-bottom-sheet` (SC-001).
+.sheet-demo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-8);
+}
+
+.sheet-demo__title {
+  color: var(--color-content-1);
+  font-family: var(--font-family-heading);
+  font-size: 24px;
+  font-weight: tokens.$font-weight-bold;
+  line-height: 1.2;
+
+  // Estilo Figma "Title": Inter Bold 24px / 1.2, com 16px de folga
+  // abaixo (nó `4412:5938`, que é um wrapper com `padding-bottom`).
+  margin: 0 0 var(--space-16);
+}
+
+.sheet-demo__body {
+  color: var(--color-content-1);
+  font-family: var(--font-family-body);
+  font-size: 16px;
+  line-height: 1.35;
+
+  // Estilo Figma "Default": Inter Regular 16px / 1.35.
+  margin: 0;
+}
+
+.sheet-demo__hint {
+  color: var(--color-content-2);
+  font-family: var(--font-family-body);
+  font-size: var(--font-size-subsection);
+  line-height: 1.35;
+
+  // Estilo Figma "Subsection": Inter Regular 14px / 1.35, content-2.
+  margin: 0;
+}
+
+// Composição de chat de REFERÊNCIA do drawer (nó Figma `4412:5721`) — mesma
+// tipografia do `.sheet-demo` (o par de mobile/tablet), porque é o mesmo
+// conteúdo de exemplo em ambos os nós Figma. Vive aqui, não no componente,
+// pelo mesmo motivo do bottom-sheet: pertence ao conteúdo PROJETADO, não ao
+// design system (spec.md § Assumptions). Alvo de SC-001 de
+// `specs/ds/DS-component-drawer`.
+.drawer-demo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-8);
+}
+
+.drawer-demo__title {
+  color: var(--color-content-1);
+  font-family: var(--font-family-heading);
+  font-size: 24px;
+  font-weight: tokens.$font-weight-bold;
+  line-height: 1.2;
+  margin: 0 0 var(--space-16);
+}
+
+.drawer-demo__body {
+  color: var(--color-content-1);
+  font-family: var(--font-family-body);
+  font-size: 16px;
+  line-height: 1.35;
+  margin: 0;
+}
+
+.drawer-demo__hint {
+  color: var(--color-content-2);
+  font-family: var(--font-family-body);
+  font-size: var(--font-size-subsection);
+  line-height: 1.35;
+  margin: 0;
+}
+
+// Input/textarea de referência projetados no slot `accordionInput` da galeria —
+// pertencem ao conteúdo de exemplo, não ao design system do accordion em si
+// (mesmo raciocínio de `.sheet-demo`/`.drawer-demo`): o componente só estiliza
+// o container ao redor, nunca o campo projetado.
+.accordion-demo__input {
+  box-sizing: border-box;
+  width: 100%;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-family: var(--font-family-body);
+  font-size: 16px;
+  color: var(--color-content-1);
+  resize: vertical;
+}
+
+// Cor/peso do valor nas views "texto"/"data" (nó Figma 4500:12713) — pertence
+// ao conteúdo PROJETADO, não ao componente accordion em si (FR-005): o
+// accordion não define a cor da resposta, só o container/rótulo ao redor.
+.accordion-demo__value {
+  color: var(--color-content-3);
+  font-weight: tokens.$font-weight-medium;
+}
+
+.accordion-demo__tag {
+  display: inline-flex;
+  align-items: center;
+  gap: tokens.$space-8;
+  font-family: var(--font-family-body);
+  font-weight: tokens.$font-weight-semibold;
+  color: var(--color-content-1);
+}

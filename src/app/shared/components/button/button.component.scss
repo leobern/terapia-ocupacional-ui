@@ -1,0 +1,170 @@
+@use '../../styles/tokens';
+@use '../../styles/mixins';
+
+// `display: contents` tira o host do fluxo de layout — sem isso, o elemento
+// customizado `<app-button>` (inline por padrão) ficaria entre o `<button>`
+// real e o container pai, e `.button--full-width { width: 100% }` resolveria
+// contra esse wrapper encolhido ao conteúdo, não contra o container real.
+:host {
+  display: contents;
+}
+
+.button {
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: tokens.$space-8;
+  height: 48px;
+  // Sem isso, o botão (tamanho intrínseco, inline-flex) simplesmente estoura
+  // qualquer container mais estreito que o conteúdo em vez de respeitar o
+  // limite e truncar — quebraria o Acceptance Scenario 4 do spec ("sem
+  // fullWidth, ainda trunca quando o container é mais estreito"). Achado
+  // durante `/speckit-converge` (T015), ao escrever o teste de truncamento.
+  max-width: 100%;
+  padding: tokens.$space-8 tokens.$space-16;
+  border-style: solid;
+  border-radius: tokens.$radius-sm;
+  // Inter (elementos interativos) — ver _tokens.scss.
+  font-family: tokens.$font-family-interactive;
+  font-weight: tokens.$font-weight-bold;
+  font-size: tokens.$font-size-interactive;
+  line-height: normal; // Figma: 100% — não é um valor numérico tokenizável
+  cursor: pointer;
+  transition:
+    filter 0.2s ease,
+    transform 0.15s ease,
+    box-shadow 0.2s ease;
+
+  // Padrão único de foco por teclado do design system — ver _mixins.scss.
+  @include mixins.focus-ring;
+
+  // Hover/Active não têm fonte Figma (o usuário optou por não desenhar isso
+  // no Figma — decisão registrada em spec.md § Clarifications). Hover: só a
+  // animação de levantar já comunica o mouse-over, sem escurecer.
+  &:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 3px 6px rgba(tokens.$color-content-1, 0.2);
+  }
+
+  // Active: NÃO usar `border: 0` aqui — o botão não tem `width` fixo (só
+  // `height`), então box-sizing: border-box protege a altura mas não a
+  // largura intrínseca; remover a borda encolhe o botão lateralmente
+  // ("mexidinha" no layout ao clicar). Em vez disso, a largura da borda
+  // permanece a mesma; só a COR muda para igualar o fundo de cada
+  // kind/appearance logo abaixo — a borda "some" visualmente sem nenhuma
+  // mudança de caixa. `filter` se aplica ao elemento inteiro (fundo + borda
+  // juntos), então a cor combinada continua batendo depois do escurecimento.
+  &:active:not(:disabled) {
+    filter: brightness(0.85);
+    transform: translateY(0) scale(0.97);
+    box-shadow: none;
+    transition-duration: 0.08s; // clique tem que parecer instantâneo
+  }
+}
+
+.button--full-width {
+  width: 100%;
+}
+
+.button__icon {
+  flex-shrink: 0;
+}
+
+.button__label {
+  // Item flex tem min-width:auto por padrão, o que impede o encolhimento
+  // necessário para o ellipsis funcionar — ver research.md §2.
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+// --- borda por appearance (habilitado) --------------------------------------
+// Solid: só a borda inferior, sempre na cor content-1 (efeito de profundidade,
+// igual nos 3 kind). Outlined: as 4 bordas, topo/laterais 2px e inferior 3px
+// — mesma cor do kind em todos os lados. Larguras assimétricas não afetam a
+// altura (box-sizing: border-box protege os 48px fixos), só a largura
+// intrínseca — por isso o estado `:active` (abaixo) troca a COR da borda em
+// vez de removê-la, para não encolher o botão lateralmente ao clicar.
+
+.button--solid {
+  border-width: 0 0 2px;
+  border-color: tokens.$color-content-1;
+}
+
+.button--outlined {
+  border-width: 2px 2px 3px;
+}
+
+// --- kind × appearance (cores, estado habilitado) ---------------------------
+
+.button--primary.button--solid {
+  background: tokens.$color-primary;
+  color: tokens.$color-content-6;
+}
+
+.button--primary.button--outlined {
+  background: tokens.$color-surface;
+  border-color: tokens.$color-primary;
+  color: tokens.$color-primary;
+}
+
+.button--secondary.button--solid {
+  background: tokens.$color-secondary;
+  color: tokens.$color-content-1;
+}
+
+.button--secondary.button--outlined {
+  background: tokens.$color-surface;
+  border-color: tokens.$color-content-2;
+  color: tokens.$color-content-2;
+}
+
+.button--tertiary.button--solid {
+  background: tokens.$color-tertiary;
+  color: tokens.$color-content-1;
+}
+
+.button--tertiary.button--outlined {
+  background: tokens.$color-surface;
+  border-color: tokens.$color-content-3;
+  color: tokens.$color-content-3;
+}
+
+// --- active: borda na cor do próprio fundo (não remove, só "esconde") ------
+// Ideia do usuário: em vez de `border: 0` (que muda a largura intrínseca do
+// botão e causa a "mexidinha" lateral descrita acima), a borda continua com
+// a mesma largura — só a cor passa a ser igual ao fundo daquele
+// kind/appearance, então ela some visualmente sem mexer na caixa. `outlined`
+// sempre usa `surface` como fundo, então uma regra cobre os 3 kind; `solid`
+// tem um fundo diferente por kind, então precisa de uma regra cada.
+.button--primary.button--solid:active:not(:disabled) {
+  border-color: tokens.$color-primary;
+}
+
+.button--secondary.button--solid:active:not(:disabled) {
+  border-color: tokens.$color-secondary;
+}
+
+.button--tertiary.button--solid:active:not(:disabled) {
+  border-color: tokens.$color-tertiary;
+}
+
+.button--outlined:active:not(:disabled) {
+  border-color: tokens.$color-surface;
+}
+
+// --- disabled (aparência única, por último de propósito) --------------------
+// `.button:disabled` (classe + pseudo-classe) tem a MESMA especificidade que
+// `.button--{kind}.button--{appearance}` (duas classes) — por isso este bloco
+// precisa vir depois no arquivo, para vencer no empate pela ordem de origem em
+// vez de depender de especificidade. Ver DS-component-button/spec.md §
+// Clarifications (Sessão 2026-07-23): aparência única, independente de
+// kind/appearance.
+.button:disabled {
+  background: tokens.$color-state-disabled;
+  border: none;
+  color: tokens.$color-state-disabled-2;
+  cursor: not-allowed;
+}

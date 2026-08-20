@@ -1,0 +1,43 @@
+@switch (type()) {
+  @case ('user') {
+    <!--
+      `[name]` além de `[imageUrl]`: sem foto, o avatar cai nas iniciais, e sem
+      nome as iniciais seriam "--". O rótulo da tag JÁ é o nome da pessoa neste
+      type, então é a fonte certa para o fallback.
+    -->
+    <app-avatar
+      size="small"
+      type="photo"
+      [imageUrl]="avatarSrc()"
+      [name]="label()"
+    />
+    <span class="tag__label">{{ label() }}</span>
+    @if (iconRight()) {
+      <ph-icon
+        [name]="resolvedIconRightName()"
+        [size]="16"
+        [style.color]="iconRightColor()"
+      />
+    }
+  }
+  @case ('default') {
+    @if (iconLeft()) {
+      <ph-icon
+        [name]="resolvedIconLeftName()"
+        [size]="16"
+        [style.color]="iconLeftColor()"
+      />
+    }
+    <span class="tag__label tag__label--default">{{ label() }}</span>
+    @if (iconRight()) {
+      <ph-icon
+        [name]="resolvedIconRightName()"
+        [size]="16"
+        [style.color]="iconRightColor()"
+      />
+    }
+  }
+  @case ('status') {
+    <span class="tag__label tag__label--status">{{ label() }}</span>
+  }
+}

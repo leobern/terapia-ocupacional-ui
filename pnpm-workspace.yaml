@@ -1,2 +1,12 @@
+allowBuilds:
+  '@compodoc/compodoc': true
+  '@openapitools/openapi-generator-cli': true
+  '@parcel/watcher': true
+  core-js: true
+  esbuild: true
+  lmdb: true
+  msgpackr-extract: true
+  protobufjs: true
+  unrs-resolver: true
 overrides:
   brace-expansion@>=4.0.0 <5.0.5: '>=5.0.5'

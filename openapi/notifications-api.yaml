@@ -1,0 +1,210 @@
+openapi: 3.0.3
+info:
+  title: Notifications API
+  version: 1.0.0
+  description: >
+    Contrato da tela Notificações (specs/004-notificacoes). Consumido pelo frontend via
+    openapi-generator-cli (typescript-angular) — ver
+    terapia-ocupacional-ui/openapitools.json. Servido pelo módulo
+    pt.terapiaocupacional.home (backend) — Notificacao já é dono deste módulo desde a
+    Home (research.md §1), esta feature estende com respostas e listagem por status.
+paths:
+  /api/v1/notifications:
+    get:
+      operationId: getNotifications
+      summary: >
+        Lista paginada de notificações do profissional autenticado, filtrada por status
+        (pendente/resolvida — FR-004a). Cada seção da tela pagina de forma independente.
+      parameters:
+        - name: hospitalId
+          in: query
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: status
+          in: query
+          required: true
+          schema:
+            $ref: "#/components/schemas/NotificationStatus"
+        - name: cursor
+          in: query
+          required: false
+          description: Cursor opaco do último item carregado nesta seção (ausente = primeiro lote)
+          schema:
+            type: string
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 10
+            maximum: 10
+      responses:
+        "200":
+          description: >
+            Lote de até 10 notificações daquele status, ordenadas da mais recente para a
+            mais antiga (FR-004a).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotificationPage"
+        "401":
+          description: Não autenticado
+        "403":
+          description: Profissional sem vínculo com o hospital informado
+
+  /api/v1/notifications/{notificationId}/replies:
+    post:
+      operationId: createNotificationReply
+      summary: >
+        Registra a resposta do profissional autenticado a uma notificação (FR-009); move a
+        notificação da seção Pendentes para Resolvidas.
+      parameters:
+        - name: notificationId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateReplyRequest"
+      responses:
+        "201":
+          description: Resposta registrada com sucesso
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotificationReply"
+        "401":
+          description: Não autenticado
+        "403":
+          description: >
+            Profissional sem vínculo com o hospital da notificação, ou notificação não
+            direcionada a este profissional (destinatarioId ≠ subject do JWT)
+        "404":
+          description: Notificação não encontrada
+        "422":
+          description: Corpo inválido (ex.: texto vazio)
+
+components:
+  schemas:
+    NotificationStatus:
+      type: string
+      enum: [pending, resolved]
+      description: >
+        pending = nenhuma resposta registrada; resolved = ao menos 1 resposta registrada
+        (status derivado, não uma coluna persistida — ver data-model.md).
+
+    NotificationPage:
+      type: object
+      required: [items, nextCursor]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/Notification"
+        nextCursor:
+          type: string
+          nullable: true
+          description: null quando não há mais notificações daquele status a carregar
+
+    Notification:
+      type: object
+      required: [id, author, patient, description, createdAt, read, replyCount]
+      description: >
+        `patient` é required nesta v1 porque o único `tipoEvento` suportado hoje é
+        relacionado a paciente (spec.md FR-006) — mas a coluna correspondente no banco
+        (`notificacao.paciente_id`) já é nullable, de propósito, para permitir tipos de
+        notificação futuros sem paciente associado (research.md §4, spec.md § Assumptions).
+        Quando um `tipoEvento` desse tipo for implementado, este schema MUST ser revisado
+        para tornar `patient` opcional — não usar um valor fictício/placeholder para
+        contornar esta obrigatoriedade.
+      properties:
+        id:
+          type: integer
+          format: int64
+        author:
+          $ref: "#/components/schemas/ProfessionalRef"
+        patient:
+          $ref: "#/components/schemas/PatientRef"
+        description:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        read:
+          type: boolean
+        replyCount:
+          type: integer
+          description: >
+            Contagem de respostas já registradas (FR-012, tag "N Respostas"); 0 = notificação
+            pendente.
+        replies:
+          type: array
+          description: >
+            Histórico completo de respostas, sempre incluído quando `replyCount > 0`
+            (volume tipicamente pequeno por notificação — sem necessidade de um endpoint
+            de detalhe separado). O frontend só renderiza esta lista quando o card é
+            expandido (`Answer-open` — FR-012); o payload já vem completo desde a
+            listagem paginada, simplificando o estado do NgRx (sem fetch adicional ao
+            expandir).
+          items:
+            $ref: "#/components/schemas/NotificationReply"
+
+    NotificationReply:
+      type: object
+      required: [id, author, text, createdAt]
+      properties:
+        id:
+          type: integer
+          format: int64
+        author:
+          $ref: "#/components/schemas/ProfessionalRef"
+        text:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+
+    CreateReplyRequest:
+      type: object
+      required: [text]
+      properties:
+        text:
+          type: string
+          minLength: 1
+
+    ProfessionalRef:
+      type: object
+      required: [id, name, specialty]
+      properties:
+        id:
+          type: integer
+          format: int64
+        name:
+          type: string
+        specialty:
+          type: string
+        photoUrl:
+          type: string
+          nullable: true
+          description: Ausente/nulo → frontend renderiza avatar de iniciais
+
+    PatientRef:
+      type: object
+      required: [id, name]
+      properties:
+        id:
+          type: integer
+          format: int64
+        name:
+          type: string
+          description: >
+            Exibido no bloco "Paciente" do card (FR-005); usado para navegar à tela de
+            detalhe do paciente ao tocar no card (FR-006) — rota de destino ainda não
+            implementada nesta versão do app (research.md §8).

@@ -28,7 +28,8 @@
             "assets": [
               "src/favicon.svg",
               "src/assets/html",
-              "src/assets/images"
+              "src/assets/images",
+              "src/assets/fonts"
             ],
             "styles": ["src/styles.scss"],
             "scripts": [],
@@ -119,18 +120,18 @@
             "polyfills": ["zone.js"],
             "tsConfig": "tsconfig.spec.json",
             "karmaConfig": "karma.conf.js",
-            "assets": ["src/assets/html", "src/assets/images"],
+            "assets": [
+              "src/assets/html",
+              "src/assets/images",
+              "src/assets/fonts"
+            ],
             "codeCoverage": true
           }
         },
         "lint": {
           "builder": "@angular-eslint/builder:lint",
           "options": {
-            "lintFilePatterns": [
-              "src/**/*.ts",
-              "e2e/**/*.ts",
-              "src/**/*.html"
-            ],
+            "lintFilePatterns": ["src/**/*.ts", "e2e/**/*.ts", "src/**/*.html"],
             "eslintConfig": "eslint.config.mjs"
           }
         }

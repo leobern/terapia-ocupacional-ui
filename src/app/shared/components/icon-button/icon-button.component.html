@@ -1,0 +1,13 @@
+<button
+  type="button"
+  class="icon-button"
+  [class]="variantClass()"
+  [class.keyboard-focus]="keyboardFocused()"
+  [attr.aria-label]="ariaLabel()"
+  [attr.aria-expanded]="ariaExpanded()"
+  [disabled]="disabled()"
+  (focus)="onFocus()"
+  (blur)="onBlur()"
+>
+  <ph-icon [name]="icon()" [size]="iconSizePx()" />
+</button>

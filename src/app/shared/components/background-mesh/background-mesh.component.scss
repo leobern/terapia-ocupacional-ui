@@ -1,0 +1,103 @@
+// -----------------------------------------------------------------------------
+// DS-component-background-mesh — fundo decorativo puramente visual, atrás de
+// todo o conteúdo da tela. `position: fixed` (não `absolute` — spec.md §
+// Clarifications, 2026-07-25: não deve rolar com o conteúdo da página).
+//
+// As 4 cores (2 blobs + 2 stops do gradiente do mesh) são hex cru recebidas via
+// `input()` no `.component.ts` — nenhum token do design system é usado nesta v1
+// (desvio do Princípio VIII documentado e aprovado em spec.md § Clarifications).
+// Por isso este arquivo não importa `../../styles/tokens`.
+// -----------------------------------------------------------------------------
+// `:host` é o próprio elemento raiz — sem `<div>` wrapper interno (removido
+// pelo usuário, 2026-07-26): os blobs e o SVG são filhos diretos do host.
+// `aria-hidden="true"` migrou para o host via metadata do componente (`host:`
+// no `@Component`), já que não há mais um elemento de template para carregá-lo.
+:host {
+  position: fixed;
+  inset: 0;
+  // Zero, não negativo: um z-index negativo pinta ATRÁS do canvas do próprio
+  // `body` (o "background do elemento raiz" vira o fundo da viewport inteira,
+  // por cima de qualquer descendente com z-index < 0 — regra do CSS 2.1 §
+  // E.2). Como o `body` agora sempre pinta `surface-2` (ver styles.scss), um
+  // z-index negativo aqui deixava o mesh permanentemente invisível. Em 0, ele
+  // pinta acima desse canvas e abaixo de todo conteúdo normal (que vem depois
+  // dele no DOM, ver app.component.html).
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+// -----------------------------------------------------------------------------
+// Blobs de cor (canto superior-esquerdo) — SEMPRE circulares (largura ==
+// altura), variando de tamanho conforme a tela via `width: 100%` + `max-width`
+// (o único valor que muda por blob) + `aspect-ratio: 1/1` (deriva a altura da
+// largura, nunca o contrário). Corrigido em 2026-07-26 (achado do
+// `/speckit-converge`, T013): a versão anterior usava `top:0; bottom:0`
+// (2 insets opostos), o que força uma altura definida igual à altura cheia do
+// host e ANULA o `aspect-ratio` sempre que essa altura excede o `max-width` —
+// produzindo uma cápsula alongada em vez de um círculo. Ancoragem por um único
+// inset por eixo (`top`/`left`, nunca `top`+`bottom` juntos), mesmo princípio
+// já usado no mesh estático abaixo (`bottom`+`right`, nunca 2 insets opostos).
+// Sem animação (removida pelo usuário, 2026-07-26).
+// -----------------------------------------------------------------------------
+// Breakpoint de desktop replicado aqui como valor literal (não via
+// `@use '../../styles/breakpoints'`) porque esse arquivo pertence a outra
+// sessão/trabalho ainda não commitado neste branch no momento em que este
+// componente foi escrito — evita depender de um arquivo que pode não existir
+// no histórico do git ainda. Migrar para `breakpoints.md` (1200px, mesmo
+// valor) quando esse arquivo estiver commitado e disponível para import.
+$background-mesh-desktop-breakpoint: 1200px;
+
+.background-mesh__blob {
+  position: absolute;
+  top: 0;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  border-radius: 50%;
+  filter: blur(160px);
+  mix-blend-mode: color;
+
+  // Ajuste de posicionamento mobile × desktop (2026-07-26) — valores
+  // ajustados manualmente pelo usuário via DevTools, olhando os dois
+  // dispositivos separadamente. Continua valendo a regra de FR-001/FR-006:
+  // círculo sempre perfeito, só `max-width` (e aqui também `left`/`top`)
+  // mudam por breakpoint — nunca `width`/`height` explícitos.
+  &--1 {
+    top: -40px;
+    left: -60px;
+    max-width: 320px;
+
+    @media (min-width: $background-mesh-desktop-breakpoint) {
+      top: 0;
+      left: 0;
+      max-width: 560px;
+    }
+  }
+
+  &--2 {
+    left: 200px;
+    max-width: 360px;
+
+    @media (min-width: $background-mesh-desktop-breakpoint) {
+      // Offset de `left` removido no desktop (não apenas trocado de valor) —
+      // ajuste do usuário; `left: 0` deixa o comportamento determinístico
+      // (mesma âncora do blob-1) em vez de depender do fallback `auto`.
+      left: 0;
+      max-width: 800px;
+    }
+  }
+}
+
+// -----------------------------------------------------------------------------
+// Mesh estático (canto inferior-direito) — sem animação. Ajustado pelo
+// usuário via DevTools (2026-07-26): ancorado direto no canto (`bottom:0;
+// right:0`, sem `top` nem `display:block`), tamanho limitado por
+// `max-width` em vez do `top`/`bottom`% original do Figma (research.md §5).
+// -----------------------------------------------------------------------------
+.background-mesh__static {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  aspect-ratio: 620 / 620;
+  max-width: 940px;
+}

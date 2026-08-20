@@ -1,0 +1,119 @@
+@use '../../styles/tokens';
+@use '../../styles/input-shell';
+
+// Mesmo motivo do Button/IconButton: tira o host do fluxo de layout — sem
+// isso, `<app-input-select>` (inline por padrão) ficaria entre a `.input-select`
+// real e o container pai.
+:host {
+  display: contents;
+}
+
+.input-select {
+  // Borda, raio, fundo, `min-height: 48px` e os dois indicadores de foco vêm do
+  // mixin compartilhado (`shared/styles/_input-shell.scss`), extraído deste
+  // arquivo quando `DS-component-input-chat` passou a precisar do mesmo visual
+  // com layout diferente — ver specs/ds/DS-component-input-chat/research.md §1.
+  // Nenhum valor mudou na extração; a suíte deste componente é o gate disso.
+  @include input-shell.chrome;
+
+  // FICAM AQUI (não no mixin) — são exatamente o que diverge do `input-chat`.
+  // `max-height: 48px` + `overflow: hidden` travam este campo em uma linha.
+  // Com padding vertical (space-8×2) + row interna (32px) + borda (1px×2), o
+  // conteúdo natural soma 50px — 2px acima dos 48px que a metadata do Figma
+  // mede. O clamp absorve esse slack sem mexer no `min-height`.
+  // NOTA (2026-07-28): a versão anterior deste comentário dizia "remover o
+  // `max-height` quando `input-chat` precisar de crescimento real". Não foi o
+  // que aconteceu, e é melhor assim: o `input-chat` NÃO herda esta trava — ele
+  // aplica o mesmo mixin e declara o próprio `max-height: 160px` com
+  // `overflow-y: auto`. Este campo continua de linha única, sem regressão.
+  max-height: 48px;
+  overflow: hidden;
+  padding: tokens.$space-8 tokens.$space-16;
+
+  &--select {
+    cursor: pointer;
+  }
+
+  &:hover:not(.input-select--disabled):not(:focus-within) {
+    @include input-shell.hover-chrome;
+  }
+
+  &--disabled {
+    @include input-shell.disabled-chrome;
+  }
+}
+
+.input-select__content {
+  @include input-shell.content-row;
+
+  min-height: 32px;
+}
+
+// Cor fixa (não herda o `color` dinâmico do texto/placeholder) — os ícones do
+// Figma não mudam de cor entre Default/Filled, diferente do texto. Ícone
+// esquerdo e direito têm cores fixas DIFERENTES entre si (confirmado por
+// inspeção visual do usuário contra o Figma — os ícones são assets de
+// imagem exportados, sem cor extraível via `get_variable_defs`).
+.input-select__icon {
+  flex-shrink: 0;
+}
+
+.input-select__icon--leading {
+  color: tokens.$color-content-1;
+}
+
+.input-select__icon--trailing {
+  color: tokens.$color-content-5;
+}
+
+.input-select__field {
+  @include input-shell.field-typography;
+
+  flex: 1 0 0;
+  min-width: 0;
+  overflow: hidden;
+  border: none;
+  outline: none;
+  background: transparent;
+  padding: 0;
+  // Truncamento em uma linha — o oposto do `input-chat`, que quebra palavra e
+  // cresce; por isso overflow de texto fica fora do mixin compartilhado.
+  text-overflow: ellipsis;
+  white-space: nowrap;
+
+  &::placeholder {
+    color: tokens.$color-content-5;
+    font-weight: tokens.$font-weight-medium;
+  }
+
+  &--filled {
+    @include input-shell.field-filled;
+  }
+
+  &--select {
+    cursor: pointer;
+    user-select: none;
+  }
+}
+
+// Estado disabled MUST usar exclusivamente tokens `state-disabled*` para toda
+// cor (fundo, borda, texto, ícone) — nenhuma cor de variante/estado normal
+// (content-1/content-3/content-5) pode vazar aqui. Regra transversal do
+// design system, não só deste componente (Constituição, Princípio VIII).
+.input-select--disabled .input-select__field,
+.input-select--disabled .input-select__icon {
+  @include input-shell.disabled-content;
+}
+
+// `all: unset` reseta a UA stylesheet padrão de `<button>` (borda, fundo,
+// padding, fonte) antes de redefinir só o necessário — mesma técnica usada
+// para não herdar estilo de botão nativo num ícone que só funciona como
+// gatilho de limpar.
+.input-select__clear {
+  all: unset;
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  cursor: pointer;
+  color: tokens.$color-content-3;
+}

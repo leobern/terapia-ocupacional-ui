@@ -1,0 +1,56 @@
+name: CI
+
+# Constituição Conductia, Workflow de Desenvolvimento: "CI obrigatório em todo PR
+# [...] NENHUM merge com pipeline vermelho". O repositório não tinha nenhum workflow
+# até aqui — foi por isso que o PR #1 chegou a review com o build quebrado
+# (import para `src/app/features/`, diretório que não existia).
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    name: lint · test · build
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      # `--ignore-scripts`: o `postinstall` do projeto gera os models OpenAPI
+      # (precisa de Java) e baixa os browsers do Playwright. Nada disso entra em
+      # `src/` — os models são emitidos em `dist/openapi/` — então lint, teste e
+      # build não dependem deles. O job de E2E, quando existir, roda o postinstall
+      # completo.
+      #
+      # `--frozen-lockfile` é o ponto: mudança de dependência sem lockfile
+      # atualizado no mesmo commit falha aqui (Princípio XI).
+      - name: Install
+        run: pnpm install --frozen-lockfile --ignore-scripts
+
+      - name: Lint
+        run: pnpm run lint
+
+      - name: Test
+        run: pnpm exec ng test --watch=false --browsers=ChromeHeadless
+        env:
+          CHROME_BIN: /usr/bin/google-chrome
+
+      - name: Build
+        run: pnpm run build:ci

@@ -1,0 +1,41 @@
+@use '../../../../shared/styles/tokens';
+
+.confirm-dialog__scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: tokens.$space-24;
+  background: rgba(0, 0, 0, 0.4);
+}
+
+.confirm-dialog__panel {
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$space-16;
+  width: 100%;
+  max-width: 320px;
+  padding: tokens.$space-24;
+  border-radius: tokens.$radius-md;
+  background: tokens.$color-surface;
+}
+
+.confirm-dialog__title {
+  margin: 0;
+  font-family: tokens.$font-family-base;
+  font-weight: tokens.$font-weight-semibold;
+  font-size: tokens.$font-size-subsection;
+  color: tokens.$color-content-1;
+  text-align: center;
+}
+
+.confirm-dialog__actions {
+  display: flex;
+  gap: tokens.$space-8;
+
+  app-button {
+    flex: 1 0 0;
+  }
+}

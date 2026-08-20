@@ -1,0 +1,127 @@
+@use '../../styles/tokens';
+
+// O host É a caixa visual do avatar (mesmo padrão de app-badge) — nenhum
+// `display: contents` aqui. `overflow: visible` (não `hidden`) porque o badge de
+// edição precisa ficar parcialmente fora do círculo, exibindo sua circunferência
+// inteira, conforme o Figma — o recorte de `type="photo"` acontece em
+// `.avatar__content` (dentro do host), não no host inteiro.
+:host {
+  box-sizing: border-box;
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  overflow: visible;
+  border-radius: tokens.$radius-pill;
+}
+
+// --- size ----------------------------------------------------------------------------
+// Tipografia das iniciais por tamanho (Figma, reconfirmado via get_design_context em
+// 2026-07-30 — nó 4046:2289): 3 estilos de texto distintos, não um único peso/altura
+// de linha compartilhado.
+// - small:   Figma "Label - SemiBold"   → Inter, SemiBold (600), 12px, line-height 135%
+// - default: Figma "Default - SemiBold" → Inter, SemiBold (600), 16px, line-height 135%
+// - big:     Figma "Section"            → Inter, Medium (500),   40px, line-height 100% (normal)
+// `$font-size-label` (12px) é reusado do Badge — mesmo valor numérico, agora também a
+// fonte das iniciais em `small`. `$font-weight-semibold`/`$font-weight-medium` já
+// existem como tokens (DS-component-tag). `line-height` segue o padrão do resto do
+// design system (Button, Tag, CardNotify): valor literal, não tokenizado — ver
+// comentário em button.component.scss.
+:host(.avatar--small) {
+  width: tokens.$space-32;
+  height: tokens.$space-32;
+  font-size: tokens.$font-size-label;
+  font-weight: tokens.$font-weight-semibold;
+  line-height: 1.35;
+}
+
+:host(.avatar--default) {
+  width: tokens.$space-56;
+  height: tokens.$space-56;
+  font-size: tokens.$font-size-interactive;
+  font-weight: tokens.$font-weight-semibold;
+  line-height: 1.35;
+}
+
+:host(.avatar--big) {
+  width: tokens.$space-120;
+  height: tokens.$space-120;
+  font-size: tokens.$font-size-title;
+  font-weight: tokens.$font-weight-medium;
+  line-height: normal;
+}
+
+// Wrapper que recorta o conteúdo (foto/iniciais) em círculo — o host em si não
+// recorta mais (ver comentário acima), só este elemento interno. Quando editável,
+// este MESMO papel é assumido pelo `<button>` (.avatar__edit-trigger), não por um
+// `<span>` — é ele que cobre a circunferência inteira e vira o alvo de clique.
+.avatar__content {
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  border-radius: tokens.$radius-pill;
+}
+
+// --- type="photo" ----------------------------------------------------------------------
+.avatar__image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+// --- type="user"/"patient" ---------------------------------------------------------
+// Cor de fundo fixa por type (FR-003) — mesmo padrão do fundo fixo de type="numeral"
+// em BadgeComponent (classe SCSS com token de cor, não binding JS).
+:host(.avatar--user) {
+  background: tokens.$color-tertiary;
+}
+
+:host(.avatar--patient) {
+  background: tokens.$color-state-disabled;
+}
+
+.avatar__initials {
+  color: tokens.$color-content-1;
+  font-family: tokens.$font-family-interactive;
+  font-weight: inherit;
+  font-size: inherit;
+  line-height: inherit;
+  text-align: center;
+}
+
+// --- controle de edição (toda a circunferência do avatar, não só o badge) ---------
+// `<button>` real cobrindo 100% do avatar (mesma dimensão/recorte de `.avatar__content`)
+// — a área clicável/focável é o avatar inteiro, o badge é só um indicador visual
+// sobreposto, sem alvo de clique próprio (`pointer-events: none` abaixo).
+.avatar__edit-trigger {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+}
+
+// --- badge de edição (decorativo — o clique é tratado pelo .avatar__edit-trigger) --
+// Ausente em size="small" (FR-007). Fica parcialmente fora do círculo (offset
+// negativo), por isso o host precisa de `overflow: visible` (ver acima).
+.avatar__edit-badge {
+  position: absolute;
+  pointer-events: none;
+}
+
+:host(.avatar--default) .avatar__edit-badge {
+  bottom: calc(-1 * #{tokens.$space-8});
+  right: 0;
+}
+
+:host(.avatar--big) .avatar__edit-badge {
+  bottom: calc(-1 * #{tokens.$space-8});
+  left: 50%;
+  transform: translateX(-50%);
+}

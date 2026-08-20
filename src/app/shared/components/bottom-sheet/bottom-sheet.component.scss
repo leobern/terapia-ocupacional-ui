@@ -1,0 +1,274 @@
+@use '../../styles/breakpoints';
+@use '../../styles/tokens';
+
+// -----------------------------------------------------------------------------
+// DS-component-bottom-sheet — nó Figma `4412:5973`.
+//
+// O container é um `<dialog>` no top layer (`showModal()`), não um
+// `position: fixed`: `page-container` e `background-mesh` aplicam
+// `transform`/`filter`, e cada um cria um containing block que capturaria um
+// fixed descendente. Ver o docblock do componente.
+// -----------------------------------------------------------------------------
+
+// Alturas dos encaixes. São geometria DESTE componente, não tokens de design —
+// promovê-las à escala global poluiria os tokens sem reuso previsto (mesmo
+// critério de `--bottom-nav-bar-height`). São o Desvio 7 da spec: o Figma só
+// desenha `default`.
+$snap-default: 70dvh;
+$snap-full: calc(100dvh - env(safe-area-inset-top) - var(--space-24));
+
+// Alvo de toque mínimo do WCAG 2.5.5 (FR-017). NÃO é token de design — é uma
+// constante de norma de acessibilidade, e por isso vive aqui e não em _tokens.scss
+// (o Figma não tem, nem deveria ter, uma variável para isso).
+$min-touch-target: 44px;
+
+// Folga por lado que leva o botão de fechar de 32x32 (caixa visual) a 44x44 (alvo
+// de toque). Aritmética SASS sobre o token, não `calc()` com `var()`: o Sass
+// reparsa o conteúdo de `calc()` e descartava silenciosamente a declaração inteira
+// quando ela misturava interpolação e `var()` — a folga simplesmente não era
+// aplicada, e o alvo continuava 32x32. Mesmo padrão de `bottom-nav-bar`, que
+// deriva medidas de `tokens.$space-56` em Sass.
+$close-hit-inset: ($min-touch-target - tokens.$space-32) * 0.5;
+$duration-enter: 300ms;
+$duration-exit: 250ms;
+$duration-reduced: 150ms;
+
+// Curva de desaceleração de sheets nativos: rápida no início, assentamento suave.
+// Sem origem no Figma (`get_motion_context` retornou vazio) — proposta de
+// engenharia declarada em spec.md § Interações & Motion.
+$ease-sheet: cubic-bezier(0.32, 0.72, 0, 1);
+
+:host {
+  display: contents;
+}
+
+@keyframes bottom-sheet-enter {
+  from {
+    translate: 0 100%;
+  }
+}
+
+@keyframes bottom-sheet-scrim-enter {
+  from {
+    background-color: transparent;
+  }
+}
+
+@keyframes bottom-sheet-enter-reduced {
+  from {
+    opacity: 0;
+  }
+}
+
+.bottom-sheet {
+  background: var(--color-surface);
+  border: 0;
+  border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+  color: var(--color-content-1);
+  display: flex;
+  flex-direction: column;
+  height: $snap-default;
+
+  // O `<dialog>` é centrado por `margin: auto` por padrão; aqui ele mora colado ao
+  // rodapé, e o deslocamento do teclado virtual entra como distância do fundo.
+  inset: auto 0 0;
+  margin: 0 auto;
+  max-height: $snap-full;
+  max-width: 100%;
+  overflow: visible;
+  padding: 0;
+  transition:
+    height $duration-exit $ease-sheet,
+    translate $duration-exit $ease-sheet,
+    overlay $duration-exit allow-discrete,
+    display $duration-exit allow-discrete;
+
+  // Estado FECHADO no seletor base, não em `&:not([open])`: as duas formas têm a
+  // mesma especificidade que `&[open]`, e no empate o estado fechado vencia — o
+  // sheet abria já empurrado 100% para fora da viewport. Na base (0,1,0) ele
+  // perde para `[open]` (0,2,0) e a regra deixa de depender da ordem no arquivo.
+  //
+  // Os dois estados usam valores LITERAIS, nunca `var()`: com
+  // `translate: 0 var(--drag, 0px)` no estado aberto, o Chrome não reavalia a
+  // propriedade quando `showModal()` acrescenta `[open]` — o sheet abria
+  // invisível, 100% abaixo da viewport, e só recalculava ao mexer em qualquer
+  // custom property inline. O deslocamento do arraste e o do teclado entram como
+  // estilo inline pelo componente (ver `dragTranslate`/`keyboardInsetPx`).
+  translate: 0 100%;
+  width: 100%;
+
+  // Inócuo no top layer, onde o empilhamento não usa `z-index`. Mantido de
+  // propósito: custo zero, cobre o caminho não-modal e mantém a letra de FR-015.
+  z-index: var(--z-index-overlay);
+
+  &[open] {
+    // Entrada por `@keyframes`. Foi preferida a `@starting-style` (que é a receita
+    // canônica para animar a entrada de um `<dialog>`), mas por escolha de
+    // implementação, NÃO por incompatibilidade comprovada.
+    //
+    // CORREÇÃO DE DIAGNÓSTICO: uma nota anterior aqui afirmava que
+    // `@starting-style` "não iniciava neste componente", com base em observar o
+    // sheet abrindo 100% abaixo da viewport e `getAnimations()` parado. Aquela
+    // conclusão estava ERRADA. A causa real é o ambiente de preview: a aba roda
+    // oculta (`document.visibilityState === 'hidden'`), então
+    // `document.timeline.currentTime` fica travado em 0 e NENHUMA animação CSS
+    // avança — toda animação fica presa no primeiro keyframe, `@keyframes` e
+    // `@starting-style` igualmente. Confirmado medindo a timeline e finalizando as
+    // animações à mão (`getAnimations().forEach(a => a.finish())`), o que fez o
+    // `translate` cair para `0` e o sheet assentar na posição correta.
+    //
+    // Consequência prática: entrada e saída NÃO foram validadas visualmente em
+    // nenhum ambiente. Fica pendente num navegador visível de verdade — se o
+    // motion precisar mudar, `@starting-style` volta a ser candidato legítimo.
+    animation: bottom-sheet-enter $duration-enter $ease-sheet;
+    translate: 0;
+  }
+
+  &--full {
+    height: $snap-full;
+  }
+
+  // Durante o gesto o sheet acompanha o dedo sem interpolação — qualquer
+  // transição aqui vira arrasto perceptível.
+  &--dragging {
+    transition: none;
+  }
+
+  // NOTA: o deslocamento do teclado virtual entra como `margin-bottom` inline,
+  // aplicado pelo componente a partir do `visualViewport` — `dvh` não serve: no
+  // iOS ele acompanha o layout viewport, que NÃO encolhe com o teclado aberto
+  // (research.md §4).
+
+  &::backdrop {
+    background-color: transparent;
+    transition:
+      background-color $duration-enter ease-out,
+      overlay $duration-enter allow-discrete,
+      display $duration-enter allow-discrete;
+  }
+
+  &[open]::backdrop {
+    animation: bottom-sheet-scrim-enter $duration-enter ease-out;
+    background-color: var(--color-scrim);
+
+    // O scrim clareia conforme o sheet desce, sinalizando que soltar dispensa
+    // (spec.md § Interações & Motion). O valor é escrito inline no `<dialog>` pelo
+    // componente e chega aqui por herança — o fallback `1` é o que garante que,
+    // num navegador que não propague a custom property para o `::backdrop`, a
+    // degradação seja o scrim opaco de sempre, nunca um scrim invisível.
+    opacity: var(--bottom-sheet-scrim-opacity, 1);
+  }
+
+  // Em tablet o container acompanha a `bottom-nav-bar` e o `page-container`, mas
+  // continua colado ao rodapé com os cantos inferiores retos. O `::backdrop`
+  // ignora este limite e cobre a viewport inteira — restringi-lo deixaria as
+  // laterais tocáveis com um `aria-modal="true"` aberto (FR-026/SC-015).
+  @include breakpoints.sm {
+    max-width: tokens.$content-max-width;
+  }
+}
+
+// Cabeçalho: área de arraste INTEIRA (a alça de 8px é alvo pequeno demais).
+// `touch-action: none` vive só aqui — é o que impede a rolagem do conteúdo de
+// virar arraste (FR-022/SC-012).
+.bottom-sheet__header {
+  align-items: flex-start;
+  cursor: grab;
+  display: flex;
+  flex-shrink: 0;
+  justify-content: space-between;
+  padding: var(--space-24);
+  touch-action: none;
+
+  &:active {
+    cursor: grabbing;
+  }
+}
+
+.bottom-sheet__logo,
+.bottom-sheet__logo-placeholder {
+  flex-shrink: 0;
+  height: var(--space-48);
+  width: var(--space-48);
+}
+
+.bottom-sheet__handle {
+  background: var(--color-state-disabled);
+  border-radius: var(--radius-pill);
+  flex-shrink: 0;
+  height: var(--space-8);
+  margin: var(--space-8) 0;
+  width: var(--space-80);
+}
+
+// Alvo de toque de 44x44 sem mexer na caixa visual de 32x32 (FR-017).
+//
+// A ampliação é feita com `padding` + `margin` NEGATIVA de mesmo valor: a caixa de
+// conteúdo continua 32x32 (é ela que o `icon-button` preenche e que o usuário vê),
+// a caixa de borda vira 44x44 e é ela que responde ao toque, e a margem negativa
+// devolve o espaço para o `space-between` não deslocar nada.
+//
+// Duas alternativas foram testadas e falharam de formas instrutivas:
+// 1. `::after` com `inset` negativo e `z-index: -1` — o pseudo-elemento ia para
+//    trás do fundo OPACO do `<dialog>` (o `<span>` não cria contexto de
+//    empilhamento) e deixava de ser atingível por hit-test.
+// 2. o mesmo `::after` sem `z-index` — passava a cobrir o `<button>` e matava os
+//    estados de hover/active do `icon-button`.
+// O host do `app-icon-button` é `display: contents`, então nada disso pode ser
+// aplicado nele: ele não gera caixa nenhuma. Daí o `<span>` no template.
+.bottom-sheet__close,
+.bottom-sheet__close-placeholder {
+  box-sizing: content-box;
+  display: block;
+  flex-shrink: 0;
+  height: tokens.$space-32;
+  margin: -$close-hit-inset;
+  padding: $close-hit-inset;
+  width: tokens.$space-32;
+}
+
+.bottom-sheet__content {
+  flex: 1 0 0;
+  min-height: 0;
+  overflow-y: auto;
+
+  // Impede o scroll chaining: rolar a conversa até o fim não pode continuar
+  // rolando a página por baixo.
+  overscroll-behavior: contain;
+  padding: var(--space-8) var(--space-40) var(--space-40);
+}
+
+// Faixa de atalhos: some inteira (padding incluído) quando não há atalhos —
+// o `@if` do template cobre este bloco (FR-009/SC-007).
+.bottom-sheet__actions {
+  display: flex;
+  flex-shrink: 0;
+  flex-wrap: wrap;
+  gap: var(--space-16);
+  padding: var(--space-24);
+}
+
+.bottom-sheet__footer {
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  padding: 0 var(--space-24) calc(var(--space-40) + env(safe-area-inset-bottom));
+}
+
+// O arraste continua funcionando: é gesto direto, não animação decorativa.
+@media (prefers-reduced-motion: reduce) {
+  .bottom-sheet {
+    opacity: 0;
+    transition:
+      opacity $duration-reduced ease,
+      overlay $duration-reduced allow-discrete,
+      display $duration-reduced allow-discrete;
+    translate: none;
+
+    &[open] {
+      animation: bottom-sheet-enter-reduced $duration-reduced ease;
+      opacity: 1;
+      translate: none;
+    }
+  }
+}

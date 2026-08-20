@@ -1,0 +1,21 @@
+@if (open()) {
+  <div class="confirm-dialog__scrim">
+    <div class="confirm-dialog__panel">
+      <p class="confirm-dialog__title">{{ title() }}</p>
+      <div class="confirm-dialog__actions">
+        <app-button
+          kind="tertiary"
+          appearance="outlined"
+          [label]="cancelLabel()"
+          (click)="cancelled.emit()"
+        />
+        <app-button
+          kind="primary"
+          appearance="solid"
+          [label]="confirmLabel()"
+          (click)="confirmed.emit()"
+        />
+      </div>
+    </div>
+  </div>
+}

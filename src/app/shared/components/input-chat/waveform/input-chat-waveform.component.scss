@@ -1,0 +1,83 @@
+@use '../../../styles/tokens';
+
+// Geometria interna das ondas — medida no SVG que o Figma exporta para os nós
+// 4054:3375…3381 (specs/ds/DS-component-input-chat/research.md §3), não
+// estimada. São constantes NOMEADAS de componente, não tokens globais: valores
+// de glifo que existem só aqui e não têm significado de sistema poluiriam a
+// escala de 8px (FR-017).
+$group-width: 22px;
+$group-height: 26px;
+$bar-width: 2px;
+$bar-gap: 3px;
+$bar-radius: 1px;
+
+:host {
+  display: contents;
+}
+
+// 6 grupos de 22px com 4px entre eles = 152px. `justify-content: center`
+// mantém o conjunto centralizado enquanto o botão de cancelar flutua à
+// esquerda por cima (nó 4054:3382).
+.input-chat-waveform {
+  align-items: center;
+  display: flex;
+  gap: tokens.$space-4;
+  height: 100%;
+  justify-content: center;
+  width: 100%;
+}
+
+.input-chat-waveform__group {
+  align-items: center;
+  display: flex;
+  flex-shrink: 0;
+  gap: $bar-gap;
+  height: $group-height;
+  width: $group-width;
+}
+
+.input-chat-waveform__bar {
+  // `content-2` (#006DA3) — medido no SVG que o Figma exporta para os nós
+  // 4054:3375…3381 após o ajuste do usuário (era `content-1`).
+  background: tokens.$color-content-2;
+  border-radius: $bar-radius;
+  display: block;
+
+  // Altura FIXA: a animação só escala. Animar `height` faria layout e paint a
+  // cada quadro; `transform` fica no compositor (FR-010).
+  height: $group-height;
+
+  // `center` — as barras crescem simetricamente a partir da linha média, que é
+  // exatamente como o SVG do Figma as desenha (todas centradas em y=13 de 26).
+  transform-origin: center;
+  width: $bar-width;
+}
+
+// Fallback canônico: sem sinal (permissão pendente ou negada), as barras
+// respiram por CSS puro. Nunca ficam achatadas ou paradas (FR-012) — uma barra
+// morta pareceria um componente quebrado.
+.input-chat-waveform--idle .input-chat-waveform__bar {
+  animation: input-chat-waveform-breathe 1.4s ease-in-out infinite;
+}
+
+@keyframes input-chat-waveform-breathe {
+  0%,
+  100% {
+    transform: scaleY(0.15);
+  }
+
+  50% {
+    transform: scaleY(0.55);
+  }
+}
+
+// Regra dura, não degradação parcial: nenhum keyframe ativo e nenhum loop
+// rodando (o loop é barrado no TS pelo mesmo media query). O estado "gravando"
+// passa a ser comunicado só pela região `aria-live` do componente pai.
+@media (prefers-reduced-motion: reduce) {
+  .input-chat-waveform__bar,
+  .input-chat-waveform--idle .input-chat-waveform__bar {
+    animation: none;
+    transform: scaleY(0.5);
+  }
+}

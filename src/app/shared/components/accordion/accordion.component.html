@@ -1,0 +1,64 @@
+<button
+  type="button"
+  class="accordion__header"
+  [attr.aria-expanded]="isExpanded()"
+  (click)="onToggle()"
+>
+  <span class="accordion__text">
+    <span
+      class="accordion__title"
+      [class.accordion__title--label]="isFilled()"
+      >{{ title() }}</span
+    >
+    @if (isEmpty()) {
+      <span class="accordion__placeholder">{{ emptyPlaceholder() }}</span>
+    }
+  </span>
+  <span
+    class="accordion__icon"
+    [class.accordion__icon--expanded]="isExpanded()"
+  >
+    <ph-icon name="caret-down" [size]="16" />
+  </span>
+</button>
+
+<!--
+  Os dois slots ficam SEMPRE no DOM (não mais atrás de @if) — é o que permite a transição de
+  altura de 200ms (spec.md § Interações & Motion, T020): grid-template-rows anima entre 0fr/1fr
+  só quando .accordion__slot--open está presente; fechado, a linha da grid colapsa a 0px de
+  verdade (não é só "invisível") porque .accordion__slot-inner tem overflow:hidden + min-height
+  0, o truque padrão de "accordion CSS puro" sem biblioteca de animação (mesma filosofia do
+  bottom-sheet/drawer, que também não usam @angular/animations). `[attr.inert]` neutraliza
+  foco/interação no slot fechado — sem isso, um <input> projetado continuaria alcançável via
+  Tab mesmo com 0px de altura visível.
+-->
+<div
+  class="accordion__slot"
+  [class.accordion__slot--open]="isExpanded()"
+  [attr.inert]="isExpanded() ? null : ''"
+>
+  <div class="accordion__slot-inner">
+    <div class="accordion__input">
+      <ng-content select="[accordionInput]" />
+    </div>
+  </div>
+</div>
+
+<!--
+  Nenhuma classe por viewType() aqui de propósito: o Figma (4500:12713) usa o MESMO container
+  para as 3 views (tag/texto/data) — só o CONTEÚDO projetado muda de aparência (cor content-3
+  no texto/data, pill com avatar na tag), e isso é responsabilidade de quem consome
+  (FR-005/research.md §2). `viewType` fica na API para documentar a intenção da instância, não
+  para gerar CSS que nada no design distingue.
+-->
+<div
+  class="accordion__slot"
+  [class.accordion__slot--open]="isFilled()"
+  [attr.inert]="isFilled() ? null : ''"
+>
+  <div class="accordion__slot-inner">
+    <div class="accordion__answer">
+      <ng-content select="[accordionAnswer]" />
+    </div>
+  </div>
+</div>

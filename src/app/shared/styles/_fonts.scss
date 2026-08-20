@@ -1,0 +1,84 @@
+// =============================================================================
+// Inter (todo o sistema) e Lora (conteúdo de chat com IA — Bottom-sheet/Drawer)
+// — tokens do Figma "Conductia". Baixadas do Google Fonts (fontes variáveis,
+// subconjunto "latin", SIL Open Font License 1.1) e auto-hospedadas aqui —
+// nunca via <link>/@import de CDN, para não quebrar o offline-first
+// (Constituição, Princípio IV). Substituem Helvetica Neue e Nunito Sans
+// (arquivos removidos — não há mais nenhum uso das duas no projeto).
+//
+// Cada arquivo é uma fonte VARIÁVEL: o Google já entrega um único .woff2
+// cobrindo todo o eixo de peso do estilo (o `@font-face` abaixo declara a
+// faixa completa via `font-weight: 200 900`/`100 900`, em vez de um arquivo
+// por peso como a Helvetica tinha) — por isso só 4 arquivos no total, não ~16.
+//
+// IMPORTANTE: este arquivo só deve ser `@use`ado UMA VEZ, em styles.scss (a
+// folha de estilo global). Angular compila o SCSS de cada componente como
+// uma unidade separada — se este arquivo fosse importado a partir de
+// _tokens.scss (que quase todo componente usa), cada componente duplicaria
+// estas regras @font-face no bundle final. As variáveis de peso de fonte
+// (usadas livremente nos componentes) vivem à parte, em _font-weights.scss,
+// que não emite CSS nenhum.
+//
+// -----------------------------------------------------------------------------
+// FORMATO: só WOFF2 (Princípio XI)
+// -----------------------------------------------------------------------------
+// Os `.otf`/`.ttf` originais eram formato de DESKTOP: 6,4 MB de assets servidos
+// ao navegador. Convertidos para WOFF2 (mesmos glifos, compressão Brotli), os
+// mesmos 8 pesos ocupam 1,2 MB — 81% a menos. WOFF2 é suportado por 100% dos
+// navegadores-alvo; nenhum fallback de formato é necessário.
+//
+// -----------------------------------------------------------------------------
+// VARIANTES: só as usadas (Princípio XI)
+// -----------------------------------------------------------------------------
+// As 8 faces ITÁLICAS foram removidas: nenhuma folha de estilo do projeto declara
+// `font-style: italic`, e o único `<em>` do código (o wordmark em
+// `nav-menu.component.html`) é explicitamente `font-style: normal`. Se um itálico
+// real for necessário, converta a face correspondente do zip original e adicione
+// o @font-face aqui — não reintroduza os `.otf`.
+//
+// -----------------------------------------------------------------------------
+// ⚠️ LICENÇA — PENDENTE DE VERIFICAÇÃO (Princípio XI)
+// -----------------------------------------------------------------------------
+// Helvetica Neue é fonte PROPRIETÁRIA (Monotype/Linotype). Licença de desktop
+// NÃO cobre distribuição como webfont: os arquivos abaixo são servidos
+// publicamente pelo `dist/`. Antes do merge em `main`, a licença DEVE ser
+// confirmada e registrada (o projeto já tem `licenses:compliance` e
+// `license-whitelist.txt` para dependências npm — falta o equivalente para
+// assets). Se a licença não cobrir uso web, a saída é uma família com licença
+// aberta e métricas próximas (ex.: Inter, Manrope), decidida com o design.
+// =============================================================================
+
+@font-face {
+  font-family: 'Inter';
+  src: url('/assets/fonts/inter/Inter-Variable.woff2') format('woff2');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+// Só o peso 200 (Extra Light) — único itálico usado no produto até agora
+// (headline "Section - italic" do Figma, ex.: "Tarefas diárias do hospital").
+// Ampliar a faixa (baixar outro arquivo) quando outro peso itálico aparecer.
+@font-face {
+  font-family: 'Inter';
+  src: url('/assets/fonts/inter/Inter-Italic-200.woff2') format('woff2');
+  font-weight: 200;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Lora';
+  src: url('/assets/fonts/lora/Lora-Variable.woff2') format('woff2');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Lora';
+  src: url('/assets/fonts/lora/Lora-Italic-Variable.woff2') format('woff2');
+  font-weight: 100 900;
+  font-style: italic;
+  font-display: swap;
+}

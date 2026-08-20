@@ -1,0 +1,13 @@
+@use '../../../../shared/styles/tokens';
+
+// Estimativa a partir da hierarquia tipográfica já catalogada (Inter Semi
+// Bold, mesmo peso/família dos títulos de card) — validar com get_screenshot
+// contra o nó Figma 4496:11857 (tasks.md T023, pendente).
+.notification-section-title {
+  margin: 0;
+  padding: tokens.$space-16 tokens.$space-8;
+  font-family: tokens.$font-family-base;
+  font-weight: tokens.$font-weight-semibold;
+  font-size: tokens.$font-size-interactive;
+  color: tokens.$color-content-1;
+}

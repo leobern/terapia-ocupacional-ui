@@ -1,0 +1,425 @@
+@use '../../styles/breakpoints';
+@use '../../styles/mixins';
+@use '../../styles/tokens';
+
+// -----------------------------------------------------------------------------
+// DS-component-menu — nó Figma `4334:7401` (variantes `4334:7400` colapsado /
+// `4334:7402` expandido) no desktop; nó `4367:11591` ("menu aberto") no
+// mobile/tablet.
+//
+// Mesmo componente nos dois mundos, dois mecanismos de acionamento:
+//   - Desktop (md, >=1200px): hover/`:focus-within` no trilho — `:host`
+//     reserva SEMPRE `--space-72` no layout (nunca muda de tamanho, então o
+//     conteúdo da rota ao lado nunca se move) e `.nav-menu__panel` expande
+//     por `width`, `position: absolute` dentro do host (que já é
+//     `position: sticky`, servindo de bloco de posicionamento).
+//   - Mobile/tablet (<md): `:host` não gera caixa (`display: contents`) — a
+//     navegação daí é a bottom-nav-bar, este componente não deve disputar
+//     espaço nenhum no `.app-shell`. `.nav-menu__panel` é `position: fixed`,
+//     fora da tela por padrão (`translate: -100% 0`) e desliza para dentro
+//     quando o host recebe a classe `.nav-menu--open` (`open()`, controlado
+//     pelo consumidor via botão "Menu" da bottom-nav-bar) — mesma dupla
+//     easing/duração do desktop, só que acionada por classe em vez de hover.
+//
+// Curva de easing compartilhada — "standard" (acelera e desacelera suave, sem
+// ricochete).
+// -----------------------------------------------------------------------------
+$ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
+// Um pouco mais lento que antes (320ms) — feedback do usuário: a sensação de
+// "crescimento" do painel precisava ser mais perceptível/suave, não um salto.
+$duration-expand: 380ms;
+
+:host {
+  display: contents;
+}
+
+.nav-menu__panel {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$space-32;
+  padding: tokens.$space-16;
+  align-items: flex-start;
+  // NÃO `overflow: hidden` (diferente do legado): `app-icon-logo-button`
+  // reserva uma caixa de 1.75× `--icon-logo-size` para o transbordo do halo/
+  // luzes de hover — clipar aqui cortaria essa caixa. O recorte dos rótulos
+  // (`max-width`/`opacity`) já é feito localmente em cada `.nav-menu__label`/
+  // `.nav-menu__wordmark`/`.nav-menu__profile-text`.
+  overflow: visible;
+
+  // Mobile/tablet (<md): painel de tela cheia (altura) fixo, fora da tela por
+  // padrão, deslizando a partir da esquerda — Figma `4367:11591`.
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: min(340px, calc(100vw - #{tokens.$space-16}));
+  background: var(--color-surface);
+  border-top-right-radius: var(--radius-md);
+  border-bottom-right-radius: var(--radius-md);
+  box-shadow: var(--shadow-elevation-bottomsheet);
+  z-index: var(--z-index-overlay);
+  translate: -100% 0;
+  transition: translate $duration-expand $ease-standard;
+
+  :host(.nav-menu--open) & {
+    translate: 0 0;
+  }
+}
+
+@include breakpoints.md {
+  :host {
+    box-sizing: border-box;
+    // `block` basta: `.nav-menu__panel` (o filho único real) é
+    // `position: absolute`, então não depende do `display` do host para se
+    // posicionar — só precisa que o host não seja `display: none` e sirva de
+    // bloco de posicionamento (`position: sticky` já cumpre isso).
+    display: block;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    // Reserva FIXA — nunca transiciona. É o que garante que o conteúdo da
+    // rota, irmão deste componente em `.app-shell` (display: flex), nunca
+    // seja empurrado quando o painel abre.
+    flex: 0 0 var(--space-72);
+    width: var(--space-72);
+
+    // `position: sticky` já cria um contexto de empilhamento próprio (mesma
+    // regra de `fixed`) — mas SEM `z-index` aqui, esse contexto inteiro fica
+    // no nível "auto" em relação aos irmãos dentro de `.app-shell`. Um
+    // `z-index` só no `.nav-menu__panel` (descendente) não resolve: ele só
+    // vale DENTRO do contexto do host, não na comparação do host com o
+    // conteúdo da rota ao lado. Achado do usuário: o menu aberto ficava
+    // ATRÁS do conteúdo. `z-index` precisa estar aqui, no host, também.
+    &:hover,
+    &:focus-within {
+      z-index: var(--z-index-overlay);
+    }
+  }
+
+  .nav-menu__panel {
+    // Reset das propriedades mobile (fixed/translate/sombra sempre visível)
+    // para o mecanismo de desktop (absolute + width, sem slide).
+    position: absolute;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: 100%;
+    background: transparent;
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+    box-shadow: none;
+    z-index: auto;
+    translate: 0 0;
+    border-right: 1px solid var(--color-border);
+    // Sem `right: 0` de propósito — a largura é controlada só por `width`
+    // (100% colapsado, `--space-280` expandido). Combinar `left`/`right`/
+    // `width` ao mesmo tempo deixaria o cálculo sobre-restringido.
+    transition:
+      width $duration-expand $ease-standard,
+      background-color $duration-expand $ease-standard,
+      box-shadow $duration-expand $ease-standard;
+
+    :host(:hover) &,
+    :host(:focus-within) &,
+    :host(.nav-menu--open) & {
+      width: var(--space-280);
+      background: var(--color-surface);
+      box-shadow: var(--shadow-elevation-bottomsheet);
+      border-right: none;
+      border-top-right-radius: var(--radius-md);
+      border-bottom-right-radius: var(--radius-md);
+      // Acima do conteúdo da rota — o painel flutua por cima em vez de
+      // compartilhar espaço com ele (feedback do usuário: comportamento de
+      // sobreposição, não de "arrastar" os elementos da tela).
+      z-index: var(--z-index-overlay);
+    }
+  }
+}
+
+// Rótulos/nome só aparecem (fade + leve deslocamento) quando o trilho está
+// expandido — mesmo DOM nos dois estados, só CSS anima a transição (sem
+// estado em JS). Vale para TODO rótulo de texto revelado na abertura: os 5
+// itens de navegação, o Sair, o wordmark da logo e o bloco de perfil do
+// usuário (nome + cargo) — mesma animação em todos, nenhum tratado à parte.
+//
+// `translateX` pequeno (a favor da leitura, esquerda→direita) em vez de só
+// opacidade: um "nascimento" com leve movimento lê como mais intencional do
+// que um fade puro (feedback do usuário — pedido explicitamente para os
+// rótulos, incluindo o do perfil). Atraso leve na entrada
+// (`transition-delay`) para o texto só começar a aparecer quando a largura
+// já abriu um pouco — evita o rótulo "nascer" espremido contra o ícone antes
+// de haver espaço. Sem atraso na saída (`max-width: 0`), para o texto sumir
+// imediatamente e não sobrar truncado durante o recolhimento.
+.nav-menu__wordmark,
+.nav-menu__label,
+.nav-menu__profile-text {
+  opacity: 0;
+  max-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  translate: -8px 0;
+  transition:
+    opacity 260ms $ease-standard,
+    translate 260ms $ease-standard,
+    max-width $duration-expand $ease-standard;
+}
+
+:host(:hover),
+:host(:focus-within),
+:host(.nav-menu--open) {
+  .nav-menu__wordmark,
+  .nav-menu__label,
+  .nav-menu__profile-text {
+    opacity: 1;
+    max-width: 160px;
+    translate: 0 0;
+    transition-delay: 80ms;
+  }
+}
+
+.nav-menu__logo {
+  display: flex;
+  align-items: center;
+  // Altura FIXA de 56px (ajuste do usuário) — centraliza o ícone de 40px e o
+  // wordmark de 36px dentro da faixa, sem colar ao topo. Sem essa altura
+  // explícita, a linha encolhe para o filho mais alto.
+  height: tokens.$space-56;
+  // SEMPRE `flex-start` — nunca centraliza. O badge é o primeiro (e, quando
+  // colapsado, único) filho: com `flex-start` fixo, ele fica sempre na mesma
+  // posição relativa à borda esquerda do painel, colapsado ou expandido
+  // (feedback do usuário: a logo não pode mudar de lugar ao abrir/fechar).
+  justify-content: flex-start;
+  // 12px exatos (`get_metadata`: ícone termina em x=40, wordmark começa em
+  // x=52) — token dedicado `$space-12`.
+  gap: tokens.$space-12;
+  flex-shrink: 0;
+  width: 100%;
+}
+
+// Slot com o tamanho EXATO do Figma (40×40, `get_metadata`: instância
+// `icon-logo` 40×40 nos dois estados) — vira a referência real de layout
+// (gap-12 para o wordmark conta a partir daqui). `app-icon-logo-button` por
+// baixo é maior (1.75× = 70px, reserva para o transbordo do halo/luzes de
+// hover) e fica centralizado dentro do slot por posicionamento absoluto —
+// sem o slot, o círculo VISÍVEL renderiza deslocado ~15px do canto do badge
+// (metade da folga entre 70px e 40px), porque o fluxo normal alinha a CAIXA
+// de 70px, não o círculo de 40px nela centralizado (achado do usuário: a
+// logo ficava desalinhada em relação aos outros elementos do menu).
+.nav-menu__logo-slot {
+  position: relative;
+  display: block;
+  width: tokens.$space-40;
+  height: tokens.$space-40;
+  flex-shrink: 0;
+}
+
+.nav-menu__logo-badge {
+  // Sobrescreve o default de 48px do `DS-component-icon-logo` — o Figma deste
+  // componente usa 40px. Custom property herdada pelo componente interno via
+  // `var(--icon-logo-size, 48px)` — não precisa de input novo.
+  --icon-logo-size: #{tokens.$space-40};
+  // Cor de repouso — primary (colapsado). Herdada pelo `icon-logo-visual`
+  // interno via `var(--icon-logo-accent-override, ...)`, escape hatch aditivo
+  // criado especificamente para este caso (ver icon-logo-visual.component.scss).
+  --icon-logo-accent-override: var(--color-primary);
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+:host(:hover),
+:host(:focus-within),
+:host(.nav-menu--open) {
+  .nav-menu__logo-badge {
+    // Muda de forma sutil: só a cor de acento (borda + traço da malha)
+    // transiciona de `primary` para `secondary` — sem trocar de componente,
+    // sem halo, sem "piscar" (o estado `button` nunca desenha a camada de
+    // halo/blur, ver icon-logo-visual.component.html) — feedback do usuário:
+    // a transição anterior "piscava um blur azul"; esta troca é só cor.
+    --icon-logo-accent-override: var(--color-secondary);
+  }
+}
+
+.nav-menu__wordmark {
+  font-family: tokens.$font-family-base;
+  font-weight: tokens.$font-weight-bold;
+  font-size: 24px;
+  color: var(--color-primary);
+
+  em {
+    font-style: normal;
+    color: var(--color-secondary);
+  }
+}
+
+// Só existe fora do desktop (`showCloseButton()`, ver .ts) — no trilho de
+// desktop quem fecha é o mouse saindo, sem botão dedicado. Empurrado para o
+// fim da linha da logo (Figma `4367:11591`: "X" no canto superior direito
+// do painel).
+.nav-menu__close {
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+.nav-menu__links {
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$space-8;
+  flex: 1 0 0;
+  min-height: 0;
+  width: 100%;
+}
+
+.nav-menu__link {
+  display: flex;
+  align-items: center;
+  // Colapsado: SEM gap e largura `fit-content` — o rótulo tem `max-width: 0`
+  // (invisível), mas um `gap` diferente de zero ainda reservaria espaço para
+  // ele; o Figma mostra o item colapsado ocupando só ícone+padding (40px),
+  // não a largura cheia do painel (`get_metadata`: `bt` w=40 colapsado vs.
+  // w=248 expandido). Expandido: gap e largura cheia entram no override
+  // abaixo, junto com o resto do estado expandido.
+  gap: 0;
+  padding: tokens.$space-8;
+  border: none;
+  border-radius: var(--radius-xs);
+  background: transparent;
+  color: var(--color-content-1);
+  cursor: pointer;
+  width: fit-content;
+  text-align: left;
+  // `background-color` sem atraso na regra BASE — governa a SAÍDA do hover
+  // (mouse sai do item, ou o painel recolhe): o destaque some rápido, sem
+  // lag artificial. O atraso de entrada fica só na regra de hover abaixo
+  // (achado do usuário: como o cursor entra no trilho colapsado quase
+  // sempre sobre o primeiro item, "Hospitais", o fundo dele aparecia
+  // INSTANTANEAMENTE no exato momento em que o menu começava a abrir,
+  // enquanto os demais só recebem hover depois, já com o painel aberto —
+  // parecendo uma animação diferente).
+  transition:
+    background-color $duration-expand $ease-standard,
+    color 0.15s ease,
+    gap $duration-expand $ease-standard;
+
+  @include mixins.focus-ring;
+
+  // Hover de item individual (não desenhado no Figma, decisão de engenharia —
+  // spec.md § Clarifications): mesmo fundo/raio do item ativo, mas mantém a
+  // cor de conteúdo padrão. Declarado ANTES da regra `--active` para que o
+  // item ativo tenha prioridade e não mude de cor ao receber hover sobre si
+  // mesmo (research.md §6).
+  &:hover {
+    background: var(--color-surface-2);
+  }
+
+  &--active {
+    background: var(--color-surface-2);
+    color: var(--color-state-disabled-2);
+
+    // Sobrepõe a cor própria do ícone (primary/secondary por estado, ver
+    // `.nav-menu__icon`) — item ativo é a única situação em que ícone e
+    // rótulo ficam com a MESMA cor (spec.md FR-009).
+    .nav-menu__icon {
+      color: var(--color-state-disabled-2);
+    }
+  }
+
+  &--logout {
+    // Só o ÍCONE do item Sair é vermelho (`comm-alert`) — o rótulo usa a cor
+    // padrão de texto (`content-1`), confirmado via `get_design_context`
+    // reconsultado (o "Sair" do Figma renderiza texto escuro, não vermelho).
+    .nav-menu__icon {
+      color: var(--color-comm-alert);
+    }
+  }
+}
+
+:host(:hover),
+:host(:focus-within),
+:host(.nav-menu--open) {
+  .nav-menu__link {
+    // Expandido: largura cheia (o fundo de hover/ativo cobre a linha
+    // inteira, `get_metadata`: `bt` w=248) e o gap entre ícone e rótulo —
+    // ajustado pelo usuário para `$space-16` uniformemente (itens de
+    // navegação e Sair já usavam o mesmo valor).
+    width: 100%;
+    gap: tokens.$space-16;
+
+    // Atraso só na ENTRADA do hover (mouse chegando no item), casando com o
+    // mesmo atraso do rótulo — a saída (regra base, sem atraso) continua
+    // rápida. Só se aplica aqui dentro (painel já expandido/expandindo);
+    // sozinho, `.nav-menu__link:hover` (fora deste bloco) nunca dispara sem
+    // o host também estar em hover/focus-within.
+    &:hover {
+      transition-delay: 80ms;
+    }
+  }
+}
+
+.nav-menu__icon {
+  flex-shrink: 0;
+  // Ícone dos itens de navegação tem cor PRÓPRIA, distinta do rótulo de texto
+  // (`content-1`) — confirmado via `get_design_context` reconsultado: o vetor
+  // colapsado usa `default/primary` (#004466) e o expandido usa
+  // `default/secondary` (#00AAFF). Não é `currentColor`/herdado do texto.
+  color: var(--color-primary);
+  // Fade mais suave que o padrão de hover (feedback do usuário) — mais lento
+  // que a transição de largura/gap, para a mudança de cor ler como um
+  // detalhe refinado, não um flash.
+  transition: color 400ms $ease-standard;
+}
+
+:host(:hover),
+:host(:focus-within),
+:host(.nav-menu--open) {
+  // `:not(--logout)` e `:not(--active)` evitam que a troca de cor por estado
+  // (colapsado/expandido) sobreponha as cores fixas do item Sair e do item
+  // ativo, que têm regra própria acima.
+  .nav-menu__link:not(.nav-menu__link--logout):not(.nav-menu__link--active)
+    .nav-menu__icon {
+    color: var(--color-secondary);
+  }
+}
+
+.nav-menu__label {
+  font-family: tokens.$font-family-interactive;
+  // Ajustado pelo usuário: medium (500) em vez do bold (700) padrão do
+  // design system para elementos interativos.
+  font-weight: tokens.$font-weight-medium;
+  font-size: tokens.$font-size-interactive;
+}
+
+.nav-menu__footer {
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$space-16;
+  flex-shrink: 0;
+  width: 100%;
+}
+
+.nav-menu__profile {
+  display: flex;
+  align-items: center;
+  gap: tokens.$space-16;
+  padding: 0 tokens.$space-4;
+}
+
+.nav-menu__profile-text {
+  display: flex;
+  flex-direction: column;
+  color: var(--color-content-1);
+}
+
+.nav-menu__profile-name {
+  font-family: tokens.$font-family-base;
+  font-weight: tokens.$font-weight-heavy;
+  font-size: 16px;
+}
+
+.nav-menu__profile-role {
+  font-family: tokens.$font-family-base;
+  font-size: 12px;
+  color: var(--color-content-4);
+}

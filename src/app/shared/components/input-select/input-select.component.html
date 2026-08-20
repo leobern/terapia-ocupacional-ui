@@ -1,0 +1,72 @@
+<div
+  class="input-select"
+  [class.input-select--select]="variant() === 'select'"
+  [class.input-select--filled]="hasValue()"
+  [class.input-select--disabled]="disabled()"
+  [class.keyboard-focus]="keyboardFocused()"
+>
+  <div class="input-select__content">
+    @if (iconLeft(); as icon) {
+      <ph-icon
+        class="input-select__icon input-select__icon--leading"
+        [name]="icon"
+        [size]="24"
+      />
+    }
+
+    @if (variant() === 'select') {
+      <div
+        class="input-select__field input-select__field--select"
+        role="combobox"
+        aria-haspopup="listbox"
+        [class.input-select__field--filled]="hasValue()"
+        [attr.aria-label]="effectiveAriaLabel()"
+        [attr.aria-expanded]="expanded()"
+        [attr.aria-controls]="controlsId()"
+        [attr.aria-activedescendant]="activeDescendantId()"
+        [attr.aria-disabled]="disabled()"
+        [attr.tabindex]="disabled() ? -1 : 0"
+        (click)="onSelectClick()"
+        (keydown.enter)="onSelectKeydown($event)"
+        (keydown.space)="onSelectKeydown($event)"
+        (focus)="onFocus()"
+        (blur)="onBlur()"
+      >
+        {{ hasValue() ? value() : displayPlaceholder() }}
+      </div>
+    } @else {
+      <input
+        class="input-select__field"
+        type="text"
+        [class.input-select__field--filled]="hasValue()"
+        [attr.aria-label]="effectiveAriaLabel()"
+        [value]="value()"
+        [placeholder]="displayPlaceholder()"
+        [disabled]="disabled()"
+        (input)="onInput($event)"
+        (focus)="onFocus()"
+        (blur)="onBlur()"
+      />
+    }
+
+    @if (showClear()) {
+      <button
+        type="button"
+        class="input-select__clear"
+        aria-label="Limpar"
+        (mousedown)="onClearMousedown($event)"
+        (click)="onClear()"
+      >
+        <ph-icon name="x" [size]="16" />
+      </button>
+    }
+
+    @if (effectiveTrailingIcon(); as icon) {
+      <ph-icon
+        class="input-select__icon input-select__icon--trailing"
+        [name]="icon"
+        [size]="16"
+      />
+    }
+  </div>
+</div>

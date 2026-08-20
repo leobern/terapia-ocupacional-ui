@@ -1,0 +1,85 @@
+@use '../../styles/mixins';
+
+// -----------------------------------------------------------------------------
+// DS-component-icon-logo — wrapper público interativo.
+// O `<button>` mede o CÍRCULO (com piso de 44px), não a caixa de bleed do núcleo:
+// o alvo de clique não pode se estender além do desenho visível (SC-011). O núcleo
+// transborda o botão e é `pointer-events: none`, então cliques na auréola não
+// chegam aqui.
+// -----------------------------------------------------------------------------
+// O host reserva a MESMA caixa de bleed do componente decorativo
+// (`1.75 × --icon-logo-size`), e não o tamanho do botão. Sem isto os dois
+// componentes públicos ocupam caixas diferentes para o mesmo símbolo, e um
+// `<app-icon-logo>` ao lado de um `<app-icon-logo-button>` sai desalinhado
+// verticalmente (achado do usuário na validação, 2026-07-26).
+:host {
+  display: inline-block;
+  height: calc(var(--icon-logo-size, 48px) * 1.75);
+  line-height: 0;
+  position: relative;
+  width: calc(var(--icon-logo-size, 48px) * 1.75);
+}
+
+.icon-logo-button {
+  @include mixins.focus-ring;
+
+  align-items: center;
+  background: transparent;
+  border: none;
+
+  // Circular para que o hit-test acompanhe o formato do símbolo, não um quadrado.
+  border-radius: 50%;
+  box-sizing: border-box;
+  cursor: pointer;
+
+  // `flex` (não `inline-flex`) + posicionamento absoluto: fora do fluxo inline não
+  // há line box nem alinhamento por baseline, que era o que somava ~11px fantasma
+  // à altura do host. Centrado por `margin` negativa e NÃO por
+  // `transform: translate(-50%)` — um transform aqui criaria stacking context e
+  // isolaria o blend das camadas do núcleo (research.md §1).
+  display: flex;
+
+  // `max()` garante os 44x44 mínimos de área de toque (WCAG 2.5.5/2.5.8) mesmo com
+  // `--icon-logo-size` menor, sem alterar o desenho visível (FR-015). O fallback
+  // repete o default do núcleo porque esta property pode não ter sido definida.
+  height: max(var(--icon-logo-size, 48px), 44px);
+  justify-content: center;
+  left: 50%;
+  margin-left: calc(max(var(--icon-logo-size, 48px), 44px) / -2);
+  margin-top: calc(max(var(--icon-logo-size, 48px), 44px) / -2);
+  padding: 0;
+  position: absolute;
+  top: 50%;
+
+  // `scale` (propriedade independente) em vez de `transform`, para não competir com
+  // nada. Cria stacking context durante os 120ms do press, isolando o blend contra a
+  // página — impacto aceito e analisado em research.md §3: os alvos de composição
+  // visualmente relevantes (base, surface, mesh) são internos e continuam compondo.
+  transition: scale 120ms ease-out;
+  width: max(var(--icon-logo-size, 48px), 44px);
+
+  &:active:not(:disabled) {
+    scale: 0.96;
+  }
+
+  &:disabled {
+    cursor: default;
+  }
+}
+
+// O núcleo mede 1.75x o círculo e precisa TRANSBORDAR o botão, não caber nele.
+// Sem isto ele entra como flex item encolhível e é espremido até a largura do
+// botão, virando uma elipse vertical (achado na verificação visual, 2026-07-26).
+.icon-logo-button app-icon-logo-visual {
+  flex-shrink: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .icon-logo-button {
+    transition-duration: 0s;
+
+    &:active:not(:disabled) {
+      scale: 1;
+    }
+  }
+}

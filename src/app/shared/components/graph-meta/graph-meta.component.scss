@@ -1,0 +1,16 @@
+:host {
+  display: inline-flex;
+}
+
+.progress {
+  stroke-linecap: round;
+  transition:
+    stroke-dashoffset 0.3s ease,
+    stroke 0.3s ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .progress {
+    transition: none;
+  }
+}
