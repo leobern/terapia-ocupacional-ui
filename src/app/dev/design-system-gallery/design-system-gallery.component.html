@@ -929,6 +929,134 @@
   </section>
 
   <section class="gallery__section">
+    <h2>Accordion — DS-component-accordion</h2>
+    <p class="gallery__hint">
+      Componente de "pergunta única" reutilizável em qualquer fluxo de
+      criação/edição via bottom-sheet/drawer (primeiro consumidor:
+      <code>005-criar-notificacao</code>). Cada grupo abaixo reproduz um dos 3
+      nós Figma de origem para comparação via <code>get_screenshot</code>.
+    </p>
+
+    <h3>
+      state="collapsed-empty" — nó
+      <code>4499:12360</code>
+    </h3>
+    <div class="gallery__stack gallery__narrow">
+      <app-accordion title="Quem será notificado:" state="collapsed-empty" />
+      <app-accordion
+        title="Qual é a mensagem da notificação?"
+        state="collapsed-empty"
+      />
+      <app-accordion
+        title="Data para resolução?"
+        state="collapsed-empty"
+        emptyPlaceholder="Opcional"
+      />
+    </div>
+
+    <h3>
+      state="expanded" — nó
+      <code>4499:12525</code>
+    </h3>
+    <div class="gallery__stack gallery__narrow">
+      <app-accordion title="Quem será notificado:" state="expanded">
+        <input
+          accordionInput
+          type="text"
+          placeholder="@nome da pessoa"
+          class="accordion-demo__input"
+        />
+      </app-accordion>
+      <app-accordion title="Qual é a mensagem da notificação?" state="expanded">
+        <textarea
+          accordionInput
+          placeholder="Escreva a mensagem"
+          class="accordion-demo__input"
+        ></textarea>
+      </app-accordion>
+      <app-accordion title="Data para resolução?" state="expanded">
+        <input accordionInput type="date" class="accordion-demo__input" />
+      </app-accordion>
+    </div>
+
+    <h3>
+      state="collapsed-filled" — nó
+      <code>4500:12713</code>
+      (os 3 <code>viewType</code>s)
+    </h3>
+    <div class="gallery__stack gallery__narrow">
+      <app-accordion
+        title="Quem será notificado:"
+        state="collapsed-filled"
+        viewType="tag"
+      >
+        <span accordionAnswer class="accordion-demo__tag">
+          <app-avatar
+            size="small"
+            type="photo"
+            imageUrl="https://i.pravatar.cc/64?img=47"
+          />
+          Dra. Michelle Franklin
+        </span>
+      </app-accordion>
+      <app-accordion
+        title="Mensagem:"
+        state="collapsed-filled"
+        viewType="texto"
+      >
+        <span accordionAnswer class="accordion-demo__value"
+          >Alinhado com a equipe manter VO exclusivo por hora</span
+        >
+      </app-accordion>
+      <app-accordion title="Data:" state="collapsed-filled" viewType="data">
+        <span accordionAnswer class="accordion-demo__value">23/04/2027</span>
+      </app-accordion>
+    </div>
+
+    <h3>
+      Interativo — motion, teclado, independência entre instâncias (SC-003)
+    </h3>
+    <p class="gallery__hint">
+      Clique no cabeçalho (ou dê Tab até ele e aperte Enter/Espaço) para
+      alternar de verdade entre os 3 estados — observe a transição de 200ms na
+      altura do slot. As duas instâncias abaixo são independentes: alternar a
+      primeira não deve afetar a segunda (já coberto por teste automatizado em
+      <code>accordion.component.spec.ts</code>; isto é a checagem visual
+      complementar).
+    </p>
+    <div class="gallery__stack gallery__narrow">
+      <app-accordion
+        title="Quem será notificado:"
+        viewType="tag"
+        [state]="accordionInteractiveState()"
+        (toggled)="onAccordionInteractiveToggle()"
+      >
+        <input
+          accordionInput
+          type="text"
+          placeholder="@nome da pessoa"
+          class="accordion-demo__input"
+          [value]="accordionInteractiveValue()"
+          (input)="onAccordionInteractiveInput($event)"
+        />
+        <span accordionAnswer>{{ accordionInteractiveValue() }}</span>
+      </app-accordion>
+      <app-accordion
+        title="Instância independente (não deve reagir ao clique acima)"
+        [state]="accordionSecondState()"
+        (toggled)="onAccordionSecondToggle()"
+      >
+        <input
+          accordionInput
+          type="text"
+          placeholder="Campo de teste"
+          class="accordion-demo__input"
+        />
+      </app-accordion>
+    </div>
+  </section>
+
+  <section class="gallery__section">
     <h2>Bottom Sheet — DS-component-bottom-sheet</h2>
     <p class="gallery__hint">
       Única superfície modal do produto em celular e tablet. É um

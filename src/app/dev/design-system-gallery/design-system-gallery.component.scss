@@ -150,3 +150,36 @@
   line-height: 1.35;
   margin: 0;
 }
+
+// Input/textarea de referência projetados no slot `accordionInput` da galeria —
+// pertencem ao conteúdo de exemplo, não ao design system do accordion em si
+// (mesmo raciocínio de `.sheet-demo`/`.drawer-demo`): o componente só estiliza
+// o container ao redor, nunca o campo projetado.
+.accordion-demo__input {
+  box-sizing: border-box;
+  width: 100%;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-family: var(--font-family-body);
+  font-size: 16px;
+  color: var(--color-content-1);
+  resize: vertical;
+}
+
+// Cor/peso do valor nas views "texto"/"data" (nó Figma 4500:12713) — pertence
+// ao conteúdo PROJETADO, não ao componente accordion em si (FR-005): o
+// accordion não define a cor da resposta, só o container/rótulo ao redor.
+.accordion-demo__value {
+  color: var(--color-content-3);
+  font-weight: tokens.$font-weight-medium;
+}
+
+.accordion-demo__tag {
+  display: inline-flex;
+  align-items: center;
+  gap: tokens.$space-8;
+  font-family: var(--font-family-body);
+  font-weight: tokens.$font-weight-semibold;
+  color: var(--color-content-1);
+}

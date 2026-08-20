@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, signal } from '@angular/core';
 
+import { AccordionComponent, type AccordionState } from '../../shared/components/accordion/accordion.component';
 import { AvatarComponent } from '../../shared/components/avatar/avatar.component';
 import { BackgroundMeshComponent } from '../../shared/components/background-mesh/background-mesh.component';
 import { BadgeComponent } from '../../shared/components/badge/badge.component';
@@ -28,6 +29,7 @@ import { TagComponent } from '../../shared/components/tag/tag.component';
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
+    AccordionComponent,
     AvatarComponent,
     BackgroundMeshComponent,
     BadgeComponent,
@@ -117,6 +119,17 @@ export class DesignSystemGalleryComponent {
 
   protected readonly drawerChatValue = signal('');
 
+  // --- accordion --------------------------------------------------------------
+  //
+  // Instância "interativa": alterna de verdade entre os 3 estados no clique do
+  // header, para testar a transição de 200ms (T020) e o comportamento de
+  // teclado/inert. A segunda instância existe só para provar visualmente que
+  // alternar uma não afeta a outra (SC-003, já coberto por teste automatizado
+  // em accordion.component.spec.ts — isto é a checagem visual complementar).
+  protected readonly accordionInteractiveState = signal<AccordionState>('collapsed-empty');
+  protected readonly accordionInteractiveValue = signal('');
+  protected readonly accordionSecondState = signal<AccordionState>('collapsed-empty');
+
   protected onCardPatientsClick(variant: string): void {
     this.cardPatientsLastClick.set(`card-patients (${variant}) — ${new Date().toLocaleTimeString()}`);
   }
@@ -166,5 +179,25 @@ export class DesignSystemGalleryComponent {
 
   protected onDrawerShortcut(shortcut: ChatShortcut): void {
     this.drawerLastEvent.set(`shortcutSelect: ${shortcut.id} — "${shortcut.label}"`);
+  }
+
+  protected onAccordionInteractiveToggle(): void {
+    if (this.accordionInteractiveState() !== 'expanded') {
+      this.accordionInteractiveState.set('expanded');
+
+      return;
+    }
+
+    this.accordionInteractiveState.set(
+      this.accordionInteractiveValue().trim() ? 'collapsed-filled' : 'collapsed-empty',
+    );
+  }
+
+  protected onAccordionInteractiveInput(event: Event): void {
+    this.accordionInteractiveValue.set((event.target as HTMLInputElement).value);
+  }
+
+  protected onAccordionSecondToggle(): void {
+    this.accordionSecondState.set(this.accordionSecondState() === 'expanded' ? 'collapsed-empty' : 'expanded');
   }
 }
