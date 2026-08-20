@@ -162,22 +162,15 @@ export class NotificationsComponent implements OnDestroy {
     this.intersectionObserver?.disconnect();
   }
 
-  protected onRetry(): void {
-    const hospitalId = this.hospitalId();
-
-    if (hospitalId != null) {
-      this.store.dispatch(NotificationsActions.retryRequested({ hospitalId }));
-    }
-  }
-
-  protected isExpanded(id: number): boolean {
+  // public: os membros a seguir são exercitados diretamente pelo spec.
+  isExpanded(id: number): boolean {
     // Um card em modo "answering" também mostra o histórico expandido, se
     // houver (Acceptance Scenario 2 de US3) — nunca colapsado enquanto respondendo.
     return this.expandedIds().has(id) || this.answeringId() === id;
   }
 
   /** `type` a passar para `app-card-notify` — usado no template para as 2 seções. */
-  protected cardType(id: number): CardNotifyType {
+  cardType(id: number): CardNotifyType {
     if (this.answeringId() === id) {
       return 'answering';
     }
@@ -187,18 +180,18 @@ export class NotificationsComponent implements OnDestroy {
 
   /** FR-006 (US2) — navega para o paciente relacionado; `app-card-notify` já suprime
    *  `cardClick` sozinho quando `type="answering"` (Acceptance Scenario 2). */
-  protected onCardClick(patientId: number): void {
+  onCardClick(patientId: number): void {
     this.router.navigate(['/patients', patientId]);
   }
 
-  protected onViewRepliesClick(id: number): void {
+  onViewRepliesClick(id: number): void {
     const next = new Set(this.expandedIds());
 
     next.add(id);
     this.expandedIds.set(next);
   }
 
-  protected onCollapseClick(id: number): void {
+  onCollapseClick(id: number): void {
     const next = new Set(this.expandedIds());
 
     next.delete(id);
@@ -207,19 +200,11 @@ export class NotificationsComponent implements OnDestroy {
 
   // --- Fluxo de resposta via IA (User Story 3) ---
 
-  protected onAnswerClick(id: number): void {
+  onAnswerClick(id: number): void {
     this.store.dispatch(NotificationsActions.answerStarted({ notificationId: id }));
   }
 
-  protected onDraftInput(text: string): void {
-    const id = this.answeringId();
-
-    if (id != null) {
-      this.store.dispatch(NotificationsActions.draftChanged({ notificationId: id, text }));
-    }
-  }
-
-  protected onSendDraft(): void {
+  onSendDraft(): void {
     const id = this.answeringId();
 
     if (id != null) {
@@ -228,9 +213,25 @@ export class NotificationsComponent implements OnDestroy {
   }
 
   /** Bottom sheet fechado sem confirmar o envio (FR-010) — descarta direto, sem diálogo. */
-  protected onBottomSheetClosed(): void {
+  onBottomSheetClosed(): void {
     if (this.answeringId() != null) {
       this.store.dispatch(NotificationsActions.answerDiscarded());
+    }
+  }
+
+  protected onRetry(): void {
+    const hospitalId = this.hospitalId();
+
+    if (hospitalId != null) {
+      this.store.dispatch(NotificationsActions.retryRequested({ hospitalId }));
+    }
+  }
+
+  protected onDraftInput(text: string): void {
+    const id = this.answeringId();
+
+    if (id != null) {
+      this.store.dispatch(NotificationsActions.draftChanged({ notificationId: id, text }));
     }
   }
 

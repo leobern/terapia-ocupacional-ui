@@ -74,13 +74,18 @@ function formatTodayLabel(): string {
   templateUrl: './home.component.html',
 })
 export class HomeComponent implements OnDestroy {
-  // `store` precisa ser o primeiro campo: os `toSignal(this.store.select(...))`
-  // abaixo dependem dele já estar atribuído — campos de classe inicializam na
-  // ordem em que aparecem no arquivo, e não na ordem de accessibility exigida
-  // pelo lint (por isso `store` fica `protected`, não `private`, aqui).
-  protected readonly store = inject(Store);
-  protected readonly aiAssistant = inject(AiAssistantService);
+  // public: o spec abre o assistente diretamente na instância do componente.
+  // Fica antes de `store` sem problema — não depende dele (diferente dos
+  // `toSignal(this.store.select(...))` logo abaixo).
+  readonly aiAssistant = inject(AiAssistantService);
 
+  // `store` precisa vir antes dos `toSignal(this.store.select(...))` abaixo:
+  // dependem dele já estar atribuído — campos de classe inicializam na ordem
+  // em que aparecem no arquivo (por isso `store` fica `protected`, não
+  // `private`, aqui — regra de ordering exige público antes de protected,
+  // mas dentro do bloco protected a ordem de inicialização real continua
+  // valendo).
+  protected readonly store = inject(Store);
   protected readonly status = toSignal(this.store.select(selectStatus), { initialValue: 'idle' as const });
   protected readonly summary = toSignal(this.store.select(selectSummary), { initialValue: null });
   protected readonly notifications = toSignal(this.store.select(selectNotifications), { initialValue: [] });
@@ -146,15 +151,12 @@ export class HomeComponent implements OnDestroy {
     this.intersectionObserver?.disconnect();
   }
 
-  protected onRetry(): void {
-    this.store.dispatch(HomeActions.retryRequested());
-  }
-
-  protected onViewNotificationDetail(_: number): void {
+  // public: os quatro a seguir são exercitados diretamente pelo spec.
+  onViewNotificationDetail(_: number): void {
     // Rota de detalhe registrada na US2 (T039) — fora do escopo desta spec.
   }
 
-  protected onViewAllNotifications(): void {
+  onViewAllNotifications(): void {
     // specs/004-notificacoes FR-001 — a Home já conhece o hospital em contexto,
     // então passa como query param (a tela de Notificações também aceita entrar
     // sem ele, ex.: vindo do Menu — resolve via GET /api/v1/home/hospitals).
@@ -165,11 +167,15 @@ export class HomeComponent implements OnDestroy {
     });
   }
 
-  protected onViewPatients(): void {
+  onViewPatients(): void {
     // Navega para a tela "Listagem de Pacientes" — especificação independente, fora de escopo.
   }
 
-  protected formatTime(isoDate: string): string {
+  formatTime(isoDate: string): string {
     return new Intl.DateTimeFormat('pt-BR', { hour: '2-digit', minute: '2-digit' }).format(new Date(isoDate));
+  }
+
+  protected onRetry(): void {
+    this.store.dispatch(HomeActions.retryRequested());
   }
 }

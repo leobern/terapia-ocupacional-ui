@@ -44,11 +44,12 @@ import { ViewportBreakpointService } from './shared/services/viewport-breakpoint
   templateUrl: './app.component.html',
 })
 export class AppComponent {
+  // public: os specs disparam abertura/fechamento do assistente e do menu
+  // diretamente na instância do componente.
+  readonly aiAssistant = inject(AiAssistantService);
+  readonly menuOpen = signal(false);
+
   protected readonly viewportBreakpoint = inject(ViewportBreakpointService);
-  protected readonly aiAssistant = inject(AiAssistantService);
-
-  protected readonly menuOpen = signal(false);
-
   protected readonly isNotificationsRoute = computed(() => this.currentUrl().startsWith('/notifications'));
   // '#D3FFE9' é o default do próprio app-background-mesh — repetido aqui só
   // porque o binding precisa de um valor concreto nas duas pontas do ternário.
@@ -76,12 +77,13 @@ export class AppComponent {
     { initialValue: this.router.url },
   );
 
-  protected onAiShortcut(_: ChatShortcut): void {
+  // public: exercitados diretamente pelo spec (ver `menuOpen`/`aiAssistant` acima).
+  onAiShortcut(_: ChatShortcut): void {
     // Conduzir a conversa com a IA fica para quando o serviço de chat existir
     // — por enquanto só fecha o atalho selecionado, sem enviar nada de verdade.
   }
 
-  protected onAiSend(_: string): void {
+  onAiSend(_: string): void {
     // Ver onAiShortcut — mesma justificativa.
   }
 

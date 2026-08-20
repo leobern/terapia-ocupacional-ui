@@ -5,14 +5,42 @@ import { AppComponent } from './app.component';
 
 describe('AppComponent', () => {
   let fixture: ComponentFixture<AppComponent>;
+  let originalMatchMedia: PropertyDescriptor | undefined;
+
+  /**
+   * `ViewportBreakpointService.isDesktop` só muda a partir de `matchMedia`
+   * (o signal que ele deriva é privado — não dá pra escrever nele do spec).
+   * Mesmo mock de `viewport-breakpoint.service.spec.ts`.
+   */
+  function installMatchMedia(matches: boolean): void {
+    Object.defineProperty(window, 'matchMedia', {
+      configurable: true,
+      value: (query: string): MediaQueryList =>
+        ({
+          addEventListener: (): void => undefined,
+          matches,
+          media: query,
+          removeEventListener: (): void => undefined,
+        }) as unknown as MediaQueryList,
+    });
+  }
 
   beforeEach(async () => {
+    originalMatchMedia = Object.getOwnPropertyDescriptor(window, 'matchMedia');
+    installMatchMedia(false);
+
     await TestBed.configureTestingModule({
       imports: [AppComponent, RouterModule.forRoot([])],
     }).compileComponents();
 
     fixture = TestBed.createComponent(AppComponent);
     fixture.detectChanges();
+  });
+
+  afterEach(() => {
+    if (originalMatchMedia) {
+      Object.defineProperty(window, 'matchMedia', originalMatchMedia);
+    }
   });
 
   it('should create the app', () => {
@@ -67,8 +95,18 @@ describe('AppComponent', () => {
     expect(fixture.nativeElement.querySelector('app-drawer')).toBeFalsy();
   });
 
-  it('renders app-drawer (not app-bottom-sheet) when the viewport is desktop', () => {
-    fixture.componentInstance.viewportBreakpoint.isDesktopSignal.set(true);
+  it('renders app-drawer (not app-bottom-sheet) when the viewport is desktop', async () => {
+    // ViewportBreakpointService é `providedIn: 'root'` e já foi instanciado com o
+    // mock `false` no `beforeEach` — precisa de um TestBed novo para que o
+    // construtor do serviço leia o `matchMedia` reinstalado com `true`.
+    TestBed.resetTestingModule();
+    installMatchMedia(true);
+
+    await TestBed.configureTestingModule({
+      imports: [AppComponent, RouterModule.forRoot([])],
+    }).compileComponents();
+
+    fixture = TestBed.createComponent(AppComponent);
     fixture.detectChanges();
 
     expect(fixture.nativeElement.querySelector('app-drawer')).toBeTruthy();
