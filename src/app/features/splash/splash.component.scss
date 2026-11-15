@@ -1,0 +1,27 @@
+@use '../../shared/styles/tokens';
+
+.splash {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: tokens.$space-24;
+  min-height: 100vh;
+  padding: tokens.$space-16;
+  color: var(--color-content-1);
+}
+
+.splash__logo {
+  --icon-logo-size: 96px;
+
+  display: flex;
+  // Sem toque em INITIALIZING (fora de escopo: elementos interativos).
+  pointer-events: none;
+}
+
+.splash__message {
+  margin: 0;
+  font-family: tokens.$font-family-base;
+  font-weight: tokens.$font-weight-roman;
+  text-align: center;
+}
