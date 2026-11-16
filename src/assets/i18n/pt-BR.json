@@ -2,6 +2,39 @@
   "app": {
     "title": "Terapia Nutricional"
   },
+  "passwordRecovery": {
+    "backToLogin": "Voltar ao login",
+    "forgot": {
+      "description": "Informe o e-mail cadastrado para receber o link de redefinição.",
+      "emailInvalid": "Informe um e-mail válido.",
+      "emailLabel": "E-mail",
+      "emailRequired": "Informe seu e-mail.",
+      "retry": "Tentar novamente",
+      "sentMessage": "Verifique seu e-mail",
+      "sentTitle": "Verifique seu e-mail",
+      "serviceError": "Não foi possível concluir a solicitação. Tente novamente.",
+      "submit": "Enviar link",
+      "title": "Recuperar senha"
+    },
+    "reset": {
+      "confirmationLabel": "Confirmar nova senha",
+      "expiredMessage": "O link de redefinição expirou. Solicite um novo link.",
+      "expiredTitle": "Link expirado",
+      "mismatch": "As senhas não coincidem.",
+      "passwordLabel": "Nova senha",
+      "policy": {
+        "digit": "Inclua ao menos um número.",
+        "lowercase": "Inclua ao menos uma letra minúscula.",
+        "min-length": "Use ao menos 8 caracteres.",
+        "uppercase": "Inclua ao menos uma letra maiúscula."
+      },
+      "requestNew": "Solicitar novo link",
+      "retry": "Tentar novamente",
+      "serviceError": "Não foi possível redefinir a senha. Tente novamente.",
+      "submit": "Redefinir senha",
+      "title": "Definir nova senha"
+    }
+  },
   "splash": {
     "logoLabel": "Conductia",
     "noConnection": "Sem conexão. Verifique sua internet.",
