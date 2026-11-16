@@ -34,8 +34,14 @@ export const routes: Routes = [
     data: { hideShell: true },
     loadChildren: () => import('./features/splash/splash.routes').then(m => m.SPLASH_ROUTES),
   },
+  {
+    path: 'login',
+    data: { hideShell: true },
+    loadChildren: () => import('./features/login/login.routes').then(m => m.LOGIN_ROUTES),
+  },
   // Placeholders das telas de outras stories (ver PendingScreenComponent).
-  ...(['login', 'lock', 'hospital-links'] as const).map(path => ({
+  // `forgot-password` é a recuperação de senha (US-001-1-06), linkada pelo login.
+  ...(['forgot-password', 'lock', 'hospital-links'] as const).map(path => ({
     path,
     data: { screen: path },
     loadComponent: () =>

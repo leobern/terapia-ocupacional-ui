@@ -7,4 +7,12 @@ describe('LocalStartupStateReader (provisional)', () => {
     expect(reader.readLocal().isSessionValid).toBeFalse();
     await expectAsync(reader.initialize()).toBeResolved();
   });
+
+  it('registers a login in memory: valid session, unlocked, with the given link state', () => {
+    const reader = new LocalStartupStateReader();
+
+    reader.registerLogin(true);
+
+    expect(reader.readLocal()).toEqual({ hasApprovedHospitalLink: true, isLocked: false, isSessionValid: true });
+  });
 });

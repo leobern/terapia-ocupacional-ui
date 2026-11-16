@@ -17,6 +17,11 @@ export interface LocalStartupState {
 export abstract class StartupStateReader {
   /** Lê o estado persistido no dispositivo. */
   abstract readLocal(): LocalStartupState;
+  /**
+   * Registra um login bem-sucedido (US-001-1-03): sessão válida, sem bloqueio e com o
+   * estado de vínculos retornado. A persistência real do token é da US-001-1-08.
+   */
+  abstract registerLogin(hasApprovedHospitalLink: boolean): void;
   /** Inicialização remota (ex.: renovar sessão). Rejeita em falha de rede. */
   abstract initialize(): Promise<void>;
 }
