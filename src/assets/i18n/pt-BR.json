@@ -60,6 +60,20 @@
     "unlock": "Desbloquear",
     "useBiometric": "Usar biometria"
   },
+  "login": {
+    "email": "E-mail",
+    "error": {
+      "invalid-credentials": "E-mail ou senha incorretos",
+      "locked": "Muitas tentativas. Tente novamente mais tarde.",
+      "network-error": "Sem conexão. Verifique sua internet.",
+      "validation": "Informe um e-mail válido e a senha."
+    },
+    "forgotPassword": "Esqueci minha senha",
+    "password": "Senha",
+    "submit": "Entrar",
+    "submitting": "Entrando...",
+    "title": "Entrar"
+  },
   "logout": {
     "cancel": "Cancelar",
     "confirm": "Sair",

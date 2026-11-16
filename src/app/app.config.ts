@@ -51,6 +51,8 @@ import {
   ProvisionalManagerAccess,
 } from './features/hospital-team/provisional-hospital-invite';
 import { ProvisionalProfessionalAccess } from './features/hospital-team/provisional-professional-access';
+import { AuthGateway } from './features/login/auth-gateway';
+import { HttpAuthGateway } from './features/login/http-auth-gateway';
 import { AnnouncementAssistant } from './features/notifications/assistant/announcement-assistant';
 import { PendingNotificationsQueryResolver } from './features/notifications/assistant/pending-notifications-query.resolver';
 import { ProvisionalAnnouncementAssistant } from './features/notifications/assistant/provisional-announcement-assistant';
@@ -167,6 +169,7 @@ import { UserDirectory } from './shared/services/user-directory';
 export const appConfig: ApplicationConfig = {
   providers: [
     { provide: ProfessionalProfileReader, useClass: LocalProfessionalProfileReader },
+    { provide: AuthGateway, useClass: HttpAuthGateway },
     { provide: PasswordResetGateway, useClass: HttpPasswordResetGateway },
     // Biometria e senha da conta do desbloqueio: provisórios até haver shell nativo e API de login.
     { provide: BiometricAuth, useClass: ProvisionalBiometricAuth },

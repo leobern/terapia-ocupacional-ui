@@ -132,13 +132,12 @@ export const routes: Routes = [
     path: 'hospital-links',
     loadChildren: () => import('./features/hospital-links/hospital-links.routes').then(m => m.HOSPITAL_LINKS_ROUTES),
   },
-  // Placeholders das telas de outras stories (ver PendingScreenComponent).
-  ...(['login'] as const).map(path => ({
-    path,
-    data: { screen: path },
-    loadComponent: () =>
-      import('./features/pending-screen/pending-screen.component').then(m => m.PendingScreenComponent),
-  })),
+  // Login com e-mail e senha (US-001-1-03).
+  {
+    path: 'login',
+    data: { hideShell: true },
+    loadChildren: () => import('./features/login/login.routes').then(m => m.LOGIN_ROUTES),
+  },
   {
     path: '',
     data: { hideShell: true },
