@@ -1,5 +1,7 @@
 <div class="app-shell">
-  <app-nav-menu />
+  @if (showShell()) {
+    <app-nav-menu />
+  }
   <router-outlet />
   <!--
     DEPOIS do <router-outlet /> por dois motivos, ambos normativos:
@@ -9,5 +11,7 @@
     2. assim a ordem de tabulação (conteúdo → barra) bate com a leitura visual.
     A barra é `position: fixed`, então não é flex item e não disputa largura.
   -->
-  <app-bottom-nav-bar />
+  @if (showShell()) {
+    <app-bottom-nav-bar />
+  }
 </div>

@@ -1,0 +1,16 @@
+<main class="splash">
+  @if (state() === 'INITIALIZING') {
+    <div
+      class="splash__logo"
+      role="img"
+      [attr.aria-label]="i18n.t('splash.logoLabel')"
+    >
+      <app-icon-logo state="anim" />
+    </div>
+  } @else {
+    <p class="splash__message" role="alert">
+      {{ i18n.t('splash.noConnection') }}
+    </p>
+    <app-button [label]="i18n.t('splash.retry')" (click)="retry()" />
+  }
+</main>

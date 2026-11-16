@@ -29,5 +29,17 @@ export const routes: Routes = [
     path: 'home',
     loadChildren: () => import('./features/home/home.routes').then(m => m.HOME_ROUTES),
   },
-  { path: '', pathMatch: 'full', redirectTo: 'home' },
+  {
+    path: 'splash',
+    data: { hideShell: true },
+    loadChildren: () => import('./features/splash/splash.routes').then(m => m.SPLASH_ROUTES),
+  },
+  // Placeholders das telas de outras stories (ver PendingScreenComponent).
+  ...(['login', 'lock', 'hospital-links'] as const).map(path => ({
+    path,
+    data: { screen: path },
+    loadComponent: () =>
+      import('./features/pending-screen/pending-screen.component').then(m => m.PendingScreenComponent),
+  })),
+  { path: '', pathMatch: 'full', redirectTo: 'splash' },
 ];
