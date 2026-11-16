@@ -1,6 +1,6 @@
 <div class="app-shell">
   @if (showShell()) {
-    <app-nav-menu />
+    <app-nav-menu (logoutClick)="requestLogout()" />
   }
   <router-outlet />
   <!--
@@ -12,6 +12,33 @@
     A barra é `position: fixed`, então não é flex item e não disputa largura.
   -->
   @if (showShell()) {
-    <app-bottom-nav-bar />
+    <app-bottom-nav-bar
+      [menuOpen]="menuOpen()"
+      (menuClick)="menuOpen.set(true)"
+    />
+  }
+  @if (showShell()) {
+    <app-bottom-sheet
+      [open]="menuOpen()"
+      [showLogo]="false"
+      [ariaLabel]="i18n.t('logout.menuLabel')"
+      (closed)="menuOpen.set(false)"
+    >
+      <div bottomSheetContent>
+        <app-button
+          kind="secondary"
+          appearance="outlined"
+          iconLeft="power"
+          [fullWidth]="true"
+          [label]="i18n.t('logout.signOut')"
+          (click)="requestLogout()"
+        />
+      </div>
+    </app-bottom-sheet>
+    <app-logout-confirm
+      [open]="confirmOpen()"
+      (cancelled)="cancelLogout()"
+      (confirmed)="confirmLogout()"
+    />
   }
 </div>

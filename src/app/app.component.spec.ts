@@ -1,8 +1,10 @@
 import { ChangeDetectionStrategy, Component } from '@angular/core';
-import { TestBed } from '@angular/core/testing';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter, Router } from '@angular/router';
 
 import { AppComponent } from './app.component';
+import { LogoutService } from './features/auth/logout.service';
+import { SessionRevoker } from './features/auth/session-revoker';
 
 @Component({ changeDetection: ChangeDetectionStrategy.OnPush, template: '' })
 class DummyComponent {}
@@ -12,9 +14,11 @@ describe('AppComponent', () => {
     await TestBed.configureTestingModule({
       imports: [AppComponent],
       providers: [
+        { provide: SessionRevoker, useValue: { revokeCurrentDevice: (): Promise<void> => Promise.resolve() } },
         provideRouter([
           { component: DummyComponent, data: { hideShell: true }, path: 'splash' },
           { component: DummyComponent, path: 'home' },
+          { component: DummyComponent, path: 'login' },
         ]),
       ],
     }).compileComponents();
@@ -43,5 +47,59 @@ describe('AppComponent', () => {
 
     expect(el.querySelector('app-nav-menu')).not.toBeNull();
     expect(el.querySelector('app-bottom-nav-bar')).not.toBeNull();
+  });
+
+  describe('logout', () => {
+    let logout: jasmine.Spy;
+    let router: Router;
+    let fixture: ComponentFixture<AppComponent>;
+    let el: HTMLElement;
+
+    const button = (label: string): HTMLButtonElement | undefined =>
+      Array.from(el.querySelectorAll('dialog[open] button')).find(b => b.textContent?.trim() === label) as
+        HTMLButtonElement | undefined;
+
+    beforeEach(async () => {
+      spyOnProperty(navigator, 'language', 'get').and.returnValue('pt-BR');
+      logout = jasmine.createSpy('logout').and.resolveTo();
+      TestBed.inject(LogoutService).logout = logout as unknown as LogoutService['logout'];
+      router = TestBed.inject(Router);
+      fixture = TestBed.createComponent(AppComponent);
+      el = fixture.nativeElement as HTMLElement;
+      await router.navigateByUrl('/home');
+      fixture.detectChanges();
+      el.querySelector<HTMLButtonElement>('.nav-menu__link--logout')?.click();
+      fixture.detectChanges();
+    });
+
+    it('asks for confirmation before ending the session', () => {
+      expect(logout).not.toHaveBeenCalled();
+      expect(el.textContent).toContain('Deseja sair da conta?');
+    });
+
+    it('ends the session and redirects to login on confirm', async () => {
+      button('Sair')?.click();
+      await fixture.whenStable();
+
+      expect(logout).toHaveBeenCalledTimes(1);
+      expect(router.url).toBe('/login');
+    });
+
+    it('keeps the session and the route on cancel', async () => {
+      button('Cancelar')?.click();
+      await fixture.whenStable();
+      fixture.detectChanges();
+
+      expect(logout).not.toHaveBeenCalled();
+      expect(router.url).toBe('/home');
+      expect(el.querySelector<HTMLDialogElement>('dialog')?.open ?? false).toBeFalse();
+    });
+
+    it('offers the sign out action from the mobile menu', () => {
+      el.querySelector<HTMLButtonElement>('app-bottom-nav-bar button')?.click();
+      fixture.detectChanges();
+
+      expect(el.querySelector('dialog[aria-label="Menu"]')).not.toBeNull();
+    });
   });
 });
