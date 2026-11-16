@@ -2,6 +2,21 @@
   "app": {
     "title": "Nutritional Therapy"
   },
+  "passwordRecovery": {
+    "backToLogin": "Back to login",
+    "forgot": {
+      "description": "Enter your registered e-mail to receive the reset link.",
+      "emailInvalid": "Enter a valid e-mail.",
+      "emailLabel": "E-mail",
+      "emailRequired": "Enter your e-mail.",
+      "retry": "Try again",
+      "sentMessage": "Check your e-mail",
+      "sentTitle": "Check your e-mail",
+      "serviceError": "We could not complete the request. Try again.",
+      "submit": "Send link",
+      "title": "Recover password"
+    }
+  },
   "splash": {
     "logoLabel": "Conductia",
     "noConnection": "No connection. Check your internet.",

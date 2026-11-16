@@ -41,5 +41,11 @@ export const routes: Routes = [
     loadComponent: () =>
       import('./features/pending-screen/pending-screen.component').then(m => m.PendingScreenComponent),
   })),
+  {
+    path: 'forgot-password',
+    data: { hideShell: true },
+    loadChildren: () =>
+      import('./features/password-recovery/password-recovery.routes').then(m => m.PASSWORD_RECOVERY_ROUTES),
+  },
   { path: '', pathMatch: 'full', redirectTo: 'splash' },
 ];
