@@ -2,6 +2,15 @@
   "app": {
     "title": "Terapia Nutricional"
   },
+  "logout": {
+    "cancel": "Cancelar",
+    "confirm": "Sair",
+    "dialogLabel": "Confirmar saída da conta",
+    "menuLabel": "Menu",
+    "message": "Sua sessão neste dispositivo será encerrada e os dados salvos nele serão removidos.",
+    "signOut": "Sair",
+    "title": "Deseja sair da conta?"
+  },
   "splash": {
     "logoLabel": "Conductia",
     "noConnection": "Sem conexão. Verifique sua internet.",
