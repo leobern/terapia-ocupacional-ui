@@ -96,6 +96,9 @@ describe('AppComponent', () => {
     });
 
     it('offers the sign out action from the mobile menu', () => {
+      // Fecha a confirmação antes: dois sheets abertos juntos vazariam o travamento de rolagem.
+      button('Cancelar')?.click();
+      fixture.detectChanges();
       el.querySelector<HTMLButtonElement>('app-bottom-nav-bar button')?.click();
       fixture.detectChanges();
 
