@@ -1,0 +1,26 @@
+@use '../../shared/styles/tokens';
+
+.home-header {
+  display: flex;
+  align-items: center;
+  gap: tokens.$space-8;
+  font-family: tokens.$font-family-base;
+  color: var(--color-content-1);
+}
+
+.home-header__text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.home-header__name {
+  margin: 0;
+  font-weight: tokens.$font-weight-heavy;
+}
+
+.home-header__date {
+  margin: 0;
+  font-weight: tokens.$font-weight-roman;
+  color: var(--color-content-2);
+}
