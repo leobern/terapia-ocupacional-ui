@@ -1,0 +1,16 @@
+name: terapia-ocupacional-ui
+version: 1.0.0
+description: APM project for terapia-ocupacional-ui
+author: Leonardo
+# Which agent platforms to deploy to.
+# Resolution order: --target flag > this field > auto-detect from filesystem.
+# Accepted values: agent-skills, antigravity, claude, codex, copilot, cursor, gemini, grok-bot, grok-build, hermes, kiro, opencode, vscode, windsurf
+targets:
+  - claude
+dependencies:
+  apm:
+    - angular/skills/angular-developer
+    - angular/skills/angular-new-app
+  mcp: []
+includes: auto
+scripts: {}
