@@ -15,6 +15,24 @@
       "serviceError": "We could not complete the request. Try again.",
       "submit": "Send link",
       "title": "Recover password"
+    },
+    "reset": {
+      "confirmationLabel": "Confirm new password",
+      "expiredMessage": "The reset link has expired. Request a new link.",
+      "expiredTitle": "Link expired",
+      "mismatch": "Passwords do not match.",
+      "passwordLabel": "New password",
+      "policy": {
+        "digit": "Include at least one number.",
+        "lowercase": "Include at least one lowercase letter.",
+        "min-length": "Use at least 8 characters.",
+        "uppercase": "Include at least one uppercase letter."
+      },
+      "requestNew": "Request new link",
+      "retry": "Try again",
+      "serviceError": "We could not reset the password. Try again.",
+      "submit": "Reset password",
+      "title": "Set new password"
     }
   },
   "splash": {

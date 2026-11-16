@@ -42,7 +42,7 @@ export const routes: Routes = [
       import('./features/pending-screen/pending-screen.component').then(m => m.PendingScreenComponent),
   })),
   {
-    path: 'forgot-password',
+    path: '',
     data: { hideShell: true },
     loadChildren: () =>
       import('./features/password-recovery/password-recovery.routes').then(m => m.PASSWORD_RECOVERY_ROUTES),
