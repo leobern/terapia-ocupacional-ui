@@ -52,3 +52,20 @@
     font-weight: tokens.$font-weight-heavy;
   }
 }
+
+.home__header {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.home__bell {
+  position: relative;
+  display: inline-flex;
+}
+
+.home__badge {
+  position: absolute;
+  top: 0;
+  right: 0;
+  pointer-events: none;
+}

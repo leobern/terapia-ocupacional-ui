@@ -35,7 +35,7 @@ export const routes: Routes = [
     loadChildren: () => import('./features/splash/splash.routes').then(m => m.SPLASH_ROUTES),
   },
   // Placeholders das telas de outras stories (ver PendingScreenComponent).
-  ...(['login', 'lock', 'hospital-links'] as const).map(path => ({
+  ...(['login', 'lock', 'hospital-links', 'notificacoes'] as const).map(path => ({
     path,
     data: { screen: path },
     loadComponent: () =>
