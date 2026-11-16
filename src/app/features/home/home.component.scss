@@ -27,9 +27,28 @@
   font-weight: tokens.$font-weight-heavy;
 }
 
-.home__message {
+.home__hospital {
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$space-8;
+}
+
+.home__hospital-list {
+  display: flex;
+  flex-direction: column;
   margin: 0;
+  padding: tokens.$space-8;
+  list-style: none;
   font-family: tokens.$font-family-base;
   font-weight: tokens.$font-weight-roman;
-  color: var(--color-content-2);
+  color: var(--color-content-1);
+}
+
+.home__hospital-option {
+  padding: tokens.$space-8;
+  cursor: pointer;
+
+  &[aria-selected='true'] {
+    font-weight: tokens.$font-weight-heavy;
+  }
 }
