@@ -320,6 +320,50 @@ describe('HomeComponent', () => {
       expect(fixture.componentInstance.formatTime('2026-11-17T10:30:00')).toBe('10:30');
     });
 
+    it('shows author data, initials avatar, 2-line clamps and the bell icon on the card (US-003-3-03)', async () => {
+      await setup();
+      fixture.componentInstance.notifications.set([
+        {
+          author: { id: 1, name: 'Jairo Nepomuceno', photoUrl: null, specialty: 'Farmacêutico' },
+          createdAt: '2026-11-17T10:30:00',
+          description: 'Resumo da notificação '.repeat(30),
+          id: 1,
+          read: false,
+        },
+        {
+          author: { id: 2, name: 'Madonna', photoUrl: null, specialty: 'Nutricionista' },
+          createdAt: '2026-11-17T10:30:00',
+          description: 'Outro',
+          id: 2,
+          read: false,
+        },
+        {
+          author: { id: 3, name: 'Ana Souza', photoUrl: 'https://x/y.png', specialty: 'Médica' },
+          createdAt: '2026-11-17T10:30:00',
+          description: 'Outro',
+          id: 3,
+          read: false,
+        },
+      ]);
+      fixture.detectChanges();
+      const cards = Array.from(el().querySelectorAll('app-card-notify')) as HTMLElement[];
+      const text = (c: HTMLElement, sel: string): string => c.querySelector(sel)?.textContent?.trim() ?? '';
+
+      expect(text(cards[0], '.card-notify__name')).toBe('Jairo Nepomuceno');
+      expect(text(cards[0], '.card-notify__specialty')).toBe('Farmacêutico');
+      expect(text(cards[0], '.avatar__initials')).toBe('JN');
+      expect(text(cards[1], '.avatar__initials')).toBe('M');
+      expect(cards[2].querySelector('.avatar__initials')).toBeNull();
+      expect(cards[2].querySelector('img')).not.toBeNull();
+      const desc = getComputedStyle(cards[0].querySelector('.card-notify__description') as Element);
+      const nameStyle = getComputedStyle(cards[0].querySelector('.card-notify__name') as Element);
+
+      expect(desc.getPropertyValue('-webkit-line-clamp')).toBe('2');
+      expect(desc.overflow).toBe('hidden');
+      expect(nameStyle.getPropertyValue('-webkit-line-clamp')).toBe('2');
+      expect(cards[0].querySelector('.card-notify__time ph-icon')).not.toBeNull();
+    });
+
     it('ignores the card callbacks (no navigation yet)', async () => {
       await setup();
       const component = fixture.componentInstance;
