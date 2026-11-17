@@ -410,13 +410,40 @@ describe('HomeComponent', () => {
       expect(arcs[0].getAttribute('stroke')).toBe('var(--color-comm-success)');
     });
 
-    it('does nothing when the arrow button is clicked', async () => {
+    it('shows the arrow button with an accessible label', async () => {
       await setup([HOSPITALS[0]]);
       await settled();
       const button = el().querySelector('app-card-patients button') as HTMLElement;
 
-      expect(() => button.click()).not.toThrow();
-      expect(el().querySelector('app-card-patients')).toBeTruthy();
+      expect(button.getAttribute('aria-label')).toBe('Ver pacientes do dia');
+    });
+
+    it('keeps the arrow button when all patients were attended', async () => {
+      await setup(HOSPITALS);
+      patients.loadForDay = (): Promise<DailyPatientsSummary> =>
+        Promise.resolve({ averageCaloricPercentage: 0, averageProteinPercentage: 0, patientCount: 0 });
+      TestBed.inject(HospitalContextService).select('b');
+      fixture.detectChanges();
+      await settled();
+
+      expect(grid()[0].textContent).toContain('Todos os pacientes foram atendidos');
+      expect(el().querySelector('app-card-patients button')?.getAttribute('aria-label')).toBe('Ver pacientes do dia');
+    });
+
+    it('has no effect when the arrow button or the card is clicked', async () => {
+      await setup([HOSPITALS[0]]);
+      await settled();
+      const before = el().innerHTML;
+      const callsBefore = patients.calls.length;
+
+      (el().querySelector('app-card-patients button') as HTMLElement).click();
+      (el().querySelector('app-card-patients article') as HTMLElement).click();
+      fixture.detectChanges();
+      await settled();
+
+      expect(navigate).not.toHaveBeenCalled();
+      expect(patients.calls.length).toBe(callsBefore);
+      expect(el().innerHTML).toBe(before);
     });
   });
 });
