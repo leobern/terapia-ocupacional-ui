@@ -1,7 +1,9 @@
 import { ProvisionalHomeNotificationsSource } from './provisional-home-notifications';
 
 describe('ProvisionalHomeNotificationsSource', () => {
-  it('resolves an empty list', async () => {
-    expect(await new ProvisionalHomeNotificationsSource().loadForHospital()).toEqual([]);
+  it('returns an empty last page', async () => {
+    const page = await new ProvisionalHomeNotificationsSource().loadPage();
+
+    expect(page).toEqual({ items: [], nextCursor: null });
   });
 });

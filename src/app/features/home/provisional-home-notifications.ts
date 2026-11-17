@@ -1,12 +1,12 @@
 import { Injectable } from '@angular/core';
 
-import { HomeNotification } from './home.models';
-import { HomeNotificationsSource } from './home-notifications';
+import { NotificationPage } from './home.models';
+import { HomeNotificationsSource } from './home-notifications-source';
 
-/** Provisório: sem backend ligado à Home, nenhuma notificação. */
+/** Provisório: sem backend ligado, nenhuma notificação. */
 @Injectable()
 export class ProvisionalHomeNotificationsSource extends HomeNotificationsSource {
-  loadForHospital(): Promise<readonly HomeNotification[]> {
-    return Promise.resolve([] as readonly HomeNotification[]);
+  loadPage(): Promise<NotificationPage> {
+    return Promise.resolve({ items: [], nextCursor: null });
   }
 }

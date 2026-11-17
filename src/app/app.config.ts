@@ -7,7 +7,7 @@ import { provideStore } from '@ngrx/store';
 
 import { routes } from './app.routing';
 import { DailyPatientsSource } from './features/home/daily-patients';
-import { HomeNotificationsSource } from './features/home/home-notifications';
+import { HomeNotificationsSource } from './features/home/home-notifications-source';
 import { LinkedHospitalsReader } from './features/home/linked-hospitals';
 import { LocalProfessionalProfileReader } from './features/home/local-professional-profile-reader';
 import { LocalUnreadNotificationsReader } from './features/home/local-unread-notifications-reader';

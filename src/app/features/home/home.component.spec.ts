@@ -3,9 +3,9 @@ import { provideRouter, Router } from '@angular/router';
 
 import { DailyPatientsSource, DailyPatientsSummary } from './daily-patients';
 import { HomeComponent } from './home.component';
-import { HomeNotification } from './home.models';
+import { HomeNotification, NotificationPage } from './home.models';
 import { HomeData, HomeDataSource } from './home-data-source';
-import { HomeNotificationsSource } from './home-notifications';
+import { HomeNotificationsSource } from './home-notifications-source';
 import { HomeStateService } from './home-state.service';
 import { HospitalContextService } from './hospital-context.service';
 import { LinkedHospital, LinkedHospitalsReader } from './linked-hospitals';
@@ -33,27 +33,43 @@ class FakePatients extends DailyPatientsSource {
   }
 }
 
-function notif(id: number, createdAt: string): HomeNotification {
-  return {
-    author: { id, name: `Autor ${id}`, photoUrl: null, specialty: 'Nutrição' },
-    createdAt,
-    description: `Notificação ${id}`,
-    id,
-    read: false,
-  };
-}
-
+/** Feed fake com `total` notificações; cursor = índice do próximo item. */
 class FakeNotifications extends HomeNotificationsSource {
-  byHospital: Record<string, readonly HomeNotification[]> = {};
+  calls: { hospitalId: string; cursor: string | null; limit: number }[] = [];
+  total = 35;
   fail = false;
+  failFirst = false;
+  custom: readonly HomeNotification[] | null = null;
+  gate: Promise<void> | null = null;
 
-  loadForHospital(hospitalId: string): Promise<readonly HomeNotification[]> {
-    return this.fail ? Promise.reject(new Error('offline')) : Promise.resolve(this.byHospital[hospitalId] ?? []);
+  loadPage(hospitalId: string, cursor: string | null, limit: number): Promise<NotificationPage> {
+    this.calls.push({ cursor, hospitalId, limit });
+    if (this.failFirst && cursor === null) {
+      return Promise.reject(new Error('offline'));
+    }
+    if (this.custom) {
+      return Promise.resolve({ items: [...this.custom], nextCursor: null });
+    }
+    if (this.fail && cursor !== null) {
+      return Promise.reject(new Error('offline'));
+    }
+    const start = cursor === null ? 0 : Number(cursor);
+    const end = Math.min(start + limit, this.total);
+    const items: HomeNotification[] = Array.from({ length: end - start }, (_, i) => ({
+      author: { id: start + i, name: `Autor ${start + i}`, photoUrl: null, specialty: 'Nutrição' },
+      createdAt: new Date(Date.UTC(2026, 10, 17, 12) - (start + i) * 60_000).toISOString(),
+      description: `Notificação ${start + i}`,
+      id: start + i,
+      read: false,
+    }));
+    const page = { items, nextCursor: end < this.total ? String(end) : null };
+
+    return (this.gate ?? Promise.resolve()).then(() => page);
   }
 }
 
 interface SetupOptions {
-  notifs?: Record<string, readonly HomeNotification[]>;
+  feed?: FakeNotifications;
   hospitals?: readonly LinkedHospital[];
   unread?: number;
   source?: Pick<HomeDataSource, 'load'>;
@@ -64,8 +80,8 @@ interface SetupOptions {
 describe('HomeComponent', () => {
   let fixture: ComponentFixture<HomeComponent>;
   let patients: FakePatients;
-  let notifications: FakeNotifications;
   let navigate: jasmine.Spy;
+  let notifications: FakeNotifications;
 
   async function settle(): Promise<void> {
     await fixture.whenStable();
@@ -73,10 +89,16 @@ describe('HomeComponent', () => {
   }
 
   async function setup(options: SetupOptions = {}): Promise<void> {
-    const { hospitals = [HOSPITALS[0]], unread = 0, source, summary, counts = {}, notifs = {} } = options;
+    const {
+      hospitals = [HOSPITALS[0]],
+      unread = 0,
+      source,
+      summary,
+      counts = {},
+      feed = new FakeNotifications(),
+    } = options;
 
-    notifications = new FakeNotifications();
-    notifications.byHospital = notifs;
+    notifications = feed;
 
     patients = new FakePatients();
     if (summary) {
@@ -89,7 +111,7 @@ describe('HomeComponent', () => {
       providers: [
         provideRouter([]),
         { provide: DailyPatientsSource, useValue: patients },
-        { provide: HomeNotificationsSource, useValue: notifications },
+        { provide: HomeNotificationsSource, useValue: feed },
         ...(source ? [{ provide: HomeDataSource, useValue: source }] : []),
         { provide: ProfessionalProfileReader, useClass: LocalProfessionalProfileReader },
         { provide: LinkedHospitalsReader, useValue: { read: (): readonly LinkedHospital[] => hospitals } },
@@ -328,7 +350,10 @@ describe('HomeComponent', () => {
     });
 
     it('lists notifications after the count card in the grid', async () => {
-      await setup();
+      const feed = new FakeNotifications();
+
+      feed.total = 0;
+      await setup({ feed });
       fixture.componentInstance.notifications.set(
         Array.from({ length: 3 }, (_, i) => ({
           author: { id: i, name: `Autor ${i}`, photoUrl: null, specialty: 'Nutrição' },
@@ -347,94 +372,6 @@ describe('HomeComponent', () => {
       expect(fixture.componentInstance.formatTime('2026-11-17T10:30:00')).toBe('10:30');
     });
 
-    describe('notification feed (US-003-3-01)', () => {
-      const cards = (): string[] =>
-        Array.from(el().querySelectorAll('.home__grid app-card-notify')).map(c => c.textContent ?? '');
-
-      it('lists 3 notifications after the fixed card, newest first', async () => {
-        await setup({
-          notifs: {
-            a: [notif(1, '2026-11-17T08:00:00'), notif(3, '2026-11-17T10:00:00'), notif(2, '2026-11-17T09:00:00')],
-          },
-        });
-
-        expect(grid()[0].tagName.toLowerCase()).toBe('app-card-patients');
-        expect(cards().length).toBe(3);
-        expect(cards()[0]).toContain('Notificação 3');
-        expect(cards()[1]).toContain('Notificação 2');
-        expect(cards()[2]).toContain('Notificação 1');
-      });
-
-      it('breaks exact time ties by creation order (latest created first)', async () => {
-        await setup({
-          notifs: {
-            a: [notif(5, '2026-11-17T10:00:00'), notif(7, '2026-11-17T10:00:00'), notif(6, '2026-11-17T10:00:00')],
-          },
-        });
-
-        expect(cards().map(c => /Notificação (\d)/.exec(c)?.[1])).toEqual(['7', '6', '5']);
-      });
-
-      it('replaces the list when the hospital changes', async () => {
-        await setup({
-          hospitals: HOSPITALS,
-          notifs: { a: [notif(1, '2026-11-17T08:00:00')], b: [notif(2, '2026-11-17T09:00:00')] },
-        });
-        TestBed.inject(HospitalContextService).select('b');
-        fixture.detectChanges();
-        await settle();
-
-        expect(cards().length).toBe(1);
-        expect(cards()[0]).toContain('Notificação 2');
-      });
-
-      it('discards a late response for a hospital that is no longer selected', async () => {
-        await setup({ hospitals: HOSPITALS, notifs: { b: [notif(2, '2026-11-17T09:00:00')] } });
-        const late: { resolve?: (v: readonly HomeNotification[]) => void } = {};
-
-        spyOn(notifications, 'loadForHospital').and.callFake((id: string) =>
-          id === 'a'
-            ? new Promise<readonly HomeNotification[]>(resolve => (late.resolve = resolve))
-            : Promise.resolve([notif(2, '2026-11-17T09:00:00')]),
-        );
-        const context = TestBed.inject(HospitalContextService);
-
-        context.select('b');
-        fixture.detectChanges();
-        await settle();
-        context.select('a');
-        fixture.detectChanges();
-        context.select('b');
-        fixture.detectChanges();
-        await settle();
-        late.resolve?.([notif(9, '2026-11-17T10:00:00')]);
-        await settle();
-
-        expect(cards().length).toBe(1);
-        expect(cards()[0]).toContain('Notificação 2');
-      });
-
-      it('clears the list when there is no hospital in context', async () => {
-        await setup({ hospitals: [] });
-
-        expect(fixture.componentInstance.notifications()).toEqual([]);
-      });
-
-      it('keeps the last list and flags stale data when a reload fails', async () => {
-        await setup({
-          hospitals: HOSPITALS,
-          notifs: { a: [notif(1, '2026-11-17T08:00:00')] },
-        });
-        notifications.fail = true;
-        TestBed.inject(HospitalContextService).select('b');
-        fixture.detectChanges();
-        await settle();
-
-        expect(fixture.componentInstance.stale()).toBeTrue();
-        expect(el().querySelector('.home__stale-banner')).toBeTruthy();
-      });
-    });
-
     it('ignores the card callbacks (no navigation yet)', async () => {
       await setup();
       const component = fixture.componentInstance;
@@ -443,6 +380,189 @@ describe('HomeComponent', () => {
         component.onViewPatients();
         component.onViewNotificationDetail(1);
       }).not.toThrow();
+    });
+  });
+
+  describe('notification feed ordering (US-003-3-01)', () => {
+    const notif = (id: number, createdAt: string): HomeNotification => ({
+      author: { id, name: `Autor ${id}`, photoUrl: null, specialty: 'Nutrição' },
+      createdAt,
+      description: `Notificação ${id}`,
+      id,
+      read: false,
+    });
+    const order = (): (string | undefined)[] =>
+      Array.from(el().querySelectorAll('app-card-notify')).map(c => /Notificação (\d)/.exec(c.textContent ?? '')?.[1]);
+
+    it('lists notifications after the fixed card, newest first', async () => {
+      const feed = new FakeNotifications();
+
+      feed.custom = [notif(1, '2026-11-17T08:00:00'), notif(3, '2026-11-17T10:00:00'), notif(2, '2026-11-17T09:00:00')];
+      await setup({ feed });
+
+      expect(grid()[0].tagName.toLowerCase()).toBe('app-card-patients');
+      expect(order()).toEqual(['3', '2', '1']);
+    });
+
+    it('breaks exact time ties by creation order (latest created first)', async () => {
+      const feed = new FakeNotifications();
+
+      feed.custom = [notif(5, '2026-11-17T10:00:00'), notif(7, '2026-11-17T10:00:00'), notif(6, '2026-11-17T10:00:00')];
+      await setup({ feed });
+
+      expect(order()).toEqual(['7', '6', '5']);
+    });
+
+    it('clears the list when there is no hospital in context', async () => {
+      await setup({ hospitals: [] });
+
+      expect(fixture.componentInstance.notifications()).toEqual([]);
+    });
+
+    it('flags stale data (without the generic error) when the first batch fails', async () => {
+      const feed = new FakeNotifications();
+
+      feed.failFirst = true;
+      await setup({ feed });
+
+      expect(fixture.componentInstance.stale()).toBeTrue();
+      expect(q('.home__stale-banner')).toBeTruthy();
+      expect(q('app-home-error')).toBeNull();
+    });
+  });
+
+  describe('infinite scroll', () => {
+    const cards = (): HTMLElement[] => Array.from(el().querySelectorAll('app-card-notify'));
+    const sentinel = (): HTMLElement | null => q('.home__scroll-sentinel');
+
+    it('shows only the 10 most recent of 35 notifications on load (RN-01)', async () => {
+      await setup();
+
+      expect(notifications.calls).toEqual([{ cursor: null, hospitalId: 'a', limit: 10 }]);
+      expect(cards().length).toBe(10);
+      expect(cards()[0].textContent).toContain('Notificação 0');
+    });
+
+    it('loads the next batch of 10 when reaching the end (RN-02)', async () => {
+      await setup();
+
+      await fixture.componentInstance.loadNextBatch();
+      fixture.detectChanges();
+
+      expect(notifications.calls[1]).toEqual({ cursor: '10', hospitalId: 'a', limit: 10 });
+      expect(cards().length).toBe(20);
+      expect(cards()[19].textContent).toContain('Notificação 19');
+    });
+
+    it('keeps loading 10 by 10 until exhausted, then stops without requests or sentinel (RN-03)', async () => {
+      await setup();
+      const component = fixture.componentInstance;
+
+      await component.loadNextBatch();
+      await component.loadNextBatch();
+      await component.loadNextBatch();
+      fixture.detectChanges();
+
+      expect(cards().length).toBe(35);
+      expect(sentinel()).toBeNull();
+      const callsBefore = notifications.calls.length;
+
+      await component.loadNextBatch();
+
+      expect(notifications.calls.length).toBe(callsBefore);
+      expect(q('[role="alert"], app-home-error')).toBeNull();
+    });
+
+    it('does not fire duplicate requests while a batch is in flight', async () => {
+      await setup();
+      let release!: () => void;
+
+      notifications.gate = new Promise<void>(resolve => (release = resolve));
+      const component = fixture.componentInstance;
+      const first = component.loadNextBatch();
+
+      void component.loadNextBatch();
+      void component.loadNextBatch();
+      release();
+      await first;
+
+      expect(notifications.calls.length).toBe(2);
+      expect(component.notifications().length).toBe(20);
+    });
+
+    it('keeps the cards and the generic error away when an extra batch fails', async () => {
+      await setup();
+      notifications.fail = true;
+
+      await fixture.componentInstance.loadNextBatch();
+      fixture.detectChanges();
+
+      expect(cards().length).toBe(10);
+      expect(q('app-home-error')).toBeNull();
+    });
+
+    it('does not load more batches while the data is stale (offline)', async () => {
+      await setup();
+      fixture.componentInstance.stale.set(true);
+
+      await fixture.componentInstance.loadNextBatch();
+
+      expect(notifications.calls.length).toBe(1);
+    });
+
+    it('restarts the feed with only the first batch when the hospital changes', async () => {
+      await setup({ hospitals: HOSPITALS });
+      await fixture.componentInstance.loadNextBatch();
+
+      TestBed.inject(HospitalContextService).select('b');
+      fixture.detectChanges();
+      await settle();
+
+      expect(notifications.calls[notifications.calls.length - 1]).toEqual({ cursor: null, hospitalId: 'b', limit: 10 });
+      expect(cards().length).toBe(10);
+    });
+
+    it('ignores a stale batch that resolves after the hospital changed', async () => {
+      await setup({ hospitals: HOSPITALS });
+      let release!: () => void;
+
+      notifications.gate = new Promise<void>(resolve => (release = resolve));
+      const pendingBatch = fixture.componentInstance.loadNextBatch();
+
+      notifications.gate = null;
+      TestBed.inject(HospitalContextService).select('b');
+      fixture.detectChanges();
+      await settle();
+      release();
+      await pendingBatch;
+
+      expect(fixture.componentInstance.notifications().length).toBe(10);
+    });
+
+    it('loads the next batch when the sentinel becomes visible', async () => {
+      let notify!: (entries: { isIntersecting: boolean }[]) => void;
+      const disconnect = jasmine.createSpy('disconnect');
+      const original = window.IntersectionObserver;
+
+      window.IntersectionObserver = function (cb: typeof notify): unknown {
+        notify = cb;
+
+        return { disconnect, observe: (): void => undefined };
+      } as unknown as typeof IntersectionObserver;
+      try {
+        await setup();
+        notify([{ isIntersecting: false }]);
+        await settle();
+
+        expect(notifications.calls.length).toBe(1);
+
+        notify([{ isIntersecting: true }]);
+        await settle();
+
+        expect(notifications.calls.length).toBe(2);
+      } finally {
+        window.IntersectionObserver = original;
+      }
     });
   });
 

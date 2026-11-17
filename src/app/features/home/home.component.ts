@@ -1,4 +1,17 @@
-import { ChangeDetectionStrategy, Component, computed, effect, inject, OnInit, Signal, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  effect,
+  ElementRef,
+  inject,
+  Injector,
+  OnDestroy,
+  OnInit,
+  Signal,
+  signal,
+  viewChild,
+} from '@angular/core';
 import { Router } from '@angular/router';
 
 import { AvatarComponent, type AvatarType } from '../../shared/components/avatar/avatar.component';
@@ -14,7 +27,11 @@ import { HomeSkeletonComponent } from './components/home-skeleton/home-skeleton.
 import { DailyPatientsSource, DailyPatientsSummary } from './daily-patients';
 import { HomeNotification } from './home.models';
 import { HomeData, HomeDataSource } from './home-data-source';
-import { HomeNotificationsSource, sortNotificationsNewestFirst } from './home-notifications';
+import {
+  HomeNotificationsSource,
+  NOTIFICATIONS_BATCH_SIZE,
+  sortNotificationsNewestFirst,
+} from './home-notifications-source';
 import { type HomeLoadStatus, HomeStateService } from './home-state.service';
 import { HospitalContextService } from './hospital-context.service';
 import { ProfessionalProfileReader } from './professional-profile';
@@ -62,7 +79,7 @@ function formatTodayLabel(): string {
   styleUrl: './home.component.scss',
   templateUrl: './home.component.html',
 })
-export class HomeComponent implements OnInit {
+export class HomeComponent implements OnInit, OnDestroy {
   // public: o spec abre o assistente e dispara o estado diretamente na instância.
   readonly aiAssistant = inject(AiAssistantService);
   /** Estado de carregamento inicial, compartilhado com as stories irmãs via HomeStateService. */
@@ -73,8 +90,12 @@ export class HomeComponent implements OnInit {
   readonly stale = signal(false);
   readonly loading = signal(false);
   readonly controlsEnabled = computed(() => !this.stale());
-  /** Notificações da grade (após o card fixo). Mais recente primeiro (US-003-3-01). */
+  /** Notificações da grade (após o card fixo), da mais recente para a mais antiga (US-003-3-01). */
   readonly notifications = signal<readonly HomeNotification[]>([]);
+
+  /** Cursor do próximo lote; `null` quando o fim da lista foi atingido (RN-03). */
+  readonly nextCursor = signal<string | null>(null);
+  readonly hasMore = computed(() => this.nextCursor() !== null);
 
   protected readonly context = inject(HospitalContextService);
   protected readonly unreadCount = signal(0);
@@ -96,6 +117,11 @@ export class HomeComponent implements OnInit {
   private readonly source = inject(HomeDataSource);
   private readonly patients = inject(DailyPatientsSource);
   private readonly notificationsSource = inject(HomeNotificationsSource);
+  private readonly injector = inject(Injector);
+  private readonly scrollSentinel = viewChild<ElementRef<HTMLElement>>('scrollSentinel');
+  private intersectionObserver?: IntersectionObserver;
+  private feedGeneration = 0;
+  private loadingMore = false;
 
   constructor() {
     const profile = inject(ProfessionalProfileReader).read();
@@ -109,12 +135,67 @@ export class HomeComponent implements OnInit {
 
       if (hospitalId === undefined) {
         this.summary.set(null);
-        this.notifications.set([]);
+        this.resetFeed();
       } else {
         void this.loadSummary(hospitalId);
-        void this.loadNotifications(hospitalId);
+        void this.loadFirstBatch(hospitalId);
       }
     });
+
+    // Observa o sentinel de fim de lista (só existe enquanto há mais lotes).
+    effect(
+      () => {
+        const element = this.scrollSentinel()?.nativeElement;
+
+        this.intersectionObserver?.disconnect();
+        if (!element || typeof IntersectionObserver === 'undefined') {
+          return;
+        }
+        this.intersectionObserver = new IntersectionObserver(entries => {
+          if (entries.some(entry => entry.isIntersecting)) {
+            void this.loadNextBatch();
+          }
+        });
+        this.intersectionObserver.observe(element);
+      },
+      { injector: this.injector },
+    );
+  }
+
+  ngOnDestroy(): void {
+    this.intersectionObserver?.disconnect();
+  }
+
+  /** Carrega e anexa o próximo lote; no-op sem mais itens, em andamento ou offline com dados exibidos. */
+  async loadNextBatch(): Promise<void> {
+    const hospitalId = this.context.selected()?.id;
+    const cursor = this.nextCursor();
+
+    if (hospitalId === undefined || cursor === null || this.loadingMore || this.stale()) {
+      return;
+    }
+    const generation = this.feedGeneration;
+
+    this.loadingMore = true;
+    try {
+      const page = await this.notificationsSource.loadPage(hospitalId, cursor, NOTIFICATIONS_BATCH_SIZE);
+
+      if (generation === this.feedGeneration) {
+        const known = new Set(this.notifications().map(n => n.id));
+
+        this.notifications.update(current => [
+          ...current,
+          ...sortNotificationsNewestFirst(page.items.filter(n => !known.has(n.id))),
+        ]);
+        this.nextCursor.set(page.nextCursor);
+      }
+    } catch {
+      // Falha em lote adicional preserva os cards e o cursor (nova tentativa ao rolar de novo).
+    } finally {
+      if (generation === this.feedGeneration) {
+        this.loadingMore = false;
+      }
+    }
   }
 
   async ngOnInit(): Promise<void> {
@@ -200,24 +281,37 @@ export class HomeComponent implements OnInit {
     }
   }
 
+  private resetFeed(): void {
+    this.feedGeneration++;
+    this.loadingMore = false;
+    this.notifications.set([]);
+    this.nextCursor.set(null);
+  }
+
+  private async loadFirstBatch(hospitalId: string): Promise<void> {
+    this.resetFeed();
+    const generation = this.feedGeneration;
+
+    try {
+      const page = await this.notificationsSource.loadPage(hospitalId, null, NOTIFICATIONS_BATCH_SIZE);
+
+      if (generation === this.feedGeneration) {
+        this.notifications.set(sortNotificationsNewestFirst(page.items));
+        this.nextCursor.set(page.nextCursor);
+      }
+    } catch {
+      // Falha do primeiro lote: sem erro genérico (isso é do `refresh()`); sinaliza dados desatualizados.
+      if (generation === this.feedGeneration) {
+        this.stale.set(true);
+      }
+    }
+  }
+
   private async loadSummary(hospitalId: string): Promise<void> {
     const summary = await this.patients.loadForDay(hospitalId, new Date());
 
     if (this.context.selected()?.id === hospitalId) {
       this.summary.set(summary);
-    }
-  }
-
-  private async loadNotifications(hospitalId: string): Promise<void> {
-    try {
-      const items = await this.notificationsSource.loadForHospital(hospitalId);
-
-      if (this.context.selected()?.id === hospitalId) {
-        this.notifications.set(sortNotificationsNewestFirst(items));
-      }
-    } catch {
-      // Falha ao atualizar: mantém a última lista válida e sinaliza dados desatualizados.
-      this.stale.set(true);
     }
   }
 }
