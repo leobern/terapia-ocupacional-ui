@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, signal } from '@angular/core';
 
+import { HomeSkeletonComponent } from '../../features/home/home-skeleton.component';
 import { AvatarComponent } from '../../shared/components/avatar/avatar.component';
 import { BackgroundMeshComponent } from '../../shared/components/background-mesh/background-mesh.component';
 import { BadgeComponent } from '../../shared/components/badge/badge.component';
@@ -39,6 +40,7 @@ import { TagComponent } from '../../shared/components/tag/tag.component';
     GraphMetaComponent,
     IconButtonComponent,
     InputChatComponent,
+    HomeSkeletonComponent,
     InputSelectComponent,
     TagComponent,
   ],
