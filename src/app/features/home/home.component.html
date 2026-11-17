@@ -127,7 +127,6 @@
               [patientCount]="s.patientCount"
               [averageCaloricPercentage]="s.averageCaloricPercentage"
               [averageProteinPercentage]="s.averageProteinPercentage"
-              [actionDisabled]="true"
               (cardClick)="onViewPatients()"
             />
           }
@@ -140,7 +139,6 @@
               [authorPhotoUrl]="notification.author.photoUrl"
               [description]="notification.description"
               [time]="formatTime(notification.createdAt)"
-              [actionDisabled]="true"
               (cardClick)="onViewNotificationDetail(notification.id)"
             />
           }

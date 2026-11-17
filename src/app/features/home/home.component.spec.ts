@@ -345,6 +345,26 @@ describe('HomeComponent', () => {
       expect(Math.round(cardWidth)).toBe(Math.round(parseFloat(tracks[0])));
     });
 
+    it('shows the notification arrow as the enabled secondary outlined icon button (Figma icon-button)', async () => {
+      await setup();
+      fixture.componentInstance.notifications.set([
+        {
+          author: { id: 1, name: 'Autor 1', photoUrl: null, specialty: 'Nutrição' },
+          createdAt: '2026-11-17T10:30:00',
+          description: 'Notificação 1',
+          id: 1,
+          read: false,
+        },
+      ]);
+      fixture.detectChanges();
+      const arrow = q<HTMLButtonElement>('app-card-notify button.icon-button');
+
+      expect(arrow?.disabled).toBeFalse();
+      expect(arrow?.className).toContain('icon-button--secondary');
+      expect(arrow?.className).toContain('icon-button--outlined');
+      expect(arrow?.className).toContain('icon-button--small');
+    });
+
     it('keeps the arrow reserved and inert: clicking it or the card changes nothing', async () => {
       await setup();
       const before = el().innerHTML;
