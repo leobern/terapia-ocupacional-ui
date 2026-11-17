@@ -9,6 +9,8 @@ import { LocalProfessionalProfileReader } from './features/home/local-profession
 import { ProfessionalProfileReader } from './features/home/professional-profile';
 import { LinkedHospitalsReader } from './features/home/linked-hospitals';
 import { MockLinkedHospitalsReader } from './features/home/mock-linked-hospitals-reader';
+import { LocalUnreadNotificationsReader } from './features/home/local-unread-notifications-reader';
+import { UnreadNotificationsReader } from './features/home/unread-notifications-reader';
 import { LocalStartupStateReader } from './features/splash/local-startup-state-reader';
 import { StartupStateReader } from './features/splash/startup-state';
 
@@ -17,6 +19,7 @@ export const appConfig: ApplicationConfig = {
     { provide: ProfessionalProfileReader, useClass: LocalProfessionalProfileReader },
     { provide: StartupStateReader, useClass: LocalStartupStateReader },
     { provide: LinkedHospitalsReader, useClass: MockLinkedHospitalsReader },
+    { provide: UnreadNotificationsReader, useClass: LocalUnreadNotificationsReader },
     provideZoneChangeDetection({ eventCoalescing: true }),
     provideRouter(routes),
     provideStore(),

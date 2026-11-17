@@ -1,4 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { provideRouter, Router } from '@angular/router';
 
 import { HomeComponent, HomeLoadState } from './home.component';
 import { HospitalContextService } from './hospital-context.service';
@@ -10,20 +11,30 @@ const HOSPITALS: LinkedHospital[] = [
   { id: 'a', name: 'Hospital A' },
   { id: 'b', name: 'Hospital B' },
 ];
+import { UnreadNotificationsReader } from './unread-notifications-reader';
 
 describe('HomeComponent', () => {
   let fixture: ComponentFixture<HomeComponent>;
+  let navigate: jasmine.Spy;
 
-  async function setup(hospitals: readonly LinkedHospital[]): Promise<void> {
+  async function setup(hospitals: readonly LinkedHospital[], unread = 0): Promise<void> {
     await TestBed.configureTestingModule({
       imports: [HomeComponent],
       providers: [
+        provideRouter([]),
         { provide: ProfessionalProfileReader, useClass: LocalProfessionalProfileReader },
         { provide: LinkedHospitalsReader, useValue: { read: (): readonly LinkedHospital[] => hospitals } },
+        {
+          provide: UnreadNotificationsReader,
+          useValue: { countUnread: (): Promise<number> => Promise.resolve(unread) },
+        },
       ],
     }).compileComponents();
 
+    navigate = spyOn(TestBed.inject(Router), 'navigateByUrl').and.resolveTo(true);
     fixture = TestBed.createComponent(HomeComponent);
+    fixture.detectChanges();
+    await fixture.whenStable();
     fixture.detectChanges();
   }
 
@@ -139,6 +150,37 @@ describe('HomeComponent', () => {
       fixture.detectChanges();
 
       expect(options().length).toBe(0);
+    });
+  });
+
+  describe('notification bell', () => {
+    const bell = (): HTMLButtonElement => el().querySelector('.home__bell button') as HTMLButtonElement;
+
+    it('shows 5 unread notifications on the bell', async () => {
+      await setup([HOSPITALS[0]], 5);
+
+      expect(el().querySelector('app-badge')?.textContent?.trim()).toBe('5');
+      expect(bell().getAttribute('aria-label')).toBe('Notificações, 5 não lidas');
+    });
+
+    it('shows no badge when there are no unread notifications', async () => {
+      await setup([HOSPITALS[0]], 0);
+
+      expect(el().querySelector('app-badge')).toBeNull();
+      expect(bell().getAttribute('aria-label')).toBe('Notificações');
+    });
+
+    it('caps the badge above 999', async () => {
+      await setup([HOSPITALS[0]], 1500);
+
+      expect(el().querySelector('app-badge')?.textContent?.trim()).toBe('+999');
+    });
+
+    it('navigates to notifications when the bell is tapped', async () => {
+      await setup([HOSPITALS[0]], 5);
+      bell().click();
+
+      expect(navigate).toHaveBeenCalledWith('/notificacoes');
     });
   });
 });

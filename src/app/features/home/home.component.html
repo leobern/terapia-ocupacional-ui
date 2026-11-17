@@ -1,4 +1,17 @@
 <main class="home">
+  <header class="home__header">
+    <div class="home__bell">
+      <app-icon-button
+        appearance="icon"
+        icon="bell"
+        [ariaLabel]="bellLabel()"
+        (click)="openNotifications()"
+      />
+      @if (unreadCount() > 0) {
+        <app-badge class="home__badge" type="numeral" [value]="unreadCount()" />
+      }
+    </div>
+  </header>
   <h1 class="home__title">Conductia</h1>
   <app-home-header />
   <section class="home__content" [attr.data-state]="loadState()">
