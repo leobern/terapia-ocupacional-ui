@@ -61,7 +61,7 @@ describe('HomeComponent', () => {
 
     expect(el().querySelectorAll('main').length).toBe(1);
     expect(el().querySelectorAll('h1').length).toBe(1);
-    expect(el.querySelector('main.home h1')?.textContent?.trim()).toBe('Conductia');
+    expect(el().querySelector('main.home h1')?.textContent?.trim()).toBe('Conductia');
   });
 
   (['loading', 'success', 'error'] as HomeLoadState[]).forEach(state => {
