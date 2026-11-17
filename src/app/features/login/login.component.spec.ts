@@ -1,0 +1,210 @@
+import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { provideRouter, Router } from '@angular/router';
+
+import { LocalStartupStateReader } from '../splash/local-startup-state-reader';
+import { StartupStateReader } from '../splash/startup-state';
+import { AuthGateway, LoginResult } from './auth-gateway';
+import { LoginComponent } from './login.component';
+
+class FakeGateway extends AuthGateway {
+  login!: jasmine.Spy<AuthGateway['login']>;
+}
+
+describe('LoginComponent', () => {
+  let gateway: FakeGateway;
+  let fixture: ComponentFixture<LoginComponent>;
+  let el: HTMLElement;
+
+  beforeEach(() => {
+    spyOnProperty(navigator, 'language', 'get').and.returnValue('pt-BR');
+    gateway = new FakeGateway();
+    gateway.login = jasmine.createSpy('login');
+    gateway.login.and.resolveTo({ kind: 'invalid-credentials' } satisfies LoginResult);
+    TestBed.configureTestingModule({
+      imports: [LoginComponent],
+      providers: [
+        provideRouter([]),
+        { provide: AuthGateway, useValue: gateway },
+        { provide: StartupStateReader, useClass: LocalStartupStateReader },
+      ],
+    });
+    fixture = TestBed.createComponent(LoginComponent);
+    el = fixture.nativeElement as HTMLElement;
+    fixture.detectChanges();
+  });
+
+  const input = (name: string): HTMLInputElement => el.querySelector(`input[name="${name}"]`) as HTMLInputElement;
+  const error = (): string => el.querySelector('[role="alert"]')?.textContent?.trim() ?? '';
+  const button = (): HTMLButtonElement => el.querySelector('app-button button') as HTMLButtonElement;
+
+  function fill(email: string, password: string): void {
+    input('email').value = email;
+    input('email').dispatchEvent(new Event('input'));
+    input('password').value = password;
+    input('password').dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+  }
+
+  async function submit(): Promise<void> {
+    button().click();
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+  }
+
+  it('renders email, password, submit button and forgot-password link', () => {
+    expect(input('email')).toBeTruthy();
+    expect(input('password').type).toBe('password');
+    expect(button().textContent).toContain('Entrar');
+    expect(el.querySelector('a')?.textContent).toContain('Esqueci minha senha');
+    expect(el.querySelector('a')?.getAttribute('href')).toBe('/forgot-password');
+  });
+
+  it('C3: wrong credentials show the generic message and clear only the password', async () => {
+    fill('a@b.com', 'wrong');
+    await submit();
+
+    expect(gateway.login).toHaveBeenCalledWith('a@b.com', 'wrong');
+    expect(error()).toBe('E-mail ou senha incorretos');
+    expect(input('password').value).toBe('');
+    expect(input('email').value).toBe('a@b.com');
+  });
+
+  it('C4/RN01: unknown account yields the exact same observable outcome', async () => {
+    // O gateway não distingue os dois casos: ambos chegam como `invalid-credentials`.
+    fill('ghost@b.com', 'whatever');
+    await submit();
+
+    expect(error()).toBe('E-mail ou senha incorretos');
+    expect(input('password').value).toBe('');
+  });
+
+  it('shows a distinct message on network failure and keeps the password', async () => {
+    gateway.login.and.resolveTo({ kind: 'network-error' } satisfies LoginResult);
+    fill('a@b.com', 'secret');
+    await submit();
+
+    expect(error()).toBe('Sem conexão. Verifique sua internet.');
+    expect(input('password').value).toBe('secret');
+  });
+
+  it('validates empty and malformed input before calling the gateway', async () => {
+    await submit();
+
+    expect(error()).toContain('e-mail válido');
+
+    fill('not-an-email', 'x');
+    await submit();
+
+    fill('a@b.com', '');
+    await submit();
+
+    expect(gateway.login).not.toHaveBeenCalled();
+    expect(input('email').getAttribute('aria-invalid')).toBe('true');
+  });
+
+  it('disables the button while loading and ignores double submit', async () => {
+    let resolve!: (r: LoginResult) => void;
+
+    gateway.login.and.returnValue(new Promise<LoginResult>(r => (resolve = r)));
+    fill('a@b.com', 'secret');
+    button().click();
+    fixture.detectChanges();
+
+    expect(button().disabled).toBeTrue();
+    expect(button().textContent).toContain('Entrando');
+
+    input('password').dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
+    (fixture.componentInstance as unknown as { submit(): void }).submit();
+
+    expect(gateway.login).toHaveBeenCalledTimes(1);
+
+    resolve({ kind: 'invalid-credentials' });
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(button().disabled).toBeFalse();
+  });
+
+  it('submits with Enter and clears the previous error on a new attempt', async () => {
+    fill('a@b.com', 'wrong');
+    await submit();
+    fill('a@b.com', 'again');
+    input('password').dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
+    fixture.detectChanges();
+
+    expect(gateway.login).toHaveBeenCalledTimes(2);
+    expect(error()).toBe('');
+  });
+
+  describe('after a successful login', () => {
+    let navigate: jasmine.Spy;
+
+    beforeEach(() => {
+      navigate = spyOn(TestBed.inject(Router), 'navigateByUrl').and.resolveTo(true);
+    });
+
+    it('C1: goes to home when a hospital is approved, replacing the login entry', async () => {
+      gateway.login.and.resolveTo({ hasApprovedHospitalLink: true, kind: 'success' } satisfies LoginResult);
+      fill('a@b.com', 'secret');
+      await submit();
+
+      expect(navigate).toHaveBeenCalledWith('/home', { replaceUrl: true });
+      expect(TestBed.inject(StartupStateReader).readLocal().isSessionValid).toBeTrue();
+    });
+
+    it('C2: goes to hospital links when none is approved, recording the link state', async () => {
+      gateway.login.and.resolveTo({ hasApprovedHospitalLink: false, kind: 'success' } satisfies LoginResult);
+      fill('a@b.com', 'secret');
+      await submit();
+
+      expect(navigate).toHaveBeenCalledWith('/hospital-links', { replaceUrl: true });
+      expect(TestBed.inject(StartupStateReader).readLocal().hasApprovedHospitalLink).toBeFalse();
+    });
+  });
+
+  describe('locked account', () => {
+    beforeEach(() => jasmine.clock().install());
+
+    afterEach(() => jasmine.clock().uninstall());
+
+    it('disables submit with a generic message until the server-provided time elapses', async () => {
+      gateway.login.and.resolveTo({ kind: 'locked', retryAfterSeconds: 60 } satisfies LoginResult);
+      fill('a@b.com', 'secret');
+      await submit();
+
+      expect(error()).toBe('Muitas tentativas. Tente novamente mais tarde.');
+      expect(button().disabled).toBeTrue();
+      expect(input('password').value).toBe('');
+
+      jasmine.clock().tick(59_999);
+      (fixture.componentInstance as unknown as { submit(): void }).submit();
+
+      expect(gateway.login).toHaveBeenCalledTimes(1);
+
+      jasmine.clock().tick(1);
+      fixture.detectChanges();
+
+      expect(button().disabled).toBeFalse();
+      expect(error()).toBe('');
+    });
+
+    it('keeps submit available for a manual retry when no remaining time is given', async () => {
+      gateway.login.and.resolveTo({ kind: 'locked' } satisfies LoginResult);
+      fill('a@b.com', 'secret');
+      await submit();
+
+      expect(error()).toBe('Muitas tentativas. Tente novamente mais tarde.');
+      expect(button().disabled).toBeFalse();
+    });
+
+    it('cancels the unlock timer on destroy', async () => {
+      gateway.login.and.resolveTo({ kind: 'locked', retryAfterSeconds: 5 } satisfies LoginResult);
+      fill('a@b.com', 'secret');
+      await submit();
+      fixture.destroy();
+
+      expect(() => jasmine.clock().tick(5000)).not.toThrow();
+    });
+  });
+});

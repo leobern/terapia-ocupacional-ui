@@ -11,6 +11,10 @@ class FakeReader extends StartupStateReader {
   readLocal(): LocalStartupState {
     return this.state;
   }
+
+  registerLogin(): void {
+    // não usado nestes testes
+  }
 }
 
 describe('SplashComponent', () => {

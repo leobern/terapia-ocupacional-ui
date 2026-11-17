@@ -2,6 +2,20 @@
   "app": {
     "title": "Nutritional Therapy"
   },
+  "login": {
+    "email": "E-mail",
+    "error": {
+      "invalid-credentials": "Incorrect e-mail or password",
+      "locked": "Too many attempts. Try again later.",
+      "network-error": "No connection. Check your internet.",
+      "validation": "Enter a valid e-mail and your password."
+    },
+    "forgotPassword": "Forgot my password",
+    "password": "Password",
+    "submit": "Sign in",
+    "submitting": "Signing in...",
+    "title": "Sign in"
+  },
   "splash": {
     "logoLabel": "Conductia",
     "noConnection": "No connection. Check your internet.",
