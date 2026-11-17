@@ -11,15 +11,27 @@
       posição (feedback do usuário: a logo "pulava" de lugar ao abrir/fechar).
       `--icon-logo-size: 40px` e a cor (primary→secondary) via
       `--icon-logo-accent-override`, ambos definidos no SCSS — só o wordmark
-      ao lado aparece/some, com o mesmo fade dos rótulos dos itens.
+      ao lado aparece/some, com o mesmo fade dos rótulos dos itens. Clicar
+      abre o assistente de IA — mesmo destino do botão de IA da bottom-nav-bar.
     -->
     <span class="nav-menu__logo-slot">
       <app-icon-logo-button
         class="nav-menu__logo-badge"
-        ariaLabel="Condutia — página inicial"
+        ariaLabel="Abrir assistente de IA"
+        (clicked)="logoClick.emit()"
       />
     </span>
     <span class="nav-menu__wordmark">Condut<em>ia</em></span>
+
+    @if (showCloseButton()) {
+      <app-icon-button
+        class="nav-menu__close"
+        appearance="icon"
+        icon="x"
+        ariaLabel="Fechar menu"
+        (click)="onCloseClick()"
+      />
+    }
   </div>
 
   <nav class="nav-menu__links" aria-label="Navegação principal">

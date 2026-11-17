@@ -17,6 +17,10 @@ import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 export class BackgroundMeshComponent {
   readonly color1 = input<string>('#D3FFE9');
   readonly color2 = input<string>('#a6fbfb');
+  // Ocultam o blob correspondente sem remover a prop de cor (2026-08-17,
+  // specs/004-notificacoes) — ver DS-component-background-mesh § Variantes & Props.
+  readonly showColor1 = input<boolean>(true);
+  readonly showColor2 = input<boolean>(true);
   readonly meshGradientCoreColor = input<string>('#ABB3BA');
   readonly meshGradientEdgeColor = input<string>('#4D5154');
 }

@@ -1,8 +1,15 @@
 // =============================================================================
-// Helvetica Neue — arquivos fornecidos pelo usuário (helvetica-neue-5.zip),
-// convertidos para WOFF2 em src/assets/fonts/helvetica-neue/. Um @font-face por
-// peso, mapeado para o `font-weight` numérico padrão da família (convenção
-// Adobe/Helvetica Neue: UltraLight 100 … Black 900).
+// Inter (todo o sistema) e Lora (conteúdo de chat com IA — Bottom-sheet/Drawer)
+// — tokens do Figma "Conductia". Baixadas do Google Fonts (fontes variáveis,
+// subconjunto "latin", SIL Open Font License 1.1) e auto-hospedadas aqui —
+// nunca via <link>/@import de CDN, para não quebrar o offline-first
+// (Constituição, Princípio IV). Substituem Helvetica Neue e Nunito Sans
+// (arquivos removidos — não há mais nenhum uso das duas no projeto).
+//
+// Cada arquivo é uma fonte VARIÁVEL: o Google já entrega um único .woff2
+// cobrindo todo o eixo de peso do estilo (o `@font-face` abaixo declara a
+// faixa completa via `font-weight: 200 900`/`100 900`, em vez de um arquivo
+// por peso como a Helvetica tinha) — por isso só 4 arquivos no total, não ~16.
 //
 // IMPORTANTE: este arquivo só deve ser `@use`ado UMA VEZ, em styles.scss (a
 // folha de estilo global). Angular compila o SCSS de cada componente como
@@ -42,73 +49,36 @@
 // =============================================================================
 
 @font-face {
-  font-family: 'Helvetica Neue';
-  src: url('/assets/fonts/helvetica-neue/HelveticaNeueUltraLight.woff2')
-    format('woff2');
-  font-weight: 100;
+  font-family: 'Inter';
+  src: url('/assets/fonts/inter/Inter-Variable.woff2') format('woff2');
+  font-weight: 100 900;
   font-style: normal;
   font-display: swap;
 }
 
+// Só o peso 200 (Extra Light) — único itálico usado no produto até agora
+// (headline "Section - italic" do Figma, ex.: "Tarefas diárias do hospital").
+// Ampliar a faixa (baixar outro arquivo) quando outro peso itálico aparecer.
 @font-face {
-  font-family: 'Helvetica Neue';
-  src: url('/assets/fonts/helvetica-neue/HelveticaNeueThin.woff2')
-    format('woff2');
+  font-family: 'Inter';
+  src: url('/assets/fonts/inter/Inter-Italic-200.woff2') format('woff2');
   font-weight: 200;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Lora';
+  src: url('/assets/fonts/lora/Lora-Variable.woff2') format('woff2');
+  font-weight: 100 900;
   font-style: normal;
   font-display: swap;
 }
 
 @font-face {
-  font-family: 'Helvetica Neue';
-  src: url('/assets/fonts/helvetica-neue/HelveticaNeueLight.woff2')
-    format('woff2');
-  font-weight: 300;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: 'Helvetica Neue';
-  src: url('/assets/fonts/helvetica-neue/HelveticaNeueRoman.woff2')
-    format('woff2');
-  font-weight: 400;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: 'Helvetica Neue';
-  src: url('/assets/fonts/helvetica-neue/HelveticaNeueMedium.woff2')
-    format('woff2');
-  font-weight: 500;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: 'Helvetica Neue';
-  src: url('/assets/fonts/helvetica-neue/HelveticaNeueBold.woff2')
-    format('woff2');
-  font-weight: 700;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: 'Helvetica Neue';
-  src: url('/assets/fonts/helvetica-neue/HelveticaNeueHeavy.woff2')
-    format('woff2');
-  font-weight: 800;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: 'Helvetica Neue';
-  src: url('/assets/fonts/helvetica-neue/HelveticaNeueBlack.woff2')
-    format('woff2');
-  font-weight: 900;
-  font-style: normal;
+  font-family: 'Lora';
+  src: url('/assets/fonts/lora/Lora-Italic-Variable.woff2') format('woff2');
+  font-weight: 100 900;
+  font-style: italic;
   font-display: swap;
 }

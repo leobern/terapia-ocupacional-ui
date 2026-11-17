@@ -1,8 +1,9 @@
 // =============================================================================
-// Uma variável Sass por arquivo de fonte do helvetica-neue-5.zip (pedido do
-// usuário) — usar nos componentes em vez do número "mágico" de font-weight,
-// já que o nome do arquivo original (Roman, Heavy, Black…) não corresponde
-// 1:1 ao número.
+// Uma variável Sass por peso nomeado da escala OpenType — usar nos componentes
+// em vez do número "mágico" de font-weight. Nomes preservados da era Helvetica
+// Neue (Roman/Heavy/Black…) porque Inter usa a mesma convenção de nomenclatura
+// de peso; `$font-weight-semibold` (600) é novo, adicionado quando o Figma
+// passou a nomear "Semi Bold" como estilo próprio (DS-component-tag).
 //
 // Separado de _fonts.scss (que só tem as regras @font-face) de propósito:
 // esse arquivo não emite nenhum CSS, só variáveis — por isso pode ser
@@ -16,6 +17,7 @@ $font-weight-thin: 200;
 $font-weight-light: 300;
 $font-weight-roman: 400;
 $font-weight-medium: 500;
+$font-weight-semibold: 600;
 $font-weight-bold: 700;
 $font-weight-heavy: 800;
 $font-weight-black: 900;

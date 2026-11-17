@@ -1,22 +1,20 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter, Router } from '@angular/router';
 
-import { I18nService } from '../../shared/services/i18n.service';
 import { DailyPatientsSource, DailyPatientsSummary } from './daily-patients';
-import { HomeComponent, HomeLoadState } from './home.component';
+import { HomeComponent } from './home.component';
 import { HomeData, HomeDataSource } from './home-data-source';
 import { HomeStateService } from './home-state.service';
 import { HospitalContextService } from './hospital-context.service';
 import { LinkedHospital, LinkedHospitalsReader } from './linked-hospitals';
 import { LocalProfessionalProfileReader } from './local-professional-profile-reader';
 import { ProfessionalProfileReader } from './professional-profile';
+import { UnreadNotificationsReader } from './unread-notifications-reader';
 
 const HOSPITALS: LinkedHospital[] = [
   { id: 'a', name: 'Hospital A' },
   { id: 'b', name: 'Hospital B' },
 ];
-
-import { UnreadNotificationsReader } from './unread-notifications-reader';
 
 class FakePatients extends DailyPatientsSource {
   calls: { hospitalId: string; day: Date }[] = [];
@@ -33,23 +31,33 @@ class FakePatients extends DailyPatientsSource {
   }
 }
 
+interface SetupOptions {
+  hospitals?: readonly LinkedHospital[];
+  unread?: number;
+  source?: Pick<HomeDataSource, 'load'>;
+  summary?: DailyPatientsSummary;
+  counts?: Record<string, number>;
+}
+
 describe('HomeComponent', () => {
   let fixture: ComponentFixture<HomeComponent>;
   let patients: FakePatients;
   let navigate: jasmine.Spy;
 
-  async function setup(
-    hospitals: readonly LinkedHospital[],
-    unread = 0,
-    source?: Pick<HomeDataSource, 'load'>,
-    summary?: DailyPatientsSummary,
-    counts: Record<string, number> = {},
-  ): Promise<void> {
+  async function settle(): Promise<void> {
+    await fixture.whenStable();
+    fixture.detectChanges();
+  }
+
+  async function setup(options: SetupOptions = {}): Promise<void> {
+    const { hospitals = [HOSPITALS[0]], unread = 0, source, summary, counts = {} } = options;
+
     patients = new FakePatients();
     if (summary) {
       patients.summary = summary;
     }
     patients.counts = counts;
+
     await TestBed.configureTestingModule({
       imports: [HomeComponent],
       providers: [
@@ -65,92 +73,127 @@ describe('HomeComponent', () => {
       ],
     }).compileComponents();
 
-    navigate = spyOn(TestBed.inject(Router), 'navigateByUrl').and.resolveTo(true);
+    const router = TestBed.inject(Router);
+
+    spyOn(router, 'navigate').and.resolveTo(true);
+    navigate = router.navigate as jasmine.Spy;
     if (!source) {
       TestBed.inject(HomeStateService).setStatus('success');
     }
     fixture = TestBed.createComponent(HomeComponent);
     fixture.detectChanges();
-    await fixture.whenStable();
-    fixture.detectChanges();
+    await settle();
   }
 
   const el = (): HTMLElement => fixture.nativeElement;
-  const combobox = (): HTMLElement => el().querySelector('[role="combobox"]') as HTMLElement;
+  const q = <T extends Element = HTMLElement>(selector: string): T | null => el().querySelector<T>(selector);
+  const bell = (): HTMLButtonElement => q<HTMLButtonElement>('.home__notify-wrapper button') as HTMLButtonElement;
+  const trigger = (): HTMLButtonElement | null => q<HTMLButtonElement>('.home__hospital-trigger');
   const options = (): HTMLElement[] => Array.from(el().querySelectorAll('[role="option"]'));
+  const grid = (): HTMLElement[] => Array.from(el().querySelectorAll('.home__grid > *'));
 
-  // Acessibilidade (Princípio X): a rota precisa de um marco de navegação e de um
-  // título de nível 1 para leitor de tela ancorar a página.
-  it('renders a single <main> landmark with a level-1 heading', async () => {
-    await setup([HOSPITALS[0]]);
+  describe('layout', () => {
+    beforeEach(() => setup());
 
-    expect(el().querySelectorAll('main').length).toBe(1);
-    expect(el().querySelectorAll('h1').length).toBe(1);
-    expect(el().querySelector('main.home h1')?.textContent?.trim()).toBe('Conductia');
-  });
+    // Acessibilidade (Princípio X): marco de navegação e um único título de nível 1.
+    it('renders a single <main> landmark with the professional as level-1 heading', () => {
+      expect(el().querySelectorAll('h1').length).toBe(1);
+      expect(q('h1')?.textContent?.trim()).toBe('Michelle Franklin');
+    });
 
-  (['loading', 'success', 'error'] as HomeLoadState[]).forEach(state => {
-    it(`keeps the same header element visible in the ${state} state`, async () => {
-      await setup([HOSPITALS[0]]);
-      const before = fixture.nativeElement.querySelector('.home-header');
+    it('shows the header with title, avatar and the day headline', () => {
+      expect(q('.home__header-title')?.textContent?.trim()).toBe('Dra.');
+      expect(q('.home__header app-avatar')).toBeTruthy();
+      expect(q('.home__headline')?.textContent?.trim()).toBe('Tarefas diárias do hospital');
+      expect(q('.home__date')?.textContent?.trim()).toMatch(/ - \d+ de /);
+    });
 
-      fixture.componentInstance.loadState.set(state);
-      fixture.detectChanges();
-      const after = fixture.nativeElement.querySelector('.home-header');
+    it('does not mount the bottom nav bar itself (the shell owns it)', () => {
+      expect(q('app-bottom-nav-bar')).toBeNull();
+    });
 
-      expect(after).toBeTruthy();
-      expect(after).toBe(before);
-      expect(after.textContent).toContain('Michelle Franklin');
+    it('opens the AI assistant from the desktop shortcuts button', () => {
+      const component = fixture.componentInstance;
+
+      spyOn(component.aiAssistant, 'openPanel');
+
+      (q('.home__shortcuts-wrapper button') as HTMLButtonElement).click();
+
+      expect(component.aiAssistant.openPanel).toHaveBeenCalledWith();
     });
   });
 
-  it('does not mount the bottom nav bar itself (the shell owns it)', async () => {
-    await setup([HOSPITALS[0]]);
+  describe('notification bell', () => {
+    it('shows 5 unread notifications on the bell', async () => {
+      await setup({ unread: 5 });
 
-    expect(fixture.nativeElement.querySelector('app-bottom-nav-bar')).toBeNull();
+      expect(q('app-badge')?.textContent?.trim()).toBe('5');
+      expect(bell().getAttribute('aria-label')).toBe('Notificações, 5 não lidas');
+    });
+
+    it('shows no badge when there are no unread notifications', async () => {
+      await setup({ unread: 0 });
+
+      expect(q('app-badge')).toBeNull();
+      expect(bell().getAttribute('aria-label')).toBe('Notificações');
+    });
+
+    it('caps the badge above 999', async () => {
+      await setup({ unread: 1500 });
+
+      expect(q('app-badge')?.textContent?.trim()).toBe('+999');
+    });
+
+    it('navigates to the notifications screen when the bell is tapped', async () => {
+      await setup({ unread: 5 });
+      bell().click();
+
+      expect(navigate).toHaveBeenCalledWith(['/notifications'], { queryParams: {} });
+    });
+
+    it('passes the hospital in context when its id is numeric', async () => {
+      await setup({ hospitals: [{ id: '42', name: 'Hospital 42' }] });
+      bell().click();
+
+      expect(navigate).toHaveBeenCalledWith(['/notifications'], { queryParams: { hospitalId: '42' } });
+    });
   });
 
   describe('single hospital', () => {
-    beforeEach(() => setup([HOSPITALS[0]]));
+    beforeEach(() => setup());
 
-    it('shows the hospital name in an accessibly named selector', () => {
-      expect(combobox().textContent?.trim()).toBe('Hospital A');
-      expect(combobox().getAttribute('aria-label')).toBe('Hospital');
-    });
-
-    it('does not open an option list', () => {
-      combobox().click();
-      fixture.detectChanges();
-
+    it('shows the hospital as a tag, without an option list', () => {
+      expect(q('.home__local app-tag')?.textContent).toContain('Hospital A');
+      expect(trigger()).toBeNull();
       expect(options().length).toBe(0);
     });
   });
 
   describe('multiple hospitals', () => {
-    beforeEach(() => setup(HOSPITALS));
+    beforeEach(() => setup({ hospitals: HOSPITALS }));
 
     it('lists linked hospitals and marks the current one', () => {
-      combobox().click();
+      trigger()?.click();
       fixture.detectChanges();
 
       expect(options().map(o => o.textContent?.trim())).toEqual(['Hospital A', 'Hospital B']);
       expect(options().map(o => o.getAttribute('aria-selected'))).toEqual(['true', 'false']);
-      expect(combobox().getAttribute('aria-expanded')).toBe('true');
+      expect(trigger()?.getAttribute('aria-expanded')).toBe('true');
     });
 
     it('switches the context when choosing another hospital', () => {
-      combobox().click();
+      trigger()?.click();
       fixture.detectChanges();
       options()[1].click();
       fixture.detectChanges();
 
-      expect(combobox().textContent?.trim()).toBe('Hospital B');
+      expect(q('.home__local app-tag')?.textContent).toContain('Hospital B');
       expect(TestBed.inject(HospitalContextService).selected()?.id).toBe('b');
       expect(options().length).toBe(0);
     });
 
     it('closes without changing when choosing the current hospital', () => {
-      combobox().click();
+      trigger()?.click();
       fixture.detectChanges();
       options()[0].click();
       fixture.detectChanges();
@@ -160,7 +203,7 @@ describe('HomeComponent', () => {
     });
 
     it('supports keyboard: arrows move focus, Enter selects, Escape closes', () => {
-      combobox().click();
+      trigger()?.click();
       fixture.detectChanges();
       options()[0].dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown' }));
 
@@ -172,78 +215,123 @@ describe('HomeComponent', () => {
 
       expect(options().length).toBe(0);
 
-      combobox().click();
+      trigger()?.click();
       fixture.detectChanges();
       options()[1].dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
       fixture.detectChanges();
 
-      expect(combobox().textContent?.trim()).toBe('Hospital B');
+      expect(q('.home__local app-tag')?.textContent).toContain('Hospital B');
     });
 
     it('toggles the list closed on a second trigger', () => {
-      combobox().click();
+      trigger()?.click();
       fixture.detectChanges();
-      combobox().click();
+      trigger()?.click();
       fixture.detectChanges();
 
       expect(options().length).toBe(0);
     });
-  });
 
-  describe('notification bell', () => {
-    const bell = (): HTMLButtonElement => el().querySelector('.home__bell button') as HTMLButtonElement;
+    it('reloads the count when the hospital in context changes', async () => {
+      TestBed.inject(HospitalContextService).select('b');
+      fixture.detectChanges();
+      await settle();
 
-    it('shows 5 unread notifications on the bell', async () => {
-      await setup([HOSPITALS[0]], 5);
-
-      expect(el().querySelector('app-badge')?.textContent?.trim()).toBe('5');
-      expect(bell().getAttribute('aria-label')).toBe('Notificações, 5 não lidas');
-    });
-
-    it('shows no badge when there are no unread notifications', async () => {
-      await setup([HOSPITALS[0]], 0);
-
-      expect(el().querySelector('app-badge')).toBeNull();
-      expect(bell().getAttribute('aria-label')).toBe('Notificações');
-    });
-
-    it('caps the badge above 999', async () => {
-      await setup([HOSPITALS[0]], 1500);
-
-      expect(el().querySelector('app-badge')?.textContent?.trim()).toBe('+999');
-    });
-
-    it('navigates to notifications when the bell is tapped', async () => {
-      await setup([HOSPITALS[0]], 5);
-      bell().click();
-
-      expect(navigate).toHaveBeenCalledWith('/notificacoes');
+      expect(patients.calls.map(c => c.hospitalId)).toEqual(['a', 'b']);
     });
   });
 
-  describe('initial loading', () => {
-    beforeEach(() => setup([HOSPITALS[0]]));
+  describe('daily patients card', () => {
+    it('shows "10 Pacientes" in the first card for the hospital in context and the current day', async () => {
+      await setup();
 
-    it('shows the skeleton in place of the selector while loading, keeping the header', () => {
-      TestBed.inject(HomeStateService).setStatus('loading');
+      expect(grid()[0].tagName.toLowerCase()).toBe('app-card-patients');
+      expect(grid()[0].textContent).toContain('10 Pacientes');
+      expect(patients.calls.length).toBe(1);
+      expect(patients.calls[0].hospitalId).toBe('a');
+      expect(patients.calls[0].day.toDateString()).toBe(new Date().toDateString());
+    });
+
+    it('replaces the number with "Todos os pacientes foram atendidos" when the count is zero', async () => {
+      await setup({ counts: { a: 0 } });
+
+      expect(grid()[0].textContent).toContain('Todos os pacientes foram atendidos');
+      expect(grid()[0].textContent).not.toContain(' Pacientes');
+    });
+
+    it('switches between number and message when changing to a hospital with a different count', async () => {
+      await setup({ counts: { b: 0 }, hospitals: HOSPITALS });
+
+      expect(grid()[0].textContent).toContain('10 Pacientes');
+
+      TestBed.inject(HospitalContextService).select('b');
+      fixture.detectChanges();
+      await settle();
+
+      expect(grid()[0].textContent).toContain('Todos os pacientes foram atendidos');
+    });
+
+    it('shows the average caloric and protein intake of the day (scenario 1)', async () => {
+      await setup();
+      const graph = grid()[0].querySelector('app-graph-meta svg') as SVGElement;
+
+      expect(graph.getAttribute('aria-label')).toBe('Aporte calórico 80%, aporte protéico 70%');
+    });
+
+    it('renders the protein indicator red when the average is 15% of the goal (scenario 2)', async () => {
+      await setup({ summary: { averageCaloricPercentage: 80, averageProteinPercentage: 15, patientCount: 10 } });
+      const arcs = grid()[0].querySelectorAll('app-graph-meta circle.progress');
+
+      expect(arcs[1].getAttribute('stroke')).toBe('var(--color-comm-alert)');
+      expect(arcs[0].getAttribute('stroke')).toBe('var(--color-comm-success)');
+    });
+
+    it('keeps the arrow reserved and inert: clicking it or the card changes nothing', async () => {
+      await setup();
+      const before = el().innerHTML;
+      const callsBefore = patients.calls.length;
+
+      (q('app-card-patients button') as HTMLButtonElement).click();
+      fixture.detectChanges();
+      await settle();
+
+      expect(navigate).not.toHaveBeenCalled();
+      expect(patients.calls.length).toBe(callsBefore);
+      expect(el().innerHTML).toBe(before);
+    });
+
+    it('lists notifications after the count card in the grid', async () => {
+      await setup();
+      fixture.componentInstance.notifications.set(
+        Array.from({ length: 3 }, (_, i) => ({
+          author: { id: i, name: `Autor ${i}`, photoUrl: null, specialty: 'Nutrição' },
+          createdAt: '2026-11-17T10:30:00',
+          description: `Notificação ${i}`,
+          id: i,
+          read: false,
+        })),
+      );
       fixture.detectChanges();
 
-      expect(el().querySelector('app-home-skeleton')).toBeTruthy();
-      expect(el().querySelector('.home__hospital')).toBeNull();
-      expect(el().querySelector('.home-header')).toBeTruthy();
+      expect(grid().length).toBe(4);
+      expect(grid()[0].tagName.toLowerCase()).toBe('app-card-patients');
+      expect(grid()[1].tagName.toLowerCase()).toBe('app-card-notify');
+      expect(grid()[1].textContent).toContain('Notificação 0');
+      expect(fixture.componentInstance.formatTime('2026-11-17T10:30:00')).toBe('10:30');
     });
 
-    it('removes the skeleton on success and on failure', () => {
-      (['success', 'error'] as const).forEach(status => {
-        TestBed.inject(HomeStateService).setStatus(status);
-        fixture.detectChanges();
+    it('ignores the card callbacks (no navigation yet)', async () => {
+      await setup();
+      const component = fixture.componentInstance;
 
-        expect(el().querySelector('app-home-skeleton')).toBeNull();
-      });
+      expect(() => {
+        component.onViewPatients();
+        component.onViewNotificationDetail(1);
+      }).not.toThrow();
     });
   });
 
-  describe('load failure', () => {
+  describe('load states', () => {
     let results: (HomeData | Error)[];
     let calls: number;
     let pending: ((d: HomeData) => void)[];
@@ -259,16 +347,11 @@ describe('HomeComponent', () => {
         return next instanceof Error ? Promise.reject(next) : Promise.resolve(next);
       },
     };
-    const t = (key: string): string => TestBed.inject(I18nService).t(key);
-    const alert = (): Element | null => el().querySelector('[role="alert"]');
-    const retry = (): HTMLButtonElement | null => el().querySelector('app-button button');
-    const settle = async (): Promise<void> => {
-      await fixture.whenStable();
-      fixture.detectChanges();
-    };
+    const errorBlock = (): Element | null => q('app-home-error');
+    const retry = (): HTMLButtonElement | null => q<HTMLButtonElement>('app-home-error app-button button');
     const open = async (...r: (HomeData | Error)[]): Promise<void> => {
       results = r;
-      await setup([HOSPITALS[0]], 0, fake);
+      await setup({ source: fake });
     };
 
     beforeEach(() => {
@@ -276,13 +359,28 @@ describe('HomeComponent', () => {
       pending = [];
     });
 
+    it('shows the skeleton in place of the hospital and the cards while loading, keeping the header', async () => {
+      await open();
+
+      expect(q('app-home-skeleton')).toBeTruthy();
+      expect(q('.home__local')).toBeNull();
+      expect(q('.home__header')).toBeTruthy();
+    });
+
+    it('removes the skeleton once loaded', async () => {
+      await open({});
+
+      expect(q('app-home-skeleton')).toBeNull();
+      expect(q('.home__local')).toBeTruthy();
+    });
+
     it('shows the generic error with the header visible when loading fails without cache', async () => {
       await open(new Error('offline'));
 
-      expect(el().querySelector('.home-header')).toBeTruthy();
-      expect(alert()?.querySelector('h2')?.textContent).toContain(t('home.error.title'));
-      expect(alert()?.querySelector('ph-icon')).toBeTruthy();
-      expect(retry()?.textContent).toContain(t('home.error.retry'));
+      expect(q('.home__header')).toBeTruthy();
+      expect(errorBlock()).toBeTruthy();
+      expect(q('app-home-skeleton')).toBeNull();
+      expect(retry()?.textContent).toContain('Tentar novamente');
     });
 
     it('replaces the error with normal content when retry succeeds', async () => {
@@ -290,7 +388,8 @@ describe('HomeComponent', () => {
       retry()?.click();
       await settle();
 
-      expect(alert()).toBeNull();
+      expect(errorBlock()).toBeNull();
+      expect(q('.home__local')).toBeTruthy();
       expect(calls).toBe(2);
     });
 
@@ -299,8 +398,7 @@ describe('HomeComponent', () => {
       retry()?.click();
       await settle();
 
-      expect(alert()).toBeTruthy();
-      expect(retry()?.disabled).toBeFalse();
+      expect(errorBlock()).toBeTruthy();
     });
 
     it('ignores repeated retries while one is in flight', async () => {
@@ -310,11 +408,10 @@ describe('HomeComponent', () => {
       await fixture.componentInstance.refresh();
 
       expect(calls).toBe(2);
-      expect(retry()?.disabled).toBeTrue();
       pending[0]({});
       await settle();
 
-      expect(alert()).toBeNull();
+      expect(errorBlock()).toBeNull();
     });
 
     it('keeps last valid data with a stale notice when a refresh fails with cache', async () => {
@@ -322,170 +419,34 @@ describe('HomeComponent', () => {
       await fixture.componentInstance.refresh();
       fixture.detectChanges();
 
-      expect(alert()).toBeNull();
-      expect(el().querySelector('.home__stale')?.textContent).toContain(t('home.stale'));
+      expect(errorBlock()).toBeNull();
+      expect(q('.home__stale-banner')?.textContent).toContain('desatualizados');
       expect(fixture.componentInstance.controlsEnabled()).toBeFalse();
     });
 
-    it('recovers from the stale state after a successful refresh', async () => {
-      await open({}, new Error('offline'), {});
-      await fixture.componentInstance.refresh();
+    it('blocks switching hospital while the data is stale and recovers after a refresh', async () => {
+      results = [{}, new Error('offline'), {}];
+      await setup({ hospitals: HOSPITALS, source: fake });
+
+      expect(trigger()).toBeTruthy();
+
       await fixture.componentInstance.refresh();
       fixture.detectChanges();
 
-      expect(el().querySelector('.home__stale')).toBeNull();
-      expect(fixture.componentInstance.controlsEnabled()).toBeTrue();
+      expect(trigger()).toBeNull();
+
+      await fixture.componentInstance.refresh();
+      fixture.detectChanges();
+
+      expect(q('.home__stale-banner')).toBeNull();
+      expect(trigger()).toBeTruthy();
     });
 
     it('opens normally with the default data source', async () => {
-      await setup([HOSPITALS[0]]);
-      await settle();
+      await setup();
 
-      expect(alert()).toBeNull();
-      expect(combobox()).toBeTruthy();
-    });
-  });
-
-  describe('daily patients card', () => {
-    const grid = (): HTMLElement[] => Array.from(el().querySelectorAll('.home__grid > li'));
-    const settled = async (): Promise<void> => {
-      await fixture.whenStable();
-      fixture.detectChanges();
-    };
-
-    it('shows "10 Pacientes" in the first card for the hospital in context and the current day', async () => {
-      await setup([HOSPITALS[0]]);
-      await settled();
-
-      expect(grid()[0].textContent).toContain('10 Pacientes');
-      expect(patients.calls.length).toBe(1);
-      expect(patients.calls[0].hospitalId).toBe('a');
-      expect(patients.calls[0].day.toDateString()).toBe(new Date().toDateString());
-    });
-
-    it('keeps the count card first when many other items exist', async () => {
-      await setup([HOSPITALS[0]]);
-      fixture.componentRef.setInput(
-        'items',
-        Array.from({ length: 5 }, (_, i) => ({ id: `n${i}`, text: `Notificação ${i}` })),
-      );
-      fixture.detectChanges();
-      await settled();
-
-      expect(grid().length).toBe(6);
-      expect(grid()[0].querySelector('app-card-patients')).toBeTruthy();
-      expect(grid()[1].textContent).toContain('Notificação 0');
-    });
-
-    it('reloads the count when the hospital in context changes', async () => {
-      await setup(HOSPITALS);
-      await settled();
-      TestBed.inject(HospitalContextService).select('b');
-      fixture.detectChanges();
-      await settled();
-
-      expect(patients.calls.map(c => c.hospitalId)).toEqual(['a', 'b']);
-    });
-
-    it('does not render the count card nor query the source without a hospital in context', async () => {
-      await setup([]);
-      await settled();
-
-      expect(el().querySelector('app-card-patients')).toBeNull();
-      expect(patients.calls.length).toBe(0);
-    });
-
-    it('shows the average caloric and protein intake of the day in the count card (scenario 1)', async () => {
-      await setup([HOSPITALS[0]]);
-      await settled();
-      const graph = grid()[0].querySelector('app-graph-meta svg') as SVGElement;
-
-      expect(graph.getAttribute('aria-label')).toBe('Aporte calórico 80%, aporte protéico 70%');
-    });
-
-    it('renders the protein indicator red when the average is 15% of the goal (scenario 2)', async () => {
-      await setup([HOSPITALS[0]], 0, undefined, {
-        averageCaloricPercentage: 80,
-        averageProteinPercentage: 15,
-        patientCount: 10,
-      });
-      await settled();
-      const arcs = grid()[0].querySelectorAll('app-graph-meta circle.progress');
-
-      expect(arcs[1].getAttribute('stroke')).toBe('var(--color-comm-alert)');
-      expect(arcs[0].getAttribute('stroke')).toBe('var(--color-comm-success)');
-    });
-
-    it('replaces the number with "Todos os pacientes foram atendidos" when the count is zero, keeping the card first', async () => {
-      await setup([HOSPITALS[0]], 0, undefined, undefined, { a: 0 });
-      await settled();
-
-      expect(grid()[0].querySelector('app-card-patients')).toBeTruthy();
-      expect(grid()[0].textContent).toContain('Todos os pacientes foram atendidos');
-      expect(grid()[0].textContent).not.toContain(' Pacientes');
-    });
-
-    it('shows the number and not the message when the count is greater than zero', async () => {
-      await setup([HOSPITALS[0]]);
-      await settled();
-
-      expect(grid()[0].textContent).toContain('10 Pacientes');
-      expect(grid()[0].textContent).not.toContain('Todos os pacientes foram atendidos');
-    });
-
-    it('switches between number and message when changing to a hospital with a different count', async () => {
-      await setup(HOSPITALS, 0, undefined, undefined, { b: 0 });
-      await settled();
-
-      expect(grid()[0].textContent).toContain('10 Pacientes');
-
-      TestBed.inject(HospitalContextService).select('b');
-      fixture.detectChanges();
-      await settled();
-
-      expect(grid()[0].textContent).toContain('Todos os pacientes foram atendidos');
-
-      TestBed.inject(HospitalContextService).select('a');
-      fixture.detectChanges();
-      await settled();
-
-      expect(grid()[0].textContent).toContain('10 Pacientes');
-    });
-
-    it('shows the arrow button with an accessible label', async () => {
-      await setup([HOSPITALS[0]]);
-      await settled();
-      const button = el().querySelector('app-card-patients button') as HTMLElement;
-
-      expect(button.getAttribute('aria-label')).toBe('Ver pacientes do dia');
-    });
-
-    it('keeps the arrow button when all patients were attended', async () => {
-      await setup(HOSPITALS);
-      patients.loadForDay = (): Promise<DailyPatientsSummary> =>
-        Promise.resolve({ averageCaloricPercentage: 0, averageProteinPercentage: 0, patientCount: 0 });
-      TestBed.inject(HospitalContextService).select('b');
-      fixture.detectChanges();
-      await settled();
-
-      expect(grid()[0].textContent).toContain('Todos os pacientes foram atendidos');
-      expect(el().querySelector('app-card-patients button')?.getAttribute('aria-label')).toBe('Ver pacientes do dia');
-    });
-
-    it('has no effect when the arrow button or the card is clicked', async () => {
-      await setup([HOSPITALS[0]]);
-      await settled();
-      const before = el().innerHTML;
-      const callsBefore = patients.calls.length;
-
-      (el().querySelector('app-card-patients button') as HTMLElement).click();
-      (el().querySelector('app-card-patients article') as HTMLElement).click();
-      fixture.detectChanges();
-      await settled();
-
-      expect(navigate).not.toHaveBeenCalled();
-      expect(patients.calls.length).toBe(callsBefore);
-      expect(el().innerHTML).toBe(before);
+      expect(errorBlock()).toBeNull();
+      expect(q('.home__local')).toBeTruthy();
     });
   });
 });

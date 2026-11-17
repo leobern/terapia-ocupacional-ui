@@ -1,6 +1,16 @@
+<app-background-mesh
+  [color1]="backgroundColor1()"
+  [showColor2]="backgroundShowColor2()"
+/>
+
 <div class="app-shell">
   @if (showShell()) {
-    <app-nav-menu />
+    <app-nav-menu
+      [open]="menuOpen()"
+      (closed)="menuOpen.set(false)"
+      (logoClick)="aiAssistant.openPanel()"
+      (notificacoesClick)="onNotificacoesClick()"
+    />
   }
   <router-outlet />
   <!--
@@ -12,6 +22,67 @@
     A barra é `position: fixed`, então não é flex item e não disputa largura.
   -->
   @if (showShell()) {
-    <app-bottom-nav-bar />
+    <app-bottom-nav-bar
+      [menuOpen]="menuOpen()"
+      [aiOpen]="aiAssistant.isOpen()"
+      (menuClick)="menuOpen.set(true)"
+      (aiClick)="aiAssistant.openPanel()"
+    />
+
+    @if (!viewportBreakpoint.isDesktop()) {
+      <app-bottom-sheet
+        ariaLabel="Assistente de IA"
+        [open]="aiAssistant.isOpen()"
+        [snap]="aiSheetSnap()"
+        [shortcuts]="aiShortcuts"
+        (closed)="aiAssistant.closePanel()"
+        (snapChange)="aiSheetSnap.set($event)"
+        (shortcutSelect)="onAiShortcut($event)"
+      >
+        <div bottomSheetContent class="ai-chat__message">
+          <h2 class="ai-chat__title">Como eu posso te ajudar?</h2>
+          <p class="ai-chat__body">
+            Quer tirar uma dúvida, ou quer que eu faça um resumo de todas as
+            suas tarefas do dia? Eu posso fazer praticamente tudo, só me diz o
+            que você precisa?
+          </p>
+          <p class="ai-chat__hint">
+            Você pode conversar comigo via texto ou áudio.
+          </p>
+        </div>
+        <app-input-chat
+          bottomSheetFooter
+          placeholder="Escreva a sua mensagem"
+          (send)="onAiSend($event)"
+        />
+      </app-bottom-sheet>
+    } @else {
+      <app-drawer
+        ariaLabel="Assistente de IA"
+        [open]="aiAssistant.isOpen()"
+        [snap]="aiDrawerSnap()"
+        [shortcuts]="aiShortcuts"
+        (closed)="aiAssistant.closePanel()"
+        (snapChange)="aiDrawerSnap.set($event)"
+        (shortcutSelect)="onAiShortcut($event)"
+      >
+        <div drawerContent class="ai-chat__message">
+          <h2 class="ai-chat__title">Como eu posso te ajudar?</h2>
+          <p class="ai-chat__body">
+            Quer tirar uma dúvida, ou quer que eu faça um resumo de todas as
+            suas tarefas do dia? Eu posso fazer praticamente tudo, só me diz o
+            que você precisa?
+          </p>
+          <p class="ai-chat__hint">
+            Você pode conversar comigo via texto ou áudio.
+          </p>
+        </div>
+        <app-input-chat
+          drawerFooter
+          placeholder="Escreva a sua mensagem"
+          (send)="onAiSend($event)"
+        />
+      </app-drawer>
+    }
   }
 </div>

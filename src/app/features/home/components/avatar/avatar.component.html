@@ -1,0 +1,29 @@
+<div
+  class="avatar-wrapper"
+  [style.width.px]="size()"
+  [style.height.px]="size()"
+>
+  @if (photoUrl(); as url) {
+    <img class="avatar avatar--photo" [src]="url" [alt]="name()" />
+  } @else {
+    <div
+      class="avatar avatar--initials"
+      role="img"
+      [style.fontSize.px]="size() * 0.36"
+      [attr.aria-label]="name()"
+    >
+      {{ initials() }}
+    </div>
+  }
+
+  @if (editable()) {
+    <button
+      type="button"
+      class="avatar__photo-button"
+      aria-label="Alterar foto"
+      (click)="changePhoto.emit()"
+    >
+      <ph-icon name="camera" [size]="12" />
+    </button>
+  }
+</div>

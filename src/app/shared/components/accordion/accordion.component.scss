@@ -1,0 +1,117 @@
+@use '../../styles/tokens';
+
+// O host É a caixa visual do accordion (mesmo padrão de app-avatar/app-badge, sem
+// `display: contents`) — não um controle interativo próprio; quem é focável/clicável é o
+// <button> interno (accordion.component.ts, docblock).
+//
+// SEM `gap` aqui de propósito (T020): o espaçamento entre o header e o slot aberto vive como
+// `margin-top` no PRÓPRIO conteúdo do slot (.accordion__input/.accordion__answer), não como
+// gap do flex do host — um `gap` do host somaria espaço mesmo com os dois `.accordion__slot`
+// colapsados a 0px (eles continuam no DOM, só sem altura), quebrando o layout justo de
+// `collapsed-empty` (nó 4499:12360, sem nenhum espaço abaixo do header).
+:host {
+  display: flex;
+  flex-direction: column;
+  padding: tokens.$space-16;
+  border: 1px solid tokens.$color-border-2;
+  border-radius: tokens.$radius-sm;
+  background: tokens.$color-surface;
+}
+
+// `all: unset` reseta a UA stylesheet do <button> (borda, fundo, padding, fonte) antes de
+// redefinir só o necessário — mesma técnica já usada em input-select__clear.
+.accordion__header {
+  all: unset;
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  box-sizing: border-box;
+}
+
+.accordion__text {
+  display: flex;
+  flex: 1 0 0;
+  flex-direction: column;
+  gap: tokens.$space-4;
+  min-width: 0;
+}
+
+.accordion__title {
+  font-family: tokens.$font-family-interactive;
+  font-size: tokens.$font-size-interactive;
+  font-weight: tokens.$font-weight-semibold;
+  color: tokens.$color-content-1;
+  word-break: break-word;
+}
+
+// state="collapsed-filled": o título vira um rótulo pequeno (14px regular) acima do valor
+// projetado — MAS continua em content-1 (escuro), diferente do placeholder cinza de
+// collapsed-empty. Confirmado nos nós 4500:12730/4500:12737/4500:12744 do Figma.
+.accordion__title--label {
+  font-size: tokens.$font-size-subsection;
+  font-weight: tokens.$font-weight-roman;
+}
+
+.accordion__placeholder {
+  font-family: tokens.$font-family-interactive;
+  font-size: tokens.$font-size-subsection;
+  font-weight: tokens.$font-weight-roman;
+  color: tokens.$color-content-4;
+  word-break: break-word;
+}
+
+.accordion__icon {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  padding: tokens.$space-8;
+  border-radius: tokens.$radius-sm;
+  color: tokens.$color-content-1;
+  transition: transform 200ms ease-in-out;
+}
+
+.accordion__icon--expanded {
+  transform: rotate(180deg);
+}
+
+// Truque de "accordion CSS puro" (T020): a track da grid anima entre 0fr/1fr; fechado, a
+// altura real é 0px (não só oculto) porque .accordion__slot-inner tem overflow:hidden +
+// min-height:0 — sem isso o item de grid não encolheria abaixo da altura intrínseca do
+// conteúdo projetado. `[attr.inert]` (no .html) cuida de tirar o slot fechado da árvore de
+// acessibilidade/foco, já que ele continua no DOM.
+.accordion__slot {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 200ms ease-in-out;
+}
+
+.accordion__slot--open {
+  grid-template-rows: 1fr;
+}
+
+.accordion__slot-inner {
+  overflow: hidden;
+  min-height: 0;
+}
+
+.accordion__input {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 40px;
+  margin-top: tokens.$space-8;
+  padding: tokens.$space-8 tokens.$space-16;
+  border: 1px solid tokens.$color-border-2;
+  border-radius: tokens.$radius-sm;
+  background: tokens.$color-surface;
+}
+
+// gap 16px (não 8px) antes do valor respondido, diferente do slot de input — confirmado nos
+// nós 4500:12734/4500:12741 do Figma (state="collapsed-filled").
+.accordion__answer {
+  width: 100%;
+  margin-top: tokens.$space-16;
+  word-break: break-word;
+}

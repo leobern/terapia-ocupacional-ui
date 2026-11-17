@@ -1,0 +1,48 @@
+@use '../../styles/tokens';
+@use '../../styles/breakpoints';
+
+// -----------------------------------------------------------------------------
+// Container responsivo (specs "Ajustes de componentes" item 8) — replicável
+// em toda tela: só envolver o conteúdo com <app-page-container>.
+//
+// O fundo decorativo (antes hospedado aqui) é agora `app-background-mesh`
+// (DS-component-background-mesh) — global, `position: fixed`, montado uma
+// única vez no shell da aplicação (app.component.html), não por tela. Por
+// isso este componente não precisa mais de posicionamento/z-index próprio:
+// o `ng-content` projetado segue o fluxo normal do documento.
+// -----------------------------------------------------------------------------
+:host {
+  position: relative;
+  display: block;
+  box-sizing: border-box;
+  min-height: 100%;
+
+  // breakpoint-xs (<672px): largura total, com 24px de margem lateral.
+  width: calc(100% - 48px);
+  margin-inline: 24px;
+
+  // A `bottom-nav-bar` é `position: fixed` — não empurra nada. É aqui que o
+  // espaço dela é reservado, uma vez só, para toda tela do produto: sem isto o
+  // fim do conteúdo rolável fica escondido atrás do vidro
+  // (specs/ds/DS-component-bottom-nav-bar, FR-013/SC-007). O token já inclui
+  // `env(safe-area-inset-bottom)`.
+  padding-bottom: var(--bottom-nav-bar-height);
+
+  @include breakpoints.sm {
+    // breakpoint-sm (>=672px): largura de conteúdo travada, centralizada.
+    width: 100%;
+    // Mesmo token consumido pela `bottom-nav-bar` — a barra acompanha a coluna
+    // de conteúdo neste breakpoint, então o valor não pode viver em dois lugares.
+    max-width: tokens.$content-max-width;
+    margin-inline: auto;
+  }
+
+  @include breakpoints.md {
+    // breakpoint-md (>=1200px): preenche 100% do espaço entre menu e side-IA.
+    width: 100%;
+    max-width: none;
+    margin-inline: 0;
+    // Sem barra inferior no desktop (o `nav-menu` assume) — nada a reservar.
+    padding-bottom: 0;
+  }
+}
