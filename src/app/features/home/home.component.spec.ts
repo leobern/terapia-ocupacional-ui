@@ -20,11 +20,12 @@ import { UnreadNotificationsReader } from './unread-notifications-reader';
 
 class FakePatients extends DailyPatientsSource {
   calls: { hospitalId: string; day: Date }[] = [];
+  summary: DailyPatientsSummary = { averageCaloricPercentage: 80, averageProteinPercentage: 70, patientCount: 10 };
 
   loadForDay(hospitalId: string, day: Date): Promise<DailyPatientsSummary> {
     this.calls.push({ day, hospitalId });
 
-    return Promise.resolve({ averageCaloricPercentage: 80, averageProteinPercentage: 70, patientCount: 10 });
+    return Promise.resolve(this.summary);
   }
 }
 
@@ -37,8 +38,12 @@ describe('HomeComponent', () => {
     hospitals: readonly LinkedHospital[],
     unread = 0,
     source?: Pick<HomeDataSource, 'load'>,
+    summary?: DailyPatientsSummary,
   ): Promise<void> {
     patients = new FakePatients();
+    if (summary) {
+      patients.summary = summary;
+    }
     await TestBed.configureTestingModule({
       imports: [HomeComponent],
       providers: [
@@ -382,6 +387,27 @@ describe('HomeComponent', () => {
 
       expect(el().querySelector('app-card-patients')).toBeNull();
       expect(patients.calls.length).toBe(0);
+    });
+
+    it('shows the average caloric and protein intake of the day in the count card (scenario 1)', async () => {
+      await setup([HOSPITALS[0]]);
+      await settled();
+      const graph = grid()[0].querySelector('app-graph-meta svg') as SVGElement;
+
+      expect(graph.getAttribute('aria-label')).toBe('Aporte calórico 80%, aporte protéico 70%');
+    });
+
+    it('renders the protein indicator red when the average is 15% of the goal (scenario 2)', async () => {
+      await setup([HOSPITALS[0]], 0, undefined, {
+        averageCaloricPercentage: 80,
+        averageProteinPercentage: 15,
+        patientCount: 10,
+      });
+      await settled();
+      const arcs = grid()[0].querySelectorAll('app-graph-meta circle.progress');
+
+      expect(arcs[1].getAttribute('stroke')).toBe('var(--color-comm-alert)');
+      expect(arcs[0].getAttribute('stroke')).toBe('var(--color-comm-success)');
     });
 
     it('does nothing when the arrow button is clicked', async () => {
