@@ -1,20 +1,21 @@
-import { ChangeDetectionStrategy, Component } from '@angular/core';
+import { ChangeDetectionStrategy, Component, signal } from '@angular/core';
+
+import { HomeHeaderComponent } from './home-header.component';
+
+/** Estado de carregamento da área abaixo do cabeçalho. */
+export type HomeLoadState = 'loading' | 'success' | 'error';
 
 /**
- * Placeholder da tela inicial.
- *
- * NÃO é design: nenhum nó Figma foi implementado aqui, e nenhum valor visual novo
- * é introduzido — só tokens já existentes. O componente existe para que a rota
- * `home` (referenciada por `app.routing.ts` desde o PR #1) aponte para algo real,
- * e para dar ao shell (`app-nav-menu` + `app-bottom-nav-bar`) um conteúdo de rota
- * navegável em teste manual.
- *
- * Substituir pela implementação real via `/speckit-specify` da feature Home.
+ * Tela inicial. O cabeçalho fica fora da alternância de estado (RN-03); o conteúdo
+ * de cada estado (skeleton, erro, cards) pertence a outras stories da feature.
  */
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [HomeHeaderComponent],
   selector: 'app-home',
   styleUrl: './home.component.scss',
   templateUrl: './home.component.html',
 })
-export class HomeComponent {}
+export class HomeComponent {
+  readonly loadState = signal<HomeLoadState>('success');
+}
