@@ -259,6 +259,7 @@ $duration-expand: 380ms;
 // fim da linha da logo (Figma `4367:11591`: "X" no canto superior direito
 // do painel).
 .nav-menu__close {
+  display: inline-flex;
   margin-left: auto;
   flex-shrink: 0;
 }

@@ -111,6 +111,11 @@ export class AppComponent {
   // aqui, fora de qualquer feature), então não conhece o hospital em contexto; a
   // tela de Notificações resolve isso sozinha (GET /api/v1/home/hospitals, mesmo
   // default da Home) quando entra sem `hospitalId` na query.
+  protected onHomeClick(): void {
+    this.menuOpen.set(false);
+    void this.router.navigate(['/home']);
+  }
+
   protected onNotificacoesClick(): void {
     this.menuOpen.set(false);
     this.router.navigate(['/notifications']);
