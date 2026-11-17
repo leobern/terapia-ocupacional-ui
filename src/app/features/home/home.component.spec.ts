@@ -21,11 +21,15 @@ import { UnreadNotificationsReader } from './unread-notifications-reader';
 class FakePatients extends DailyPatientsSource {
   calls: { hospitalId: string; day: Date }[] = [];
   summary: DailyPatientsSummary = { averageCaloricPercentage: 80, averageProteinPercentage: 70, patientCount: 10 };
+  counts: Record<string, number> = {};
 
   loadForDay(hospitalId: string, day: Date): Promise<DailyPatientsSummary> {
     this.calls.push({ day, hospitalId });
 
-    return Promise.resolve(this.summary);
+    return Promise.resolve({
+      ...this.summary,
+      patientCount: this.counts[hospitalId] ?? this.summary.patientCount,
+    });
   }
 }
 
@@ -39,11 +43,13 @@ describe('HomeComponent', () => {
     unread = 0,
     source?: Pick<HomeDataSource, 'load'>,
     summary?: DailyPatientsSummary,
+    counts: Record<string, number> = {},
   ): Promise<void> {
     patients = new FakePatients();
     if (summary) {
       patients.summary = summary;
     }
+    patients.counts = counts;
     await TestBed.configureTestingModule({
       imports: [HomeComponent],
       providers: [
@@ -408,6 +414,42 @@ describe('HomeComponent', () => {
 
       expect(arcs[1].getAttribute('stroke')).toBe('var(--color-comm-alert)');
       expect(arcs[0].getAttribute('stroke')).toBe('var(--color-comm-success)');
+    });
+
+    it('replaces the number with "Todos os pacientes foram atendidos" when the count is zero, keeping the card first', async () => {
+      await setup([HOSPITALS[0]], 0, undefined, undefined, { a: 0 });
+      await settled();
+
+      expect(grid()[0].querySelector('app-card-patients')).toBeTruthy();
+      expect(grid()[0].textContent).toContain('Todos os pacientes foram atendidos');
+      expect(grid()[0].textContent).not.toContain(' Pacientes');
+    });
+
+    it('shows the number and not the message when the count is greater than zero', async () => {
+      await setup([HOSPITALS[0]]);
+      await settled();
+
+      expect(grid()[0].textContent).toContain('10 Pacientes');
+      expect(grid()[0].textContent).not.toContain('Todos os pacientes foram atendidos');
+    });
+
+    it('switches between number and message when changing to a hospital with a different count', async () => {
+      await setup(HOSPITALS, 0, undefined, undefined, { b: 0 });
+      await settled();
+
+      expect(grid()[0].textContent).toContain('10 Pacientes');
+
+      TestBed.inject(HospitalContextService).select('b');
+      fixture.detectChanges();
+      await settled();
+
+      expect(grid()[0].textContent).toContain('Todos os pacientes foram atendidos');
+
+      TestBed.inject(HospitalContextService).select('a');
+      fixture.detectChanges();
+      await settled();
+
+      expect(grid()[0].textContent).toContain('10 Pacientes');
     });
 
     it('shows the arrow button with an accessible label', async () => {
