@@ -44,4 +44,16 @@ describe('AppComponent', () => {
     expect(el.querySelector('app-nav-menu')).not.toBeNull();
     expect(el.querySelector('app-bottom-nav-bar')).not.toBeNull();
   });
+
+  it('mounts a single bottom nav bar with the three accesses on /home', async () => {
+    const router = TestBed.inject(Router);
+    const fixture = TestBed.createComponent(AppComponent);
+    const el = fixture.nativeElement as HTMLElement;
+
+    await router.navigateByUrl('/home');
+    fixture.detectChanges();
+
+    expect(el.querySelectorAll('app-bottom-nav-bar').length).toBe(1);
+    expect(el.querySelectorAll('app-bottom-nav-bar nav button').length).toBe(3);
+  });
 });

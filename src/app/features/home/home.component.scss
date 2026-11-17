@@ -1,3 +1,4 @@
+@use '../../shared/styles/breakpoints';
 @use '../../shared/styles/tokens';
 
 // Sem desenho próprio: só tokens já existentes, para o placeholder não criar
@@ -8,6 +9,16 @@
   gap: tokens.$space-8;
   padding: tokens.$space-16;
   color: var(--color-content-1);
+
+  // A barra inferior é `position: fixed` (shell): reserva o espaço dela para que
+  // o fim da rolagem não fique coberto. Em desktop (`md`) ela some.
+  padding-block-end: calc(tokens.$space-16 + var(--bottom-nav-bar-height));
+}
+
+@include breakpoints.md {
+  .home {
+    padding-block-end: tokens.$space-16;
+  }
 }
 
 .home__title {
