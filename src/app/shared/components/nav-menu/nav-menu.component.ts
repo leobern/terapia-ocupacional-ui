@@ -11,8 +11,8 @@ import { AvatarComponent } from '../avatar/avatar.component';
 import { IconButtonComponent } from '../icon-button/icon-button.component';
 import { IconLogoButtonComponent } from '../icon-logo/icon-logo-button.component';
 
-/** Mapeia as 5 chaves fixas dos itens de navegação (spec.md § Clarifications). */
-export type NavMenuItemKey = 'hospitais' | 'farmacia' | 'pacientes' | 'acoes-tela' | 'notificacoes';
+/** Mapeia as 6 chaves fixas dos itens de navegação (spec.md § Clarifications + Home). */
+export type NavMenuItemKey = 'home' | 'hospitais' | 'farmacia' | 'pacientes' | 'acoes-tela' | 'notificacoes';
 
 interface NavMenuItem {
   readonly key: NavMenuItemKey;
@@ -69,6 +69,7 @@ export class NavMenuComponent {
   readonly closed = output();
   /** Emitido ao clicar/ativar a logo — abre o assistente de IA (bottom-sheet/drawer, decisão do consumidor). */
   readonly logoClick = output();
+  readonly homeClick = output();
   readonly hospitaisClick = output();
   readonly farmaciaClick = output();
   readonly pacientesClick = output();
@@ -87,6 +88,7 @@ export class NavMenuComponent {
   // Ícones sempre em peso "regular" (não o "bold" padrão do design system) —
   // decisão específica deste componente (spec.md § Clarifications).
   protected readonly items: readonly NavMenuItem[] = [
+    { icon: 'house', key: 'home', label: 'Home' },
     { icon: 'hospital', key: 'hospitais', label: 'Hospitais' },
     { icon: 'pill', key: 'farmacia', label: 'Farmácia' },
     { icon: 'users-four', key: 'pacientes', label: 'Pacientes' },
@@ -105,6 +107,9 @@ export class NavMenuComponent {
 
   protected onItemClick(key: NavMenuItemKey): void {
     switch (key) {
+      case 'home':
+        this.homeClick.emit();
+        break;
       case 'hospitais':
         this.hospitaisClick.emit();
         break;

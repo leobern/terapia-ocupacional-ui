@@ -2,6 +2,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 
 import { PhIconComponent } from '../../icons/ph-icon/ph-icon.component';
+import { IconButtonComponent } from '../icon-button/icon-button.component';
 import { NavMenuComponent, NavMenuItemKey } from './nav-menu.component';
 
 describe('NavMenuComponent', () => {
@@ -34,8 +35,9 @@ describe('NavMenuComponent', () => {
     fixture.detectChanges();
   });
 
-  it('renders the 5 navigation items with the expected icons, all in "regular" weight and 24px', () => {
+  it('renders the 6 navigation items with the expected icons, all in "regular" weight and 24px', () => {
     const expected: { label: string; icon: string }[] = [
+      { icon: 'house', label: 'Home' },
       { icon: 'hospital', label: 'Hospitais' },
       { icon: 'pill', label: 'Farmácia' },
       { icon: 'users-four', label: 'Pacientes' },
@@ -45,7 +47,7 @@ describe('NavMenuComponent', () => {
 
     const links = navLinks();
 
-    expect(links.length).toBe(5);
+    expect(links.length).toBe(6);
 
     expected.forEach(({ label, icon }) => {
       const link = linkByLabel(label);
@@ -79,6 +81,7 @@ describe('NavMenuComponent', () => {
   });
 
   const clickCases: { label: string; output: keyof NavMenuComponent }[] = [
+    { label: 'Home', output: 'homeClick' },
     { label: 'Hospitais', output: 'hospitaisClick' },
     { label: 'Farmácia', output: 'farmaciaClick' },
     { label: 'Pacientes', output: 'pacientesClick' },
@@ -112,7 +115,7 @@ describe('NavMenuComponent', () => {
     }
   });
 
-  const activeCases: NavMenuItemKey[] = ['hospitais', 'farmacia', 'pacientes', 'acoes-tela', 'notificacoes'];
+  const activeCases: NavMenuItemKey[] = ['home', 'hospitais', 'farmacia', 'pacientes', 'acoes-tela', 'notificacoes'];
 
   for (const key of activeCases) {
     it(`marks only the "${key}" item as active when activeItem is set to it`, () => {
@@ -170,6 +173,19 @@ describe('NavMenuComponent', () => {
       expect(closeButton).toBeTruthy();
     });
 
+    it('uses the same secondary small "X" as the bottom-sheet close button', () => {
+      const closeButton = fixture.debugElement.query(By.css('.nav-menu__close app-icon-button'))
+        .componentInstance as IconButtonComponent;
+
+      expect(closeButton.kind()).toBe('secondary');
+      expect(closeButton.size()).toBe('small');
+      expect(closeButton.icon()).toBe('x');
+    });
+
+    it('lists Home as the first navigation item', () => {
+      expect(navLinks()[0].textContent).toContain('Home');
+    });
+
     it('applies the nav-menu--open host class when open is true', () => {
       fixture.componentRef.setInput('open', true);
       fixture.detectChanges();
@@ -185,7 +201,7 @@ describe('NavMenuComponent', () => {
       const closed = jasmine.createSpy('closed');
 
       fixture.componentInstance.closed.subscribe(closed);
-      (fixture.nativeElement.querySelector('.nav-menu__close') as HTMLButtonElement).click();
+      (fixture.nativeElement.querySelector('.nav-menu__close button') as HTMLButtonElement).click();
 
       expect(closed).toHaveBeenCalledWith(undefined);
     });

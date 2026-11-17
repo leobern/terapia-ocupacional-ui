@@ -24,13 +24,22 @@
     <span class="nav-menu__wordmark">Condut<em>ia</em></span>
 
     @if (showCloseButton()) {
-      <app-icon-button
-        class="nav-menu__close"
-        appearance="icon"
-        icon="x"
-        ariaLabel="Fechar menu"
-        (click)="onCloseClick()"
-      />
+      <!--
+        Mesmo botão "X" do bottom-sheet (secundário, small). O `<span>` existe
+        porque o host do `app-icon-button` é `display: contents` e não gera
+        caixa: sem ele o `margin-left: auto` seria inerte e o X ficaria colado
+        ao wordmark em vez de ir para a extremidade direita do painel.
+      -->
+      <span class="nav-menu__close">
+        <app-icon-button
+          kind="secondary"
+          appearance="icon"
+          size="small"
+          icon="x"
+          ariaLabel="Fechar menu"
+          (click)="onCloseClick()"
+        />
+      </span>
     }
   </div>
 
