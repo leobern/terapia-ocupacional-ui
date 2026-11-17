@@ -1,9 +1,13 @@
-import { ChangeDetectionStrategy, Component, inject, OnInit, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, OnInit, signal } from '@angular/core';
 import { Router } from '@angular/router';
 
 import { BadgeComponent } from '../../shared/components/badge/badge.component';
+import { ButtonComponent } from '../../shared/components/button/button.component';
 import { IconButtonComponent } from '../../shared/components/icon-button/icon-button.component';
 import { InputSelectComponent } from '../../shared/components/input-select/input-select.component';
+import { PhIconComponent } from '../../shared/icons/ph-icon/ph-icon.component';
+import { I18nService } from '../../shared/services/i18n.service';
+import { HomeData, HomeDataSource } from './home-data-source';
 import { HomeHeaderComponent } from './home-header.component';
 import { HomeSkeletonComponent } from './home-skeleton.component';
 import { type HomeLoadStatus, HomeStateService } from './home-state.service';
@@ -21,22 +25,63 @@ export type HomeLoadState = HomeLoadStatus;
  */
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [BadgeComponent, HomeHeaderComponent, HomeSkeletonComponent, IconButtonComponent, InputSelectComponent],
+  imports: [
+    BadgeComponent,
+    ButtonComponent,
+    HomeHeaderComponent,
+    HomeSkeletonComponent,
+    IconButtonComponent,
+    InputSelectComponent,
+    PhIconComponent,
+  ],
   selector: 'app-home',
   styleUrl: './home.component.scss',
   templateUrl: './home.component.html',
 })
 export class HomeComponent implements OnInit {
-  protected readonly state = inject(HomeStateService);
-  /** Estado de carregamento inicial, compartilhado com as stories irmãs via `HomeStateService`. */
-  readonly loadState = this.state.status;
-  protected readonly unreadCount = signal(0);
+  /** Estado de carregamento inicial, compartilhado com as stories irmãs via HomeStateService. */
+  readonly loadState = inject(HomeStateService).status;
+  /** Último carregamento bem-sucedido da sessão (cache em memória). */
+  readonly data = signal<HomeData | null>(null);
+  /** Dados exibidos podem estar desatualizados; troca de hospital e paginação indisponíveis. */
+  readonly stale = signal(false);
+  readonly loading = signal(false);
+  readonly controlsEnabled = computed(() => !this.stale());
 
+  protected readonly i18n = inject(I18nService);
+  protected readonly unreadCount = signal(0);
+  protected readonly context = inject(HospitalContextService);
+  protected readonly listOpen = signal(false);
+  protected readonly listId = 'home-hospital-list';
+
+  private readonly state = inject(HomeStateService);
   private readonly router = inject(Router);
   private readonly reader = inject(UnreadNotificationsReader);
+  private readonly source = inject(HomeDataSource);
 
   async ngOnInit(): Promise<void> {
+    void this.refresh();
     this.unreadCount.set(await this.reader.countUnread());
+  }
+
+  async refresh(): Promise<void> {
+    if (this.loading()) {
+      return;
+    }
+    this.loading.set(true);
+    try {
+      this.data.set(await this.source.load());
+      this.stale.set(false);
+      this.state.setStatus('success');
+    } catch {
+      if (this.data() === null) {
+        this.state.setStatus('error');
+      } else {
+        this.stale.set(true);
+      }
+    } finally {
+      this.loading.set(false);
+    }
   }
 
   protected bellLabel(): string {
@@ -48,10 +93,6 @@ export class HomeComponent implements OnInit {
   protected openNotifications(): void {
     void this.router.navigateByUrl('/notificacoes');
   }
-
-  protected readonly context = inject(HospitalContextService);
-  protected readonly listOpen = signal(false);
-  protected readonly listId = 'home-hospital-list';
 
   protected onTrigger(): void {
     if (this.context.canSwitch) {
