@@ -388,6 +388,38 @@ describe('HomeComponent', () => {
         expect(cards()[0]).toContain('Notificação 2');
       });
 
+      it('discards a late response for a hospital that is no longer selected', async () => {
+        await setup({ hospitals: HOSPITALS, notifs: { b: [notif(2, '2026-11-17T09:00:00')] } });
+        const late: { resolve?: (v: readonly HomeNotification[]) => void } = {};
+
+        spyOn(notifications, 'loadForHospital').and.callFake((id: string) =>
+          id === 'a'
+            ? new Promise<readonly HomeNotification[]>(resolve => (late.resolve = resolve))
+            : Promise.resolve([notif(2, '2026-11-17T09:00:00')]),
+        );
+        const context = TestBed.inject(HospitalContextService);
+
+        context.select('b');
+        fixture.detectChanges();
+        await settle();
+        context.select('a');
+        fixture.detectChanges();
+        context.select('b');
+        fixture.detectChanges();
+        await settle();
+        late.resolve?.([notif(9, '2026-11-17T10:00:00')]);
+        await settle();
+
+        expect(cards().length).toBe(1);
+        expect(cards()[0]).toContain('Notificação 2');
+      });
+
+      it('clears the list when there is no hospital in context', async () => {
+        await setup({ hospitals: [] });
+
+        expect(fixture.componentInstance.notifications()).toEqual([]);
+      });
+
       it('keeps the last list and flags stale data when a reload fails', async () => {
         await setup({
           hospitals: HOSPITALS,
