@@ -23,21 +23,21 @@ function progressDasharray(halfCircumference: number, percentage: number): strin
 
 /**
  * 4 faixas independentes por arco (research.md §3): 0% é seu próprio nível
- * (disabled), não parte de "<=10%" — evita a sobreposição de regras do
+ * (disabled), não parte da faixa de alerta (<20%, RN-02 da US-003-2-03) — evita a sobreposição de regras do
  * enunciado original. `normalColor` diferencia o arco de topo (verde) do de
  * base (azul) apenas na faixa 50–100%; as demais faixas são iguais para os
  * dois arcos.
  *
  * Corte em `value < 50` (não `value <= 49`): valores decimais no intervalo
  * aberto (49, 50) — ex.: 49.5% — MUST permanecer na faixa de aviso
- * (11–49%, spec.md § Edge Cases), não "vazar" para a faixa ≥50% só porque
+ * (20–49%), não "vazar" para a faixa ≥50% só porque
  * ultrapassam o inteiro 49 (achado de /speckit-converge, T013).
  */
 function colorForPercentage(value: number, normalColor: string): string {
   if (value === 0) {
     return 'var(--color-state-disabled)';
   }
-  if (value <= 10) {
+  if (value < 20) {
     return 'var(--color-comm-alert)';
   }
   if (value < 50) {
@@ -63,7 +63,7 @@ function colorForPercentage(value: number, normalColor: string): string {
  * altura renderizada não é exatamente metade da largura.
  *
  * Cor de cada arco é resolvida por 4 faixas a partir do próprio valor
- * (research.md §3): 0% → disabled; 1–10% → alerta (vermelho); 11–49% → aviso
+ * (research.md §3): 0% → disabled; 1–19% → alerta (vermelho, RN-02: abaixo de 20%); 20–49% → aviso
  * (amarelo); 50–100% → sucesso/verde no arco de topo, conteúdo/azul no de
  * base. O trilho (parte não preenchida) é sempre `--color-border` — o token
  * correto do nó Figma, não `--color-border-2` usado pela referência
