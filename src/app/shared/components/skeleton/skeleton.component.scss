@@ -1,0 +1,53 @@
+@use '../../styles/tokens';
+
+:host {
+  display: contents;
+}
+
+.skeleton {
+  box-sizing: border-box;
+  background: tokens.$color-surface-glass-2;
+  animation: skeleton-pulse 1.2s ease-in-out infinite;
+
+  // Mesmas dimensões e cantos de input-select (48px, radius-sm).
+  &--select {
+    width: 100%;
+    height: 48px;
+    border-radius: tokens.$radius-sm;
+  }
+
+  // Mesmas dimensões e cantos de card-patients (180x180).
+  &--card-patients {
+    flex: 0 0 auto;
+    width: 180px;
+    height: 180px;
+    border-radius: tokens.$radius-md tokens.$radius-xl tokens.$radius-md
+      tokens.$radius-lg;
+  }
+
+  // Mesmas dimensões e cantos de card-notify (180x180).
+  &--card-notify {
+    flex: 0 0 auto;
+    width: 180px;
+    height: 180px;
+    border-radius: tokens.$radius-lg tokens.$radius-sm tokens.$radius-md
+      tokens.$radius-sm;
+  }
+}
+
+@keyframes skeleton-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.5;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton {
+    animation: none;
+  }
+}

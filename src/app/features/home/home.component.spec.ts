@@ -2,6 +2,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter, Router } from '@angular/router';
 
 import { HomeComponent, HomeLoadState } from './home.component';
+import { HomeStateService } from './home-state.service';
 import { HospitalContextService } from './hospital-context.service';
 import { LinkedHospital, LinkedHospitalsReader } from './linked-hospitals';
 import { LocalProfessionalProfileReader } from './local-professional-profile-reader';
@@ -32,6 +33,7 @@ describe('HomeComponent', () => {
     }).compileComponents();
 
     navigate = spyOn(TestBed.inject(Router), 'navigateByUrl').and.resolveTo(true);
+    TestBed.inject(HomeStateService).setStatus('success');
     fixture = TestBed.createComponent(HomeComponent);
     fixture.detectChanges();
     await fixture.whenStable();
@@ -181,6 +183,28 @@ describe('HomeComponent', () => {
       bell().click();
 
       expect(navigate).toHaveBeenCalledWith('/notificacoes');
+    });
+  });
+
+  describe('initial loading', () => {
+    beforeEach(() => setup([HOSPITALS[0]]));
+
+    it('shows the skeleton in place of the selector while loading, keeping the header', () => {
+      TestBed.inject(HomeStateService).setStatus('loading');
+      fixture.detectChanges();
+
+      expect(el().querySelector('app-home-skeleton')).toBeTruthy();
+      expect(el().querySelector('.home__hospital')).toBeNull();
+      expect(el().querySelector('.home-header')).toBeTruthy();
+    });
+
+    it('removes the skeleton on success and on failure', () => {
+      (['success', 'error'] as const).forEach(status => {
+        TestBed.inject(HomeStateService).setStatus(status);
+        fixture.detectChanges();
+
+        expect(el().querySelector('app-home-skeleton')).toBeNull();
+      });
     });
   });
 });

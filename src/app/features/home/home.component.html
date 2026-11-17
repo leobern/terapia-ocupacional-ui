@@ -16,7 +16,9 @@
   <app-home-header />
   <section class="home__content" [attr.data-state]="loadState()">
     @switch (loadState()) {
-      @case ('loading') {}
+      @case ('loading') {
+        <app-home-skeleton />
+      }
       @case ('error') {}
       @default {
         <div class="home__hospital">

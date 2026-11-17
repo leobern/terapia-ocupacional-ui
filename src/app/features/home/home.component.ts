@@ -5,11 +5,13 @@ import { BadgeComponent } from '../../shared/components/badge/badge.component';
 import { IconButtonComponent } from '../../shared/components/icon-button/icon-button.component';
 import { InputSelectComponent } from '../../shared/components/input-select/input-select.component';
 import { HomeHeaderComponent } from './home-header.component';
+import { HomeSkeletonComponent } from './home-skeleton.component';
+import { type HomeLoadStatus, HomeStateService } from './home-state.service';
 import { HospitalContextService } from './hospital-context.service';
 import { UnreadNotificationsReader } from './unread-notifications-reader';
 
 /** Estado de carregamento da área abaixo do cabeçalho. */
-export type HomeLoadState = 'loading' | 'success' | 'error';
+export type HomeLoadState = HomeLoadStatus;
 
 /**
  * Tela inicial. O cabeçalho fica fora da alternância de estado (RN-03); o conteúdo
@@ -19,13 +21,15 @@ export type HomeLoadState = 'loading' | 'success' | 'error';
  */
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [BadgeComponent, HomeHeaderComponent, IconButtonComponent, InputSelectComponent],
+  imports: [BadgeComponent, HomeHeaderComponent, HomeSkeletonComponent, IconButtonComponent, InputSelectComponent],
   selector: 'app-home',
   styleUrl: './home.component.scss',
   templateUrl: './home.component.html',
 })
 export class HomeComponent implements OnInit {
-  readonly loadState = signal<HomeLoadState>('success');
+  protected readonly state = inject(HomeStateService);
+  /** Estado de carregamento inicial, compartilhado com as stories irmãs via `HomeStateService`. */
+  readonly loadState = this.state.status;
   protected readonly unreadCount = signal(0);
 
   private readonly router = inject(Router);
