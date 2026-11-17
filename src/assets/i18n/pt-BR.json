@@ -2,6 +2,14 @@
   "app": {
     "title": "Terapia Nutricional"
   },
+  "home": {
+    "error": {
+      "description": "Verifique sua conexão de internet e tente novamente em alguns instantes.",
+      "retry": "Tentar novamente",
+      "title": "Erro ao carregar os dados"
+    },
+    "stale": "Os dados podem estar desatualizados. Sem conexão no momento."
+  },
   "splash": {
     "logoLabel": "Conductia",
     "noConnection": "Sem conexão. Verifique sua internet.",

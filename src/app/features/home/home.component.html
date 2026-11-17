@@ -19,8 +19,22 @@
       @case ('loading') {
         <app-home-skeleton />
       }
-      @case ('error') {}
+      @case ('error') {
+        <div class="home__error" role="alert">
+          <ph-icon name="wifi-slash" [size]="48" />
+          <h2 class="home__error-title">{{ i18n.t('home.error.title') }}</h2>
+          <p class="home__error-text">{{ i18n.t('home.error.description') }}</p>
+          <app-button
+            [label]="i18n.t('home.error.retry')"
+            [disabled]="loading()"
+            (click)="refresh()"
+          />
+        </div>
+      }
       @default {
+        @if (stale()) {
+          <p class="home__stale" role="status">{{ i18n.t('home.stale') }}</p>
+        }
         <div class="home__hospital">
           <app-input-select
             variant="select"

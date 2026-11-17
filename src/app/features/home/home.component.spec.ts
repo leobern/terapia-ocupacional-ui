@@ -1,7 +1,9 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter, Router } from '@angular/router';
 
+import { I18nService } from '../../shared/services/i18n.service';
 import { HomeComponent, HomeLoadState } from './home.component';
+import { HomeData, HomeDataSource } from './home-data-source';
 import { HomeStateService } from './home-state.service';
 import { HospitalContextService } from './hospital-context.service';
 import { LinkedHospital, LinkedHospitalsReader } from './linked-hospitals';
@@ -12,17 +14,23 @@ const HOSPITALS: LinkedHospital[] = [
   { id: 'a', name: 'Hospital A' },
   { id: 'b', name: 'Hospital B' },
 ];
+
 import { UnreadNotificationsReader } from './unread-notifications-reader';
 
 describe('HomeComponent', () => {
   let fixture: ComponentFixture<HomeComponent>;
   let navigate: jasmine.Spy;
 
-  async function setup(hospitals: readonly LinkedHospital[], unread = 0): Promise<void> {
+  async function setup(
+    hospitals: readonly LinkedHospital[],
+    unread = 0,
+    source?: Pick<HomeDataSource, 'load'>,
+  ): Promise<void> {
     await TestBed.configureTestingModule({
       imports: [HomeComponent],
       providers: [
         provideRouter([]),
+        ...(source ? [{ provide: HomeDataSource, useValue: source }] : []),
         { provide: ProfessionalProfileReader, useClass: LocalProfessionalProfileReader },
         { provide: LinkedHospitalsReader, useValue: { read: (): readonly LinkedHospital[] => hospitals } },
         {
@@ -33,7 +41,9 @@ describe('HomeComponent', () => {
     }).compileComponents();
 
     navigate = spyOn(TestBed.inject(Router), 'navigateByUrl').and.resolveTo(true);
-    TestBed.inject(HomeStateService).setStatus('success');
+    if (!source) {
+      TestBed.inject(HomeStateService).setStatus('success');
+    }
     fixture = TestBed.createComponent(HomeComponent);
     fixture.detectChanges();
     await fixture.whenStable();
@@ -48,10 +58,9 @@ describe('HomeComponent', () => {
   // título de nível 1 para leitor de tela ancorar a página.
   it('renders a single <main> landmark with a level-1 heading', async () => {
     await setup([HOSPITALS[0]]);
-    const el: HTMLElement = fixture.nativeElement;
 
-    expect(el.querySelectorAll('main').length).toBe(1);
-    expect(el.querySelectorAll('h1').length).toBe(1);
+    expect(el().querySelectorAll('main').length).toBe(1);
+    expect(el().querySelectorAll('h1').length).toBe(1);
     expect(el.querySelector('main.home h1')?.textContent?.trim()).toBe('Conductia');
   });
 
@@ -72,6 +81,7 @@ describe('HomeComponent', () => {
 
   it('does not mount the bottom nav bar itself (the shell owns it)', async () => {
     await setup([HOSPITALS[0]]);
+
     expect(fixture.nativeElement.querySelector('app-bottom-nav-bar')).toBeNull();
   });
 
@@ -205,6 +215,109 @@ describe('HomeComponent', () => {
 
         expect(el().querySelector('app-home-skeleton')).toBeNull();
       });
+    });
+  });
+
+  describe('load failure', () => {
+    let results: (HomeData | Error)[];
+    let calls: number;
+    let pending: ((d: HomeData) => void)[];
+    const fake: Pick<HomeDataSource, 'load'> = {
+      load: (): Promise<HomeData> => {
+        calls++;
+        const next = results.shift();
+
+        if (next === undefined) {
+          return new Promise(resolve => pending.push(resolve));
+        }
+
+        return next instanceof Error ? Promise.reject(next) : Promise.resolve(next);
+      },
+    };
+    const t = (key: string): string => TestBed.inject(I18nService).t(key);
+    const alert = (): Element | null => el().querySelector('[role="alert"]');
+    const retry = (): HTMLButtonElement | null => el().querySelector('app-button button');
+    const settle = async (): Promise<void> => {
+      await fixture.whenStable();
+      fixture.detectChanges();
+    };
+    const open = async (...r: (HomeData | Error)[]): Promise<void> => {
+      results = r;
+      await setup([HOSPITALS[0]], 0, fake);
+    };
+
+    beforeEach(() => {
+      calls = 0;
+      pending = [];
+    });
+
+    it('shows the generic error with the header visible when loading fails without cache', async () => {
+      await open(new Error('offline'));
+
+      expect(el().querySelector('.home-header')).toBeTruthy();
+      expect(alert()?.querySelector('h2')?.textContent).toContain(t('home.error.title'));
+      expect(alert()?.querySelector('ph-icon')).toBeTruthy();
+      expect(retry()?.textContent).toContain(t('home.error.retry'));
+    });
+
+    it('replaces the error with normal content when retry succeeds', async () => {
+      await open(new Error('offline'), {});
+      retry()?.click();
+      await settle();
+
+      expect(alert()).toBeNull();
+      expect(calls).toBe(2);
+    });
+
+    it('keeps the error and allows another retry when retry fails', async () => {
+      await open(new Error('a'), new Error('b'));
+      retry()?.click();
+      await settle();
+
+      expect(alert()).toBeTruthy();
+      expect(retry()?.disabled).toBeFalse();
+    });
+
+    it('ignores repeated retries while one is in flight', async () => {
+      await open(new Error('a'));
+      retry()?.click();
+      fixture.detectChanges();
+      await fixture.componentInstance.refresh();
+
+      expect(calls).toBe(2);
+      expect(retry()?.disabled).toBeTrue();
+      pending[0]({});
+      await settle();
+
+      expect(alert()).toBeNull();
+    });
+
+    it('keeps last valid data with a stale notice when a refresh fails with cache', async () => {
+      await open({}, new Error('offline'));
+      await fixture.componentInstance.refresh();
+      fixture.detectChanges();
+
+      expect(alert()).toBeNull();
+      expect(el().querySelector('.home__stale')?.textContent).toContain(t('home.stale'));
+      expect(fixture.componentInstance.controlsEnabled()).toBeFalse();
+    });
+
+    it('recovers from the stale state after a successful refresh', async () => {
+      await open({}, new Error('offline'), {});
+      await fixture.componentInstance.refresh();
+      await fixture.componentInstance.refresh();
+      fixture.detectChanges();
+
+      expect(el().querySelector('.home__stale')).toBeNull();
+      expect(fixture.componentInstance.controlsEnabled()).toBeTrue();
+    });
+
+    it('opens normally with the default data source', async () => {
+      await setup([HOSPITALS[0]]);
+      await settle();
+
+      expect(alert()).toBeNull();
+      expect(combobox()).toBeTruthy();
     });
   });
 });
