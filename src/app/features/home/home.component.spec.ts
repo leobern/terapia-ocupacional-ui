@@ -3,7 +3,9 @@ import { provideRouter, Router } from '@angular/router';
 
 import { DailyPatientsSource, DailyPatientsSummary } from './daily-patients';
 import { HomeComponent } from './home.component';
+import { HomeNotification } from './home.models';
 import { HomeData, HomeDataSource } from './home-data-source';
+import { HomeNotificationsSource } from './home-notifications';
 import { HomeStateService } from './home-state.service';
 import { HospitalContextService } from './hospital-context.service';
 import { LinkedHospital, LinkedHospitalsReader } from './linked-hospitals';
@@ -31,7 +33,27 @@ class FakePatients extends DailyPatientsSource {
   }
 }
 
+function notif(id: number, createdAt: string): HomeNotification {
+  return {
+    author: { id, name: `Autor ${id}`, photoUrl: null, specialty: 'Nutrição' },
+    createdAt,
+    description: `Notificação ${id}`,
+    id,
+    read: false,
+  };
+}
+
+class FakeNotifications extends HomeNotificationsSource {
+  byHospital: Record<string, readonly HomeNotification[]> = {};
+  fail = false;
+
+  loadForHospital(hospitalId: string): Promise<readonly HomeNotification[]> {
+    return this.fail ? Promise.reject(new Error('offline')) : Promise.resolve(this.byHospital[hospitalId] ?? []);
+  }
+}
+
 interface SetupOptions {
+  notifs?: Record<string, readonly HomeNotification[]>;
   hospitals?: readonly LinkedHospital[];
   unread?: number;
   source?: Pick<HomeDataSource, 'load'>;
@@ -42,6 +64,7 @@ interface SetupOptions {
 describe('HomeComponent', () => {
   let fixture: ComponentFixture<HomeComponent>;
   let patients: FakePatients;
+  let notifications: FakeNotifications;
   let navigate: jasmine.Spy;
 
   async function settle(): Promise<void> {
@@ -50,7 +73,10 @@ describe('HomeComponent', () => {
   }
 
   async function setup(options: SetupOptions = {}): Promise<void> {
-    const { hospitals = [HOSPITALS[0]], unread = 0, source, summary, counts = {} } = options;
+    const { hospitals = [HOSPITALS[0]], unread = 0, source, summary, counts = {}, notifs = {} } = options;
+
+    notifications = new FakeNotifications();
+    notifications.byHospital = notifs;
 
     patients = new FakePatients();
     if (summary) {
@@ -63,6 +89,7 @@ describe('HomeComponent', () => {
       providers: [
         provideRouter([]),
         { provide: DailyPatientsSource, useValue: patients },
+        { provide: HomeNotificationsSource, useValue: notifications },
         ...(source ? [{ provide: HomeDataSource, useValue: source }] : []),
         { provide: ProfessionalProfileReader, useClass: LocalProfessionalProfileReader },
         { provide: LinkedHospitalsReader, useValue: { read: (): readonly LinkedHospital[] => hospitals } },
@@ -318,6 +345,62 @@ describe('HomeComponent', () => {
       expect(grid()[1].tagName.toLowerCase()).toBe('app-card-notify');
       expect(grid()[1].textContent).toContain('Notificação 0');
       expect(fixture.componentInstance.formatTime('2026-11-17T10:30:00')).toBe('10:30');
+    });
+
+    describe('notification feed (US-003-3-01)', () => {
+      const cards = (): string[] =>
+        Array.from(el().querySelectorAll('.home__grid app-card-notify')).map(c => c.textContent ?? '');
+
+      it('lists 3 notifications after the fixed card, newest first', async () => {
+        await setup({
+          notifs: {
+            a: [notif(1, '2026-11-17T08:00:00'), notif(3, '2026-11-17T10:00:00'), notif(2, '2026-11-17T09:00:00')],
+          },
+        });
+
+        expect(grid()[0].tagName.toLowerCase()).toBe('app-card-patients');
+        expect(cards().length).toBe(3);
+        expect(cards()[0]).toContain('Notificação 3');
+        expect(cards()[1]).toContain('Notificação 2');
+        expect(cards()[2]).toContain('Notificação 1');
+      });
+
+      it('breaks exact time ties by creation order (latest created first)', async () => {
+        await setup({
+          notifs: {
+            a: [notif(5, '2026-11-17T10:00:00'), notif(7, '2026-11-17T10:00:00'), notif(6, '2026-11-17T10:00:00')],
+          },
+        });
+
+        expect(cards().map(c => /Notificação (\d)/.exec(c)?.[1])).toEqual(['7', '6', '5']);
+      });
+
+      it('replaces the list when the hospital changes', async () => {
+        await setup({
+          hospitals: HOSPITALS,
+          notifs: { a: [notif(1, '2026-11-17T08:00:00')], b: [notif(2, '2026-11-17T09:00:00')] },
+        });
+        TestBed.inject(HospitalContextService).select('b');
+        fixture.detectChanges();
+        await settle();
+
+        expect(cards().length).toBe(1);
+        expect(cards()[0]).toContain('Notificação 2');
+      });
+
+      it('keeps the last list and flags stale data when a reload fails', async () => {
+        await setup({
+          hospitals: HOSPITALS,
+          notifs: { a: [notif(1, '2026-11-17T08:00:00')] },
+        });
+        notifications.fail = true;
+        TestBed.inject(HospitalContextService).select('b');
+        fixture.detectChanges();
+        await settle();
+
+        expect(fixture.componentInstance.stale()).toBeTrue();
+        expect(el().querySelector('.home__stale-banner')).toBeTruthy();
+      });
     });
 
     it('ignores the card callbacks (no navigation yet)', async () => {

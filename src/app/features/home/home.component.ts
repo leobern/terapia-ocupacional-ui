@@ -14,6 +14,7 @@ import { HomeSkeletonComponent } from './components/home-skeleton/home-skeleton.
 import { DailyPatientsSource, DailyPatientsSummary } from './daily-patients';
 import { HomeNotification } from './home.models';
 import { HomeData, HomeDataSource } from './home-data-source';
+import { HomeNotificationsSource, sortNotificationsNewestFirst } from './home-notifications';
 import { type HomeLoadStatus, HomeStateService } from './home-state.service';
 import { HospitalContextService } from './hospital-context.service';
 import { ProfessionalProfileReader } from './professional-profile';
@@ -72,7 +73,7 @@ export class HomeComponent implements OnInit {
   readonly stale = signal(false);
   readonly loading = signal(false);
   readonly controlsEnabled = computed(() => !this.stale());
-  /** Notificações da grade (após o card fixo). A fonte real chega com a US-003-3-01. */
+  /** Notificações da grade (após o card fixo). Mais recente primeiro (US-003-3-01). */
   readonly notifications = signal<readonly HomeNotification[]>([]);
 
   protected readonly context = inject(HospitalContextService);
@@ -94,6 +95,7 @@ export class HomeComponent implements OnInit {
   private readonly reader = inject(UnreadNotificationsReader);
   private readonly source = inject(HomeDataSource);
   private readonly patients = inject(DailyPatientsSource);
+  private readonly notificationsSource = inject(HomeNotificationsSource);
 
   constructor() {
     const profile = inject(ProfessionalProfileReader).read();
@@ -107,8 +109,10 @@ export class HomeComponent implements OnInit {
 
       if (hospitalId === undefined) {
         this.summary.set(null);
+        this.notifications.set([]);
       } else {
         void this.loadSummary(hospitalId);
+        void this.loadNotifications(hospitalId);
       }
     });
   }
@@ -201,6 +205,19 @@ export class HomeComponent implements OnInit {
 
     if (this.context.selected()?.id === hospitalId) {
       this.summary.set(summary);
+    }
+  }
+
+  private async loadNotifications(hospitalId: string): Promise<void> {
+    try {
+      const items = await this.notificationsSource.loadForHospital(hospitalId);
+
+      if (this.context.selected()?.id === hospitalId) {
+        this.notifications.set(sortNotificationsNewestFirst(items));
+      }
+    } catch {
+      // Falha ao atualizar: mantém a última lista válida e sinaliza dados desatualizados.
+      this.stale.set(true);
     }
   }
 }
