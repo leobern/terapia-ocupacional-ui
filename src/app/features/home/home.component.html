@@ -72,6 +72,23 @@
             </ul>
           }
         </div>
+
+        <ul class="home__grid">
+          @if (summary(); as s) {
+            <li class="home__cell">
+              <!-- Seta sem ação (no-op) até a listagem de pacientes existir. -->
+              <app-card-patients
+                actionAriaLabel="Ver pacientes do dia"
+                [patientCount]="s.patientCount"
+                [averageCaloricPercentage]="s.averageCaloricPercentage"
+                [averageProteinPercentage]="s.averageProteinPercentage"
+              />
+            </li>
+          }
+          @for (item of items(); track item.id) {
+            <li class="home__cell home__item">{{ item.text }}</li>
+          }
+        </ul>
       }
     }
   </section>

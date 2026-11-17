@@ -2,6 +2,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter, Router } from '@angular/router';
 
 import { I18nService } from '../../shared/services/i18n.service';
+import { DailyPatientsSource, DailyPatientsSummary } from './daily-patients';
 import { HomeComponent, HomeLoadState } from './home.component';
 import { HomeData, HomeDataSource } from './home-data-source';
 import { HomeStateService } from './home-state.service';
@@ -17,8 +18,19 @@ const HOSPITALS: LinkedHospital[] = [
 
 import { UnreadNotificationsReader } from './unread-notifications-reader';
 
+class FakePatients extends DailyPatientsSource {
+  calls: { hospitalId: string; day: Date }[] = [];
+
+  loadForDay(hospitalId: string, day: Date): Promise<DailyPatientsSummary> {
+    this.calls.push({ day, hospitalId });
+
+    return Promise.resolve({ averageCaloricPercentage: 80, averageProteinPercentage: 70, patientCount: 10 });
+  }
+}
+
 describe('HomeComponent', () => {
   let fixture: ComponentFixture<HomeComponent>;
+  let patients: FakePatients;
   let navigate: jasmine.Spy;
 
   async function setup(
@@ -26,10 +38,12 @@ describe('HomeComponent', () => {
     unread = 0,
     source?: Pick<HomeDataSource, 'load'>,
   ): Promise<void> {
+    patients = new FakePatients();
     await TestBed.configureTestingModule({
       imports: [HomeComponent],
       providers: [
         provideRouter([]),
+        { provide: DailyPatientsSource, useValue: patients },
         ...(source ? [{ provide: HomeDataSource, useValue: source }] : []),
         { provide: ProfessionalProfileReader, useClass: LocalProfessionalProfileReader },
         { provide: LinkedHospitalsReader, useValue: { read: (): readonly LinkedHospital[] => hospitals } },
@@ -318,6 +332,65 @@ describe('HomeComponent', () => {
 
       expect(alert()).toBeNull();
       expect(combobox()).toBeTruthy();
+    });
+  });
+
+  describe('daily patients card', () => {
+    const grid = (): HTMLElement[] => Array.from(el().querySelectorAll('.home__grid > li'));
+    const settled = async (): Promise<void> => {
+      await fixture.whenStable();
+      fixture.detectChanges();
+    };
+
+    it('shows "10 Pacientes" in the first card for the hospital in context and the current day', async () => {
+      await setup([HOSPITALS[0]]);
+      await settled();
+
+      expect(grid()[0].textContent).toContain('10 Pacientes');
+      expect(patients.calls.length).toBe(1);
+      expect(patients.calls[0].hospitalId).toBe('a');
+      expect(patients.calls[0].day.toDateString()).toBe(new Date().toDateString());
+    });
+
+    it('keeps the count card first when many other items exist', async () => {
+      await setup([HOSPITALS[0]]);
+      fixture.componentRef.setInput(
+        'items',
+        Array.from({ length: 5 }, (_, i) => ({ id: `n${i}`, text: `Notificação ${i}` })),
+      );
+      fixture.detectChanges();
+      await settled();
+
+      expect(grid().length).toBe(6);
+      expect(grid()[0].querySelector('app-card-patients')).toBeTruthy();
+      expect(grid()[1].textContent).toContain('Notificação 0');
+    });
+
+    it('reloads the count when the hospital in context changes', async () => {
+      await setup(HOSPITALS);
+      await settled();
+      TestBed.inject(HospitalContextService).select('b');
+      fixture.detectChanges();
+      await settled();
+
+      expect(patients.calls.map(c => c.hospitalId)).toEqual(['a', 'b']);
+    });
+
+    it('does not render the count card nor query the source without a hospital in context', async () => {
+      await setup([]);
+      await settled();
+
+      expect(el().querySelector('app-card-patients')).toBeNull();
+      expect(patients.calls.length).toBe(0);
+    });
+
+    it('does nothing when the arrow button is clicked', async () => {
+      await setup([HOSPITALS[0]]);
+      await settled();
+      const button = el().querySelector('app-card-patients button') as HTMLElement;
+
+      expect(() => button.click()).not.toThrow();
+      expect(el().querySelector('app-card-patients')).toBeTruthy();
     });
   });
 });

@@ -5,11 +5,13 @@ import { provideRouterStore } from '@ngrx/router-store';
 import { provideStore } from '@ngrx/store';
 
 import { routes } from './app.routing';
-import { LocalProfessionalProfileReader } from './features/home/local-professional-profile-reader';
-import { ProfessionalProfileReader } from './features/home/professional-profile';
+import { DailyPatientsSource } from './features/home/daily-patients';
 import { LinkedHospitalsReader } from './features/home/linked-hospitals';
-import { MockLinkedHospitalsReader } from './features/home/mock-linked-hospitals-reader';
+import { LocalProfessionalProfileReader } from './features/home/local-professional-profile-reader';
 import { LocalUnreadNotificationsReader } from './features/home/local-unread-notifications-reader';
+import { MockLinkedHospitalsReader } from './features/home/mock-linked-hospitals-reader';
+import { ProfessionalProfileReader } from './features/home/professional-profile';
+import { ProvisionalDailyPatientsSource } from './features/home/provisional-daily-patients';
 import { UnreadNotificationsReader } from './features/home/unread-notifications-reader';
 import { LocalStartupStateReader } from './features/splash/local-startup-state-reader';
 import { StartupStateReader } from './features/splash/startup-state';
@@ -20,6 +22,7 @@ export const appConfig: ApplicationConfig = {
     { provide: StartupStateReader, useClass: LocalStartupStateReader },
     { provide: LinkedHospitalsReader, useClass: MockLinkedHospitalsReader },
     { provide: UnreadNotificationsReader, useClass: LocalUnreadNotificationsReader },
+    { provide: DailyPatientsSource, useClass: ProvisionalDailyPatientsSource },
     provideZoneChangeDetection({ eventCoalescing: true }),
     provideRouter(routes),
     provideStore(),
