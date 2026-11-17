@@ -6,11 +6,43 @@
       @case ('loading') {}
       @case ('error') {}
       @default {
-        <p class="home__message">
-          Tela inicial ainda não implementada. Os componentes do design system
-          estão disponíveis para inspeção em
-          <code>/dev/design-system</code> durante o desenvolvimento.
-        </p>
+        <div class="home__hospital">
+          <app-input-select
+            variant="select"
+            placeholder="Selecione o hospital"
+            ariaLabel="Hospital"
+            [value]="context.selected()?.name ?? ''"
+            [expanded]="listOpen()"
+            [controlsId]="listOpen() ? listId : null"
+            (selectTrigger)="onTrigger()"
+          />
+
+          @if (listOpen()) {
+            <ul
+              class="home__hospital-list"
+              role="listbox"
+              aria-label="Hospitais vinculados"
+              [id]="listId"
+            >
+              @for (
+                hospital of context.hospitals;
+                track hospital.id;
+                let i = $index
+              ) {
+                <li
+                  class="home__hospital-option"
+                  role="option"
+                  tabindex="0"
+                  [attr.aria-selected]="hospital.id === context.selected()?.id"
+                  (click)="choose(hospital.id)"
+                  (keydown)="onOptionKeydown($event, i, hospital.id)"
+                >
+                  {{ hospital.name }}
+                </li>
+              }
+            </ul>
+          }
+        </div>
       }
     }
   </section>
