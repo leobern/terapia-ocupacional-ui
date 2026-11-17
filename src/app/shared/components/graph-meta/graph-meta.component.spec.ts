@@ -61,16 +61,16 @@ describe('GraphMetaComponent', () => {
       expect(inner.getAttribute('stroke')).toBe('var(--color-state-disabled)');
     });
 
-    it('1–10% usa a cor de alerta (vermelho) em ambos os arcos', async () => {
-      await createWith({ topPercentage: 5, bottomPercentage: 10 });
+    it('1–19% usa a cor de alerta (vermelho) em ambos os arcos, incluindo 15% e 19%', async () => {
+      await createWith({ topPercentage: 15, bottomPercentage: 19 });
       const [outer, inner] = progressCircles();
 
       expect(outer.getAttribute('stroke')).toBe('var(--color-comm-alert)');
       expect(inner.getAttribute('stroke')).toBe('var(--color-comm-alert)');
     });
 
-    it('11–49% usa a cor de aviso (amarelo) em ambos os arcos', async () => {
-      await createWith({ topPercentage: 11, bottomPercentage: 49 });
+    it('20–49% usa a cor de aviso (amarelo) em ambos os arcos', async () => {
+      await createWith({ topPercentage: 20, bottomPercentage: 49 });
       const [outer, inner] = progressCircles();
 
       expect(outer.getAttribute('stroke')).toBe('var(--color-comm-warning)');
@@ -95,7 +95,7 @@ describe('GraphMetaComponent', () => {
 
     // Achado de /speckit-converge (T013): valor decimal no intervalo aberto
     // (49, 50) — ex.: 49.5 — não pode "vazar" para a faixa ≥50% só porque
-    // ultrapassa o inteiro 49; deve permanecer na faixa de aviso (11–49%).
+    // ultrapassa o inteiro 49; deve permanecer na faixa de aviso (20–49%).
     it('valor decimal em (49, 50), ex. 49.5%, permanece na faixa de aviso (amarelo), não vaza para ≥50%', async () => {
       await createWith({ topPercentage: 49.5, bottomPercentage: 49.99 });
       const [outer, inner] = progressCircles();
