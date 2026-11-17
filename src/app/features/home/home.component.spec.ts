@@ -335,6 +335,16 @@ describe('HomeComponent', () => {
       expect(arcs[0].getAttribute('stroke')).toBe('var(--color-comm-success)');
     });
 
+    it('lays the cards out in 2 columns on small screens, each card filling its column', async () => {
+      await setup();
+      const gridEl = q('.home__grid') as HTMLElement;
+      const tracks = getComputedStyle(gridEl).gridTemplateColumns.split(' ');
+      const cardWidth = (grid()[0].firstElementChild as HTMLElement).getBoundingClientRect().width;
+
+      expect(tracks.length).toBe(2);
+      expect(Math.round(cardWidth)).toBe(Math.round(parseFloat(tracks[0])));
+    });
+
     it('keeps the arrow reserved and inert: clicking it or the card changes nothing', async () => {
       await setup();
       const before = el().innerHTML;

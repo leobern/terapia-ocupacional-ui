@@ -13,7 +13,9 @@
 // alturas de encaixe do `bottom-sheet` (Desvio 7 de lá). Aqui é o Desvio 2:
 // a largura `expanded` não tem origem no Figma.
 $width-default: 480px;
-$width-expanded: calc(100vw - var(--space-80));
+$width-expanded: calc(
+  100vw - 72px
+); // largura do trilho do nav-menu (Figma 4480:7718: 1848px em 1920px)
 
 // Alvo de toque mínimo do WCAG 2.5.5. NÃO é token de design — mesma
 // justificativa do `bottom-sheet` (`$min-touch-target`/`$close-hit-inset`).
@@ -62,6 +64,20 @@ $icon-hit-inset: ($min-touch-target - tokens.$space-32) * 0.5;
   // `::backdrop` por padrão no UA stylesheet; zerá-lo é o que a spec pede.
   &::backdrop {
     background: transparent;
+  }
+}
+
+// Expandido: o chat vira uma coluna central travada em 640px (Figma 4480:7718 — cabeçalho,
+// conversa, atalhos e campo de mensagem com 640px, centralizados no painel).
+.drawer--expanded {
+  .drawer__header,
+  .drawer__content,
+  .drawer__actions,
+  .drawer__footer {
+    align-self: center;
+    box-sizing: border-box;
+    max-width: 100%;
+    width: tokens.$content-max-width;
   }
 }
 
