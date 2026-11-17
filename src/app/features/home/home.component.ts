@@ -142,11 +142,14 @@ export class HomeComponent implements OnInit, OnDestroy {
       }
     });
 
-    // Observa o sentinel de fim de lista (só existe enquanto há mais lotes).
+    // Observa o sentinel de fim de lista (só existe enquanto há mais lotes). Refaz a
+    // observação a cada lote anexado: o IntersectionObserver só avisa quando a
+    // visibilidade MUDA, e em telas grandes o sentinel segue visível depois do lote.
     effect(
       () => {
         const element = this.scrollSentinel()?.nativeElement;
 
+        this.notifications();
         this.intersectionObserver?.disconnect();
         if (!element || typeof IntersectionObserver === 'undefined') {
           return;

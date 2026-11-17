@@ -539,6 +539,31 @@ describe('HomeComponent', () => {
       expect(fixture.componentInstance.notifications().length).toBe(10);
     });
 
+    it('keeps loading while the sentinel stays visible after each batch (large screens)', async () => {
+      const original = window.IntersectionObserver;
+
+      window.IntersectionObserver = function (cb: (entries: { isIntersecting: boolean }[]) => void): unknown {
+        return {
+          disconnect: (): void => undefined,
+          observe: (): void => {
+            // Assíncrono como no navegador: só avisa na criação da observação.
+            setTimeout(() => cb([{ isIntersecting: true }]));
+          },
+        };
+      } as unknown as typeof IntersectionObserver;
+      try {
+        await setup();
+        await settle();
+        await settle();
+        await settle();
+
+        expect(cards().length).toBe(35);
+        expect(sentinel()).toBeNull();
+      } finally {
+        window.IntersectionObserver = original;
+      }
+    });
+
     it('loads the next batch when the sentinel becomes visible', async () => {
       let notify!: (entries: { isIntersecting: boolean }[]) => void;
       const disconnect = jasmine.createSpy('disconnect');
