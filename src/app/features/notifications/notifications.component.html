@@ -1,0 +1,134 @@
+<app-page-container>
+  <div class="notifications">
+    <header class="notifications__header">
+      <ph-icon name="bell" [size]="32" />
+      <h1 class="notifications__title">{{ totalCount() }} Notificações</h1>
+    </header>
+
+    <div class="notifications__local">
+      @if (hospitalId(); as id) {
+        <app-tag
+          type="default"
+          iconLeftName="map-pin"
+          [label]="'Hospital ' + id"
+        />
+      }
+    </div>
+
+    @switch (status()) {
+      @case ('error') {
+        <div class="notifications__error">
+          <ph-icon name="wifi-slash" [size]="48" />
+          <p class="notifications__error-title">Erro ao carregar os dados</p>
+          <p>
+            Verifique sua conexão de internet e tente novamente em alguns
+            instantes.
+          </p>
+          <app-icon-button
+            kind="primary"
+            appearance="solid"
+            icon="arrow-clockwise"
+            ariaLabel="Tentar novamente"
+            (click)="onRetry()"
+          />
+        </div>
+      }
+      @default {
+        <div
+          #scrollContainer
+          class="notifications__list"
+          (touchstart)="onTouchStart($event, scrollContainer)"
+          (touchend)="onTouchEnd($event)"
+        >
+          @if (isEmpty()) {
+            <p class="notifications__empty">Nenhuma notificação por aqui.</p>
+          }
+
+          @for (notification of pendingItems(); track notification.id) {
+            <app-card-notify
+              actionAriaLabel="Responder"
+              [type]="cardType(notification.id)"
+              [authorName]="notification.author.name"
+              [authorSpecialty]="notification.author.specialty"
+              [authorPhotoUrl]="notification.author.photoUrl"
+              [patientName]="notification.patient.name"
+              [description]="notification.description"
+              [time]="formatTime(notification.createdAt)"
+              [replies]="toReplies(notification)"
+              [draftText]="draftText()"
+              [draftAuthorName]="professionalName"
+              [draftAuthorSpecialty]="professionalSpecialty"
+              (cardClick)="onCardClick(notification.patient.id)"
+              (answerClick)="onAnswerClick(notification.id)"
+              (viewRepliesClick)="onViewRepliesClick(notification.id)"
+              (collapseClick)="onCollapseClick(notification.id)"
+            />
+          }
+
+          @if (resolvedItems().length > 0) {
+            <app-notification-section-title label="Resolvidas" />
+
+            @for (notification of resolvedItems(); track notification.id) {
+              <app-card-notify
+                actionAriaLabel="Responder"
+                [type]="cardType(notification.id)"
+                [authorName]="notification.author.name"
+                [authorSpecialty]="notification.author.specialty"
+                [authorPhotoUrl]="notification.author.photoUrl"
+                [patientName]="notification.patient.name"
+                [description]="notification.description"
+                [time]="formatTime(notification.createdAt)"
+                [replies]="toReplies(notification)"
+                [draftText]="draftText()"
+                [draftAuthorName]="professionalName"
+                [draftAuthorSpecialty]="professionalSpecialty"
+                (cardClick)="onCardClick(notification.patient.id)"
+                (answerClick)="onAnswerClick(notification.id)"
+                (viewRepliesClick)="onViewRepliesClick(notification.id)"
+                (collapseClick)="onCollapseClick(notification.id)"
+              />
+            }
+          }
+
+          <div #scrollSentinel class="notifications__scroll-sentinel"></div>
+
+          @if (
+            status() === 'loading-more-pending' ||
+            status() === 'loading-more-resolved'
+          ) {
+            <p class="notifications__loading-more">
+              Carregando mais notificações…
+            </p>
+          }
+        </div>
+      }
+    }
+  </div>
+</app-page-container>
+
+<app-bottom-sheet
+  ariaLabel="Responder notificação"
+  snap="default"
+  [open]="answeringId() !== null"
+  (closed)="onBottomSheetClosed()"
+>
+  <div bottomSheetContent class="notifications__answer-sheet">
+    @if (answerErrorMessage(); as message) {
+      <p class="notifications__answer-error">{{ message }}</p>
+    }
+  </div>
+  <app-input-chat
+    bottomSheetFooter
+    placeholder="Escreva a sua resposta"
+    [value]="draftText()"
+    [disabled]="submitting()"
+    (valueChange)="onDraftInput($event)"
+    (send)="onSendDraft()"
+  />
+</app-bottom-sheet>
+
+<app-confirm-dialog
+  [open]="discardConfirmPending()"
+  (confirmed)="onConfirmDiscard()"
+  (cancelled)="onCancelDiscard()"
+/>

@@ -1,0 +1,14 @@
+<div class="home-error">
+  <ph-icon name="wifi-x" [size]="61" />
+  <h2 class="home-error__title">Erro ao carregar os dados</h2>
+  <p class="home-error__text">
+    Verifique sua conexão de internet e tente novamente em alguns instantes.
+  </p>
+  <app-button
+    class="home-error__retry"
+    kind="primary"
+    appearance="solid"
+    label="Tentar novamente"
+    (click)="retry.emit()"
+  />
+</div>

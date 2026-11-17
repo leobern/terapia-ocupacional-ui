@@ -1,36 +1,148 @@
 @use '../../shared/styles/breakpoints';
 @use '../../shared/styles/tokens';
 
-// Sem desenho próprio: só tokens já existentes, para o placeholder não criar
-// precedente visual que a tela real teria de desfazer (Princípio VIII).
 .home {
   display: flex;
   flex-direction: column;
+  min-height: 100vh;
+  // Sem background sólido: o fundo decorativo (app-background-mesh, montado
+  // no shell da aplicação) precisa aparecer por trás de todo o espaço vazio
+  // da tela.
+}
+
+.home__header {
+  display: flex;
+  align-items: center;
   gap: tokens.$space-8;
-  padding: tokens.$space-16;
-  color: var(--color-content-1);
-
-  // A barra inferior é `position: fixed` (shell): reserva o espaço dela para que
-  // o fim da rolagem não fique coberto. Em desktop (`md`) ela some.
-  padding-block-end: calc(tokens.$space-16 + var(--bottom-nav-bar-height));
+  padding: tokens.$space-16 tokens.$space-16 tokens.$space-8;
 }
 
-@include breakpoints.md {
-  .home {
-    padding-block-end: tokens.$space-16;
-  }
+.home__header-text {
+  display: flex;
+  flex-direction: column;
+  flex: 1 0 0;
+  min-width: 0;
 }
 
-.home__title {
+.home__header-title {
+  margin: 0;
+  font-family: tokens.$font-family-base;
+  font-weight: tokens.$font-weight-roman;
+  font-size: 12px;
+  color: tokens.$color-content-4;
+}
+
+.home__header-name {
   margin: 0;
   font-family: tokens.$font-family-base;
   font-weight: tokens.$font-weight-heavy;
+  font-size: 24px;
+  line-height: 1.2;
+  color: tokens.$color-content-1;
 }
 
-.home__hospital {
+// `app-badge` "flutua" composto sobre o `app-icon-button` — posicionamento
+// exigido do consumidor pelo próprio contrato do badge (ver
+// badge.component.ts docblock).
+.home__notify-wrapper {
+  position: relative;
+  display: inline-flex;
+}
+
+.home__notify-badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+}
+
+// Botão de atalhos (abre o assistente de IA) — só no desktop; no mobile/
+// tablet a bottom-nav-bar já cobre a mesma ação (ver comentário no template).
+.home__shortcuts-wrapper {
+  display: none;
+
+  @include breakpoints.md {
+    display: inline-flex;
+  }
+}
+
+.home__stale-banner {
+  margin: 0 tokens.$space-16 tokens.$space-8;
+  padding: tokens.$space-8 tokens.$space-16;
+  border-radius: tokens.$radius-sm;
+  background: tokens.$color-comm-warning;
+  color: tokens.$color-content-1;
+  font-family: tokens.$font-family-base;
+  font-size: 12px;
+  text-align: center;
+}
+
+.home__local {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: tokens.$space-16;
+  padding: tokens.$space-24 tokens.$space-16;
+  border-top: 1px solid tokens.$color-border;
+}
+
+.home__local-col {
   display: flex;
   flex-direction: column;
+  flex: 1 0 0;
+  gap: tokens.$space-16;
+  min-width: 220px;
+}
+
+// Estilo Figma "Section - italic" (Inter Extra Light Italic 40px) — único uso
+// desse estilo no produto; content-3 (verde-azulado) é a cor do próprio nó.
+.home__headline {
+  margin: 0;
+  font-family: tokens.$font-family-base;
+  font-weight: tokens.$font-weight-thin;
+  font-style: italic;
+  font-size: 40px;
+  line-height: normal;
+  color: tokens.$color-content-3;
+}
+
+.home__date {
+  margin: 0;
+  font-family: tokens.$font-family-base;
+  font-size: 14px;
+  color: tokens.$color-content-4;
+  white-space: nowrap;
+}
+
+.home__grid {
+  display: flex;
+  flex-wrap: wrap;
   gap: tokens.$space-8;
+  padding: 0 tokens.$space-16 tokens.$space-16;
+}
+
+.home__scroll-sentinel {
+  height: 1px;
+}
+
+.home__loading-more {
+  padding: tokens.$space-16;
+  text-align: center;
+  font-family: tokens.$font-family-base;
+  font-size: 12px;
+  color: tokens.$color-content-4;
+}
+
+// Seletor de hospital (US-003-1-03): a tag do Figma vira o gatilho quando há mais
+// de um hospital vinculado; com um só, a tag segue como no desenho.
+.home__hospital-trigger {
+  display: inline-flex;
+  align-self: flex-start;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
 }
 
 .home__hospital-list {
@@ -41,7 +153,7 @@
   list-style: none;
   font-family: tokens.$font-family-base;
   font-weight: tokens.$font-weight-roman;
-  color: var(--color-content-1);
+  color: tokens.$color-content-1;
 }
 
 .home__hospital-option {
@@ -51,61 +163,4 @@
   &[aria-selected='true'] {
     font-weight: tokens.$font-weight-heavy;
   }
-}
-
-.home__header {
-  display: flex;
-  justify-content: flex-end;
-}
-
-.home__bell {
-  position: relative;
-  display: inline-flex;
-}
-
-.home__badge {
-  position: absolute;
-  top: 0;
-  right: 0;
-  pointer-events: none;
-}
-
-.home__error {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: tokens.$space-16;
-  text-align: center;
-  font-family: tokens.$font-family-base;
-}
-
-.home__error-title {
-  margin: 0;
-  font-weight: tokens.$font-weight-heavy;
-}
-
-.home__error-text,
-.home__stale {
-  margin: 0;
-  font-weight: tokens.$font-weight-roman;
-  color: var(--color-content-2);
-}
-
-.home__grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: tokens.$space-8;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.home__cell {
-  min-width: 0;
-}
-
-.home__item {
-  font-family: tokens.$font-family-base;
-  font-weight: tokens.$font-weight-roman;
-  color: var(--color-content-2);
 }

@@ -34,8 +34,21 @@ export const routes: Routes = [
     data: { hideShell: true },
     loadChildren: () => import('./features/splash/splash.routes').then(m => m.SPLASH_ROUTES),
   },
+  {
+    path: 'notifications',
+    loadChildren: () => import('./features/notifications/notifications.routes').then(m => m.NOTIFICATIONS_ROUTES),
+  },
+  // Caminho antigo em português, mantido como atalho para a tela real.
+  { path: 'notificacoes', pathMatch: 'full', redirectTo: 'notifications' },
+  // TODO (specs/004-notificacoes research.md §8): placeholder até a feature
+  // "Detalhe do Paciente" existir — destino real de FR-006 (US2).
+  {
+    path: 'patients/:id',
+    loadComponent: () =>
+      import('./features/patients/patient-detail-placeholder.component').then(m => m.PatientDetailPlaceholderComponent),
+  },
   // Placeholders das telas de outras stories (ver PendingScreenComponent).
-  ...(['login', 'lock', 'hospital-links', 'notificacoes'] as const).map(path => ({
+  ...(['login', 'lock', 'hospital-links'] as const).map(path => ({
     path,
     data: { screen: path },
     loadComponent: () =>

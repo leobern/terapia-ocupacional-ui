@@ -1,3 +1,5 @@
+@use './shared/styles/tokens';
+
 :host {
   display: block;
 }
@@ -19,8 +21,53 @@
   // (Achado na verificação do breakpoint `sm` de DS-component-bottom-nav-bar:
   // a barra ficava com 640px centralizados enquanto o `page-container` tinha
   // 360px encostados à esquerda.)
+  //
+  // `margin-right: var(--drawer-width, 0px)` — o drawer (desktop) escreve essa
+  // custom property na raiz do documento quando abre (ver drawer.component.ts);
+  // o consumidor precisa aplicá-la ao conteúdo da rota (contrato do
+  // componente, DS-component-drawer FR-016) para o painel não sobrepor o
+  // conteúdo sem empurrá-lo.
   ::ng-deep router-outlet + * {
     flex: 1 0 0;
     min-width: 0;
+    margin-right: var(--drawer-width, 0px);
+    transition: margin-right 0.3s ease;
   }
+}
+
+// Conteúdo do chat com a IA (mensagem de abertura) — projetado no
+// bottom-sheet/drawer, mas estilizado aqui (quem monta a conversa é sempre o
+// consumidor, nenhum dos dois componentes conhece este texto). Fonte Lora —
+// só o conteúdo da mensagem, nunca o chrome do bottom-sheet/drawer (cabeçalho,
+// botões, input-chat continuam Inter) — ver estilos Figma "Chat/Title - Chat",
+// "Chat/Default - Chat", "Chat/Subsection - Chat" (4412:5750).
+.ai-chat__message {
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$space-8;
+}
+
+.ai-chat__title {
+  margin: 0;
+  font-family: tokens.$font-family-chat;
+  font-weight: tokens.$font-weight-bold;
+  font-size: 24px;
+  line-height: 1.2;
+  color: var(--color-content-1);
+}
+
+.ai-chat__body {
+  margin: 0;
+  font-family: tokens.$font-family-chat;
+  font-size: 16px;
+  line-height: 1.35;
+  color: var(--color-content-1);
+}
+
+.ai-chat__hint {
+  margin: 0;
+  font-family: tokens.$font-family-chat;
+  font-size: 14px;
+  line-height: 1.35;
+  color: var(--color-content-2);
 }

@@ -9,6 +9,13 @@
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  // Sempre encolhe até o tamanho do conteúdo, mesmo dentro de um contêiner pai com
+  // `align-items: stretch` (ex.: flex column) — sem isso, o host herda a largura
+  // total disponível do pai, e em `type="default"` isso batia direto no
+  // `max-width: 280px`, fazendo a tag SEMPRE renderizar a 280px de largura
+  // (padding lateral gigante) mesmo com texto curto, em vez de só limitar o
+  // crescimento máximo.
+  width: fit-content;
 }
 
 // --- type="user" ---------------------------------------------------------------------

@@ -276,4 +276,31 @@ describe('AvatarComponent', () => {
       expect(getComputedStyle(avatarEl()).borderRadius).toBe('400px');
     }
   });
+
+  describe('initials typography per size (Figma nó 4046:2289, reconfirmado 2026-07-30)', () => {
+    const expectations: ['small' | 'default' | 'big', string, string, string][] = [
+      // [size, font-size, font-weight, line-height] — "Label - SemiBold" / "Default - SemiBold" / "Section"
+      ['small', '12px', '600', '16.2px'], // 12px * 1.35
+      ['default', '16px', '600', '21.6px'], // 16px * 1.35
+      ['big', '40px', '500', 'normal'],
+    ];
+
+    for (const [size, fontSize, fontWeight, lineHeight] of expectations) {
+      it(`size="${size}" renders Inter ${fontWeight} ${fontSize}, line-height ${lineHeight}`, () => {
+        fixture.componentRef.setInput('size', size);
+        fixture.componentRef.setInput('type', 'user');
+        fixture.componentRef.setInput('name', 'Julia Nogueira');
+        attachToDom();
+        fixture.detectChanges();
+
+        const initials = avatarEl().querySelector('.avatar__initials') as HTMLElement;
+        const cs = getComputedStyle(initials);
+
+        expect(cs.fontFamily).toContain('Inter');
+        expect(cs.fontSize).toBe(fontSize);
+        expect(cs.fontWeight).toBe(fontWeight);
+        expect(cs.lineHeight).toBe(lineHeight);
+      });
+    }
+  });
 });
