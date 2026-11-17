@@ -1,18 +1,26 @@
-import { ChangeDetectionStrategy, Component, computed, inject, OnInit, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, input, OnInit, signal } from '@angular/core';
 import { Router } from '@angular/router';
 
 import { BadgeComponent } from '../../shared/components/badge/badge.component';
 import { ButtonComponent } from '../../shared/components/button/button.component';
+import { CardPatientsComponent } from '../../shared/components/card-patients/card-patients.component';
 import { IconButtonComponent } from '../../shared/components/icon-button/icon-button.component';
 import { InputSelectComponent } from '../../shared/components/input-select/input-select.component';
 import { PhIconComponent } from '../../shared/icons/ph-icon/ph-icon.component';
 import { I18nService } from '../../shared/services/i18n.service';
+import { DailyPatientsSource, DailyPatientsSummary } from './daily-patients';
 import { HomeData, HomeDataSource } from './home-data-source';
 import { HomeHeaderComponent } from './home-header.component';
 import { HomeSkeletonComponent } from './home-skeleton.component';
 import { type HomeLoadStatus, HomeStateService } from './home-state.service';
 import { HospitalContextService } from './hospital-context.service';
 import { UnreadNotificationsReader } from './unread-notifications-reader';
+
+/** Item adicional da grade (notificações reais virão em outra story). */
+export interface HomeGridItem {
+  readonly id: string;
+  readonly text: string;
+}
 
 /** Estado de carregamento da área abaixo do cabeçalho. */
 export type HomeLoadState = HomeLoadStatus;
@@ -28,6 +36,7 @@ export type HomeLoadState = HomeLoadStatus;
   imports: [
     BadgeComponent,
     ButtonComponent,
+    CardPatientsComponent,
     HomeHeaderComponent,
     HomeSkeletonComponent,
     IconButtonComponent,
@@ -47,9 +56,12 @@ export class HomeComponent implements OnInit {
   readonly stale = signal(false);
   readonly loading = signal(false);
   readonly controlsEnabled = computed(() => !this.stale());
+  /** Itens após o card fixo de contagem de pacientes (o card é sempre o primeiro da grade). */
+  readonly items = input<readonly HomeGridItem[]>([]);
 
   protected readonly i18n = inject(I18nService);
   protected readonly unreadCount = signal(0);
+  protected readonly summary = signal<DailyPatientsSummary | null>(null);
   protected readonly context = inject(HospitalContextService);
   protected readonly listOpen = signal(false);
   protected readonly listId = 'home-hospital-list';
@@ -58,6 +70,19 @@ export class HomeComponent implements OnInit {
   private readonly router = inject(Router);
   private readonly reader = inject(UnreadNotificationsReader);
   private readonly source = inject(HomeDataSource);
+  private readonly patients = inject(DailyPatientsSource);
+
+  constructor() {
+    effect(() => {
+      const hospitalId = this.context.selected()?.id;
+
+      if (hospitalId === undefined) {
+        this.summary.set(null);
+      } else {
+        void this.loadSummary(hospitalId);
+      }
+    });
+  }
 
   async ngOnInit(): Promise<void> {
     void this.refresh();
@@ -81,6 +106,14 @@ export class HomeComponent implements OnInit {
       }
     } finally {
       this.loading.set(false);
+    }
+  }
+
+  protected async loadSummary(hospitalId: string): Promise<void> {
+    const summary = await this.patients.loadForDay(hospitalId, new Date());
+
+    if (this.context.selected()?.id === hospitalId) {
+      this.summary.set(summary);
     }
   }
 
