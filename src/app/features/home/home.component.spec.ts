@@ -26,5 +26,4 @@ describe('HomeComponent', () => {
   it('does not mount the bottom nav bar itself (the shell owns it)', () => {
     expect(fixture.nativeElement.querySelector('app-bottom-nav-bar')).toBeNull();
   });
-
 });
