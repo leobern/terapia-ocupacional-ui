@@ -147,6 +147,10 @@ export class BottomSheetComponent {
     this.viewportKeyboard.isVirtualKeyboardOpen() ? 'full' : this.snap(),
   );
 
+  protected readonly expandIcon = computed(() => (this.effectiveSnap() === 'full' ? 'arrows-in' : 'arrows-out'));
+
+  protected readonly expandLabel = computed(() => (this.effectiveSnap() === 'full' ? 'Recolher' : 'Expandir'));
+
   protected readonly dragOffsetPx = signal(0);
 
   protected readonly isDragging = signal(false);
@@ -220,6 +224,9 @@ export class BottomSheetComponent {
       if (shouldOpen && !element.open) {
         element.showModal();
         this.lockScroll();
+        // O foco inicial continua no botão de fechar (e não no de expandir, que o
+        // precede no DOM).
+        element.querySelector<HTMLElement>('.bottom-sheet__close button')?.focus();
       } else if (!shouldOpen && element.open) {
         element.close();
         this.releaseScroll();
@@ -266,6 +273,11 @@ export class BottomSheetComponent {
 
   protected onCloseClick(): void {
     this.dismiss();
+  }
+
+  /** Alterna entre `default` e `full` — mesmo estado de encaixe que o arraste comanda. */
+  protected onToggleExpand(): void {
+    this.snapChange.emit(this.effectiveSnap() === 'full' ? 'default' : 'full');
   }
 
   protected onShortcut(shortcut: ChatShortcut): void {

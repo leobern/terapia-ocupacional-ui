@@ -179,6 +179,7 @@ $ease-sheet: cubic-bezier(0.32, 0.72, 0, 1);
 // `touch-action: none` vive só aqui — é o que impede a rolagem do conteúdo de
 // virar arraste (FR-022/SC-012).
 .bottom-sheet__header {
+  position: relative;
   align-items: flex-start;
   cursor: grab;
   display: flex;
@@ -204,7 +205,10 @@ $ease-sheet: cubic-bezier(0.32, 0.72, 0, 1);
   border-radius: var(--radius-pill);
   flex-shrink: 0;
   height: var(--space-8);
+  left: 50%;
   margin: var(--space-8) 0;
+  position: absolute;
+  transform: translateX(-50%);
   width: var(--space-80);
 }
 
@@ -223,6 +227,14 @@ $ease-sheet: cubic-bezier(0.32, 0.72, 0, 1);
 //    estados de hover/active do `icon-button`.
 // O host do `app-icon-button` é `display: contents`, então nada disso pode ser
 // aplicado nele: ele não gera caixa nenhuma. Daí o `<span>` no template.
+.bottom-sheet__buttons {
+  align-items: flex-start;
+  display: flex;
+  flex-shrink: 0;
+  gap: var(--space-8);
+}
+
+.bottom-sheet__expand,
 .bottom-sheet__close,
 .bottom-sheet__close-placeholder {
   box-sizing: content-box;

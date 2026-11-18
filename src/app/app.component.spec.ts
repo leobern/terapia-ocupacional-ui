@@ -184,6 +184,74 @@ describe('AppComponent', () => {
     });
   });
 
+  describe('expandir e fechar o assistente (mobile/tablet)', () => {
+    function sheetButton(label: string): HTMLButtonElement | null {
+      return fixture.nativeElement.querySelector(`app-bottom-sheet button[aria-label="${label}"]`);
+    }
+
+    function openWithConversation(): HTMLElement {
+      fixture.componentInstance.aiAssistant.openShortcuts();
+      fixture.detectChanges();
+
+      return fixture.nativeElement.querySelector('app-assistant-content .assistant-content');
+    }
+
+    function dialog(): HTMLDialogElement {
+      return fixture.nativeElement.querySelector('app-bottom-sheet dialog');
+    }
+
+    it('expande para tela cheia preservando o conteúdo já exibido e recolhe de volta', () => {
+      const before = openWithConversation();
+      const text = before.textContent;
+
+      sheetButton('Expandir')?.click();
+      fixture.detectChanges();
+
+      expect(dialog().classList).toContain('bottom-sheet--full');
+      expect(fixture.nativeElement.querySelector('app-assistant-content .assistant-content')).toBe(before);
+      expect(before.textContent).toBe(text);
+
+      sheetButton('Recolher')?.click();
+      fixture.detectChanges();
+
+      expect(dialog().classList).not.toContain('bottom-sheet--full');
+      expect(fixture.nativeElement.querySelector('app-assistant-content .assistant-content')).toBe(before);
+    });
+
+    it('fecha a partir do painel compacto, devolvendo a Home com a rolagem destravada', () => {
+      openWithConversation();
+
+      sheetButton('Fechar')?.click();
+      fixture.detectChanges();
+
+      expect(fixture.componentInstance.aiAssistant.isOpen()).toBe(false);
+      expect(dialog().open).toBe(false);
+      expect(document.documentElement.style.overflow).not.toBe('hidden');
+    });
+
+    it('fecha a partir da tela cheia e reabre no encaixe compacto', () => {
+      openWithConversation();
+      sheetButton('Expandir')?.click();
+      fixture.detectChanges();
+
+      sheetButton('Recolher')?.click();
+      sheetButton('Expandir')?.click();
+      fixture.detectChanges();
+      sheetButton('Fechar')?.click();
+      fixture.detectChanges();
+
+      expect(fixture.componentInstance.aiAssistant.isOpen()).toBe(false);
+      expect(dialog().open).toBe(false);
+
+      fixture.componentInstance.aiAssistant.openPanel();
+      fixture.detectChanges();
+
+      expect(dialog().open).toBe(true);
+      expect(dialog().classList).not.toContain('bottom-sheet--full');
+      expect(sheetButton('Expandir')).toBeTruthy();
+    });
+  });
+
   it('onAiShortcut and onAiSend do not throw (sem serviço de conversa com a IA ainda)', () => {
     expect(() => fixture.componentInstance.onAiShortcut({ id: 'x', label: 'X' })).not.toThrow();
     expect(() => fixture.componentInstance.onAiSend('mensagem')).not.toThrow();
