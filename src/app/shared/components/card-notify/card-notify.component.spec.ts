@@ -1,4 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
 
 import { AvatarComponent } from '../avatar/avatar.component';
 import { IconButtonComponent } from '../icon-button/icon-button.component';
@@ -161,6 +162,91 @@ describe('CardNotifyComponent', () => {
       expect(article().getAttribute('role')).toBeNull();
       expect(article().getAttribute('tabindex')).toBeNull();
       expect(fixture.nativeElement.querySelector('app-icon-button button').tabIndex).toBe(0);
+    });
+  });
+
+  describe('card da tela de Notificações (Figma 4506:9462 / 4506:9463 / 4496:11888)', () => {
+    const replies = [
+      { authorName: 'Dra. Michelle', authorPhotoUrl: null, authorSpecialty: 'Nutróloga', text: 'Ok', time: '20:27' },
+      { authorName: 'Dr. Paulo', authorPhotoUrl: null, authorSpecialty: 'Nutrólogo', text: 'Feito', time: '20:40' },
+    ];
+    const card = (): HTMLElement => fixture.nativeElement.querySelector('.card-notify');
+
+    async function createDetail(inputs: Record<string, unknown> = {}): Promise<void> {
+      await createWith({});
+      fixture.componentRef.setInput('type', 'detail');
+      fixture.componentRef.setInput('patientName', 'José da Silva');
+      fixture.componentRef.setInput('replies', replies);
+      for (const [key, value] of Object.entries(inputs)) {
+        fixture.componentRef.setInput(key, value);
+      }
+      fixture.detectChanges();
+    }
+
+    it('o botão de responder é o balão (chat-circle-dots) secundário, na coluna da direita', async () => {
+      await createDetail();
+      const button = fixture.nativeElement.querySelector('.card-notify__side app-icon-button');
+      const instance = fixture.debugElement.query(By.directive(IconButtonComponent)).componentInstance;
+
+      expect(button).toBeTruthy();
+      expect(instance.icon()).toBe('chat-circle-dots');
+      expect(instance.kind()).toBe('secondary');
+      expect(instance.appearance()).toBe('icon');
+    });
+
+    it('card resolvido ou com as respostas abertas não tem a coluna do balão', async () => {
+      await createDetail({ resolved: true });
+
+      expect(fixture.nativeElement.querySelector('.card-notify__side')).toBeNull();
+
+      fixture.componentRef.setInput('resolved', false);
+      fixture.componentRef.setInput('type', 'answer-open');
+      fixture.detectChanges();
+
+      expect(fixture.nativeElement.querySelector('.card-notify__side')).toBeNull();
+    });
+
+    it('a tag de respostas tem a foto encostada à esquerda (padding 4px) e 16px à direita', async () => {
+      await createDetail();
+      const style = getComputedStyle(fixture.nativeElement.querySelector('.card-notify__reply-tag'));
+
+      expect(style.paddingLeft).toBe('4px');
+      expect(style.paddingRight).toBe('16px');
+      expect(fixture.nativeElement.querySelector('.card-notify__reply-tag').textContent).toContain('2 Respostas');
+    });
+
+    it('com as respostas abertas, o card cresce na vertical: cada resposta fica abaixo da anterior', async () => {
+      await createDetail({ type: 'answer-open' });
+      const main = fixture.nativeElement.querySelector('.card-notify__main').getBoundingClientRect();
+      const blocks = Array.from(fixture.nativeElement.querySelectorAll('.card-notify__reply')).map(el =>
+        (el as HTMLElement).getBoundingClientRect(),
+      );
+
+      expect(blocks.length).toBe(2);
+      expect(blocks[0].top).toBeGreaterThanOrEqual(main.bottom - 1);
+      expect(blocks[1].top).toBeGreaterThanOrEqual(blocks[0].bottom - 1);
+      expect(blocks[0].width).toBeCloseTo(card().getBoundingClientRect().width, 0);
+      expect(fixture.nativeElement.querySelector('.card-notify__collapse').textContent).toContain('Ver menos');
+    });
+
+    it('o texto aparece inteiro (sem corte em 2 linhas)', async () => {
+      await createDetail({ description: 'linha '.repeat(80) });
+      const text = fixture.nativeElement.querySelector('.card-notify__description') as HTMLElement;
+
+      expect(getComputedStyle(text).overflow).toBe('visible');
+      expect(text.scrollHeight).toBeLessThanOrEqual(text.clientHeight + 1);
+    });
+
+    it('card resolvido recolhido fica esmaecido; aberto, branco', async () => {
+      await createDetail({ resolved: true });
+
+      expect(card().classList).toContain('card-notify--resolved');
+      expect(getComputedStyle(card()).backgroundColor).toContain('0.5');
+
+      fixture.componentRef.setInput('type', 'answer-open');
+      fixture.detectChanges();
+
+      expect(getComputedStyle(card()).backgroundColor).not.toContain('0.5');
     });
   });
 });

@@ -1,12 +1,15 @@
 import { Location } from '@angular/common';
 import { provideHttpClient } from '@angular/common/http';
+import { signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Actions } from '@ngrx/effects';
 import { MockStore, provideMockStore } from '@ngrx/store/testing';
 import { Subject } from 'rxjs';
 
+import { AiAssistantService } from '../../shared/services/ai-assistant.service';
 import { ScreenActionsService } from '../../shared/services/screen-actions.service';
+import { ViewportBreakpointService } from '../../shared/services/viewport-breakpoint.service';
 import { LinkedHospitalsReader } from '../home/linked-hospitals';
 import { NotificationsRepository } from './data-access/notifications-repository.service';
 import { NotificationsComponent } from './notifications.component';
@@ -33,6 +36,9 @@ describe('NotificationsComponent', () => {
   let store: MockStore;
   let router: Router;
   let actionsSubject: Subject<{ type: string }>;
+  const isDesktop = signal(true);
+
+  beforeEach(() => isDesktop.set(true));
 
   async function configureStore(overrides: Partial<NotificationsState> = {}): Promise<void> {
     actionsSubject = new Subject();
@@ -40,6 +46,7 @@ describe('NotificationsComponent', () => {
       imports: [NotificationsComponent],
       providers: [
         provideHttpClient(),
+        { provide: ViewportBreakpointService, useValue: { isDesktop: isDesktop.asReadonly() } },
         {
           provide: LinkedHospitalsReader,
           useValue: { read: (): { id: string; name: string }[] => [{ id: '1', name: 'Hospital Vila Nova Star' }] },
@@ -64,7 +71,7 @@ describe('NotificationsComponent', () => {
   // --- Cabeçalho, fechar e seções (Figma 4506:8583 / 4506:8580) ---
 
   describe('cabeçalho e seções', () => {
-    it('mostra o sino, o título "Notificações" (sem contagem) e a tag do hospital com a data', async () => {
+    it('desktop: mostra o sino, o título "Notificações" (sem contagem) e a tag do hospital com a data', async () => {
       await configureStore({ hospitalId: 1, status: 'success', pendingItems: [notification(1)] });
       createComponent();
       const el: HTMLElement = fixture.nativeElement;
@@ -75,6 +82,30 @@ describe('NotificationsComponent', () => {
       expect(el.querySelector('.notifications__date')?.textContent).toMatch(/ - \d+ de /);
     });
 
+    it('mobile: o título leva a contagem ("3 Notificações") e a data some', async () => {
+      isDesktop.set(false);
+      await configureStore({ hospitalId: 1, pendingTotalCount: 3, status: 'success' });
+      createComponent();
+
+      expect(fixture.nativeElement.querySelector('.notifications__title')?.textContent?.trim()).toBe('3 Notificações');
+    });
+
+    it('o botão de atalhos fica antes do X e abre o assistente nas ações da tela', async () => {
+      await configureStore({ status: 'success' });
+      createComponent();
+      const buttons = Array.from(
+        fixture.nativeElement.querySelectorAll('.notifications__header app-icon-button button'),
+      ) as HTMLButtonElement[];
+      const assistant = TestBed.inject(AiAssistantService);
+
+      expect(buttons.map(b => b.getAttribute('aria-label'))).toEqual(['Ações da tela', 'Fechar notificações']);
+
+      buttons[0].click();
+
+      expect(assistant.isOpen()).toBeTrue();
+      expect(assistant.view()).toBe('shortcuts');
+    });
+
     it('o X volta para a tela anterior quando há histórico', async () => {
       await configureStore({ status: 'success' });
       createComponent();
@@ -83,7 +114,9 @@ describe('NotificationsComponent', () => {
       spyOn(location, 'back');
       spyOnProperty(window.history, 'length').and.returnValue(3);
       (
-        fixture.nativeElement.querySelector('.notifications__header app-icon-button button') as HTMLButtonElement
+        fixture.nativeElement.querySelector(
+          '.notifications__header button[aria-label="Fechar notificações"]',
+        ) as HTMLButtonElement
       ).click();
 
       expect(location.back).toHaveBeenCalledWith();

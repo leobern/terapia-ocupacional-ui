@@ -6,7 +6,18 @@
       <span class="notifications__header-icon">
         <ph-icon name="bell" [size]="32" />
       </span>
-      <h1 class="notifications__title">Notificações</h1>
+      <h1 class="notifications__title">{{ title() }}</h1>
+      <!-- Ações da tela (Figma 4506:8583): só no desktop; no mobile o mesmo destino é o botão da
+           barra inferior. -->
+      <span class="notifications__shortcuts">
+        <app-icon-button
+          kind="primary"
+          appearance="icon"
+          icon="squares-four"
+          ariaLabel="Ações da tela"
+          (click)="onOpenShortcuts()"
+        />
+      </span>
       <app-icon-button
         kind="primary"
         appearance="icon"

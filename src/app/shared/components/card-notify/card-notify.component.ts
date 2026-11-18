@@ -75,7 +75,9 @@ export class CardNotifyComponent {
   protected readonly isAnswering = computed(() => this.type() === 'answering');
   protected readonly showPatientHeader = computed(() => !this.isResume() && this.patientName() !== '');
   protected readonly showReplyTag = computed(() => this.isDetail() && this.replies().length > 0);
-  protected readonly showActionButton = computed(() => this.isDetail() || this.isAnswerOpen());
+  // Figma 4506:9462: só o card pendente tem a coluna do balão (responder). Aberto com as respostas
+  // (4496:11888) e resolvido (4506:9755) não têm.
+  protected readonly showActionButton = computed(() => this.isDetail() && !this.resolved());
   protected readonly showReplyBlocks = computed(() => this.isAnswerOpen() || this.isAnswering());
 
   protected readonly avatarType = computed<AvatarType>(() => (this.authorPhotoUrl() ? 'photo' : 'user'));
