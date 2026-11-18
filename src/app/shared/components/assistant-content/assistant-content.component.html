@@ -71,6 +71,19 @@
       <p class="assistant-content__hint">
         Você pode conversar comigo via texto ou áudio.
       </p>
+      <ul class="assistant-content__suggestions" aria-label="Sugestões de pergunta">
+        @for (suggestion of suggestions; track suggestion) {
+          <li>
+            <button
+              type="button"
+              class="assistant-content__chip"
+              (click)="assistant.ask(suggestion)"
+            >
+              {{ suggestion }}
+            </button>
+          </li>
+        }
+      </ul>
     </div>
   }
 }

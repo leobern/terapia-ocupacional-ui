@@ -14,6 +14,13 @@ import { IconButtonComponent } from '../icon-button/icon-button.component';
  * cadastro: docs/regras-de-negocio/padrao-de-cadastro.md. Figma: 4506:10097 (atalhos) e
  * 4506:10525 (formulário).
  */
+/** Atalhos de pergunta exibidos ao abrir o assistente (lista simples e substituível). */
+export const ASSISTANT_SUGGESTIONS: readonly string[] = [
+  'Quais são minhas pendências de hoje?',
+  'Quantos pacientes tenho para atender hoje?',
+  'Resuma as notificações não lidas',
+];
+
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [AssistantFormComponent, ButtonComponent, IconButtonComponent],
@@ -23,6 +30,7 @@ import { IconButtonComponent } from '../icon-button/icon-button.component';
 })
 export class AssistantContentComponent {
   protected readonly assistant = inject(AiAssistantService);
+  protected readonly suggestions = ASSISTANT_SUGGESTIONS;
   protected readonly screenActions = inject(ScreenActionsService);
 
   /** Cadastro concluído: volta para as ações da tela. */

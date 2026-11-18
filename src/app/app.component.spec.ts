@@ -141,6 +141,12 @@ describe('AppComponent', () => {
     expect(() => fixture.componentInstance.onAiSend('mensagem')).not.toThrow();
   });
 
+  it('onAiSend forwards the typed question to the assistant', () => {
+    fixture.componentInstance.onAiSend('mensagem livre');
+
+    expect(fixture.componentInstance.aiAssistant.lastQuestion()).toBe('mensagem livre');
+  });
+
   it('hides the navigation shell and the AI surface on routes flagged hideShell', async () => {
     const el = fixture.nativeElement as HTMLElement;
 

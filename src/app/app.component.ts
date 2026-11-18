@@ -110,8 +110,8 @@ export class AppComponent {
     // — por enquanto só fecha o atalho selecionado, sem enviar nada de verdade.
   }
 
-  onAiSend(_: string): void {
-    // Ver onAiShortcut — mesma justificativa.
+  onAiSend(question: string): void {
+    this.aiAssistant.ask(question);
   }
 
   // specs/004-notificacoes FR-001/FR-002/research.md §8 — o Menu é global (montado

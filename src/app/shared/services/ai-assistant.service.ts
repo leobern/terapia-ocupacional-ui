@@ -29,14 +29,27 @@ export class AiAssistantService {
   /** Ação cujo formulário (ou aviso) está aberto; `null` fora dessas visões. */
   readonly activeAction: Signal<ScreenAction | null>;
 
+  /** Última pergunta enviada (chip ou campo de mensagem); ponto de integração com o motor de IA. */
+  readonly lastQuestion: Signal<string | null>;
+
+  private readonly lastQuestionSignal = signal<string | null>(null);
   private readonly isOpenSignal = signal(false);
   private readonly viewSignal = signal<AssistantView>('chat');
   private readonly activeActionSignal = signal<ScreenAction | null>(null);
 
   constructor() {
     this.isOpen = this.isOpenSignal.asReadonly();
+    this.lastQuestion = this.lastQuestionSignal.asReadonly();
     this.view = this.viewSignal.asReadonly();
     this.activeAction = this.activeActionSignal.asReadonly();
+  }
+
+  /**
+   * Único ponto de entrada de perguntas: usado pelos chips de sugestão e pelo campo de
+   * mensagem (texto/áudio). Não valida contra as sugestões; o motor de IA é outro escopo.
+   */
+  ask(question: string): void {
+    this.lastQuestionSignal.set(question);
   }
 
   /** Abre o painel no chat (saudação). */
