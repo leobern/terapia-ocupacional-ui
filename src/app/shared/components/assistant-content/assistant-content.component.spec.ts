@@ -2,6 +2,7 @@ import { type ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 
 import { AiAssistantService } from '../../services/ai-assistant.service';
+import { ASSISTANT_QUERY_RESOLVERS } from '../../services/assistant-query-resolver';
 import { type ScreenAction, ScreenActionsService } from '../../services/screen-actions.service';
 import { UserDirectory } from '../../services/user-directory';
 import { AssistantFormComponent } from '../assistant-form/assistant-form.component';
@@ -62,6 +63,79 @@ describe('AssistantContentComponent', () => {
     assistant.ask('Qual o leito do paciente João?');
 
     expect(assistant.lastQuestion()).toBe('Qual o leito do paciente João?');
+  });
+
+  it('shows the question followed by the assistant answer area', () => {
+    assistant.ask('Qual o leito do paciente João?');
+    fixture.detectChanges();
+
+    expect(text('.assistant-content__question')).toBe('Qual o leito do paciente João?');
+    expect(text('.assistant-content__answer')).toContain('Ainda não sei responder');
+  });
+
+  it('shows a loading indicator and then the answer items', async () => {
+    let finish!: (answer: { items: string[]; summary: string }) => void;
+
+    TestBed.resetTestingModule();
+    await TestBed.configureTestingModule({
+      imports: [AssistantContentComponent],
+      providers: [
+        {
+          provide: ASSISTANT_QUERY_RESOLVERS,
+          useValue: [
+            {
+              matches: (): boolean => true,
+              resolve: (): Promise<{ items: string[]; summary: string }> =>
+                new Promise(resolve => {
+                  finish = resolve;
+                }),
+            },
+          ],
+        },
+      ],
+    }).compileComponents();
+    assistant = TestBed.inject(AiAssistantService);
+    fixture = TestBed.createComponent(AssistantContentComponent);
+    assistant.ask('qualquer');
+    fixture.detectChanges();
+
+    expect(text('[role="status"]')).toContain('Buscando');
+
+    finish({ items: ['a', 'b'], summary: 'Resumo' });
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(text('.assistant-content__answer')).toContain('Resumo');
+    expect(el().querySelectorAll('.assistant-content__answer-items li').length).toBe(2);
+  });
+
+  it('shows the error message with alert role when the answer fails', async () => {
+    TestBed.resetTestingModule();
+    await TestBed.configureTestingModule({
+      imports: [AssistantContentComponent],
+      providers: [
+        {
+          provide: ASSISTANT_QUERY_RESOLVERS,
+          useValue: [{ matches: (): boolean => true, resolve: (): Promise<never> => Promise.reject(new Error('x')) }],
+        },
+      ],
+    }).compileComponents();
+    assistant = TestBed.inject(AiAssistantService);
+    fixture = TestBed.createComponent(AssistantContentComponent);
+    assistant.ask('qualquer');
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(text('[role="alert"]')).toContain('Não foi possível obter a resposta');
+  });
+
+  it('reopening the panel shows a clean conversation', () => {
+    assistant.ask('Qual o leito do paciente João?');
+    assistant.closePanel();
+    assistant.openPanel();
+    fixture.detectChanges();
+
+    expect(el().querySelector('.assistant-content__question')).toBeNull();
   });
 
   it('chips are not shown in shortcuts, form and unavailable views', () => {

@@ -77,3 +77,43 @@
     outline-offset: 2px;
   }
 }
+
+// Pergunta e resposta do assistente (sem protótipo no Figma: tokens existentes do design system).
+.assistant-content__conversation {
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$space-8;
+  margin-top: tokens.$space-8;
+}
+
+.assistant-content__question {
+  align-self: flex-end;
+  max-width: 85%;
+  margin: 0;
+  padding: tokens.$space-8 tokens.$space-16;
+  border-radius: 16px;
+  background: var(--color-default-secondary);
+  font-family: tokens.$font-family-chat;
+  font-size: 14px;
+  line-height: 1.35;
+  color: var(--color-surface-glass-1);
+}
+
+.assistant-content__answer {
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$space-8;
+}
+
+.assistant-content__answer--error .assistant-content__body {
+  color: var(--color-content-1);
+  font-weight: tokens.$font-weight-bold;
+}
+
+.assistant-content__answer-items {
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$space-8;
+  margin: 0;
+  padding-left: tokens.$space-16;
+}
