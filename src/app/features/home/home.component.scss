@@ -12,7 +12,13 @@
 .home {
   display: flex;
   flex-direction: column;
-  min-height: 100vh;
+  // Altura da tela MENOS o espaço da barra inferior que o container já reserva: com
+  // 100vh cheio a página sempre rolava ~104px mesmo sem conteúdo. No desktop não há barra.
+  min-height: calc(100dvh - var(--bottom-nav-bar-height));
+
+  @include breakpoints.md {
+    min-height: 100dvh;
+  }
   // Sem background sólido: o fundo decorativo (app-background-mesh, montado
   // no shell da aplicação) precisa aparecer por trás de todo o espaço vazio
   // da tela.

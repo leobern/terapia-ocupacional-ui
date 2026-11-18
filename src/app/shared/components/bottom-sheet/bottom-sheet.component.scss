@@ -65,7 +65,12 @@ $ease-sheet: cubic-bezier(0.32, 0.72, 0, 1);
   border: 0;
   border-radius: var(--radius-xl) var(--radius-xl) 0 0;
   color: var(--color-content-1);
-  display: flex;
+  // FECHADO = `display: none`. Antes ficava `flex` (só empurrado 100% para baixo pelo
+  // `translate`) e, sendo `position: absolute` fora do top layer, aumentava a altura
+  // rolável da página: rolar com o mouse/dedo no mobile "puxava" o sheet fechado para
+  // dentro da tela. A transição de `display` com `allow-discrete` (abaixo) mantém a
+  // animação de saída: o `none` só vale ao fim dela.
+  display: none;
   flex-direction: column;
   height: $snap-default;
 
@@ -102,6 +107,8 @@ $ease-sheet: cubic-bezier(0.32, 0.72, 0, 1);
   z-index: var(--z-index-overlay);
 
   &[open] {
+    display: flex;
+
     // Entrada por `@keyframes`. Foi preferida a `@starting-style` (que é a receita
     // canônica para animar a entrada de um `<dialog>`), mas por escolha de
     // implementação, NÃO por incompatibilidade comprovada.
