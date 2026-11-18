@@ -7,6 +7,11 @@ import { AppComponent } from './app.component';
 @Component({ changeDetection: ChangeDetectionStrategy.OnPush, template: '' })
 class DummyComponent {}
 
+interface WritableLike<T> {
+  (): T;
+  set(value: T): void;
+}
+
 const ROUTES: Routes = [
   { component: DummyComponent, data: { hideShell: true }, path: 'splash' },
   { component: DummyComponent, path: 'home' },
@@ -134,6 +139,49 @@ describe('AppComponent', () => {
     fixture.detectChanges();
 
     expect(fixture.componentInstance.aiAssistant.isOpen()).toBe(false);
+  });
+
+  describe('conversa limpa a cada abertura (RN-03)', () => {
+    function reopen(): void {
+      fixture.componentInstance.aiAssistant.closePanel();
+      fixture.detectChanges();
+      fixture.componentInstance.aiAssistant.openPanel();
+      fixture.detectChanges();
+    }
+
+    it('volta ao chat inicial, encaixe compacto e campo vazio ao reabrir', () => {
+      const component = fixture.componentInstance as unknown as {
+        aiChatValue: WritableLike<string>;
+        aiSheetSnap: WritableLike<string>;
+        aiAssistant: AppComponent['aiAssistant'];
+      };
+
+      component.aiAssistant.openShortcuts();
+      component.aiSheetSnap.set('full');
+      component.aiChatValue.set('rascunho');
+      fixture.detectChanges();
+
+      reopen();
+
+      expect(component.aiAssistant.view()).toBe('chat');
+      expect(component.aiSheetSnap()).toBe('default');
+      expect(component.aiChatValue()).toBe('');
+      expect(fixture.nativeElement.querySelector('app-input-chat textarea').value).toBe('');
+    });
+
+    it('fecha pelo scrim/Esc/arraste (evento closed) e reabre limpo', () => {
+      const component = fixture.componentInstance as unknown as { aiChatValue: WritableLike<string> };
+
+      fixture.componentInstance.aiAssistant.openPanel();
+      fixture.detectChanges();
+      component.aiChatValue.set('texto');
+      fixture.debugElement.query(el => el.name === 'app-bottom-sheet').triggerEventHandler('closed');
+      fixture.detectChanges();
+      fixture.componentInstance.aiAssistant.openPanel();
+      fixture.detectChanges();
+
+      expect(component.aiChatValue()).toBe('');
+    });
   });
 
   it('onAiShortcut and onAiSend do not throw (sem serviço de conversa com a IA ainda)', () => {

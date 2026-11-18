@@ -46,6 +46,8 @@
         <app-input-chat
           bottomSheetFooter
           placeholder="Escreva a sua mensagem"
+          [(value)]="aiChatValue"
+          [(mode)]="aiChatMode"
           (send)="onAiSend($event)"
         />
       </app-bottom-sheet>
@@ -63,6 +65,8 @@
         <app-input-chat
           drawerFooter
           placeholder="Escreva a sua mensagem"
+          [(value)]="aiChatValue"
+          [(mode)]="aiChatMode"
           (send)="onAiSend($event)"
         />
       </app-drawer>
