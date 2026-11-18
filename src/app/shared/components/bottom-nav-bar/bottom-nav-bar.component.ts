@@ -48,7 +48,7 @@ export class BottomNavBarComponent {
    * empurraria o símbolo para cima e desfaria o transbordo de 8px do desenho —
    * então o texto precisa ser curto por escrita, não por corte.
    */
-  readonly aiLabel = input<string>('Como eu posso te ajudar?');
+  readonly aiLabel = input<string>('Como posso ajudar?'); // Figma v2/BottomNav
 
   /**
    * Estado das superfícies que a barra abre, informado pelo consumidor (quem as

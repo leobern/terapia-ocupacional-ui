@@ -12,7 +12,8 @@
   },
   "splash": {
     "logoLabel": "Conductia",
-    "noConnection": "Sem conexão. Verifique sua internet.",
+    "noConnection": "Sem conexão",
+    "noConnectionHint": "Verifique sua internet e tente novamente.",
     "retry": "Tentar novamente"
   }
 }

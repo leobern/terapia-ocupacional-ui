@@ -28,7 +28,7 @@ $min-touch-target: 44px;
 // quando ela misturava interpolação e `var()` — a folga simplesmente não era
 // aplicada, e o alvo continuava 32x32. Mesmo padrão de `bottom-nav-bar`, que
 // deriva medidas de `tokens.$space-56` em Sass.
-$close-hit-inset: ($min-touch-target - tokens.$space-32) * 0.5;
+$close-hit-inset: ($min-touch-target - tokens.$control-height-md) * 0.5;
 $duration-enter: 300ms;
 $duration-exit: 120ms;
 $duration-reduced: 60ms;
@@ -63,7 +63,8 @@ $ease-sheet: cubic-bezier(0.32, 0.72, 0, 1);
 .bottom-sheet {
   background: var(--color-surface);
   border: 0;
-  border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+  border-radius: tokens.$radius-lg tokens.$radius-lg 0 0; // Figma v2 (bottom-sheet): 32px
+  box-shadow: var(--shadow-elevation-bottomsheet);
   color: var(--color-content-1);
   // FECHADO = `display: none`. Antes ficava `flex` (só empurrado 100% para baixo pelo
   // `translate`) e, sendo `position: absolute` fora do top layer, aumentava a altura
@@ -247,10 +248,10 @@ $ease-sheet: cubic-bezier(0.32, 0.72, 0, 1);
   box-sizing: content-box;
   display: block;
   flex-shrink: 0;
-  height: tokens.$space-32;
+  height: tokens.$control-height-md;
   margin: -$close-hit-inset;
   padding: $close-hit-inset;
-  width: tokens.$space-32;
+  width: tokens.$control-height-md;
 }
 
 .bottom-sheet__content {

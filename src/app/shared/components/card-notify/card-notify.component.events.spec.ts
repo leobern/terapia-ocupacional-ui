@@ -32,7 +32,7 @@ describe('CardNotifyComponent — eventos', () => {
 
   it('o balão de responder emite answerClick sem acionar o clique do card', async () => {
     await create('detail');
-    click('.card-notify__side button');
+    click('.card-notify__actions button');
 
     expect([emitted['answerClick'], emitted['cardClick']]).toEqual([1, 0]);
   });

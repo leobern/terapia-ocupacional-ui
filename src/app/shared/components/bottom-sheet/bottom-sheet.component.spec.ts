@@ -257,9 +257,9 @@ describe('BottomSheetComponent', () => {
     const target = hitArea.getBoundingClientRect();
     const visual = button.getBoundingClientRect();
 
-    // A caixa VISUAL — o `<button>` que o usuário vê — continua 32x32 (FR-017)...
-    expect(Math.round(visual.width)).toBe(32);
-    expect(Math.round(visual.height)).toBe(32);
+    // A caixa VISUAL — o `<button>` que o usuário vê — é o icon-button md do v2 (40x40)...
+    expect(Math.round(visual.width)).toBe(40);
+    expect(Math.round(visual.height)).toBe(40);
 
     // ...enquanto a caixa que responde ao toque mede 44x44.
     expect(Math.round(target.width)).toBeGreaterThanOrEqual(44);

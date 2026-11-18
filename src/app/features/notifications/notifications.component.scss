@@ -1,48 +1,52 @@
 @use '../../shared/styles/breakpoints';
 @use '../../shared/styles/tokens';
+@use '../../shared/styles/typography';
 
 // O gutter lateral vem do próprio conteúdo (16px, Figma 4496:11857), não da margem de 24px do
 // container de página (mesma troca da Home).
+// Figma "Conductia - V1" seção 07 (Fluxo Notificações), padrão v2.
 :host {
-  // Precisa da unidade: entra em `calc(100% - 2 * var(...))` no container.
-  // stylelint-disable-next-line length-zero-no-unit
-  --page-container-margin: 0px;
+  --page-container-margin: var(--layout-page-margin, 16px);
 }
 
 .notifications {
   display: flex;
   flex-direction: column;
+  gap: tokens.$space-16;
   min-height: 100vh;
-  padding: 0 tokens.$space-16;
+  padding-top: tokens.$space-8;
+
+  @include breakpoints.md {
+    padding: tokens.$space-24 var(--layout-page-margin, 32px) 0;
+  }
 }
 
-// Cabeçalho (Figma 4506:8583): sino 32px na cor do ícone do menu (secondary), título 24px
-// escuro e o "X" de fechar na extremidade direita.
-// Sem `gap`: o respiro entre o sino e o título é só o padding de 8px do ícone (Figma 4506:8583).
+// v2/PageHeader: voltar 48 + Headline + subtítulo de contexto + ações (desktop).
 .notifications__header {
   display: flex;
   align-items: center;
-  gap: 0;
-  padding: tokens.$space-24 0 tokens.$space-16;
-  color: tokens.$color-content-1;
+  gap: tokens.$space-8;
 }
 
-.notifications__header-icon {
-  display: inline-flex;
-  padding: tokens.$space-8;
-  color: tokens.$color-secondary;
+.notifications__heading {
+  display: flex;
+  flex: 1 0 0;
+  flex-direction: column;
+  min-width: 0;
 }
 
 .notifications__title {
-  flex: 1 0 0;
-  min-width: 0;
   margin: 0;
-  padding-right: tokens.$space-8;
-  font-family: tokens.$font-family-base;
-  font-weight: tokens.$font-weight-heavy;
-  font-size: 24px;
-  line-height: 1.2;
-  color: tokens.$color-content-1;
+  color: tokens.c(content-1);
+
+  @include typography.headline;
+}
+
+.notifications__subtitle {
+  margin: 0;
+  color: tokens.c(content-4);
+
+  @include typography.caption;
 }
 
 .notifications__shortcuts {
@@ -53,30 +57,6 @@
   }
 }
 
-// Tag do hospital à esquerda, data à direita (mesma linha "local" da Home).
-.notifications__local {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: tokens.$space-16;
-  padding: tokens.$space-24 0;
-  border-top: 1px solid tokens.$color-border;
-}
-
-// A data só aparece no desktop (no mobile ela está oculta no Figma 4496:11857).
-.notifications__date {
-  display: none;
-  margin: 0;
-  font-family: tokens.$font-family-base;
-  font-size: 14px;
-  color: tokens.$color-content-4;
-  white-space: nowrap;
-
-  @include breakpoints.md {
-    display: block;
-  }
-}
-
 .notifications__error {
   display: flex;
   flex-direction: column;
@@ -84,15 +64,14 @@
   gap: tokens.$space-16;
   padding: tokens.$space-16;
   text-align: center;
-  color: tokens.$color-content-4;
+  color: tokens.c(content-4);
 }
 
 .notifications__error-title {
   margin: 0;
-  font-family: tokens.$font-family-base;
-  font-weight: tokens.$font-weight-heavy;
-  font-size: tokens.$font-size-subsection;
-  color: tokens.$color-content-1;
+  color: tokens.c(content-1);
+
+  @include typography.title-lg;
 }
 
 // Grade de cards (Figma 4506:8580): 1 coluna no mobile, colunas de no mínimo 360px no desktop
@@ -104,12 +83,12 @@
 
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  gap: tokens.$space-8;
-  padding-bottom: tokens.$space-24;
+  gap: var(--layout-grid-gap, 12px);
+  padding-bottom: calc(var(--bottom-nav-bar-height) + #{tokens.$space-16});
 
   @include breakpoints.md {
-    grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
-    gap: tokens.$space-16;
+    grid-template-columns: repeat(auto-fill, minmax(420px, 1fr));
+    padding-bottom: tokens.$space-32;
   }
 }
 
@@ -123,7 +102,7 @@
 .notifications__empty {
   padding: tokens.$space-24 0;
   text-align: center;
-  color: tokens.$color-content-4;
+  color: tokens.c(content-4);
 }
 
 .notifications__scroll-sentinel {
@@ -135,5 +114,5 @@
   text-align: center;
   font-family: tokens.$font-family-base;
   font-size: 12px;
-  color: tokens.$color-content-4;
+  color: tokens.c(content-4);
 }

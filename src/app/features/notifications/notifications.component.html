@@ -10,10 +10,16 @@
         ariaLabel="Voltar"
         (click)="onClose()"
       />
-      <span class="notifications__header-icon">
-        <ph-icon name="bell" [size]="32" />
-      </span>
-      <h1 class="notifications__title">{{ title() }}</h1>
+      <!-- Figma v2/PageHeader: título Headline + contexto (hospital · data). -->
+      <div class="notifications__heading">
+        <h1 class="notifications__title">{{ title() }}</h1>
+        <p class="notifications__subtitle">
+          @if (hospitalId(); as id) {
+            {{ hospitalName() || 'Hospital ' + id }} ·
+          }
+          {{ todayLabel() }}
+        </p>
+      </div>
       <!-- Ações da tela (Figma 4506:8583): só no desktop; no mobile o mesmo destino é o botão da
            barra inferior. -->
       <span class="notifications__shortcuts">
@@ -28,16 +34,7 @@
       </span>
     </header>
 
-    <div class="notifications__local">
-      @if (hospitalId(); as id) {
-        <app-tag
-          type="default"
-          iconLeftName="map-pin"
-          [label]="hospitalName() || 'Hospital ' + id"
-        />
-      }
-      <p class="notifications__date">{{ todayLabel() }}</p>
-    </div>
+
 
     @switch (status()) {
       @case ('error') {
@@ -68,6 +65,13 @@
             <p class="notifications__empty">Nenhuma notificação por aqui.</p>
           }
 
+          @if (pendingItems().length > 0) {
+            <app-notification-section-title
+              class="notifications__section-title"
+              label="Pendentes"
+              [count]="pendingItems().length"
+            />
+          }
           @for (notification of pendingItems(); track notification.id) {
             <app-card-notify
               actionAriaLabel="Responder"
@@ -75,6 +79,7 @@
               [authorName]="notification.author.name"
               [authorSpecialty]="notification.author.specialty"
               [authorPhotoUrl]="notification.author.photoUrl"
+              [unread]="!notification.read"
               [patientName]="notification.patient?.name ?? ''"
               [description]="notification.description"
               [time]="formatTime(notification.createdAt)"
@@ -93,6 +98,7 @@
             <app-notification-section-title
               class="notifications__section-title"
               label="Resolvidas"
+              [count]="resolvedItems().length"
             />
 
             @for (notification of resolvedItems(); track notification.id) {

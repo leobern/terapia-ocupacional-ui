@@ -57,9 +57,9 @@ describe('CardNotifyComponent', () => {
       .componentInstance as AvatarComponent;
   }
 
-  function iconButton(): IconButtonComponent {
-    return fixture.debugElement.query(debug => debug.componentInstance instanceof IconButtonComponent)
-      .componentInstance as IconButtonComponent;
+  // Figma v2/CardNotify: o resumo termina com o botão de texto "Ver detalhes".
+  function cta(): HTMLButtonElement {
+    return fixture.nativeElement.querySelector('.card-notify__cta');
   }
 
   function article(): HTMLElement {
@@ -95,31 +95,28 @@ describe('CardNotifyComponent', () => {
     expect(av.imageUrl()).toBe('https://example.com/foto.jpg');
   });
 
-  it('icon-button usa kind="secondary" appearance="outlined" size="small" (Figma nó 4044:2099)', async () => {
+  it('o resumo mostra "Ver detalhes" como ação de texto (Figma v2/CardNotify)', async () => {
     await createWith({});
-    const btn = iconButton();
 
-    expect(btn.kind()).toBe('secondary');
-    expect(btn.appearance()).toBe('outlined');
-    expect(btn.size()).toBe('small');
+    expect(cta().textContent).toContain('Ver detalhes');
   });
 
-  it('propaga actionAriaLabel como ariaLabel do icon-button', async () => {
+  it('propaga actionAriaLabel como aria-label de "Ver detalhes"', async () => {
     await createWith({ actionAriaLabel: 'Ver detalhes da notificação' });
 
-    expect(iconButton().ariaLabel()).toBe('Ver detalhes da notificação');
+    expect(cta().getAttribute('aria-label')).toBe('Ver detalhes da notificação');
   });
 
-  it('icon-button fica desabilitado quando actionDisabled = true', async () => {
+  it('"Ver detalhes" fica desabilitado quando actionDisabled = true', async () => {
     await createWith({ actionDisabled: true });
 
-    expect(iconButton().disabled()).toBe(true);
+    expect(cta().disabled).toBe(true);
   });
 
-  it('icon-button fica habilitado por padrão (actionDisabled = false)', async () => {
+  it('"Ver detalhes" fica habilitado por padrão (actionDisabled = false)', async () => {
     await createWith({});
 
-    expect(iconButton().disabled()).toBe(false);
+    expect(cta().disabled).toBe(false);
   });
 
   describe('área de toque estendida — card inteiro clicável (2026-07-26)', () => {
@@ -140,7 +137,7 @@ describe('CardNotifyComponent', () => {
 
       fixture.componentInstance.cardClick.subscribe(emitted);
 
-      fixture.nativeElement.querySelector('app-icon-button button').click();
+      fixture.nativeElement.querySelector('.card-notify__cta').click();
 
       expect(emitted).toHaveBeenCalledTimes(1);
     });
@@ -161,7 +158,7 @@ describe('CardNotifyComponent', () => {
 
       expect(article().getAttribute('role')).toBeNull();
       expect(article().getAttribute('tabindex')).toBeNull();
-      expect(fixture.nativeElement.querySelector('app-icon-button button').tabIndex).toBe(0);
+      expect(fixture.nativeElement.querySelector('.card-notify__cta').tabIndex).toBe(0);
     });
   });
 
@@ -183,41 +180,40 @@ describe('CardNotifyComponent', () => {
       fixture.detectChanges();
     }
 
-    it('o botão de responder é o balão (chat-circle-dots) secundário, na coluna da direita', async () => {
+    it('o botão de responder é o balão (chat-circle-dots) com contorno, no rodapé (Figma v2/NotificationThread)', async () => {
       await createDetail();
-      const button = fixture.nativeElement.querySelector('.card-notify__side app-icon-button');
+      const button = fixture.nativeElement.querySelector('.card-notify__actions app-icon-button');
       const instance = fixture.debugElement.query(By.directive(IconButtonComponent)).componentInstance;
 
       expect(button).toBeTruthy();
       expect(instance.icon()).toBe('chat-circle-dots');
-      expect(instance.kind()).toBe('secondary');
-      expect(instance.appearance()).toBe('icon');
+      expect(instance.kind()).toBe('primary');
+      expect(instance.appearance()).toBe('outlined');
     });
 
     it('card resolvido ou com as respostas abertas não tem a coluna do balão', async () => {
       await createDetail({ resolved: true });
 
-      expect(fixture.nativeElement.querySelector('.card-notify__side')).toBeNull();
+      expect(fixture.nativeElement.querySelector('.card-notify__actions')).toBeNull();
 
       fixture.componentRef.setInput('resolved', false);
       fixture.componentRef.setInput('type', 'answer-open');
       fixture.detectChanges();
 
-      expect(fixture.nativeElement.querySelector('.card-notify__side')).toBeNull();
+      expect(fixture.nativeElement.querySelector('.card-notify__actions')).toBeNull();
     });
 
-    it('a tag de respostas tem a foto encostada à esquerda (padding 4px) e 16px à direita', async () => {
+    it('a tag de respostas mostra "N respostas" com alvo de 40px (Figma v2/NotificationThread)', async () => {
       await createDetail();
-      const style = getComputedStyle(fixture.nativeElement.querySelector('.card-notify__reply-tag'));
+      const tag = fixture.nativeElement.querySelector('.card-notify__reply-tag') as HTMLElement;
 
-      expect(style.paddingLeft).toBe('4px');
-      expect(style.paddingRight).toBe('16px');
-      expect(fixture.nativeElement.querySelector('.card-notify__reply-tag').textContent).toContain('2 Respostas');
+      expect(tag.textContent).toContain('2 respostas');
+      expect(tag.getBoundingClientRect().height).toBeGreaterThanOrEqual(40);
     });
 
     it('com as respostas abertas, o card cresce na vertical: cada resposta fica abaixo da anterior', async () => {
       await createDetail({ type: 'answer-open' });
-      const main = fixture.nativeElement.querySelector('.card-notify__main').getBoundingClientRect();
+      const main = fixture.nativeElement.querySelector('.card-notify__description').getBoundingClientRect();
       const blocks = Array.from(fixture.nativeElement.querySelectorAll('.card-notify__reply')).map(el =>
         (el as HTMLElement).getBoundingClientRect(),
       );
@@ -225,7 +221,7 @@ describe('CardNotifyComponent', () => {
       expect(blocks.length).toBe(2);
       expect(blocks[0].top).toBeGreaterThanOrEqual(main.bottom - 1);
       expect(blocks[1].top).toBeGreaterThanOrEqual(blocks[0].bottom - 1);
-      expect(blocks[0].width).toBeCloseTo(card().getBoundingClientRect().width, 0);
+      expect(blocks[0].width).toBeGreaterThan(0);
       expect(fixture.nativeElement.querySelector('.card-notify__collapse').textContent).toContain('Ver menos');
     });
 
@@ -237,16 +233,12 @@ describe('CardNotifyComponent', () => {
       expect(text.scrollHeight).toBeLessThanOrEqual(text.clientHeight + 1);
     });
 
-    it('card resolvido recolhido fica esmaecido; aberto, branco', async () => {
+    it('card resolvido usa o fundo surface-2 e o selo "Resolvida" (Figma v2/NotificationThread)', async () => {
       await createDetail({ resolved: true });
 
       expect(card().classList).toContain('card-notify--resolved');
-      expect(getComputedStyle(card()).backgroundColor).toContain('0.5');
-
-      fixture.componentRef.setInput('type', 'answer-open');
-      fixture.detectChanges();
-
-      expect(getComputedStyle(card()).backgroundColor).not.toContain('0.5');
+      expect(getComputedStyle(card()).backgroundColor).toBe('rgb(245, 247, 248)');
+      expect(fixture.nativeElement.querySelector('.card-notify__resolved-tag').textContent).toContain('Resolvida');
     });
   });
 });

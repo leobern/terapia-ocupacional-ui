@@ -1,4 +1,5 @@
 @use '../../styles/tokens';
+@use '../../styles/typography';
 
 // O host É a caixa visual do avatar (mesmo padrão de app-badge) — nenhum
 // `display: contents` aqui. `overflow: visible` (não `hidden`) porque o badge de
@@ -28,20 +29,27 @@
 // existem como tokens (DS-component-tag). `line-height` segue o padrão do resto do
 // design system (Button, Tag, CardNotify): valor literal, não tokenizado — ver
 // comentário em button.component.scss.
+// Figma v2/Avatar: sm 32 (Label/Sm) · md 40 (Label/Md, cards) · lg 56 (Title/Md,
+// cabeçalho). `big` (120) segue no detalhe/edição de perfil.
 :host(.avatar--small) {
   width: tokens.$space-32;
   height: tokens.$space-32;
-  font-size: tokens.$font-size-label;
-  font-weight: tokens.$font-weight-semibold;
-  line-height: 1.35;
+
+  @include typography.label-sm;
+}
+
+:host(.avatar--medium) {
+  width: tokens.$space-40;
+  height: tokens.$space-40;
+
+  @include typography.label-md;
 }
 
 :host(.avatar--default) {
   width: tokens.$space-56;
   height: tokens.$space-56;
-  font-size: tokens.$font-size-interactive;
-  font-weight: tokens.$font-weight-semibold;
-  line-height: 1.35;
+
+  @include typography.title-md;
 }
 
 :host(.avatar--big) {
@@ -78,15 +86,16 @@
 // Cor de fundo fixa por type (FR-003) — mesmo padrão do fundo fixo de type="numeral"
 // em BadgeComponent (classe SCSS com token de cor, não binding JS).
 :host(.avatar--user) {
-  background: tokens.$color-tertiary;
+  background: tokens.c(tertiary);
 }
 
 :host(.avatar--patient) {
-  background: tokens.$color-state-disabled;
+  // v2: iniciais de paciente usam o mesmo fundo tertiary (PatientRow no Figma).
+  background: tokens.c(tertiary);
 }
 
 .avatar__initials {
-  color: tokens.$color-content-1;
+  color: tokens.c(content-1);
   font-family: tokens.$font-family-interactive;
   font-weight: inherit;
   font-size: inherit;

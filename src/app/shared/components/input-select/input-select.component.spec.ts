@@ -292,8 +292,9 @@ describe('InputSelectComponent', () => {
       const after = containerEl().getBoundingClientRect();
       const cs = getComputedStyle(containerEl());
 
-      expect(cs.borderColor).toBe('rgb(0, 34, 51)'); // content-1 #002233
-      expect(cs.boxShadow).toContain('rgba(0, 34, 51, 0.6)');
+      // Figma v2/FormField State=focus: borda primary de 2px (1px de borda + 1px de sombra).
+      expect(cs.borderColor).toBe('rgb(0, 68, 102)');
+      expect(cs.boxShadow).toContain('rgb(0, 68, 102)');
       expect(cs.borderTopWidth).toBe('1px');
       expect(before.width).toBe(after.width);
       expect(before.height).toBe(after.height);
@@ -309,7 +310,7 @@ describe('InputSelectComponent', () => {
       const cs = getComputedStyle(containerEl());
 
       expect(cs.outlineWidth).toBe('2px');
-      expect(cs.outlineColor).toBe('rgb(255, 51, 187)'); // comm-focus #FF33BB
+      expect(cs.outlineColor).toBe('rgb(222, 67, 220)'); // comm-focus #DE43DC
       expect(cs.outlineOffset).toBe('4px');
     });
 
@@ -322,8 +323,9 @@ describe('InputSelectComponent', () => {
       const cs = getComputedStyle(containerEl());
 
       expect(cs.outlineStyle).toBe('none');
-      expect(cs.borderColor).toBe('rgb(0, 34, 51)');
-      expect(cs.boxShadow).toContain('rgba(0, 34, 51, 0.6)');
+      // Figma v2/FormField State=focus: borda primary de 2px (1px de borda + 1px de sombra).
+      expect(cs.borderColor).toBe('rgb(0, 68, 102)');
+      expect(cs.boxShadow).toContain('rgb(0, 68, 102)');
     });
 
     it('does not show the clear icon by default (unfocused, empty)', () => {
@@ -395,7 +397,7 @@ describe('InputSelectComponent', () => {
 
       const icon = fixture.nativeElement.querySelector('.input-select__icon--trailing');
 
-      expect(getComputedStyle(icon).color).toBe('rgb(148, 172, 184)'); // content-5 #94ACB8
+      expect(getComputedStyle(icon).color).toBe('rgb(131, 150, 158)'); // content-5 #83969E
     });
 
     it('uses content-1 for the leading icon color, always (not the dynamic text color)', () => {
@@ -421,8 +423,8 @@ describe('InputSelectComponent', () => {
       const leading = fixture.nativeElement.querySelector('.input-select__icon--leading');
       const trailing = fixture.nativeElement.querySelector('.input-select__icon--trailing');
 
-      expect(getComputedStyle(leading).color).toBe('rgb(78, 88, 95)'); // state-disabled-2 #4E585F
-      expect(getComputedStyle(trailing).color).toBe('rgb(78, 88, 95)');
+      expect(getComputedStyle(leading).color).toBe('rgb(102, 120, 128)'); // state-disabled-2 #667880
+      expect(getComputedStyle(trailing).color).toBe('rgb(102, 120, 128)');
     });
 
     it('uses content-3 for the clear icon color', () => {
@@ -432,7 +434,7 @@ describe('InputSelectComponent', () => {
       (fieldEl() as HTMLInputElement).focus();
       fixture.detectChanges();
 
-      expect(getComputedStyle(clearEl() as HTMLElement).color).toBe('rgb(33, 131, 131)'); // content-3 #218383
+      expect(getComputedStyle(clearEl() as HTMLElement).color).toBe('rgb(71, 195, 195)'); // content-3 #47C3C3
     });
   });
 

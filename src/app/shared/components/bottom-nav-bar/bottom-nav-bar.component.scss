@@ -1,5 +1,6 @@
 @use '../../styles/breakpoints';
 @use '../../styles/tokens';
+@use '../../styles/typography';
 
 // -----------------------------------------------------------------------------
 // DS-component-bottom-nav-bar — nó Figma `2265:1390`.
@@ -10,7 +11,9 @@
 // -----------------------------------------------------------------------------
 
 // Símbolo da IA: 56px no Figma. `$space-56` já existe na escala.
-$ai-symbol-size: tokens.$space-56;
+// Figma v2/BottomNav: logo de 48px, botões laterais 48px, padding 12/24/28/24,
+// cantos superiores de 32px, superfície glass com a sombra elvation-bottomsheet.
+$ai-symbol-size: tokens.$control-height-lg;
 
 // O host do `app-icon-logo-button` reserva 1.75× o símbolo (caixa de bleed da
 // auréola). Esta margem negativa devolve a caixa ao tamanho VISÍVEL do círculo,
@@ -24,7 +27,7 @@ $ai-symbol-bleed: calc($ai-symbol-size * -0.375); // (1 - 1.75) / 2
 // texto longo cresceria por cima dos botões de menu e de ações.
 // 3 × space-8 = dois respiros do icon-button (um por lado) + a folga extra.
 $ai-gap: tokens.$space-8 * 3;
-$ai-clearance: calc(#{tokens.$space-40} + #{tokens.$icon-size-lg} + #{$ai-gap});
+$ai-clearance: calc(#{tokens.$space-24} + #{tokens.$control-height-lg} + #{$ai-gap});
 
 :host {
   bottom: 0;
@@ -64,7 +67,8 @@ $ai-clearance: calc(#{tokens.$space-40} + #{tokens.$icon-size-lg} + #{$ai-gap});
 }
 
 .bottom-nav-bar {
-  align-items: flex-end;
+  align-items: flex-start;
+  min-height: calc(#{tokens.$bottom-nav-bar-height} + env(safe-area-inset-bottom, 0px));
 
   // O prefixo é FUNCIONALMENTE necessário: Safari/iOS só aplica o desfoque de
   // fundo com `-webkit-backdrop-filter`, e um aparelho iOS é justamente o alvo
@@ -78,16 +82,17 @@ $ai-clearance: calc(#{tokens.$space-40} + #{tokens.$icon-size-lg} + #{$ai-gap});
   // vidro de lá combina desfoque com refração e realce de borda, sem equivalente
   // único em CSS (research.md §2, Desvio 2 da spec). O raio de 24px é a única
   // medida literal permitida neste arquivo (spec.md FR-012).
-  background: rgba(tokens.$color-surface-glass-1, 0.5);
-  border-radius: tokens.$radius-xl tokens.$radius-xl 0 0;
+  background: color-mix(in srgb, #{tokens.c(surface-glass-1)} 92%, transparent);
+  border-radius: tokens.$radius-lg tokens.$radius-lg 0 0;
+  box-shadow: var(--shadow-elevation-bottomsheet, #{tokens.$shadow-elevation-bottomsheet});
   box-sizing: border-box;
   display: flex;
   justify-content: space-between;
 
   // A altura de 104px NASCE daqui (16 + 48 do icon-button + 40), em vez de ser
   // declarada — o token `$bottom-nav-bar-height` é a conferência, não a fonte.
-  padding: tokens.$space-16 tokens.$space-40
-    calc(#{tokens.$space-40} + env(safe-area-inset-bottom, 0px));
+  padding: tokens.$space-12 tokens.$space-24
+    calc(28px + env(safe-area-inset-bottom, 0px));
 
   // Containing block do cluster de IA. Sem `overflow: hidden` em lugar nenhum da
   // cadeia: o símbolo TRANSBORDA 8px acima da barra (spec.md FR-011).
@@ -101,10 +106,10 @@ $ai-clearance: calc(#{tokens.$space-40} + #{tokens.$icon-size-lg} + #{$ai-gap});
   // `transform: translateX(-50%)`: um transform criaria stacking context e
   // isolaria os `mix-blend-mode` do símbolo (mesma decisão tomada dentro do
   // próprio `icon-logo-button`).
-  bottom: calc(#{tokens.$space-32} + env(safe-area-inset-bottom, 0px));
+  bottom: calc(28px + env(safe-area-inset-bottom, 0px));
   display: flex;
   flex-direction: column;
-  gap: tokens.$space-8;
+  gap: tokens.$space-4;
   inset-inline: 0;
   margin-inline: auto;
 

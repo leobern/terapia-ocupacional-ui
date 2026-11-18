@@ -14,7 +14,7 @@ export type IconButtonKind = 'primary' | 'secondary' | 'tertiary';
  * Mapeia a propriedade Figma `variant`. Tem uma variante a mais que `ButtonAppearance`
  * (`'icon'` — sem preenchimento nem borda, só o ícone).
  */
-export type IconButtonAppearance = 'solid' | 'outlined' | 'icon';
+export type IconButtonAppearance = 'solid' | 'outlined' | 'icon' | 'tonal';
 
 /** Mapeia a propriedade Figma `size` (Default/Small). Prop nova — Button não tem `size`. */
 export type IconButtonSize = 'default' | 'small';
@@ -61,7 +61,7 @@ export class IconButtonComponent {
 
   // 32px (`default`) / 16px (`size="small"`) — ver research.md §4: reusa a prop `size`
   // (número em px) já existente em `ph-icon`, sem mudar a API do wrapper.
-  protected readonly iconSizePx = computed(() => (this.size() === 'small' ? 16 : 32));
+  protected readonly iconSizePx = computed(() => 24); // Figma v2: ícone de 24px em lg (48) e md (40)
 
   // Mesma técnica do Button — ver comentário lá e
   // shared/services/keyboard-focus.service.ts.

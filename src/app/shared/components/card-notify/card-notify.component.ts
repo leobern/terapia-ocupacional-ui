@@ -50,6 +50,8 @@ export class CardNotifyComponent {
   readonly patientName = input<string>('');
   /** Notificação já resolvida: card com fundo translúcido (Figma 4506:9755). */
   readonly resolved = input<boolean>(false);
+  /** v2: ponto vermelho de 8px no card não lido (Figma v2/CardNotify Read=false). */
+  readonly unread = input<boolean>(false);
   readonly patientAriaLabel = input<string>('Paciente');
   readonly replies = input<readonly CardNotifyReply[]>([]);
   readonly draftText = input<string>('');

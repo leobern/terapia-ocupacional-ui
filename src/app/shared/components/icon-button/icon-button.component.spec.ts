@@ -97,9 +97,9 @@ describe('IconButtonComponent', () => {
     // travada como regressão em vez de só confiar no atributo `disabled` nativo.
     const cs = getComputedStyle(buttonEl());
 
-    expect(cs.backgroundColor).toBe('rgb(199, 204, 209)'); // --color-state-disabled #C7CCD1
-    expect(cs.color).toBe('rgb(78, 88, 95)'); // --color-state-disabled-2 #4E585F
-    expect(cs.borderStyle).toBe('none');
+    expect(cs.backgroundColor).toBe('rgb(215, 224, 228)'); // --color-state-disabled #D7E0E4
+    expect(cs.color).toBe('rgb(102, 120, 128)'); // --color-state-disabled-2 #667880
+    expect(cs.borderColor).toBe('rgba(0, 0, 0, 0)'); // v2: sem contorno visível no disabled
   });
 
   it('renders as a native <button type="button">', () => {
@@ -133,10 +133,10 @@ describe('IconButtonComponent', () => {
     expect(buttonEl().disabled).toBe(true);
   });
 
-  // SC-003: size="default" produz 48x48 (ícone 32 + padding 8 nos dois lados);
-  // size="small" produz 32x32 (ícone 16 + padding 8 nos dois lados).
+  // Figma v2/IconButton: size="default" = lg 48x48 e size="small" = md 40x40,
+  // ambos com ícone de 24px.
   describe('size dimensions (SC-003)', () => {
-    it('size="default" renders a 48x48 container with a 32px icon', () => {
+    it('size="default" renders a 48x48 container with a 24px icon', () => {
       attachToDom();
       fixture.detectChanges();
 
@@ -145,20 +145,20 @@ describe('IconButtonComponent', () => {
 
       const icon = fixture.debugElement.query(By.directive(PhIconComponent));
 
-      expect(icon.componentInstance.size()).toBe(32);
+      expect(icon.componentInstance.size()).toBe(24);
     });
 
-    it('size="small" renders a 32x32 container with a 16px icon', () => {
+    it('size="small" renders a 40x40 container with a 24px icon', () => {
       fixture.componentRef.setInput('size', 'small');
       attachToDom();
       fixture.detectChanges();
 
-      expect(buttonEl().offsetWidth).toBe(32);
-      expect(buttonEl().offsetHeight).toBe(32);
+      expect(buttonEl().offsetWidth).toBe(40);
+      expect(buttonEl().offsetHeight).toBe(40);
 
       const icon = fixture.debugElement.query(By.directive(PhIconComponent));
 
-      expect(icon.componentInstance.size()).toBe(16);
+      expect(icon.componentInstance.size()).toBe(24);
     });
   });
 
@@ -173,7 +173,7 @@ describe('IconButtonComponent', () => {
 
     expect(cs.outlineWidth).toBe('2px');
     expect(cs.outlineStyle).toBe('solid');
-    expect(cs.outlineColor).toBe('rgb(255, 51, 187)'); // comm-focus #FF33BB
+    expect(cs.outlineColor).toBe('rgb(222, 67, 220)'); // comm-focus #DE43DC
     expect(cs.outlineOffset).toBe('4px');
   });
 

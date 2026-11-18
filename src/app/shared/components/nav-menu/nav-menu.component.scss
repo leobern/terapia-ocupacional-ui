@@ -1,6 +1,7 @@
 @use '../../styles/breakpoints';
 @use '../../styles/mixins';
 @use '../../styles/tokens';
+@use '../../styles/typography';
 
 // O seletor `:host(:hover), :host(:focus-within), :host(.nav-menu--open)` reaparece de propósito:
 // cada bloco agrupa as regras do painel EXPANDIDO de um elemento (logo, links, rodapé).
@@ -44,8 +45,8 @@ $duration-collapse: 90ms;
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
-  gap: tokens.$space-32;
-  padding: tokens.$space-16;
+  gap: tokens.$space-4;
+  padding: tokens.$space-16 tokens.$space-12 tokens.$space-24;
   align-items: flex-start;
   // NÃO `overflow: hidden` (diferente do legado): `app-icon-logo-button`
   // reserva uma caixa de 1.75× `--icon-logo-size` para o transbordo do halo/
@@ -60,10 +61,10 @@ $duration-collapse: 90ms;
   top: 0;
   left: 0;
   bottom: 0;
-  width: min(340px, calc(100vw - #{tokens.$space-16}));
-  background: var(--color-surface);
-  border-top-right-radius: var(--radius-md);
-  border-bottom-right-radius: var(--radius-md);
+  width: min(320px, calc(100vw - #{tokens.$space-16})); // Figma v2/NavMenu mobile-drawer
+  background: #{tokens.c(surface)};
+  border-top-right-radius: tokens.$radius-lg;
+  border-bottom-right-radius: tokens.$radius-lg;
   box-shadow: var(--shadow-elevation-bottomsheet);
   z-index: var(--z-index-overlay);
   translate: -100% 0;
@@ -112,13 +113,14 @@ $duration-collapse: 90ms;
     left: 0;
     bottom: 0;
     width: 100%;
-    background: transparent;
+    // Figma v2/NavRail: trilho de 72px com superfície glass e borda à direita.
+    background: color-mix(in srgb, #{tokens.c(surface-glass-1)} 80%, transparent);
     border-top-right-radius: 0;
     border-bottom-right-radius: 0;
     box-shadow: none;
     z-index: auto;
     translate: 0 0;
-    border-right: 1px solid var(--color-border);
+    border-right: 1px solid #{tokens.c(border)};
     // Sem `right: 0` de propósito — a largura é controlada só por `width`
     // (100% colapsado, `--space-280` expandido). Combinar `left`/`right`/
     // `width` ao mesmo tempo deixaria o cálculo sobre-restringido.
@@ -134,12 +136,11 @@ $duration-collapse: 90ms;
         width $duration-expand $ease-standard,
         background-color $duration-expand $ease-standard,
         box-shadow $duration-expand $ease-standard;
+      // Figma v2/NavMenu desktop-expanded: 280px, sobrepõe o conteúdo, sem raio.
       width: var(--space-280);
-      background: var(--color-surface);
-      box-shadow: var(--shadow-elevation-bottomsheet);
-      border-right: 0;
-      border-top-right-radius: var(--radius-md);
-      border-bottom-right-radius: var(--radius-md);
+      background: #{tokens.c(surface)};
+      box-shadow: 0 4px 16px rgb(0 0 0 / 16%);
+      border-right: 1px solid #{tokens.c(border)};
       // Acima do conteúdo da rota — o painel flutua por cima em vez de
       // compartilhar espaço com ele (feedback do usuário: comportamento de
       // sobreposição, não de "arrastar" os elementos da tela).
@@ -209,6 +210,9 @@ $duration-collapse: 90ms;
   gap: tokens.$space-12;
   flex-shrink: 0;
   width: 100%;
+  margin-bottom: tokens.$space-16; // Figma v2/NavMenu: 16px entre logo e itens
+  padding-left: tokens.$space-4;
+  box-sizing: border-box;
 }
 
 // Slot com o tamanho EXATO do Figma (40×40, `get_metadata`: instância
@@ -258,14 +262,12 @@ $duration-collapse: 90ms;
 }
 
 .nav-menu__wordmark {
-  font-family: tokens.$font-family-base;
-  font-weight: tokens.$font-weight-bold;
-  font-size: 24px;
-  color: var(--color-primary);
+  color: #{tokens.c(content-1)};
+
+  @include typography.title-lg;
 
   em {
     font-style: normal;
-    color: var(--color-secondary);
   }
 }
 
@@ -282,7 +284,7 @@ $duration-collapse: 90ms;
 .nav-menu__links {
   display: flex;
   flex-direction: column;
-  gap: tokens.$space-8;
+  gap: tokens.$space-4;
   flex: 1 0 0;
   min-height: 0;
   width: 100%;
@@ -298,11 +300,13 @@ $duration-collapse: 90ms;
   // w=248 expandido). Expandido: gap e largura cheia entram no override
   // abaixo, junto com o resto do estado expandido.
   gap: 0;
-  padding: tokens.$space-8;
+  box-sizing: border-box;
+  min-height: tokens.$control-height-lg;
+  padding: 0 tokens.$space-12;
   border: 0;
-  border-radius: var(--radius-xs);
+  border-radius: tokens.$radius-12;
   background: transparent;
-  color: var(--color-content-1);
+  color: #{tokens.c(content-1)};
   cursor: pointer;
   width: fit-content;
   text-align: left;
@@ -330,24 +334,25 @@ $duration-collapse: 90ms;
     background: var(--color-surface-2);
   }
 
+  // Figma v2: item ativo = fundo surface-2, ícone secondary, rótulo Label/Lg.
   &--active {
-    background: var(--color-surface-2);
-    color: var(--color-state-disabled-2);
+    background: #{tokens.c(surface-2)};
 
-    // Sobrepõe a cor própria do ícone (primary/secondary por estado, ver
-    // `.nav-menu__icon`) — item ativo é a única situação em que ícone e
-    // rótulo ficam com a MESMA cor (spec.md FR-009).
     .nav-menu__icon {
-      color: var(--color-state-disabled-2);
+      color: #{tokens.c(secondary)};
+    }
+
+    .nav-menu__label {
+      @include typography.label-lg;
     }
   }
 
+  // Figma v2: "Sair" em comm-alert (ícone e rótulo), sempre com texto.
   &--logout {
-    // Só o ÍCONE do item Sair é vermelho (`comm-alert`) — o rótulo usa a cor
-    // padrão de texto (`content-1`), confirmado via `get_design_context`
-    // reconsultado (o "Sair" do Figma renderiza texto escuro, não vermelho).
+    color: #{tokens.c(comm-alert)};
+
     .nav-menu__icon {
-      color: var(--color-comm-alert);
+      color: #{tokens.c(comm-alert)};
     }
   }
 }
@@ -361,7 +366,7 @@ $duration-collapse: 90ms;
     // ajustado pelo usuário para `$space-16` uniformemente (itens de
     // navegação e Sair já usavam o mesmo valor).
     width: 100%;
-    gap: tokens.$space-16;
+    gap: tokens.$space-12;
     transition:
       background-color $duration-expand $ease-standard,
       color 0.15s ease,
@@ -391,24 +396,8 @@ $duration-collapse: 90ms;
   transition: color 400ms $ease-standard;
 }
 
-:host(:hover),
-:host(:focus-within),
-:host(.nav-menu--open) {
-  // `:not(--logout)` e `:not(--active)` evitam que a troca de cor por estado
-  // (colapsado/expandido) sobreponha as cores fixas do item Sair e do item
-  // ativo, que têm regra própria acima.
-  .nav-menu__link:not(.nav-menu__link--logout, .nav-menu__link--active)
-    .nav-menu__icon {
-    color: var(--color-secondary);
-  }
-}
-
 .nav-menu__label {
-  font-family: tokens.$font-family-interactive;
-  // Ajustado pelo usuário: medium (500) em vez do bold (700) padrão do
-  // design system para elementos interativos.
-  font-weight: tokens.$font-weight-medium;
-  font-size: tokens.$font-size-interactive;
+  @include typography.label-md;
 }
 
 .nav-menu__footer {
@@ -433,15 +422,13 @@ $duration-collapse: 90ms;
 }
 
 .nav-menu__profile-name {
-  font-family: tokens.$font-family-base;
-  font-weight: tokens.$font-weight-heavy;
-  font-size: 16px;
+  @include typography.title-md;
 }
 
 .nav-menu__profile-role {
-  font-family: tokens.$font-family-base;
-  font-size: 12px;
-  color: var(--color-content-4);
+  color: #{tokens.c(content-4)};
+
+  @include typography.caption;
 }
 
 // Item desabilitado (ex.: "Ações da tela" enquanto o menu de atalhos está aberto): fica na tela,

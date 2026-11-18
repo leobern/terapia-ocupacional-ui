@@ -1,32 +1,41 @@
 @use '../../../../shared/styles/tokens';
+@use '../../../../shared/styles/typography';
 
+// Figma v2 (Home, tela 3 · Erro de carregamento): ícone de 48px num círculo de
+// 96px surface-2, título Title/Lg, texto Body/Md e botão lg (48px).
 .home-error {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: tokens.$space-8;
+  gap: tokens.$space-16;
   max-width: 320px;
   margin: 0 auto;
-  padding: 80px tokens.$space-16 0;
+  padding: 96px tokens.$space-16 0;
+  color: tokens.c(content-1);
   text-align: center;
-  color: tokens.$color-content-1;
+}
+
+.home-error__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 96px;
+  height: 96px;
+  border-radius: tokens.$radius-pill;
+  background: tokens.c(surface-2);
+  color: tokens.c(primary);
 }
 
 .home-error__title {
   margin: 0;
-  font-family: tokens.$font-family-base;
-  font-weight: tokens.$font-weight-bold;
-  font-size: 24px;
-  line-height: 1.2;
+
+  @include typography.title-lg;
 }
 
 .home-error__text {
   margin: 0;
-  font-family: tokens.$font-family-base;
-  font-size: 16px;
-}
+  color: tokens.c(content-4);
 
-.home-error__retry {
-  margin-top: tokens.$space-24;
+  @include typography.body-md;
 }

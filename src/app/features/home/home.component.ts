@@ -21,6 +21,7 @@ import { CardPatientsComponent } from '../../shared/components/card-patients/car
 import { IconButtonComponent } from '../../shared/components/icon-button/icon-button.component';
 import { PageContainerComponent } from '../../shared/components/page-container/page-container.component';
 import { TagComponent } from '../../shared/components/tag/tag.component';
+import { PhIconComponent } from '../../shared/icons/ph-icon/ph-icon.component';
 import { AiAssistantService } from '../../shared/services/ai-assistant.service';
 import { HomeErrorComponent } from './components/home-error/home-error.component';
 import { HomeSkeletonComponent } from './components/home-skeleton/home-skeleton.component';
@@ -47,7 +48,7 @@ function formatTodayLabel(): string {
   const weekday = partValue('weekday');
   const capitalizedWeekday = weekday.charAt(0).toUpperCase() + weekday.slice(1);
 
-  return `${capitalizedWeekday} - ${partValue('day')} de ${partValue('month')}`;
+  return `${capitalizedWeekday}, ${partValue('day')} de ${partValue('month')}`; // Figma v2: "Domingo, 28 de maio"
 }
 
 /**
@@ -73,6 +74,7 @@ function formatTodayLabel(): string {
     HomeSkeletonComponent,
     IconButtonComponent,
     PageContainerComponent,
+    PhIconComponent,
     TagComponent,
   ],
   selector: 'app-home',

@@ -59,7 +59,7 @@ function formatTodayLabel(): string {
   const value = (type: string): string => parts.find(p => p.type === type)?.value ?? '';
   const weekday = value('weekday');
 
-  return `${weekday.charAt(0).toUpperCase()}${weekday.slice(1)} - ${value('day')} de ${value('month')}`;
+  return `${weekday.charAt(0).toUpperCase()}${weekday.slice(1)}, ${value('day')} de ${value('month')}`;
 }
 
 /** Distância mínima de arraste, em px, para disparar o pull-to-refresh (FR-004b). */
@@ -135,7 +135,15 @@ export class NotificationsComponent implements OnDestroy {
   protected readonly todayLabel = computed(() => formatTodayLabel());
   /** Título com a contagem ("3 Notificações"), no mobile e no desktop. */
   protected readonly assistant = inject(AiAssistantService);
-  protected readonly title = computed(() => `${this.totalCount()} Notificações`);
+  protected readonly title = computed(() => {
+    const total = this.totalCount();
+
+    if (total === 0) {
+      return 'Notificações';
+    }
+
+    return `${total} ${total === 1 ? 'notificação' : 'notificações'}`;
+  });
 
   private readonly actions$ = inject(Actions);
   private readonly location = inject(Location);

@@ -71,7 +71,7 @@ describe('BottomNavBarComponent', () => {
   });
 
   it('renderiza o convite padrão do Figma', () => {
-    expect(aiLabelElement().textContent?.trim()).toBe('Como eu posso te ajudar?');
+    expect(aiLabelElement().textContent?.trim()).toBe('Como posso ajudar?');
   });
 
   it('aceita um convite customizado via aiLabel', () => {

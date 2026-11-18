@@ -13,7 +13,10 @@ export type ButtonKind = 'primary' | 'secondary' | 'tertiary';
  * Mapeia a propriedade Figma `variant` — renomeada para não ambiguar com "variant"
  * genérico de outros componentes Angular.
  */
-export type ButtonAppearance = 'solid' | 'outlined';
+export type ButtonAppearance = 'solid' | 'outlined' | 'ghost';
+
+/** Alturas do Figma `v2/Button`: sm 32px · md 40px · lg 48px. */
+export type ButtonSize = 'sm' | 'md' | 'lg';
 
 /**
  * Botão de design system (DS-component-button). `disabled` renderiza uma única
@@ -31,13 +34,16 @@ export type ButtonAppearance = 'solid' | 'outlined';
 export class ButtonComponent {
   readonly kind = input<ButtonKind>('primary');
   readonly appearance = input<ButtonAppearance>('solid');
+  readonly size = input<ButtonSize>('lg');
   readonly disabled = input<boolean>(false);
   readonly iconLeft = input<string | null>(null);
   readonly iconRight = input<string | null>(null);
   readonly fullWidth = input<boolean>(false);
   readonly label = input.required<string>();
 
-  protected readonly variantClass = computed(() => `button--${this.kind()} button--${this.appearance()}`);
+  protected readonly variantClass = computed(
+    () => `button--${this.kind()} button--${this.appearance()} button--${this.size()}`,
+  );
 
   // Captura a modalidade (teclado vs. ponteiro) no MOMENTO do foco — ver
   // shared/services/keyboard-focus.service.ts. Não usar o signal do serviço

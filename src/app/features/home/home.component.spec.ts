@@ -156,7 +156,7 @@ describe('HomeComponent', () => {
       expect(q('.home__header-title')?.textContent?.trim()).toBe('Dra.');
       expect(q('.home__header app-avatar')).toBeTruthy();
       expect(q('.home__headline')?.textContent?.trim()).toBe('Tarefas diárias do hospital');
-      expect(q('.home__date')?.textContent?.trim()).toMatch(/ - \d+ de /);
+      expect(q('.home__date')?.textContent?.trim()).toMatch(/, \d+ de /);
     });
 
     it('does not mount the bottom nav bar itself (the shell owns it)', () => {
@@ -293,11 +293,11 @@ describe('HomeComponent', () => {
   });
 
   describe('daily patients card', () => {
-    it('shows "10 Pacientes" in the first card for the hospital in context and the current day', async () => {
+    it('shows "10 pacientes" in the first card for the hospital in context and the current day', async () => {
       await setup();
 
       expect(grid()[0].tagName.toLowerCase()).toBe('app-card-patients');
-      expect(grid()[0].textContent).toContain('10 Pacientes');
+      expect(grid()[0].textContent).toContain('10 pacientes');
       expect(patients.calls.length).toBe(1);
       expect(patients.calls[0].hospitalId).toBe('a');
       expect(patients.calls[0].day.toDateString()).toBe(new Date().toDateString());
@@ -313,7 +313,7 @@ describe('HomeComponent', () => {
     it('switches between number and message when changing to a hospital with a different count', async () => {
       await setup({ counts: { b: 0 }, hospitals: HOSPITALS });
 
-      expect(grid()[0].textContent).toContain('10 Pacientes');
+      expect(grid()[0].textContent).toContain('10 pacientes');
 
       TestBed.inject(HospitalContextService).select('b');
       fixture.detectChanges();
@@ -337,17 +337,17 @@ describe('HomeComponent', () => {
       expect(arcs[0].getAttribute('stroke')).toBe('var(--color-comm-success)');
     });
 
-    it('lays the cards out in 2 columns on small screens, each card filling its column', async () => {
+    it('on small screens uses 2 columns with the patients card spanning the full row (Figma v2)', async () => {
       await setup();
       const gridEl = q('.home__grid') as HTMLElement;
       const tracks = getComputedStyle(gridEl).gridTemplateColumns.split(' ');
       const cardWidth = (grid()[0].firstElementChild as HTMLElement).getBoundingClientRect().width;
 
       expect(tracks.length).toBe(2);
-      expect(Math.round(cardWidth)).toBe(Math.round(parseFloat(tracks[0])));
+      expect(Math.round(cardWidth)).toBe(Math.round(gridEl.getBoundingClientRect().width));
     });
 
-    it('shows the notification arrow as the enabled secondary outlined icon button (Figma icon-button)', async () => {
+    it('shows the "Ver detalhes" action enabled on each notification card (Figma v2/CardNotify)', async () => {
       await setup();
       fixture.componentInstance.notifications.set([
         {
@@ -359,12 +359,10 @@ describe('HomeComponent', () => {
         },
       ]);
       fixture.detectChanges();
-      const arrow = q<HTMLButtonElement>('app-card-notify button.icon-button');
+      const cta = q<HTMLButtonElement>('app-card-notify button.card-notify__cta');
 
-      expect(arrow?.disabled).toBeFalse();
-      expect(arrow?.className).toContain('icon-button--secondary');
-      expect(arrow?.className).toContain('icon-button--outlined');
-      expect(arrow?.className).toContain('icon-button--small');
+      expect(cta?.disabled).toBeFalse();
+      expect(cta?.textContent).toContain('Ver detalhes');
     });
 
     it('keeps the arrow reserved and inert: clicking it or the card changes nothing', async () => {
@@ -397,10 +395,12 @@ describe('HomeComponent', () => {
       );
       fixture.detectChanges();
 
-      expect(grid().length).toBe(4);
+      // v2: o título "Notificações" separa o card fixo do feed.
+      expect(grid().length).toBe(5);
       expect(grid()[0].tagName.toLowerCase()).toBe('app-card-patients');
-      expect(grid()[1].tagName.toLowerCase()).toBe('app-card-notify');
-      expect(grid()[1].textContent).toContain('Notificação 0');
+      expect(grid()[1].textContent).toContain('Notificações');
+      expect(grid()[2].tagName.toLowerCase()).toBe('app-card-notify');
+      expect(grid()[2].textContent).toContain('Notificação 0');
       expect(fixture.componentInstance.formatTime('2026-11-17T10:30:00')).toBe('10:30');
     });
 

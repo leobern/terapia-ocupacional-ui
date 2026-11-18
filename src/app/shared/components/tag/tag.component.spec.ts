@@ -74,7 +74,7 @@ describe('TagComponent', () => {
       const cs = getComputedStyle(tagEl());
 
       expect(cs.backgroundColor).toBe('rgb(255, 255, 255)'); // --color-surface #FFFFFF
-      expect(cs.borderColor).toBe('rgb(206, 221, 227)'); // --color-border-2 #CEDDE3
+      expect(cs.borderColor).toBe('rgb(220, 226, 229)'); // v2: --color-border #DCE2E5
       expect(cs.borderWidth).toBe('1px');
     });
 
@@ -106,18 +106,18 @@ describe('TagComponent', () => {
       expect(fixture.debugElement.query(By.directive(PhIconComponent))).toBeNull();
     });
 
-    it('has border-radius: var(--radius-tag) (26px)', () => {
+    it('has pill border-radius (v2)', () => {
       attachToDom();
       fixture.detectChanges();
 
-      expect(getComputedStyle(tagEl()).borderRadius).toBe('26px');
+      expect(getComputedStyle(tagEl()).borderRadius).toBe('400px');
     });
 
-    it('has a fixed height of 40px', () => {
+    it('has a fixed height of 32px (v2)', () => {
       attachToDom();
       fixture.detectChanges();
 
-      expect(tagEl().offsetHeight).toBe(40);
+      expect(tagEl().offsetHeight).toBe(32); // v2: chip de pessoa 32px
     });
   });
 
@@ -191,12 +191,12 @@ describe('TagComponent', () => {
       expect(cs.overflow).toBe('hidden');
     });
 
-    it('has border-radius: var(--radius-tag) (26px) and height 32px', () => {
+    it('has pill border-radius and height 40px (v2/SelectTag)', () => {
       attachToDom();
       fixture.detectChanges();
 
-      expect(getComputedStyle(tagEl()).borderRadius).toBe('26px');
-      expect(tagEl().offsetHeight).toBe(32);
+      expect(getComputedStyle(tagEl()).borderRadius).toBe('400px');
+      expect(tagEl().offsetHeight).toBe(40); // v2/SelectTag 40px
     });
   });
 

@@ -1,44 +1,47 @@
+@use '../../../../shared/styles/breakpoints';
 @use '../../../../shared/styles/tokens';
 
 .home-skeleton {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 16px;
-  padding: 16px;
+  gap: tokens.$space-12;
 }
 
 .home-skeleton__tag-row {
   display: flex;
-  justify-content: center;
-  width: 100%;
-  padding: 8px 0;
+  flex-direction: column;
+  gap: tokens.$space-12;
+  padding-bottom: tokens.$space-12;
 }
 
+// Figma v2 (Home, tela 2): mesmas dimensões finais dos cards, sem layout shift.
 .home-skeleton__grid {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  justify-content: center;
-  width: 368px;
-  max-width: 100%;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--layout-grid-gap, 12px);
+
+  @include breakpoints.sm {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  @include breakpoints.md {
+    grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+  }
 }
 
 .home-skeleton__block {
-  flex: 0 0 auto;
-  background: tokens.$color-surface-glass-2;
+  background: tokens.c(surface-glass-2);
   animation: home-skeleton-pulse 1.2s ease-in-out infinite;
 
   &--tag {
     width: 200px;
-    height: 40px;
-    border-radius: 26px;
+    height: tokens.$control-height-md;
+    border-radius: tokens.$radius-pill;
   }
 
   &--card {
-    width: 180px;
-    height: 168px;
-    border-radius: 24px;
+    height: 142px;
+    border-radius: tokens.$radius-md;
   }
 }
 

@@ -8,9 +8,14 @@
       <app-icon-logo state="anim" />
     </div>
   } @else {
-    <p class="splash__message" role="alert">
-      {{ i18n.t('splash.noConnection') }}
-    </p>
+    <!-- Figma v2 (seção 09, S3): logo, título Title/Lg, dica Body/Lg e botão lg. -->
+    <div class="splash__logo" aria-hidden="true">
+      <app-icon-logo state="default" />
+    </div>
+    <div class="splash__message" role="alert">
+      <p class="splash__title">{{ i18n.t('splash.noConnection') }}</p>
+      <p class="splash__hint">{{ i18n.t('splash.noConnectionHint') }}</p>
+    </div>
     <app-button [label]="i18n.t('splash.retry')" (click)="retry()" />
   }
 </main>
