@@ -32,7 +32,6 @@ import { PhIconComponent } from '../../shared/icons/ph-icon/ph-icon.component';
 import { AiAssistantService } from '../../shared/services/ai-assistant.service';
 import { type ScreenAction, ScreenActionsService } from '../../shared/services/screen-actions.service';
 import { type DirectoryUser } from '../../shared/services/user-directory';
-import { ViewportBreakpointService } from '../../shared/services/viewport-breakpoint.service';
 import { HospitalContextService } from '../home/hospital-context.service';
 import { ConfirmDialogComponent } from './components/confirm-dialog/confirm-dialog.component';
 import { NotificationSectionTitleComponent } from './components/notification-section-title/notification-section-title.component';
@@ -134,15 +133,12 @@ export class NotificationsComponent implements OnDestroy {
 
   protected readonly hospitalName = computed(() => this.hospitalContext.selected()?.name ?? '');
   protected readonly todayLabel = computed(() => formatTodayLabel());
-  /** Desktop: "Notificações"; mobile: com a contagem ("3 Notificações") — Figma 4496:11857. */
-  protected readonly title = computed(() =>
-    this.viewport.isDesktop() ? 'Notificações' : `${this.totalCount()} Notificações`,
-  );
+  /** Título com a contagem ("3 Notificações"), no mobile e no desktop. */
+  protected readonly title = computed(() => `${this.totalCount()} Notificações`);
 
   private readonly actions$ = inject(Actions);
   private readonly location = inject(Location);
   private readonly assistant = inject(AiAssistantService);
-  private readonly viewport = inject(ViewportBreakpointService);
   private readonly hospitalContext = inject(HospitalContextService);
   private readonly repository = inject(NotificationsRepository);
   private readonly screenActions = inject(ScreenActionsService);

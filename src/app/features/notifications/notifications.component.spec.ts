@@ -71,18 +71,18 @@ describe('NotificationsComponent', () => {
   // --- Cabeçalho, fechar e seções (Figma 4506:8583 / 4506:8580) ---
 
   describe('cabeçalho e seções', () => {
-    it('desktop: mostra o sino, o título "Notificações" (sem contagem) e a tag do hospital com a data', async () => {
-      await configureStore({ hospitalId: 1, status: 'success', pendingItems: [notification(1)] });
+    it('desktop: mostra o sino, o título com a contagem e a tag do hospital com a data', async () => {
+      await configureStore({ hospitalId: 1, pendingTotalCount: 3, status: 'success', pendingItems: [notification(1)] });
       createComponent();
       const el: HTMLElement = fixture.nativeElement;
 
       expect(el.querySelector('.notifications__header-icon ph-icon')).toBeTruthy();
-      expect(el.querySelector('.notifications__title')?.textContent?.trim()).toBe('Notificações');
+      expect(el.querySelector('.notifications__title')?.textContent?.trim()).toBe('3 Notificações');
       expect(el.querySelector('.notifications__local app-tag')?.textContent).toContain('Hospital Vila Nova Star');
       expect(el.querySelector('.notifications__date')?.textContent).toMatch(/ - \d+ de /);
     });
 
-    it('mobile: o título leva a contagem ("3 Notificações") e a data some', async () => {
+    it('mobile: o título também leva a contagem ("3 Notificações")', async () => {
       isDesktop.set(false);
       await configureStore({ hospitalId: 1, pendingTotalCount: 3, status: 'success' });
       createComponent();
