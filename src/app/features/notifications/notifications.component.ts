@@ -27,7 +27,6 @@ import {
 import { IconButtonComponent } from '../../shared/components/icon-button/icon-button.component';
 import { InputChatComponent } from '../../shared/components/input-chat/input-chat.component';
 import { PageContainerComponent } from '../../shared/components/page-container/page-container.component';
-import { TagComponent } from '../../shared/components/tag/tag.component';
 import { PhIconComponent } from '../../shared/icons/ph-icon/ph-icon.component';
 import { AiAssistantService } from '../../shared/services/ai-assistant.service';
 import { type ScreenAction, ScreenActionsService } from '../../shared/services/screen-actions.service';
@@ -89,7 +88,6 @@ const PULL_TO_REFRESH_THRESHOLD = 80;
     NotificationSectionTitleComponent,
     PageContainerComponent,
     PhIconComponent,
-    TagComponent,
   ],
   selector: 'app-notifications',
   styleUrl: './notifications.component.scss',

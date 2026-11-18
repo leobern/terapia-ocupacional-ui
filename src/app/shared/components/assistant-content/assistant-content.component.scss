@@ -141,20 +141,21 @@
   }
 }
 
-// Erro (v2/ChatMessage Type=error): cartão com borda comm-alert, ícone e texto.
+// Falha ao buscar (Figma: tela A3 da seção 09): aviso amarelo — é um alerta
+// recuperável, não um erro. Fundo comm-warning, sem borda, ícone e texto content-1
+// (mesmo tratamento do banner offline).
 .assistant-content__error {
   display: flex;
   align-items: flex-start;
   gap: tokens.$space-8;
   padding: 10px tokens.$space-12;
-  border: 1px solid tokens.c(comm-alert);
   border-radius: tokens.$radius-12;
-  background: tokens.c(surface-2);
+  background: tokens.c(comm-warning);
   color: tokens.c(content-1);
 
   ph-icon {
     flex-shrink: 0;
-    color: tokens.c(comm-alert);
+    color: tokens.c(content-1);
   }
 
   p {
