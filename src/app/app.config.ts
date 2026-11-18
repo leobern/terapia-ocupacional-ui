@@ -17,6 +17,7 @@ import { ProfessionalProfileReader } from './features/home/professional-profile'
 import { ProvisionalDailyPatientsSource } from './features/home/provisional-daily-patients';
 import { ProvisionalHomeNotificationsSource } from './features/home/provisional-home-notifications';
 import { UnreadNotificationsReader } from './features/home/unread-notifications-reader';
+import { PendingNotificationsQueryResolver } from './features/notifications/assistant/pending-notifications-query.resolver';
 import { NotificationsApiService } from './features/notifications/data-access/notifications-api.service';
 import {
   ProvisionalHomeApiService,
@@ -24,6 +25,7 @@ import {
 } from './features/notifications/data-access/provisional-notifications-api.service';
 import { LocalStartupStateReader } from './features/splash/local-startup-state-reader';
 import { StartupStateReader } from './features/splash/startup-state';
+import { ASSISTANT_QUERY_RESOLVERS } from './shared/services/assistant-query-resolver';
 import { ProvisionalUserDirectory } from './shared/services/provisional-user-directory';
 import { UserDirectory } from './shared/services/user-directory';
 
@@ -39,6 +41,8 @@ export const appConfig: ApplicationConfig = {
     { provide: NotificationsApiService, useClass: ProvisionalNotificationsApiService },
     { provide: HomeApiService, useClass: ProvisionalHomeApiService },
     { provide: UserDirectory, useClass: ProvisionalUserDirectory },
+    // Consultas de leitura do assistente (um resolvedor por intenção).
+    { multi: true, provide: ASSISTANT_QUERY_RESOLVERS, useClass: PendingNotificationsQueryResolver },
     provideZoneChangeDetection({ eventCoalescing: true }),
     provideRouter(routes),
     provideHttpClient(),
