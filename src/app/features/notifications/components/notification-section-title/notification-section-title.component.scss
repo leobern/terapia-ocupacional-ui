@@ -1,13 +1,14 @@
 @use '../../../../shared/styles/tokens';
 
-// Estimativa a partir da hierarquia tipográfica já catalogada (Inter Semi
-// Bold, mesmo peso/família dos títulos de card) — validar com get_screenshot
-// contra o nó Figma 4496:11857 (tasks.md T023, pendente).
+// Figma 4506:9464 — estilo "Section - italic" (Inter Extra Light Italic 40px, content-3), o
+// mesmo do título da Home.
 .notification-section-title {
   margin: 0;
-  padding: tokens.$space-16 tokens.$space-8;
+  padding: tokens.$space-16 tokens.$space-8 tokens.$space-8;
   font-family: tokens.$font-family-base;
-  font-weight: tokens.$font-weight-semibold;
-  font-size: tokens.$font-size-interactive;
-  color: tokens.$color-content-1;
+  font-weight: tokens.$font-weight-thin;
+  font-style: italic;
+  font-size: 40px;
+  line-height: normal;
+  color: tokens.$color-content-3;
 }

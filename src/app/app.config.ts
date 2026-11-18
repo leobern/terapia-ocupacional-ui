@@ -7,6 +7,7 @@ import { provideStore } from '@ngrx/store';
 
 import { routes } from './app.routing';
 import { DailyPatientsSource } from './features/home/daily-patients';
+import { HomeApiService } from './features/home/data-access/home-api.service';
 import { HomeNotificationsSource } from './features/home/home-notifications-source';
 import { LinkedHospitalsReader } from './features/home/linked-hospitals';
 import { LocalProfessionalProfileReader } from './features/home/local-professional-profile-reader';
@@ -16,8 +17,15 @@ import { ProfessionalProfileReader } from './features/home/professional-profile'
 import { ProvisionalDailyPatientsSource } from './features/home/provisional-daily-patients';
 import { ProvisionalHomeNotificationsSource } from './features/home/provisional-home-notifications';
 import { UnreadNotificationsReader } from './features/home/unread-notifications-reader';
+import { NotificationsApiService } from './features/notifications/data-access/notifications-api.service';
+import {
+  ProvisionalHomeApiService,
+  ProvisionalNotificationsApiService,
+} from './features/notifications/data-access/provisional-notifications-api.service';
 import { LocalStartupStateReader } from './features/splash/local-startup-state-reader';
 import { StartupStateReader } from './features/splash/startup-state';
+import { ProvisionalUserDirectory } from './shared/services/provisional-user-directory';
+import { UserDirectory } from './shared/services/user-directory';
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -27,6 +35,10 @@ export const appConfig: ApplicationConfig = {
     { provide: UnreadNotificationsReader, useClass: LocalUnreadNotificationsReader },
     { provide: DailyPatientsSource, useClass: ProvisionalDailyPatientsSource },
     { provide: HomeNotificationsSource, useClass: ProvisionalHomeNotificationsSource },
+    // Provisórios (sem backend ainda): notificações em memória, hospital único e usuários de exemplo.
+    { provide: NotificationsApiService, useClass: ProvisionalNotificationsApiService },
+    { provide: HomeApiService, useClass: ProvisionalHomeApiService },
+    { provide: UserDirectory, useClass: ProvisionalUserDirectory },
     provideZoneChangeDetection({ eventCoalescing: true }),
     provideRouter(routes),
     provideHttpClient(),

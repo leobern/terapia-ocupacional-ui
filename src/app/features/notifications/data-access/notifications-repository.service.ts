@@ -1,0 +1,183 @@
+import { Injectable, type Signal, signal } from '@angular/core';
+
+import {
+  type Notification,
+  type NotificationPage,
+  type NotificationReply,
+  type NotificationStatus,
+  type ProfessionalRef,
+} from '../notifications.models';
+
+/** Dados do cadastro de uma notificação (formulário "Criar notificação"). */
+export interface NewNotification {
+  readonly recipients: readonly ProfessionalRef[];
+  readonly message: string;
+  /** Data limite para resolução (`yyyy-MM-dd`); vazio = sem prazo. */
+  readonly dueDate: string;
+}
+
+interface StoredNotification {
+  readonly status: NotificationStatus;
+  readonly notification: Notification;
+}
+
+const ME: ProfessionalRef = { id: 4, name: 'Michelle Franklin', photoUrl: null, specialty: 'Nutróloga' };
+const RAFAEL: ProfessionalRef = { id: 1, name: 'Rafael Dutra Rabello Euarte', photoUrl: null, specialty: 'Nutrólogo' };
+const FILIPPA: ProfessionalRef = { id: 2, name: 'Filippa Martins', photoUrl: null, specialty: 'Nutricionista' };
+const JAIRO: ProfessionalRef = { id: 3, name: 'Jairo Nepomuceno', photoUrl: null, specialty: 'Enfermeiro' };
+
+const minutesAgo = (minutes: number): string => new Date(Date.now() - minutes * 60_000).toISOString();
+
+function seed(): StoredNotification[] {
+  const base = (
+    id: number,
+    author: ProfessionalRef,
+    patient: string | null,
+    description: string,
+    minutes: number,
+    replies: NotificationReply[] = [],
+  ): Notification => ({
+    author,
+    createdAt: minutesAgo(minutes),
+    description,
+    id,
+    patient: patient ? { id, name: patient } : null,
+    read: false,
+    replies,
+    replyCount: replies.length,
+  });
+  const reply = (id: number, text: string): NotificationReply => ({
+    author: ME,
+    createdAt: minutesAgo(5),
+    id,
+    text,
+  });
+
+  return [
+    {
+      notification: base(
+        11,
+        RAFAEL,
+        'Almira Borges Pereira',
+        'Estoque com vencimento próximo: Disponíveis 8 unidades de Fresubin Protein Drink – Baunilha (cód. 81751) com vencimento em julho/2026.',
+        20,
+      ),
+      status: 'pending',
+    },
+    {
+      notification: base(
+        12,
+        FILIPPA,
+        'Samuel Lima Rocha',
+        'Paciente em uso de GTT, internado devido à erisipela. Aguarda início de TNE',
+        45,
+        [reply(1, 'Vou acompanhar.'), reply(2, 'Prescrição ajustada.')],
+      ),
+      status: 'pending',
+    },
+    {
+      notification: base(13, JAIRO, 'José da Silva', 'Identificada exteriorização acidental da SNE.', 70, [
+        reply(3, 'Reposicionada.'),
+      ]),
+      status: 'pending',
+    },
+    {
+      notification: base(21, JAIRO, 'José da Silva', 'Identificada exteriorização acidental da SNE.', 300, [
+        reply(4, 'Resolvido com a equipe.'),
+      ]),
+      status: 'resolved',
+    },
+    {
+      notification: base(22, FILIPPA, 'José da Silva', 'Identificada exteriorização acidental da SNE.', 360, [
+        reply(5, 'Resolvido.'),
+      ]),
+      status: 'resolved',
+    },
+    {
+      notification: base(23, RAFAEL, 'José da Silva', 'Identificada exteriorização acidental da SNE.', 420, [
+        reply(6, 'Ok.'),
+      ]),
+      status: 'resolved',
+    },
+    {
+      notification: base(24, JAIRO, 'José da Silva', 'Identificada exteriorização acidental da SNE.', 480, [
+        reply(7, 'Ok.'),
+      ]),
+      status: 'resolved',
+    },
+  ];
+}
+
+/**
+ * Armazenamento PROVISÓRIO (em memória) das notificações enquanto não existe a API: guarda
+ * os dados de exemplo, pagina por cursor e recebe as notificações criadas pelo formulário.
+ * Os dados somem ao recarregar a página. `version` muda a cada alteração — a tela de
+ * Notificações a observa para recarregar a lista.
+ */
+@Injectable({ providedIn: 'root' })
+export class NotificationsRepository {
+  readonly version: Signal<number>;
+
+  private readonly versionSignal = signal(0);
+  private items: StoredNotification[] = seed();
+  private nextId = 100;
+
+  constructor() {
+    this.version = this.versionSignal.asReadonly();
+  }
+
+  /** Página (por cursor = índice do próximo item) das notificações de um status, da mais recente para a mais antiga. */
+  list(status: NotificationStatus, cursor: string | null, limit: number): NotificationPage {
+    const all = this.items
+      .filter(item => item.status === status)
+      .map(item => item.notification)
+      .sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt) || b.id - a.id);
+    const start = cursor ? Number(cursor) : 0;
+    const end = Math.min(start + limit, all.length);
+
+    return {
+      items: all.slice(start, end),
+      nextCursor: end < all.length ? String(end) : null,
+      totalCount: all.length,
+    };
+  }
+
+  /** Cria uma notificação PENDENTE do profissional autenticado. */
+  create(input: NewNotification): Notification {
+    const notification: Notification = {
+      author: ME,
+      createdAt: new Date().toISOString(),
+      description: input.message,
+      id: this.nextId++,
+      patient: null,
+      read: false,
+      replies: [],
+      replyCount: 0,
+    };
+
+    this.items = [...this.items, { notification, status: 'pending' }];
+    this.versionSignal.update(version => version + 1);
+
+    return notification;
+  }
+
+  addReply(notificationId: number, text: string): NotificationReply {
+    const reply: NotificationReply = { author: ME, createdAt: new Date().toISOString(), id: this.nextId++, text };
+
+    this.items = this.items.map(item =>
+      item.notification.id === notificationId
+        ? {
+            ...item,
+            notification: {
+              ...item.notification,
+              replies: [...item.notification.replies, reply],
+              replyCount: item.notification.replyCount + 1,
+            },
+          }
+        : item,
+    );
+    this.versionSignal.update(version => version + 1);
+
+    return reply;
+  }
+}

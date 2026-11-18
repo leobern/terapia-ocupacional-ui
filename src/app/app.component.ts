@@ -3,6 +3,7 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { NavigationEnd, Router, RouterOutlet } from '@angular/router';
 import { filter, map } from 'rxjs';
 
+import { AssistantContentComponent } from './shared/components/assistant-content/assistant-content.component';
 import { BackgroundMeshComponent } from './shared/components/background-mesh/background-mesh.component';
 import { BottomNavBarComponent } from './shared/components/bottom-nav-bar/bottom-nav-bar.component';
 import {
@@ -31,6 +32,7 @@ import { ViewportBreakpointService } from './shared/services/viewport-breakpoint
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
+    AssistantContentComponent,
     BackgroundMeshComponent,
     BottomNavBarComponent,
     BottomSheetComponent,
@@ -59,6 +61,11 @@ export class AppComponent {
   protected readonly backgroundShowColor2 = computed(() => !this.isNotificationsRoute());
   protected readonly aiSheetSnap = signal<BottomSheetSnap>('default');
   protected readonly aiDrawerSnap = signal<DrawerSnap>('default');
+
+  /** Faixa de botões do painel: perguntas rápidas só no chat; as ações da tela aparecem no próprio conteúdo. */
+  protected readonly shortcuts = computed<readonly ChatShortcut[]>(() =>
+    this.aiAssistant.view() === 'chat' ? this.aiShortcuts : [],
+  );
 
   protected readonly aiShortcuts: readonly ChatShortcut[] = [
     { id: 'pendencias', label: 'Quais são minhas pendências de hoje?' },

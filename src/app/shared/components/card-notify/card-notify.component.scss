@@ -43,26 +43,43 @@
     cursor: default;
   }
 
+  // Resolvida (Figma 4506:9755): mesmo card com preenchimento branco a 50% — esmaece frente às
+  // pendentes, que são brancas sólidas.
+  &--resolved:not(.card-notify--expanded-open) {
+    background: rgba(tokens.$color-surface, 0.5);
+  }
+
   // Variantes detail/answer-open/answering (2026-08-17, specs/004-notificacoes) — nó
   // Figma 4495:9318: o card vira uma linha (col principal + coluna lateral do botão de
   // ação), largura mínima 361px, altura livre. Cursor volta ao padrão — não há mais
   // área de toque estendida (DS spec FR-015: só `resume` clica no corpo inteiro).
+  // Coluna: o bloco principal (`__main`: conteúdo + balão) fica em cima e cada resposta desce
+  // para a sua própria linha — o card cresce na vertical (Figma 4496:11888).
   &--expanded {
-    flex-direction: row;
+    flex-direction: column;
     align-items: stretch;
     width: 100%;
     height: auto;
-    min-width: 361px;
+    min-width: var(--card-min-width, 361px);
     max-width: none;
     cursor: default;
 
     @include breakpoints.md {
       width: 100%;
       height: auto;
-      min-width: 361px;
+      min-width: var(--card-min-width, 361px);
       max-width: none;
     }
   }
+}
+
+// Linha com a coluna do conteúdo e (no card pendente) a coluna do balão.
+.card-notify__main {
+  display: flex;
+  flex: 1 1 auto;
+  align-items: stretch;
+  min-height: 0;
+  min-width: 0;
 }
 
 .card-notify__col {
@@ -100,6 +117,8 @@
   color: tokens.$color-content-4;
 }
 
+// Tag "N Respostas" (Figma 4506:9463): pl 4 (a foto encosta na borda), pr 16, gap 8, 40px.
+// "Ver menos" (4496:11888): só texto + seta, gap 4, sem borda nem preenchimento.
 .card-notify__reply-tag,
 .card-notify__collapse {
   display: flex;
@@ -107,7 +126,7 @@
   gap: tokens.$space-8;
   flex-shrink: 0;
   height: 40px;
-  padding: tokens.$space-4 tokens.$space-16;
+  padding: tokens.$space-4 tokens.$space-16 tokens.$space-4 tokens.$space-4;
   border: none;
   background: transparent;
   font-family: tokens.$font-family-base;
@@ -115,6 +134,17 @@
   font-size: tokens.$font-size-interactive;
   color: tokens.$color-content-1;
   cursor: pointer;
+}
+
+// "Ver menos" (4496:11888): texto 14px + seta azul, sem preenchimento lateral.
+.card-notify__collapse {
+  gap: tokens.$space-4;
+  padding: 0;
+  font-size: tokens.$font-size-subsection;
+
+  ph-icon {
+    color: tokens.$color-secondary;
+  }
 }
 
 .card-notify__reply-tag {
@@ -133,11 +163,17 @@
   border-left: 1px solid tokens.$color-border;
 }
 
+// Resposta (Figma 4496:11888 `answer`): bloco em linha própria, separado por borda superior.
 .card-notify__reply {
   display: flex;
+  flex: 0 0 auto;
   flex-direction: column;
   width: 100%;
   border-top: 1px solid tokens.$color-border;
+
+  .card-notify__footer {
+    padding-bottom: tokens.$space-16;
+  }
 
   &--draft .card-notify__description {
     padding-bottom: tokens.$space-16;
@@ -194,9 +230,12 @@
   color: tokens.$color-content-4;
 }
 
+// `flex: 1 1 auto` (não `1 0 0`): com `height: auto` (desktop e variante expandida) a base 0
+// colapsava o conteúdo e a descrição vazava por cima do rodapé. Nos cards de altura fixa o
+// conteúdo continua encolhendo para caber.
 .card-notify__content {
   display: flex;
-  flex: 1 0 0;
+  flex: 1 1 auto;
   min-height: 0;
   padding: tokens.$space-8 tokens.$space-16 0;
 }
@@ -242,4 +281,18 @@
     white-space: nowrap;
     text-overflow: ellipsis;
   }
+}
+
+// Variantes com a coluna do balão / respostas (Figma 4506:9462): o texto respira 24px antes do rodapé.
+.card-notify--expanded .card-notify__content {
+  padding-bottom: tokens.$space-24;
+}
+
+// Nesses cards o texto aparece inteiro (Figma 4506:9462 / 4496:11857: 3-4 linhas); o corte em 2 linhas
+// vale só para o card fixo de altura de 180px da Home.
+.card-notify--expanded .card-notify__description {
+  display: block;
+  overflow: visible;
+  -webkit-line-clamp: unset;
+  line-clamp: unset;
 }

@@ -1,4 +1,13 @@
+@use '../../shared/styles/breakpoints';
 @use '../../shared/styles/tokens';
+
+// O gutter lateral vem do próprio conteúdo (16px, Figma 4496:11857), não da margem de 24px do
+// container de página (mesma troca da Home).
+:host {
+  // Precisa da unidade: entra em `calc(100% - 2 * var(...))` no container.
+  // stylelint-disable-next-line length-zero-no-unit
+  --page-container-margin: 0px;
+}
 
 .notifications {
   display: flex;
@@ -7,26 +16,65 @@
   padding: 0 tokens.$space-16;
 }
 
+// Cabeçalho (Figma 4506:8583): sino 32px na cor do ícone do menu (secondary), título 24px
+// escuro e o "X" de fechar na extremidade direita.
+// Sem `gap`: o respiro entre o sino e o título é só o padding de 8px do ícone (Figma 4506:8583).
 .notifications__header {
   display: flex;
   align-items: center;
-  gap: tokens.$space-8;
+  gap: 0;
   padding: tokens.$space-24 0 tokens.$space-16;
   color: tokens.$color-content-1;
 }
 
+.notifications__header-icon {
+  display: inline-flex;
+  padding: tokens.$space-8;
+  color: tokens.$color-secondary;
+}
+
 .notifications__title {
+  flex: 1 0 0;
+  min-width: 0;
   margin: 0;
+  padding-right: tokens.$space-8;
   font-family: tokens.$font-family-base;
   font-weight: tokens.$font-weight-heavy;
   font-size: 24px;
   line-height: 1.2;
+  color: tokens.$color-content-1;
 }
 
+.notifications__shortcuts {
+  display: none;
+
+  @include breakpoints.md {
+    display: inline-flex;
+  }
+}
+
+// Tag do hospital à esquerda, data à direita (mesma linha "local" da Home).
 .notifications__local {
   display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: tokens.$space-16;
   padding: tokens.$space-24 0;
   border-top: 1px solid tokens.$color-border;
+}
+
+// A data só aparece no desktop (no mobile ela está oculta no Figma 4496:11857).
+.notifications__date {
+  display: none;
+  margin: 0;
+  font-family: tokens.$font-family-base;
+  font-size: 14px;
+  color: tokens.$color-content-4;
+  white-space: nowrap;
+
+  @include breakpoints.md {
+    display: block;
+  }
 }
 
 .notifications__error {
@@ -47,11 +95,29 @@
   color: tokens.$color-content-1;
 }
 
+// Grade de cards (Figma 4506:8580): 1 coluna no mobile, colunas de no mínimo 360px no desktop
+// (3 em 1328px). Os cards preenchem a coluna (`--card-width`) e o título "Resolvidas" ocupa a
+// linha inteira.
 .notifications__list {
-  display: flex;
-  flex-direction: column;
+  --card-width: 100%;
+  --card-min-width: 0;
+
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: tokens.$space-8;
   padding-bottom: tokens.$space-24;
+
+  @include breakpoints.md {
+    grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+    gap: tokens.$space-16;
+  }
+}
+
+.notifications__section-title,
+.notifications__empty,
+.notifications__scroll-sentinel,
+.notifications__loading-more {
+  grid-column: 1 / -1;
 }
 
 .notifications__empty {

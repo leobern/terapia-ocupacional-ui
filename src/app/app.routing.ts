@@ -34,6 +34,13 @@ export const routes: Routes = [
     data: { hideShell: true },
     loadChildren: () => import('./features/splash/splash.routes').then(m => m.SPLASH_ROUTES),
   },
+  // Detalhe da notificação (US-003-3-04): tela com especificação própria — placeholder até lá.
+  {
+    path: 'notifications/:id',
+    data: { screen: 'notification-detail' },
+    loadComponent: () =>
+      import('./features/pending-screen/pending-screen.component').then(m => m.PendingScreenComponent),
+  },
   {
     path: 'notifications',
     loadChildren: () => import('./features/notifications/notifications.routes').then(m => m.NOTIFICATIONS_ROUTES),

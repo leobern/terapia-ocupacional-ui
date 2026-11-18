@@ -1,0 +1,76 @@
+@switch (assistant.view()) {
+  @case ('shortcuts') {
+    <div class="assistant-content">
+      <h2 class="assistant-content__title">Atalhos</h2>
+      <p class="assistant-content__body">
+        Qual ação você deseja executar nessa tela:
+      </p>
+      <!-- Figma 4506:10097: os botões das ações ficam logo abaixo do texto. -->
+      <div class="assistant-content__actions">
+        @for (action of screenActions.actions(); track action.id) {
+          <app-button
+            kind="secondary"
+            appearance="outlined"
+            [label]="action.label"
+            (click)="assistant.openAction(action)"
+          />
+        } @empty {
+          <p class="assistant-content__hint">
+            Nenhuma ação disponível nesta tela.
+          </p>
+        }
+      </div>
+    </div>
+  }
+  @case ('form') {
+    @if (assistant.activeAction()?.form; as form) {
+      <div class="assistant-content">
+        <div class="assistant-content__heading">
+          <app-icon-button
+            kind="secondary"
+            appearance="icon"
+            size="small"
+            icon="arrow-left"
+            ariaLabel="Voltar para os atalhos"
+            (click)="assistant.back()"
+          />
+          <h2 class="assistant-content__title">{{ form.title }}</h2>
+        </div>
+        <app-assistant-form [definition]="form" (submitted)="onSubmitted()" />
+      </div>
+    }
+  }
+  @case ('unavailable') {
+    <div class="assistant-content">
+      <div class="assistant-content__heading">
+        <app-icon-button
+          kind="secondary"
+          appearance="icon"
+          size="small"
+          icon="arrow-left"
+          ariaLabel="Voltar para os atalhos"
+          (click)="assistant.back()"
+        />
+        <h2 class="assistant-content__title">
+          {{ assistant.activeAction()?.label }}
+        </h2>
+      </div>
+      <p class="assistant-content__body">
+        Esta ação ainda não está disponível.
+      </p>
+    </div>
+  }
+  @default {
+    <div class="assistant-content">
+      <h2 class="assistant-content__title">Como eu posso te ajudar?</h2>
+      <p class="assistant-content__body">
+        Quer tirar uma dúvida, ou quer que eu faça um resumo de todas as suas
+        tarefas do dia? Eu posso fazer praticamente tudo, só me diz o que você
+        precisa?
+      </p>
+      <p class="assistant-content__hint">
+        Você pode conversar comigo via texto ou áudio.
+      </p>
+    </div>
+  }
+}

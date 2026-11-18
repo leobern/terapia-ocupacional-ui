@@ -1,0 +1,52 @@
+@use '../../styles/tokens';
+
+// Tipografia do chat (Figma 4412:5750): "Chat/Title", "Chat/Default", "Chat/Subsection".
+:host {
+  display: block;
+}
+
+.assistant-content {
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$space-8;
+}
+
+// Linha "← título" do formulário: seta pequena azul antes do título (Figma 4506:10525).
+.assistant-content__heading {
+  display: flex;
+  align-items: center;
+  gap: tokens.$space-8;
+}
+
+.assistant-content__title {
+  margin: 0;
+  font-family: tokens.$font-family-chat;
+  font-weight: tokens.$font-weight-bold;
+  font-size: 24px;
+  line-height: 1.2;
+  color: var(--color-content-1);
+}
+
+.assistant-content__body {
+  margin: 0;
+  font-family: tokens.$font-family-chat;
+  font-size: 16px;
+  line-height: 1.35;
+  color: var(--color-content-1);
+}
+
+.assistant-content__hint {
+  margin: 0;
+  font-family: tokens.$font-family-chat;
+  font-size: 14px;
+  line-height: 1.35;
+  color: var(--color-content-2);
+}
+
+// Botões das ações da tela (Figma 4506:10097): lado a lado, quebrando linha, 16px de intervalo.
+.assistant-content__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: tokens.$space-16;
+  margin-top: tokens.$space-16;
+}

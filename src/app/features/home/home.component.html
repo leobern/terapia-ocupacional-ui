@@ -43,7 +43,7 @@
           appearance="icon"
           icon="squares-four"
           ariaLabel="Ações da tela"
-          (click)="aiAssistant.openPanel()"
+          (click)="aiAssistant.openShortcuts()"
         />
       </span>
     </header>
@@ -141,6 +141,11 @@
               [time]="formatTime(notification.createdAt)"
               (cardClick)="onViewNotificationDetail(notification.id)"
             />
+          }
+          @if (isFeedEmpty()) {
+            <p class="home__empty" role="status">
+              Nenhuma notificação no momento.
+            </p>
           }
           @if (hasMore()) {
             <div
