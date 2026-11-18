@@ -85,6 +85,30 @@ describe('DrawerComponent', () => {
     expect(dialog().getAttribute('aria-label')).toBe('Assistente de IA');
   });
 
+  it('expanded: trava cabeçalho, conversa, atalhos e campo de mensagem em 640px centralizados', () => {
+    openDrawer('expanded');
+    const parts = ['.drawer__header', '.drawer__content', '.drawer__footer'].map(
+      selector => fixture.nativeElement.querySelector(selector) as HTMLElement,
+    );
+    const panelWidth = dialog().clientWidth;
+
+    for (const part of parts) {
+      expect(part.getBoundingClientRect().width).toBe(Math.min(640, panelWidth));
+    }
+    // Centralizado: sobra igual dos dois lados do painel.
+    const rect = parts[0].getBoundingClientRect();
+    const panelLeft = dialog().getBoundingClientRect().left;
+
+    expect(Math.round(rect.left - panelLeft)).toBe(Math.round((panelWidth - rect.width) / 2));
+  });
+
+  it('default: as faixas ocupam o painel inteiro de 480px (sem a trava de 640px)', () => {
+    openDrawer('default');
+    const header = fixture.nativeElement.querySelector('.drawer__header') as HTMLElement;
+
+    expect(header.getBoundingClientRect().width).toBe(dialog().clientWidth);
+  });
+
   it('abre o dialog em modo modal (role="dialog" + aria-modal) em snap="expanded"', () => {
     openDrawer('expanded');
 

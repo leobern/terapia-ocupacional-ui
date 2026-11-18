@@ -1,10 +1,24 @@
 @use '../../shared/styles/breakpoints';
 @use '../../shared/styles/tokens';
 
+// O gutter lateral da Home vem do próprio conteúdo (16px, como no Figma `4360:7018`),
+// não da margem de 24px do container de página.
+:host {
+  // Precisa da unidade: entra em `calc(100% - 2 * var(...))` no container.
+  // stylelint-disable-next-line length-zero-no-unit
+  --page-container-margin: 0px;
+}
+
 .home {
   display: flex;
   flex-direction: column;
-  min-height: 100vh;
+  // Altura da tela MENOS o espaço da barra inferior que o container já reserva: com
+  // 100vh cheio a página sempre rolava ~104px mesmo sem conteúdo. No desktop não há barra.
+  min-height: calc(100dvh - var(--bottom-nav-bar-height));
+
+  @include breakpoints.md {
+    min-height: 100dvh;
+  }
   // Sem background sólido: o fundo decorativo (app-background-mesh, montado
   // no shell da aplicação) precisa aparecer por trás de todo o espaço vazio
   // da tela.
@@ -114,14 +128,27 @@
   white-space: nowrap;
 }
 
+// Grade de cards (Figma "Layout" 4572:9798): mobile = SEMPRE 2 colunas (cards de ~181px,
+// gap 8); desktop = colunas de no mínimo 320px (4 em 1328px, 3 em 1050px), gap 16.
+// Os cards preenchem a coluna via `--card-width`/`--card-min-width` (ver card-notify).
 .home__grid {
-  display: flex;
-  flex-wrap: wrap;
+  --card-width: 100%;
+  --card-min-width: 0;
+
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: tokens.$space-8;
   padding: 0 tokens.$space-16 tokens.$space-16;
+
+  @include breakpoints.md {
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: tokens.$space-16;
+  }
 }
 
+// Ocupa a linha inteira da grade (não vira uma célula de card).
 .home__scroll-sentinel {
+  grid-column: 1 / -1;
   height: 1px;
   width: 100%;
 }

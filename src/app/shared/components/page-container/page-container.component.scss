@@ -17,9 +17,11 @@
   box-sizing: border-box;
   min-height: 100%;
 
-  // breakpoint-xs (<672px): largura total, com 24px de margem lateral.
-  width: calc(100% - 48px);
-  margin-inline: 24px;
+  // breakpoint-xs (<672px): largura total, com 24px de margem lateral. A tela pode
+  // trocar o valor com `--page-container-margin` (a Home usa 0 e põe o gutter de 16px
+  // do Figma no próprio conteúdo).
+  width: calc(100% - 2 * var(--page-container-margin, 24px));
+  margin-inline: var(--page-container-margin, 24px);
 
   // A `bottom-nav-bar` é `position: fixed` — não empurra nada. É aqui que o
   // espaço dela é reservado, uma vez só, para toda tela do produto: sem isto o

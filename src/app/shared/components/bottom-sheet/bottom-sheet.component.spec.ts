@@ -59,6 +59,17 @@ describe('BottomSheetComponent', () => {
     fixture.detectChanges();
   }
 
+  it('fechado: não ocupa layout (display: none) e não aumenta a altura rolável da página', () => {
+    expect(getComputedStyle(dialog()).display).toBe('none');
+    expect(dialog().getBoundingClientRect().height).toBe(0);
+  });
+
+  it('aberto: vira display: flex', () => {
+    openSheet();
+
+    expect(getComputedStyle(dialog()).display).toBe('flex');
+  });
+
   beforeEach(async () => {
     isDesktop = signal(false);
     isKeyboardOpen = signal(false);

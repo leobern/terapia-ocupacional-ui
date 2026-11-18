@@ -9,9 +9,12 @@
   display: flex;
   flex-direction: column;
   flex: 0 0 auto;
-  width: 180px;
+  // `--card-width`/`--card-min-width`: o consumidor (grade da Home) pode fazer o card
+  // preencher a coluna em vez de ter 180px fixos — sem isso, 2 cards de 180px não
+  // cabem lado a lado em telas de 375px (2 × 180 + 8 > 343).
+  width: var(--card-width, 180px);
   height: 180px;
-  min-width: 180px;
+  min-width: var(--card-min-width, 180px);
   background: tokens.$color-surface;
   // TL TR BR BL = 32/16/24/16.
   border-radius: tokens.$radius-lg tokens.$radius-sm tokens.$radius-md
@@ -26,10 +29,13 @@
   // disponível do container, entre 320px e 656px — a altura permanece
   // dirigida pelo conteúdo (180px em mobile continua o mínimo visual, mas
   // não é mais travada, já que o nome agora pode ocupar 2 linhas).
+  // `min-height: 180px` (Figma `4366:9059`): com `height: auto` o conteúdo (`flex: 1 0 0`)
+  // colapsava a 0 e a descrição sumia no desktop.
   @include breakpoints.md {
     width: 100%;
     height: auto;
-    min-width: 320px;
+    min-height: 180px;
+    min-width: var(--card-min-width, 320px);
     max-width: 656px;
   }
 
