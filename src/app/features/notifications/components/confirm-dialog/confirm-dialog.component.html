@@ -1,17 +1,28 @@
 @if (open()) {
+  <!-- Figma v2/Dialog Type=confirm: título, texto e duas ações md, a destrutiva à direita. -->
   <div class="confirm-dialog__scrim">
-    <div class="confirm-dialog__panel">
-      <p class="confirm-dialog__title">{{ title() }}</p>
+    <div
+      class="confirm-dialog__panel"
+      role="alertdialog"
+      aria-modal="true"
+      aria-labelledby="confirm-dialog-title"
+    >
+      <p id="confirm-dialog-title" class="confirm-dialog__title">{{ title() }}</p>
+      @if (message()) {
+        <p class="confirm-dialog__message">{{ message() }}</p>
+      }
       <div class="confirm-dialog__actions">
         <app-button
-          kind="tertiary"
-          appearance="outlined"
+          kind="primary"
+          appearance="ghost"
+          size="md"
           [label]="cancelLabel()"
           (click)="cancelled.emit()"
         />
         <app-button
           kind="primary"
           appearance="solid"
+          size="md"
           [label]="confirmLabel()"
           (click)="confirmed.emit()"
         />

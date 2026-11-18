@@ -24,9 +24,11 @@ import { ButtonComponent } from '../../../../shared/components/button/button.com
 })
 export class ConfirmDialogComponent {
   readonly open = input.required<boolean>();
-  readonly title = input<string>('Descartar resposta não enviada?');
+  // Textos do Figma v2/Dialog Type=confirm.
+  readonly title = input<string>('Descartar resposta?');
+  readonly message = input<string>('O texto que você escreveu será perdido.');
   readonly confirmLabel = input<string>('Descartar');
-  readonly cancelLabel = input<string>('Cancelar');
+  readonly cancelLabel = input<string>('Continuar editando');
 
   readonly confirmed = output();
   readonly cancelled = output();

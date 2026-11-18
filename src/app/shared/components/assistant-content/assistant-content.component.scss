@@ -108,14 +108,58 @@
   gap: tokens.$space-8;
 }
 
-// Erro (v2/ChatMessage Type=error): cartão com borda comm-alert e texto.
-.assistant-content__answer--error {
+.assistant-content__answer-head {
+  display: flex;
+  align-items: center;
+  gap: tokens.$space-8;
+  color: tokens.c(content-4);
+
+  @include typography.label-sm;
+}
+
+.assistant-content__answer-logo {
+  --icon-logo-size: 24px;
+}
+
+.assistant-content__skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+
+  span {
+    height: 12px;
+    border-radius: 6px;
+    background: tokens.c(surface-glass-2);
+  }
+
+  span:first-child {
+    width: 80%;
+  }
+
+  span:last-child {
+    width: 60%;
+  }
+}
+
+// Erro (v2/ChatMessage Type=error): cartão com borda comm-alert, ícone e texto.
+.assistant-content__error {
+  display: flex;
+  align-items: flex-start;
+  gap: tokens.$space-8;
   padding: 10px tokens.$space-12;
   border: 1px solid tokens.c(comm-alert);
   border-radius: tokens.$radius-12;
   background: tokens.c(surface-2);
+  color: tokens.c(content-1);
 
-  .assistant-content__body {
+  ph-icon {
+    flex-shrink: 0;
+    color: tokens.c(comm-alert);
+  }
+
+  p {
+    margin: 0;
+
     @include typography.body-md;
   }
 }
@@ -124,15 +168,38 @@
   display: flex;
   flex-direction: column;
   gap: tokens.$space-8;
-  margin: 0;
+  margin: tokens.$space-8 0 0;
   padding: 0;
   list-style: none;
+}
 
-  .assistant-content__body {
-    padding: 10px tokens.$space-12;
-    border-radius: tokens.$radius-12;
-    background: tokens.c(surface-2);
+// Item da resposta (v2/ChatMessage answer-list): card surface-2 + seta de 40px.
+.assistant-content__answer-item {
+  display: flex;
+  align-items: center;
+  gap: tokens.$space-8;
+  padding: 10px tokens.$space-12;
+  border-radius: tokens.$radius-12;
+  background: tokens.c(surface-2);
+}
 
-    @include typography.body-md;
-  }
+.assistant-content__answer-text {
+  flex: 1 1 0;
+  min-width: 0;
+  color: tokens.c(content-1);
+
+  @include typography.body-md;
+}
+
+.assistant-content__link {
+  align-self: flex-start;
+  min-height: tokens.$space-20;
+  padding: 0 tokens.$space-12;
+  border: 0;
+  background: transparent;
+  color: tokens.c(content-2);
+  cursor: pointer;
+
+  @include typography.label-md;
+  @include mixins.focus-ring;
 }

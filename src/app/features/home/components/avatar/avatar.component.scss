@@ -23,8 +23,8 @@
 }
 
 .avatar--initials {
-  background: tokens.$color-tertiary;
-  color: tokens.$color-primary;
+  background: tokens.c(tertiary);
+  color: tokens.c(primary);
   font-family: tokens.$font-family-base;
   font-weight: tokens.$font-weight-medium;
   line-height: 1;
@@ -43,7 +43,7 @@
   padding: 0;
   border: 0;
   border-radius: tokens.$radius-pill;
-  background: tokens.$color-surface;
-  color: tokens.$color-content-1;
+  background: tokens.c(surface);
+  color: tokens.c(content-1);
   cursor: pointer;
 }

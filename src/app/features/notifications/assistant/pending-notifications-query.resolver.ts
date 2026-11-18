@@ -50,7 +50,11 @@ export class PendingNotificationsQueryResolver implements AssistantQueryResolver
     }
 
     return {
-      items: notifications.map(n => `${n.author.name} (${n.author.specialty}): ${n.description}`),
+      items: notifications.map(n => ({
+        route: `/notifications/${n.id}`,
+        text: `${n.author.name} (${n.author.specialty}): ${n.description}`,
+      })),
+      link: { label: 'Ver todas em Notificações', route: '/notifications' },
       summary: notifications.length === 1 ? 'Você tem 1 pendência:' : `Você tem ${notifications.length} pendências:`,
     };
   }

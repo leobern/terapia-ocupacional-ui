@@ -1,4 +1,5 @@
 @use '../../styles/tokens';
+@use '../../styles/typography';
 
 // Figma "Criar notificação" (4506:10525): cards empilhados com 8px entre eles; cada campo é
 // um input de 48px com borda `border-2`, cantos arredondados e placeholder `content-5`.
@@ -18,26 +19,30 @@
 // O campo NÃO tem caixa própria: o accordion já é o card (título + seta); o campo é só o texto,
 // ocupando toda a largura útil do accordion, sem borda nem fundo.
 .assistant-form__input {
+  // Figma v2/FormField: campo de 48px, raio 16, borda border-2 (3:1) e foco primary 2px.
   box-sizing: border-box;
   width: 100%;
-  min-height: 24px;
+  min-height: tokens.$control-height-lg;
   margin: 0;
-  padding: 0;
-  border: 0;
+  padding: tokens.$space-12 tokens.$space-16;
+  border: 1px solid tokens.c(border-2);
+  border-radius: tokens.$radius-sm;
   outline: none;
-  background: transparent;
-  font-family: tokens.$font-family-interactive;
-  font-size: tokens.$font-size-interactive;
-  line-height: 1.35;
-  color: tokens.$color-content-1;
+  background: tokens.c(surface);
+  color: tokens.c(content-1);
+
+  @include typography.body-lg;
 
   &::placeholder {
-    color: tokens.$color-content-5;
+    color: tokens.c(content-4);
+  }
+
+  &:focus {
+    border-color: tokens.c(primary);
+    box-shadow: 0 0 0 1px tokens.c(primary);
   }
 }
 
-// Texto livre (mensagem): mesmo comportamento do input de chat — o campo cresce em altura com o
-// conteúdo até o teto de 160px (a diretiva acompanha o conteúdo) e, passando dele, rola.
 .assistant-form__grow {
   max-height: 160px;
   overflow: clip auto;
@@ -57,9 +62,10 @@
   margin: 0;
   padding: tokens.$space-4;
   list-style: none;
-  border: 1px solid tokens.$color-border-2;
+  border: 1px solid tokens.c(border);
   border-radius: tokens.$radius-sm;
-  background: tokens.$color-surface;
+  background: tokens.c(surface);
+  box-shadow: 0 4px 16px rgb(0 0 0 / 16%);
   max-height: 220px;
   overflow-y: auto;
 }
@@ -77,7 +83,7 @@
 
   &:hover,
   &:focus-visible {
-    background: tokens.$color-border;
+    background: tokens.c(border);
   }
 }
 
@@ -91,20 +97,20 @@
   font-family: tokens.$font-family-interactive;
   font-size: tokens.$font-size-subsection;
   font-weight: tokens.$font-weight-semibold;
-  color: tokens.$color-content-1;
+  color: tokens.c(content-1);
 }
 
 .assistant-form__suggestion-role {
   font-family: tokens.$font-family-interactive;
   font-size: tokens.$font-size-label;
-  color: tokens.$color-content-4;
+  color: tokens.c(content-4);
 }
 
 .assistant-form__suggestions-empty {
   padding: tokens.$space-8;
   font-family: tokens.$font-family-interactive;
   font-size: tokens.$font-size-subsection;
-  color: tokens.$color-content-4;
+  color: tokens.c(content-4);
 }
 
 .assistant-form__chips {
@@ -121,13 +127,13 @@
   align-items: center;
   gap: tokens.$space-4;
   padding: tokens.$space-4 tokens.$space-8 tokens.$space-4 tokens.$space-12;
-  border: 1px solid tokens.$color-border-2;
+  border: 1px solid tokens.c(border-2);
   border-radius: 26px;
-  background: tokens.$color-surface;
+  background: tokens.c(surface);
   font-family: tokens.$font-family-interactive;
   font-size: tokens.$font-size-subsection;
   font-weight: tokens.$font-weight-semibold;
-  color: tokens.$color-content-1;
+  color: tokens.c(content-1);
 }
 
 .assistant-form__chip-remove {
@@ -136,10 +142,10 @@
   padding: tokens.$space-4;
   border-radius: 50%;
   cursor: pointer;
-  color: tokens.$color-content-4;
+  color: tokens.c(content-4);
 
   &:focus-visible {
-    outline: 2px solid tokens.$color-secondary;
+    outline: 2px solid tokens.c(secondary);
   }
 }
 
@@ -150,7 +156,7 @@
   gap: tokens.$space-8;
   font-family: tokens.$font-family-interactive;
   font-size: tokens.$font-size-interactive;
-  color: tokens.$color-content-3;
+  color: tokens.c(content-3);
 }
 
 .assistant-form__tag {
@@ -163,5 +169,5 @@
   margin: 0;
   font-family: tokens.$font-family-interactive;
   font-size: tokens.$font-size-subsection;
-  color: tokens.$color-comm-alert;
+  color: tokens.c(comm-alert);
 }

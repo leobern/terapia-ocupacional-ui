@@ -59,11 +59,11 @@
 }
 
 .input-select__icon--leading {
-  color: tokens.$color-content-1;
+  color: tokens.c(content-1);
 }
 
 .input-select__icon--trailing {
-  color: tokens.$color-content-5;
+  color: tokens.c(content-5);
 }
 
 .input-select__field {
@@ -82,7 +82,7 @@
   white-space: nowrap;
 
   &::placeholder {
-    color: tokens.$color-content-5;
+    color: tokens.c(content-5);
     font-weight: tokens.$font-weight-medium;
   }
 
@@ -115,5 +115,5 @@
   flex-shrink: 0;
   align-items: center;
   cursor: pointer;
-  color: tokens.$color-content-3;
+  color: tokens.c(content-3);
 }

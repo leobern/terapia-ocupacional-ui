@@ -74,7 +74,13 @@ describe('PendingNotificationsQueryResolver', () => {
     const answer = await resolver.resolve();
 
     expect(answer.summary).toBe('Você tem 3 pendências:');
-    expect(answer.items).toEqual(['Ana (Nutricionista): a', 'Bia (Nutricionista): b', 'Caio (Nutricionista): c']);
+    expect(answer.items).toEqual([
+      { route: '/notifications/1', text: 'Ana (Nutricionista): a' },
+      { route: '/notifications/2', text: 'Bia (Nutricionista): b' },
+      { route: '/notifications/3', text: 'Caio (Nutricionista): c' },
+    ]);
+
+    expect(answer.link).toEqual({ label: 'Ver todas em Notificações', route: '/notifications' });
 
     expect(calls).toEqual([
       { hospitalId: 7, status: 'pending' },

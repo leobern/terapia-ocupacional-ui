@@ -1,9 +1,14 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { Router } from '@angular/router';
 
+import { PhIconComponent } from '../../icons/ph-icon/ph-icon.component';
 import { AiAssistantService } from '../../services/ai-assistant.service';
+import { type AssistantAnswerItem } from '../../services/assistant-query-resolver';
 import { ScreenActionsService } from '../../services/screen-actions.service';
 import { AssistantFormComponent } from '../assistant-form/assistant-form.component';
 import { ButtonComponent } from '../button/button.component';
+import { IconButtonComponent } from '../icon-button/icon-button.component';
+import { IconLogoComponent } from '../icon-logo/icon-logo.component';
 
 /** Atalhos de pergunta exibidos ao abrir o assistente (lista simples e substituível). */
 export const ASSISTANT_SUGGESTIONS: readonly string[] = [
@@ -22,7 +27,7 @@ export const ASSISTANT_SUGGESTIONS: readonly string[] = [
  */
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [AssistantFormComponent, ButtonComponent],
+  imports: [AssistantFormComponent, ButtonComponent, IconButtonComponent, IconLogoComponent, PhIconComponent],
   selector: 'app-assistant-content',
   styleUrl: './assistant-content.component.scss',
   templateUrl: './assistant-content.component.html',
@@ -31,6 +36,27 @@ export class AssistantContentComponent {
   protected readonly assistant = inject(AiAssistantService);
   protected readonly suggestions = ASSISTANT_SUGGESTIONS;
   protected readonly screenActions = inject(ScreenActionsService);
+
+  private readonly router = inject(Router);
+
+  protected itemText(item: AssistantAnswerItem): string {
+    return typeof item === 'string' ? item : item.text;
+  }
+
+  protected itemRoute(item: AssistantAnswerItem): string | null {
+    return typeof item === 'string' ? null : item.route;
+  }
+
+  /** Seta do item / "Ver todas": fecha o painel e navega para o destino. */
+  protected openRoute(route: string): void {
+    this.assistant.closePanel();
+    void this.router.navigateByUrl(route);
+  }
+
+  /** Erro na resposta: repete a mesma pergunta (Figma v2/ChatMessage Type=error). */
+  protected retry(question: string): void {
+    this.assistant.ask(question);
+  }
 
   /** Cadastro concluído: volta para as ações da tela. */
   protected onSubmitted(): void {

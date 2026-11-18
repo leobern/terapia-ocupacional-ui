@@ -39,7 +39,7 @@ $bar-radius: 1px;
 .input-chat-waveform__bar {
   // `content-2` (#006DA3) — medido no SVG que o Figma exporta para os nós
   // 4054:3375…3381 após o ajuste do usuário (era `content-1`).
-  background: tokens.$color-content-2;
+  background: tokens.c(content-2);
   border-radius: $bar-radius;
   display: block;
 

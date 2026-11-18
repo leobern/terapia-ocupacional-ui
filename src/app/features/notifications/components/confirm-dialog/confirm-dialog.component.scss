@@ -1,14 +1,17 @@
 @use '../../../../shared/styles/tokens';
+@use '../../../../shared/styles/typography';
 
+// Figma v2/Dialog Type=confirm: 340px, padding 24, raio 24, sombra elevation-focus,
+// sobre o scrim do tema.
 .confirm-dialog__scrim {
   position: fixed;
   inset: 0;
-  z-index: 100;
+  z-index: tokens.$z-index-overlay;
   display: flex;
   align-items: center;
   justify-content: center;
   padding: tokens.$space-24;
-  background: rgb(0 0 0 / 40%);
+  background: var(--color-scrim, rgb(0 34 51 / 50%));
 }
 
 .confirm-dialog__panel {
@@ -16,26 +19,30 @@
   flex-direction: column;
   gap: tokens.$space-16;
   width: 100%;
-  max-width: 320px;
+  max-width: 340px;
   padding: tokens.$space-24;
   border-radius: tokens.$radius-md;
-  background: tokens.$color-surface;
+  background: tokens.c(surface);
+  box-shadow: 0 4px 16px rgb(0 0 0 / 16%);
 }
 
 .confirm-dialog__title {
   margin: 0;
-  font-family: tokens.$font-family-base;
-  font-weight: tokens.$font-weight-semibold;
-  font-size: tokens.$font-size-subsection;
-  color: tokens.$color-content-1;
-  text-align: center;
+  color: tokens.c(content-1);
+
+  @include typography.title-lg;
+}
+
+.confirm-dialog__message {
+  margin: 0;
+  color: tokens.c(content-4);
+
+  @include typography.body-md;
 }
 
 .confirm-dialog__actions {
   display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
   gap: tokens.$space-8;
-
-  app-button {
-    flex: 1 0 0;
-  }
 }

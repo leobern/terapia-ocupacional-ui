@@ -129,7 +129,7 @@ $ai-clearance: calc(#{tokens.$space-24} + #{tokens.$control-height-lg} + #{$ai-g
 }
 
 .bottom-nav-bar__ai-label {
-  color: tokens.$color-content-2;
+  color: tokens.c(content-2);
   font-family: tokens.$font-family-interactive;
   font-size: tokens.$font-size-label;
   font-weight: tokens.$font-weight-medium;
