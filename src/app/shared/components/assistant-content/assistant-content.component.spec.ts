@@ -41,6 +41,42 @@ describe('AssistantContentComponent', () => {
     expect(text('.assistant-content__hint')).toContain('texto ou áudio');
   });
 
+  it('chat: shows at least two suggestion chips, including the pending-tasks one', () => {
+    const chips = Array.from(el().querySelectorAll('.assistant-content__chip')).map(b => b.textContent?.trim());
+
+    expect(chips.length).toBeGreaterThanOrEqual(2);
+    expect(chips).toContain('Quais são minhas pendências de hoje?');
+  });
+
+  it('tapping a chip sends exactly that question', () => {
+    const chip = Array.from(el().querySelectorAll<HTMLButtonElement>('.assistant-content__chip')).find(
+      b => b.textContent?.trim() === 'Quais são minhas pendências de hoje?',
+    );
+
+    chip?.click();
+
+    expect(assistant.lastQuestion()).toBe('Quais são minhas pendências de hoje?');
+  });
+
+  it('free text that is not a suggestion goes through the same entry point unchanged', () => {
+    assistant.ask('Qual o leito do paciente João?');
+
+    expect(assistant.lastQuestion()).toBe('Qual o leito do paciente João?');
+  });
+
+  it('chips are not shown in shortcuts, form and unavailable views', () => {
+    for (const open of [
+      (): void => assistant.openShortcuts(),
+      (): void => assistant.openAction(create),
+      (): void => assistant.openAction(edit),
+    ]) {
+      open();
+      fixture.detectChanges();
+
+      expect(el().querySelector('.assistant-content__chip')).toBeNull();
+    }
+  });
+
   it('shortcuts: lists the screen actions right under the question', () => {
     assistant.openShortcuts();
     fixture.detectChanges();

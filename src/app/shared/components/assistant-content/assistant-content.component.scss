@@ -50,3 +50,30 @@
   gap: tokens.$space-16;
   margin-top: tokens.$space-16;
 }
+
+// Chips de sugestão de pergunta (sem protótipo no Figma: tokens existentes do design system).
+.assistant-content__suggestions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: tokens.$space-8;
+  margin: tokens.$space-8 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.assistant-content__chip {
+  padding: tokens.$space-8 tokens.$space-16;
+  border: 1px solid var(--color-default-secondary);
+  border-radius: 999px;
+  background: transparent;
+  font-family: tokens.$font-family-chat;
+  font-size: 14px;
+  line-height: 1.35;
+  color: var(--color-default-secondary);
+  cursor: pointer;
+
+  &:focus-visible {
+    outline: 2px solid var(--color-default-secondary);
+    outline-offset: 2px;
+  }
+}
