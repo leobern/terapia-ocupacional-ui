@@ -32,6 +32,9 @@ $ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
 // Um pouco mais lento que antes (320ms) — feedback do usuário: a sensação de
 // "crescimento" do painel precisava ser mais perceptível/suave, não um salto.
 $duration-expand: 380ms;
+// Recolher (mouse out) é quase imediato: com o fade lento, o texto do menu ficava sobreposto ao
+// conteúdo de trás durante a saída.
+$duration-collapse: 90ms;
 
 :host {
   display: contents;
@@ -120,13 +123,17 @@ $duration-expand: 380ms;
     // (100% colapsado, `--space-280` expandido). Combinar `left`/`right`/
     // `width` ao mesmo tempo deixaria o cálculo sobre-restringido.
     transition:
-      width $duration-expand $ease-standard,
-      background-color $duration-expand $ease-standard,
-      box-shadow $duration-expand $ease-standard;
+      width $duration-collapse $ease-standard,
+      background-color $duration-collapse $ease-standard,
+      box-shadow $duration-collapse $ease-standard;
 
     :host(:hover) &,
     :host(:focus-within) &,
     :host(.nav-menu--open) & {
+      transition:
+        width $duration-expand $ease-standard,
+        background-color $duration-expand $ease-standard,
+        box-shadow $duration-expand $ease-standard;
       width: var(--space-280);
       background: var(--color-surface);
       box-shadow: var(--shadow-elevation-bottomsheet);
@@ -164,9 +171,9 @@ $duration-expand: 380ms;
   white-space: nowrap;
   translate: -8px 0;
   transition:
-    opacity 260ms $ease-standard,
-    translate 260ms $ease-standard,
-    max-width $duration-expand $ease-standard;
+    opacity $duration-collapse $ease-standard,
+    translate $duration-collapse $ease-standard,
+    max-width $duration-collapse $ease-standard;
 }
 
 :host(:hover),
@@ -178,7 +185,10 @@ $duration-expand: 380ms;
     opacity: 1;
     max-width: 160px;
     translate: 0 0;
-    transition-delay: 80ms;
+    transition:
+      opacity 260ms $ease-standard 80ms,
+      translate 260ms $ease-standard 80ms,
+      max-width $duration-expand $ease-standard 80ms;
   }
 }
 
@@ -305,9 +315,9 @@ $duration-expand: 380ms;
   // enquanto os demais só recebem hover depois, já com o painel aberto —
   // parecendo uma animação diferente).
   transition:
-    background-color $duration-expand $ease-standard,
+    background-color $duration-collapse $ease-standard,
     color 0.15s ease,
-    gap $duration-expand $ease-standard;
+    gap $duration-collapse $ease-standard;
 
   @include mixins.focus-ring;
 
@@ -352,6 +362,10 @@ $duration-expand: 380ms;
     // navegação e Sair já usavam o mesmo valor).
     width: 100%;
     gap: tokens.$space-16;
+    transition:
+      background-color $duration-expand $ease-standard,
+      color 0.15s ease,
+      gap $duration-expand $ease-standard;
 
     // Atraso só na ENTRADA do hover (mouse chegando no item), casando com o
     // mesmo atraso do rótulo — a saída (regra base, sem atraso) continua
