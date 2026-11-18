@@ -98,8 +98,8 @@ $icon-hit-inset: ($min-touch-target - tokens.$space-32) * 0.5;
 .drawer__logo,
 .drawer__logo-placeholder {
   flex-shrink: 0;
-  height: var(--space-48);
-  width: var(--space-48);
+  height: 84px;
+  width: 84px;
 }
 
 .drawer__buttons {

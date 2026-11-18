@@ -286,38 +286,11 @@ describe('BottomSheetComponent', () => {
   // T009 — pontos de encaixe
   // ---------------------------------------------------------------------------
 
-  it('expõe o controle Expandir e emite snapChange("full") ao acioná-lo', () => {
+  it('não tem botão de expandir (só se expande arrastando) e mantém o de fechar', () => {
     openSheet();
 
-    const snapChange = jasmine.createSpy('snapChange');
-
-    fixture.componentInstance.snapChange.subscribe(snapChange);
-    fixture.nativeElement.querySelector('.bottom-sheet__expand button[aria-label="Expandir"]').click();
-
-    expect(snapChange).toHaveBeenCalledOnceWith('full');
-  });
-
-  it('alterna o controle para Recolher em full e emite snapChange("default") sem fechar', () => {
-    openSheet('full');
-
-    const snapChange = jasmine.createSpy('snapChange');
-    const closed = jasmine.createSpy('closed');
-
-    fixture.componentInstance.snapChange.subscribe(snapChange);
-    fixture.componentInstance.closed.subscribe(closed);
-    fixture.nativeElement.querySelector('.bottom-sheet__expand button[aria-label="Recolher"]').click();
-
-    expect(snapChange).toHaveBeenCalledOnceWith('default');
-    expect(closed).not.toHaveBeenCalled();
-  });
-
-  it('mantém o alvo de toque do controle de expandir em 44x44', () => {
-    openSheet();
-
-    const rect = fixture.nativeElement.querySelector('.bottom-sheet__expand').getBoundingClientRect();
-
-    expect(Math.round(rect.width)).toBeGreaterThanOrEqual(44);
-    expect(Math.round(rect.height)).toBeGreaterThanOrEqual(44);
+    expect(fixture.nativeElement.querySelector('.bottom-sheet__expand')).toBeNull();
+    expect(fixture.nativeElement.querySelector('button[aria-label="Fechar"]')).toBeTruthy();
   });
 
   it('assenta em full ao arrastar para cima, emitindo (snapChange) uma vez', () => {

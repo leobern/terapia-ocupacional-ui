@@ -200,22 +200,11 @@ describe('AppComponent', () => {
       return fixture.nativeElement.querySelector('app-bottom-sheet dialog');
     }
 
-    it('expande para tela cheia preservando o conteúdo já exibido e recolhe de volta', () => {
-      const before = openWithConversation();
-      const text = before.textContent;
+    it('não mostra botão de expandir no mobile', () => {
+      openWithConversation();
 
-      sheetButton('Expandir')?.click();
-      fixture.detectChanges();
-
-      expect(dialog().classList).toContain('bottom-sheet--full');
-      expect(fixture.nativeElement.querySelector('app-assistant-content .assistant-content')).toBe(before);
-      expect(before.textContent).toBe(text);
-
-      sheetButton('Recolher')?.click();
-      fixture.detectChanges();
-
-      expect(dialog().classList).not.toContain('bottom-sheet--full');
-      expect(fixture.nativeElement.querySelector('app-assistant-content .assistant-content')).toBe(before);
+      expect(sheetButton('Expandir')).toBeNull();
+      expect(sheetButton('Fechar')).toBeTruthy();
     });
 
     it('fecha a partir do painel compacto, devolvendo a Home com a rolagem destravada', () => {
@@ -229,14 +218,8 @@ describe('AppComponent', () => {
       expect(document.documentElement.style.overflow).not.toBe('hidden');
     });
 
-    it('fecha a partir da tela cheia e reabre no encaixe compacto', () => {
+    it('fecha e reabre no encaixe compacto', () => {
       openWithConversation();
-      sheetButton('Expandir')?.click();
-      fixture.detectChanges();
-
-      sheetButton('Recolher')?.click();
-      sheetButton('Expandir')?.click();
-      fixture.detectChanges();
       sheetButton('Fechar')?.click();
       fixture.detectChanges();
 
@@ -248,7 +231,6 @@ describe('AppComponent', () => {
 
       expect(dialog().open).toBe(true);
       expect(dialog().classList).not.toContain('bottom-sheet--full');
-      expect(sheetButton('Expandir')).toBeTruthy();
     });
   });
 

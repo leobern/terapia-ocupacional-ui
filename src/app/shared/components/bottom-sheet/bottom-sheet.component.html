@@ -39,18 +39,6 @@
 
       @if (showLogo()) {
         <div class="bottom-sheet__buttons">
-          <!-- Wrapper ampliado só no alvo de toque; o botão interno é o foco e o teclado. -->
-          <!-- eslint-disable-next-line @angular-eslint/template/click-events-have-key-events, @angular-eslint/template/interactive-supports-focus -->
-          <span class="bottom-sheet__expand" (click)="onToggleExpand()">
-            <app-icon-button
-              kind="secondary"
-              appearance="icon"
-              size="small"
-              [icon]="expandIcon()"
-              [ariaLabel]="expandLabel()"
-            />
-          </span>
-
           @if (dismissible()) {
             <!--
             O `<span>` existe porque o host do `app-icon-button` é `display: contents`
