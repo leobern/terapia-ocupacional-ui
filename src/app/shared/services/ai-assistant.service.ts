@@ -1,6 +1,7 @@
-import { Injectable, type Signal, signal } from '@angular/core';
+import { inject, Injectable, type Signal, signal } from '@angular/core';
 
-import { type ScreenAction } from './screen-actions.service';
+import { recognizeAction, resolveAction } from './assistant-action-router';
+import { type ScreenAction, ScreenActionsService } from './screen-actions.service';
 
 /**
  * O que o painel do assistente está mostrando:
@@ -32,6 +33,7 @@ export class AiAssistantService {
   /** Última pergunta enviada (chip ou campo de mensagem); ponto de integração com o motor de IA. */
   readonly lastQuestion: Signal<string | null>;
 
+  private readonly screenActions = inject(ScreenActionsService);
   private readonly lastQuestionSignal = signal<string | null>(null);
   private readonly isOpenSignal = signal(false);
   private readonly viewSignal = signal<AssistantView>('chat');
@@ -50,6 +52,12 @@ export class AiAssistantService {
    */
   ask(question: string): void {
     this.lastQuestionSignal.set(question);
+
+    const known = recognizeAction(question);
+
+    if (known) {
+      this.openAction(resolveAction(known, this.screenActions.actions()));
+    }
   }
 
   /** Abre o painel no chat (saudação). */
