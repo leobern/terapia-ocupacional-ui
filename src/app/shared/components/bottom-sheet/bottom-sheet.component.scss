@@ -299,3 +299,24 @@ $ease-sheet: cubic-bezier(0.32, 0.72, 0, 1);
     }
   }
 }
+
+// Telas internas (cadastro manual: voltar + título, sem a logo): header e conteúdo respeitam o
+// padding de 16px do bottom sheet. Só o header com a logo usa o ajuste sem padding à esquerda.
+.bottom-sheet--form {
+  .bottom-sheet__header {
+    padding: var(--space-24) var(--space-16) var(--space-16);
+  }
+
+  .bottom-sheet__content {
+    padding: 0 var(--space-16);
+  }
+
+  .bottom-sheet__actions {
+    padding: var(--space-16);
+  }
+
+  .bottom-sheet__footer {
+    padding: var(--space-16) var(--space-16)
+      calc(var(--space-16) + env(safe-area-inset-bottom));
+  }
+}

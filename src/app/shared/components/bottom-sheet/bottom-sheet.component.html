@@ -8,6 +8,7 @@
     role="dialog"
     aria-modal="true"
     [class.bottom-sheet--full]="effectiveSnap() === 'full'"
+    [class.bottom-sheet--form]="!showLogo()"
     [class.bottom-sheet--dragging]="isDragging()"
     [attr.aria-label]="ariaLabel()"
     [style.translate]="dragTranslate()"
