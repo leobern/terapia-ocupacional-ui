@@ -34,7 +34,7 @@
     cursor: pointer;
   }
 
-  &:hover:not(.input-select--disabled):not(:focus-within) {
+  &:hover:not(.input-select--disabled, :focus-within) {
     @include input-shell.hover-chrome;
   }
 
@@ -72,7 +72,7 @@
   flex: 1 0 0;
   min-width: 0;
   overflow: hidden;
-  border: none;
+  border: 0;
   outline: none;
   background: transparent;
   padding: 0;

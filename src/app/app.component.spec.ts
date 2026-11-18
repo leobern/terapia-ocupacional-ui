@@ -287,6 +287,23 @@ describe('AppComponent', () => {
     expect(el.querySelectorAll('app-bottom-nav-bar nav button').length).toBe(3);
   });
 
+  it('navigates to /notifications and closes the mobile menu when Notificações is clicked', () => {
+    const router = TestBed.inject(Router);
+
+    spyOn(router, 'navigate').and.resolveTo(true);
+    fixture.componentInstance.menuOpen.set(true);
+    fixture.detectChanges();
+    const item = Array.from<HTMLButtonElement>(
+      fixture.nativeElement.querySelectorAll('app-nav-menu .nav-menu__links .nav-menu__link'),
+    ).find(el => el.textContent?.includes('Notificações'));
+
+    item?.click();
+    fixture.detectChanges();
+
+    expect(router.navigate).toHaveBeenCalledWith(['/notifications']);
+    expect(fixture.componentInstance.menuOpen()).toBeFalse();
+  });
+
   it('navigates to /home and closes the mobile menu when the Home item is clicked', () => {
     const router = TestBed.inject(Router);
 

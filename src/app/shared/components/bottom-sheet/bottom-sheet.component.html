@@ -1,4 +1,7 @@
 @if (!viewportBreakpoint.isDesktop()) {
+  <!-- O clique no próprio <dialog> é o clique no scrim (fora do painel); o teclado fecha pelo
+       evento `cancel` (Esc) nativo e pelo botão "Fechar", então não há equivalente de teclado aqui. -->
+  <!-- eslint-disable-next-line @angular-eslint/template/click-events-have-key-events -->
   <dialog
     #dialogEl
     class="bottom-sheet"
@@ -56,6 +59,9 @@
             o alvo ampliado simplesmente não existiria. Ver o SCSS para as duas
             alternativas com `::after` que foram testadas e falharam.
           -->
+          <!-- O alvo é o <button> interno do app-icon-button (focável e acionável por teclado); este
+               <span> só amplia a área de toque a 44x44. -->
+          <!-- eslint-disable-next-line @angular-eslint/template/click-events-have-key-events, @angular-eslint/template/interactive-supports-focus -->
           <span class="bottom-sheet__close" (click)="onCloseClick()">
             <app-icon-button
               kind="secondary"
@@ -66,7 +72,10 @@
             />
           </span>
         } @else {
-          <span class="bottom-sheet__close-placeholder" aria-hidden="true"></span>
+          <span
+            class="bottom-sheet__close-placeholder"
+            aria-hidden="true"
+          ></span>
         }
       </div>
     </div>

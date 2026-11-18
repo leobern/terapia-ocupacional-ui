@@ -22,10 +22,9 @@ $ai-symbol-bleed: calc($ai-symbol-size * -0.375); // (1 - 1.75) / 2
 // + a largura do icon-button (glifo + padding nos dois lados) + uma folga de
 // respiro. Existe porque o convite sob o símbolo é dinâmico — sem este teto, um
 // texto longo cresceria por cima dos botões de menu e de ações.
-$ai-clearance: calc(
-  #{tokens.$space-40} + #{tokens.$icon-size-lg} + #{tokens.$space-8} * 2 +
-    #{tokens.$space-8}
-);
+// 3 × space-8 = dois respiros do icon-button (um por lado) + a folga extra.
+$ai-gap: tokens.$space-8 * 3;
+$ai-clearance: calc(#{tokens.$space-40} + #{tokens.$icon-size-lg} + #{$ai-gap});
 
 :host {
   bottom: 0;

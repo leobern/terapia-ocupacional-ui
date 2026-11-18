@@ -2,6 +2,10 @@
 @use '../../styles/mixins';
 @use '../../styles/tokens';
 
+// O seletor `:host(:hover), :host(:focus-within), :host(.nav-menu--open)` reaparece de propósito:
+// cada bloco agrupa as regras do painel EXPANDIDO de um elemento (logo, links, rodapé).
+/* stylelint-disable no-duplicate-selectors */
+
 // -----------------------------------------------------------------------------
 // DS-component-menu — nó Figma `4334:7401` (variantes `4334:7400` colapsado /
 // `4334:7402` expandido) no desktop; nó `4367:11591` ("menu aberto") no
@@ -126,7 +130,7 @@ $duration-expand: 380ms;
       width: var(--space-280);
       background: var(--color-surface);
       box-shadow: var(--shadow-elevation-bottomsheet);
-      border-right: none;
+      border-right: 0;
       border-top-right-radius: var(--radius-md);
       border-bottom-right-radius: var(--radius-md);
       // Acima do conteúdo da rota — o painel flutua por cima em vez de
@@ -223,6 +227,7 @@ $duration-expand: 380ms;
   // interno via `var(--icon-logo-accent-override, ...)`, escape hatch aditivo
   // criado especificamente para este caso (ver icon-logo-visual.component.scss).
   --icon-logo-accent-override: var(--color-primary);
+
   position: absolute;
   top: 50%;
   left: 50%;
@@ -284,7 +289,7 @@ $duration-expand: 380ms;
   // abaixo, junto com o resto do estado expandido.
   gap: 0;
   padding: tokens.$space-8;
-  border: none;
+  border: 0;
   border-radius: var(--radius-xs);
   background: transparent;
   color: var(--color-content-1);
@@ -378,7 +383,7 @@ $duration-expand: 380ms;
   // `:not(--logout)` e `:not(--active)` evitam que a troca de cor por estado
   // (colapsado/expandido) sobreponha as cores fixas do item Sair e do item
   // ativo, que têm regra própria acima.
-  .nav-menu__link:not(.nav-menu__link--logout):not(.nav-menu__link--active)
+  .nav-menu__link:not(.nav-menu__link--logout, .nav-menu__link--active)
     .nav-menu__icon {
     color: var(--color-secondary);
   }

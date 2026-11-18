@@ -42,19 +42,25 @@ describe('computeBarHeights (SC-005 — FR-010)', () => {
   it('mantem a altura minima em silencio absoluto', () => {
     const heights = settle(0);
 
-    heights.forEach(h => expect(h).toBeCloseTo(BAR_HEIGHT_MIN, 5));
+    heights.forEach(h => {
+      expect(h).toBeCloseTo(BAR_HEIGHT_MIN, 5);
+    });
   });
 
   it('nunca ultrapassa o teto de 26px, nem no nivel maximo', () => {
     const heights = settle(1);
 
-    heights.forEach(h => expect(h).toBeLessThanOrEqual(BAR_HEIGHT_MAX + 1e-6));
+    heights.forEach(h => {
+      expect(h).toBeLessThanOrEqual(BAR_HEIGHT_MAX + 1e-6);
+    });
   });
 
   it('atinge exatamente o teto no nivel maximo (ganho saturado)', () => {
     const heights = settle(1);
 
-    heights.forEach(h => expect(Math.abs(h - BAR_HEIGHT_MAX)).toBeLessThanOrEqual(1));
+    heights.forEach(h => {
+      expect(Math.abs(h - BAR_HEIGHT_MAX)).toBeLessThanOrEqual(1);
+    });
   });
 
   it('escala com o nivel captado nos 4 pontos da tabela de faixas', () => {
@@ -67,7 +73,9 @@ describe('computeBarHeights (SC-005 — FR-010)', () => {
     ];
 
     expected.forEach(([level, want]) => {
-      settle(level).forEach(h => expect(Math.abs(h - want)).toBeLessThanOrEqual(1));
+      settle(level).forEach(h => {
+        expect(Math.abs(h - want)).toBeLessThanOrEqual(1);
+      });
     });
   });
 
@@ -76,7 +84,9 @@ describe('computeBarHeights (SC-005 — FR-010)', () => {
     const heights = settle(0.05);
     const want = BAR_HEIGHT_MIN + (BAR_HEIGHT_MAX - BAR_HEIGHT_MIN) * 0.05 * (0.25 + 0.75 * 0.2);
 
-    heights.forEach(h => expect(Math.abs(h - want)).toBeLessThanOrEqual(1));
+    heights.forEach(h => {
+      expect(Math.abs(h - want)).toBeLessThanOrEqual(1);
+    });
   });
 
   it('suaviza entre quadros — um unico quadro nao salta para o valor final', () => {
@@ -151,12 +161,15 @@ describe('InputChatWaveformComponent', () => {
    * componente, agendado ao final do flush do `effect`.
    */
   function runOneFrame(visibility: DocumentVisibilityState = 'visible'): jasmine.Spy {
+    // Helper de teste: o espião vive só nesta chamada e é devolvido ao teste que a usou.
+    // eslint-disable-next-line jasmine/no-unsafe-spy
     const readFrame = jasmine.createSpy('readFrame');
     const scheduled: FrameRequestCallback[] = [];
 
     // O Chrome headless reporta `visibilityState: 'hidden'`, e a guarda de
     // FR-011 barraria o quadro — por isso a visibilidade é explícita aqui.
     stubVisibility(visibility);
+    // eslint-disable-next-line jasmine/no-unsafe-spy
     spyOn(globalThis, 'requestAnimationFrame').and.callFake((cb: FrameRequestCallback) => {
       scheduled.push(cb);
 

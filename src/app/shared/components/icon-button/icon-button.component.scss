@@ -99,7 +99,7 @@
 }
 
 .icon-button--icon {
-  border: none;
+  border: 0;
   // Sem isso, o `<button>` nativo mostra o fundo cinza padrão do navegador
   // (UA stylesheet) em vez de ficar transparente — só `solid`/`outlined`
   // definem fundo explícito, `icon` é a única variante chromeless.
@@ -178,7 +178,7 @@
 // vem depois no arquivo, para vencer o empate pela ordem de origem.
 .icon-button:disabled {
   background: tokens.$color-state-disabled;
-  border: none;
+  border: 0;
   color: tokens.$color-state-disabled-2;
   cursor: not-allowed;
 }

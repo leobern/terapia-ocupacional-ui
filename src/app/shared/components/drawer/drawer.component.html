@@ -1,4 +1,7 @@
 @if (viewportBreakpoint.isDesktop()) {
+  <!-- O <dialog> só recebe o teclado para prender o foco (Tab/Shift+Tab) quando expandido; os
+       controles dentro dele é que são focáveis. -->
+  <!-- eslint-disable-next-line @angular-eslint/template/interactive-supports-focus -->
   <dialog
     #dialogEl
     class="drawer"
@@ -6,6 +9,7 @@
     [attr.role]="roleAttr()"
     [attr.aria-modal]="ariaModalAttr()"
     [attr.aria-label]="ariaLabel()"
+    (keydown)="onKeydown($event)"
   >
     <div class="drawer__header">
       @if (showLogo()) {

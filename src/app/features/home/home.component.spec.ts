@@ -124,6 +124,8 @@ describe('HomeComponent', () => {
 
     const router = TestBed.inject(Router);
 
+    // `setup()` é o helper de cada teste: o espião vale só dentro dele.
+    // eslint-disable-next-line jasmine/no-unsafe-spy
     spyOn(router, 'navigate').and.resolveTo(true);
     navigate = router.navigate as jasmine.Spy;
     if (!source) {

@@ -1,3 +1,6 @@
+<!-- O card inteiro é uma área de toque estendida; o acionamento por teclado é do <button> da
+     seta (focável), então o <article> não precisa de handler de teclado nem de foco. -->
+<!-- eslint-disable-next-line @angular-eslint/template/click-events-have-key-events, @angular-eslint/template/interactive-supports-focus -->
 <article
   class="card-patients"
   [class.card-patients--disabled]="ctaDisabled()"

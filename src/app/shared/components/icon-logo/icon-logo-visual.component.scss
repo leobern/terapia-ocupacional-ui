@@ -1,5 +1,9 @@
 @use '../../styles/tokens';
 
+// Núcleo visual do logo, portado do Figma: nomes de camada com número (`light--1`), `black` como
+// portador do canal alfa da máscara e frações com precisão de geometria (raio/ângulo de órbita).
+/* stylelint-disable selector-class-pattern, color-named, number-max-precision */
+
 // -----------------------------------------------------------------------------
 // DS-component-icon-logo — núcleo visual compartilhado (interno).
 // ⚠️ REGRA QUE NÃO PODE SER QUEBRADA (research.md §1):
@@ -144,7 +148,6 @@ $mesh-fade-mask: radial-gradient(
   color: var(--icon-logo-accent);
   height: auto;
   inset: calc(var(--icon-logo-resolved-size) / 48);
-  -webkit-mask-image: $mesh-fade-mask;
   mask-image: $mesh-fade-mask;
   transition: color 400ms ease-out;
   position: absolute;

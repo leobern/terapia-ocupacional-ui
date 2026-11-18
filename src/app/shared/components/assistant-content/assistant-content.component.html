@@ -74,11 +74,21 @@
       @if (assistant.conversation(); as conversation) {
         <div class="assistant-content__conversation" aria-live="polite">
           <p class="assistant-content__question">{{ conversation.question }}</p>
-          <div class="assistant-content__answer" [class.assistant-content__answer--error]="conversation.status === 'failed'">
+          <div
+            class="assistant-content__answer"
+            [class.assistant-content__answer--error]="
+              conversation.status === 'failed'
+            "
+          >
             @if (conversation.status === 'loading') {
-              <p class="assistant-content__hint" role="status">Buscando a resposta…</p>
+              <p class="assistant-content__hint" role="status">
+                Buscando a resposta…
+              </p>
             } @else if (conversation.answer; as answer) {
-              <p class="assistant-content__body" [attr.role]="conversation.status === 'failed' ? 'alert' : null">
+              <p
+                class="assistant-content__body"
+                [attr.role]="conversation.status === 'failed' ? 'alert' : null"
+              >
                 {{ answer.summary }}
               </p>
               @if (answer.items?.length) {
@@ -92,7 +102,10 @@
           </div>
         </div>
       }
-      <ul class="assistant-content__suggestions" aria-label="Sugestões de pergunta">
+      <ul
+        class="assistant-content__suggestions"
+        aria-label="Sugestões de pergunta"
+      >
         @for (suggestion of suggestions; track suggestion) {
           <li>
             <button

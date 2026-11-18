@@ -2,10 +2,10 @@ import { Injectable } from '@angular/core';
 
 import { DailyPatientsSource, DailyPatientsSummary } from './daily-patients';
 
-/** Provisório: sem backend definido, nenhum paciente (neutro). */
+/** Provisório: valores de exemplo (sem backend) para a Home mostrar o card de contagem e a meta. */
 @Injectable()
 export class ProvisionalDailyPatientsSource extends DailyPatientsSource {
   loadForDay(): Promise<DailyPatientsSummary> {
-    return Promise.resolve({ averageCaloricPercentage: 0, averageProteinPercentage: 0, patientCount: 0 });
+    return Promise.resolve({ averageCaloricPercentage: 82, averageProteinPercentage: 64, patientCount: 12 });
   }
 }

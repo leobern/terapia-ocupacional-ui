@@ -1,6 +1,7 @@
 {
   "name": "terapia-nutricional-ui",
   "version": "1.0.0-SNAPSHOT",
+  "packageManager": "pnpm@11.17.0",
   "private": true,
   "engines": {
     "node": ">=20.15.0",
