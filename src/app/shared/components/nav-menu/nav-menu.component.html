@@ -50,6 +50,7 @@
         class="nav-menu__link"
         [class.nav-menu__link--active]="activeItem() === item.key"
         [class.keyboard-focus]="keyboardFocused()"
+        [disabled]="item.key === 'acoes-tela' && actionsOpen()"
         (click)="onItemClick(item.key)"
         (focus)="onFocus()"
         (blur)="onBlur()"

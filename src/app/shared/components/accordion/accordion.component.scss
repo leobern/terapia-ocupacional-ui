@@ -97,15 +97,13 @@
   min-height: 0;
 }
 
+// O slot do campo NÃO desenha caixa própria: o accordion já é o card (título + seta) e o campo
+// projetado ocupa toda a largura útil dele, sem uma segunda borda por dentro.
 .accordion__input {
   box-sizing: border-box;
   width: 100%;
-  min-height: 40px;
+  min-height: 24px;
   margin-top: tokens.$space-8;
-  padding: tokens.$space-8 tokens.$space-16;
-  border: 1px solid tokens.$color-border-2;
-  border-radius: tokens.$radius-sm;
-  background: tokens.$color-surface;
 }
 
 // gap 16px (não 8px) antes do valor respondido, diferente do slot de input — confirmado nos

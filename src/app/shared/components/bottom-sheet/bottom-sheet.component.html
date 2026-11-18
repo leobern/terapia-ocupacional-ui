@@ -1,10 +1,14 @@
 @if (!viewportBreakpoint.isDesktop()) {
+  <!-- O clique no próprio <dialog> é o clique no scrim (fora do painel); o teclado fecha pelo
+       evento `cancel` (Esc) nativo e pelo botão "Fechar", então não há equivalente de teclado aqui. -->
+  <!-- eslint-disable-next-line @angular-eslint/template/click-events-have-key-events -->
   <dialog
     #dialogEl
     class="bottom-sheet"
     role="dialog"
     aria-modal="true"
     [class.bottom-sheet--full]="effectiveSnap() === 'full'"
+    [class.bottom-sheet--form]="!showLogo()"
     [class.bottom-sheet--dragging]="isDragging()"
     [attr.aria-label]="ariaLabel()"
     [style.translate]="dragTranslate()"
@@ -28,27 +32,16 @@
       @if (showLogo()) {
         <app-icon-logo class="bottom-sheet__logo" state="default" />
       } @else {
-        <!-- Mantém o `space-between` do Figma com três colunas mesmo sem o logo. -->
-        <span class="bottom-sheet__logo-placeholder" aria-hidden="true"></span>
+        <!-- Em vez da logo: o título + seta de voltar de uma ação aberta (padrão de cadastro). -->
+        <ng-content select="[bottomSheetHeaderStart]" />
       }
 
       <span class="bottom-sheet__handle" aria-hidden="true"></span>
 
-      <div class="bottom-sheet__buttons">
-        <!-- Wrapper ampliado só no alvo de toque; o botão interno é o foco e o teclado. -->
-        <!-- eslint-disable-next-line @angular-eslint/template/click-events-have-key-events, @angular-eslint/template/interactive-supports-focus -->
-        <span class="bottom-sheet__expand" (click)="onToggleExpand()">
-          <app-icon-button
-            kind="secondary"
-            appearance="icon"
-            size="small"
-            [icon]="expandIcon()"
-            [ariaLabel]="expandLabel()"
-          />
-        </span>
-
-        @if (dismissible()) {
-          <!--
+      @if (showLogo()) {
+        <div class="bottom-sheet__buttons">
+          @if (dismissible()) {
+            <!--
             O `<span>` existe porque o host do `app-icon-button` é `display: contents`
             e portanto NÃO gera caixa: largura, altura e padding aplicados nele são
             inertes. É este wrapper que carrega a caixa de conteúdo de 32x32, o
@@ -56,19 +49,26 @@
             o alvo ampliado simplesmente não existiria. Ver o SCSS para as duas
             alternativas com `::after` que foram testadas e falharam.
           -->
-          <span class="bottom-sheet__close" (click)="onCloseClick()">
-            <app-icon-button
-              kind="secondary"
-              appearance="icon"
-              size="small"
-              icon="x"
-              ariaLabel="Fechar"
-            />
-          </span>
-        } @else {
-          <span class="bottom-sheet__close-placeholder" aria-hidden="true"></span>
-        }
-      </div>
+            <!-- O alvo é o <button> interno do app-icon-button (focável e acionável por teclado); este
+               <span> só amplia a área de toque a 44x44. -->
+            <!-- eslint-disable-next-line @angular-eslint/template/click-events-have-key-events, @angular-eslint/template/interactive-supports-focus -->
+            <span class="bottom-sheet__close" (click)="onCloseClick()">
+              <app-icon-button
+                kind="secondary"
+                appearance="icon"
+                size="small"
+                icon="x"
+                ariaLabel="Fechar"
+              />
+            </span>
+          } @else {
+            <span
+              class="bottom-sheet__close-placeholder"
+              aria-hidden="true"
+            ></span>
+          }
+        </div>
+      }
     </div>
 
     <div class="bottom-sheet__content">

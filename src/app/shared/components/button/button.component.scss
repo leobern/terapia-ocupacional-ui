@@ -164,7 +164,7 @@
 // kind/appearance.
 .button:disabled {
   background: tokens.$color-state-disabled;
-  border: none;
+  border: 0;
   color: tokens.$color-state-disabled-2;
   cursor: not-allowed;
 }

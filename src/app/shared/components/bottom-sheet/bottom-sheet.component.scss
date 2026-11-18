@@ -30,8 +30,8 @@ $min-touch-target: 44px;
 // deriva medidas de `tokens.$space-56` em Sass.
 $close-hit-inset: ($min-touch-target - tokens.$space-32) * 0.5;
 $duration-enter: 300ms;
-$duration-exit: 250ms;
-$duration-reduced: 150ms;
+$duration-exit: 120ms;
+$duration-reduced: 60ms;
 
 // Curva de desaceleração de sheets nativos: rápida no início, assentamento suave.
 // Sem origem no Figma (`get_motion_context` retornou vazio) — proposta de
@@ -180,12 +180,16 @@ $ease-sheet: cubic-bezier(0.32, 0.72, 0, 1);
 // virar arraste (FR-022/SC-012).
 .bottom-sheet__header {
   position: relative;
-  align-items: flex-start;
+  // Todo bottom sheet respeita 16px de padding (topo, laterais e base); o cabeçalho ganha +8px no topo
+  // para se afastar da alça de arraste, que flutua fora desse limite. Logo (ou voltar + título) e
+  // expandir/fechar na mesma linha, centralizados na vertical.
+  align-items: center;
   cursor: grab;
   display: flex;
   flex-shrink: 0;
   justify-content: space-between;
-  padding: var(--space-24);
+  // Sem padding à esquerda (a logo encosta na borda); só 24px à direita.
+  padding: 0 var(--space-24) 0 0;
   touch-action: none;
 
   &:active {
@@ -196,8 +200,8 @@ $ease-sheet: cubic-bezier(0.32, 0.72, 0, 1);
 .bottom-sheet__logo,
 .bottom-sheet__logo-placeholder {
   flex-shrink: 0;
-  height: var(--space-48);
-  width: var(--space-48);
+  height: 84px;
+  width: 84px;
 }
 
 .bottom-sheet__handle {
@@ -208,6 +212,9 @@ $ease-sheet: cubic-bezier(0.32, 0.72, 0, 1);
   left: 50%;
   margin: var(--space-8) 0;
   position: absolute;
+  // Colada no topo do cabeçalho: com os itens centralizados na vertical, sem `top` ela acompanharia
+  // o centro da linha e ficaria por cima do título.
+  top: 0;
   transform: translateX(-50%);
   width: var(--space-80);
 }
@@ -228,13 +235,13 @@ $ease-sheet: cubic-bezier(0.32, 0.72, 0, 1);
 // O host do `app-icon-button` é `display: contents`, então nada disso pode ser
 // aplicado nele: ele não gera caixa nenhuma. Daí o `<span>` no template.
 .bottom-sheet__buttons {
-  align-items: flex-start;
+  margin-left: auto;
+  align-items: center;
   display: flex;
   flex-shrink: 0;
   gap: var(--space-8);
 }
 
-.bottom-sheet__expand,
 .bottom-sheet__close,
 .bottom-sheet__close-placeholder {
   box-sizing: content-box;
@@ -254,7 +261,7 @@ $ease-sheet: cubic-bezier(0.32, 0.72, 0, 1);
   // Impede o scroll chaining: rolar a conversa até o fim não pode continuar
   // rolando a página por baixo.
   overscroll-behavior: contain;
-  padding: var(--space-8) var(--space-40) var(--space-40);
+  padding: 0;
 }
 
 // Faixa de atalhos: some inteira (padding incluído) quando não há atalhos —
@@ -264,14 +271,15 @@ $ease-sheet: cubic-bezier(0.32, 0.72, 0, 1);
   flex-shrink: 0;
   flex-wrap: wrap;
   gap: var(--space-16);
-  padding: var(--space-24);
+  padding: var(--space-16) var(--space-24);
 }
 
 .bottom-sheet__footer {
   display: flex;
   flex-direction: column;
   flex-shrink: 0;
-  padding: 0 var(--space-24) calc(var(--space-40) + env(safe-area-inset-bottom));
+  padding: var(--space-16) var(--space-24)
+    calc(var(--space-16) + env(safe-area-inset-bottom));
 }
 
 // O arraste continua funcionando: é gesto direto, não animação decorativa.
@@ -289,5 +297,26 @@ $ease-sheet: cubic-bezier(0.32, 0.72, 0, 1);
       opacity: 1;
       translate: none;
     }
+  }
+}
+
+// Telas internas (cadastro manual: voltar + título, sem a logo): header e conteúdo respeitam o
+// padding de 16px do bottom sheet. Só o header com a logo usa o ajuste sem padding à esquerda.
+.bottom-sheet--form {
+  .bottom-sheet__header {
+    padding: var(--space-24) var(--space-16) var(--space-16);
+  }
+
+  .bottom-sheet__content {
+    padding: 0 var(--space-16);
+  }
+
+  .bottom-sheet__actions {
+    padding: var(--space-16);
+  }
+
+  .bottom-sheet__footer {
+    padding: var(--space-16) var(--space-16)
+      calc(var(--space-16) + env(safe-area-inset-bottom));
   }
 }

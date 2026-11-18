@@ -170,37 +170,21 @@ describe('AssistantContentComponent', () => {
     expect(text('.assistant-content__actions')).toContain('Nenhuma ação disponível');
   });
 
-  it('choosing a registration opens its form with a back arrow and the form title', () => {
+  it('choosing a registration opens its form (the heading and back arrow live in the panel header)', () => {
     assistant.openShortcuts();
     fixture.detectChanges();
     (el().querySelectorAll('.assistant-content__actions button')[0] as HTMLButtonElement).click();
     fixture.detectChanges();
 
-    expect(text('.assistant-content__title')).toBe('Criar notificação');
+    expect(assistant.view()).toBe('form');
     expect(el().querySelector('app-assistant-form')).toBeTruthy();
-    expect(el().querySelector('button[aria-label="Voltar para os atalhos"]')).toBeTruthy();
   });
 
-  it('the back arrow returns to the shortcuts', () => {
-    assistant.openAction(create);
-    fixture.detectChanges();
-    (el().querySelector('button[aria-label="Voltar para os atalhos"]') as HTMLButtonElement).click();
-    fixture.detectChanges();
-
-    expect(text('.assistant-content__title')).toBe('Atalhos');
-  });
-
-  it('an action without a form says it is not available yet, with a way back', () => {
+  it('an action without a form says it is not available yet', () => {
     assistant.openAction(edit);
     fixture.detectChanges();
 
-    expect(text('.assistant-content__title')).toBe('Editar notificação');
     expect(text('.assistant-content__body')).toContain('ainda não está disponível');
-
-    (el().querySelector('button[aria-label="Voltar para os atalhos"]') as HTMLButtonElement).click();
-    fixture.detectChanges();
-
-    expect(text('.assistant-content__title')).toBe('Atalhos');
   });
 
   it('after the registration is saved the panel goes back to the shortcuts', () => {

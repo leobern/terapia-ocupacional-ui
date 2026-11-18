@@ -1,6 +1,7 @@
 {
   "name": "terapia-nutricional-ui",
   "version": "1.0.0-SNAPSHOT",
+  "packageManager": "pnpm@11.17.0",
   "private": true,
   "engines": {
     "node": ">=20.15.0",
@@ -91,6 +92,7 @@
     "@angular/compiler-cli": "^21.0.0",
     "@commitlint/cli": "^20.0.0",
     "@commitlint/config-conventional": "^20.0.0",
+    "@compodoc/compodoc": "^1.1.0",
     "@cucumber/cucumber": "^11.0.0",
     "@dotenvx/dotenvx": "^1.0.0",
     "@eslint/js": "^9.0.0",
@@ -101,7 +103,6 @@
     "@ngrx/schematics": "^21.0.0",
     "@ngrx/store-devtools": "^21.0.0",
     "@openapitools/openapi-generator-cli": "^2.19.0",
-    "@compodoc/compodoc": "^1.1.0",
     "@playwright/test": "^1.49.0",
     "@smarttools/eslint-plugin-rxjs": "^1.0.22",
     "@stryker-mutator/api": "^9.0.0",
@@ -143,6 +144,7 @@
     "nodemon": "^3.0.0",
     "npm-run-all2": "^7.0.0",
     "playwright-bdd": "^8.0.0",
+    "prettier": "3.9.6",
     "rimraf": "^6.0.1",
     "sonarqube-scanner": "^4.0.0",
     "source-map-explorer": "^2.5.3",

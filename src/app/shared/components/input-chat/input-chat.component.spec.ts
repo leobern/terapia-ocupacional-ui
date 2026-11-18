@@ -13,7 +13,10 @@ import { InputChatComponent } from './input-chat.component';
  * cancelar/enviar e cleanup (research.md §5/§9).
  */
 class FakeAudioCaptureService {
+  // Dublê de classe: os espiões pertencem à instância criada em cada teste.
+  // eslint-disable-next-line jasmine/no-unsafe-spy
   readonly disposed = jasmine.createSpy('dispose');
+  // eslint-disable-next-line jasmine/no-unsafe-spy
   readonly collected = jasmine.createSpy('stopAndCollect');
 
   blob = new Blob(['audio-bytes'], { type: 'audio/webm;codecs=opus' });
@@ -434,6 +437,35 @@ describe('InputChatComponent', () => {
       expect(sentAudio.length).toBe(1);
       expect(sentAudio[0].size).toBeGreaterThan(0);
       expect(sentAudio[0].type).toBe('audio/webm;codecs=opus');
+      expect(fixture.componentInstance.mode()).toBe('text');
+    });
+
+    it('falha ao coletar o áudio libera o microfone, volta ao texto e avisa o erro', async () => {
+      const errors: string[] = [];
+
+      fixture.componentInstance.audioModeError.subscribe(error => errors.push(error));
+      await enterAudioMode();
+      const handle = capture.handle;
+
+      if (!handle) {
+        throw new Error('captura não iniciada');
+      }
+      handle.stopAndCollect = (): Promise<Blob> => Promise.reject(new Error('sem áudio'));
+      mainButtonEl().click();
+      await fixture.whenStable();
+      fixture.detectChanges();
+
+      expect(capture.disposed).toHaveBeenCalledWith();
+      expect(errors).toEqual(['unavailable']);
+      expect(fixture.componentInstance.mode()).toBe('text');
+    });
+
+    it('botão principal desabilitado não faz nada', () => {
+      fixture.componentRef.setInput('disabled', true);
+      fixture.detectChanges();
+      (fixture.componentInstance as unknown as { onMainButtonClick(): void }).onMainButtonClick();
+
+      expect(capture.handle).toBeNull();
       expect(fixture.componentInstance.mode()).toBe('text');
     });
 

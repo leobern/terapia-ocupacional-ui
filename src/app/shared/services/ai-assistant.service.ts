@@ -1,4 +1,4 @@
-import { inject, Injectable, type Signal, signal } from '@angular/core';
+import { computed, inject, Injectable, type Signal, signal } from '@angular/core';
 
 import { recognizeAction, resolveAction } from './assistant-action-router';
 import {
@@ -40,6 +40,11 @@ export interface AssistantConversation {
 @Injectable({ providedIn: 'root' })
 export class AiAssistantService {
   readonly isOpen: Signal<boolean>;
+  /**
+   * O menu de atalhos está aberto (a tela de atalhos, um formulário ou o aviso de ação indisponível):
+   * os botões que o abrem ficam desabilitados e esmaecidos para mostrar isso. O chat não conta.
+   */
+  readonly shortcutsOpen: Signal<boolean>;
   readonly view: Signal<AssistantView>;
   /** Ação cujo formulário (ou aviso) está aberto; `null` fora dessas visões. */
   readonly activeAction: Signal<ScreenAction | null>;
@@ -61,6 +66,7 @@ export class AiAssistantService {
 
   constructor() {
     this.isOpen = this.isOpenSignal.asReadonly();
+    this.shortcutsOpen = computed(() => this.isOpenSignal() && this.viewSignal() !== 'chat');
     this.lastQuestion = this.lastQuestionSignal.asReadonly();
     this.conversation = this.conversationSignal.asReadonly();
     this.view = this.viewSignal.asReadonly();

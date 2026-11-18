@@ -1,0 +1,11 @@
+@if (controller.active(); as form) {
+  <app-button
+    class="assistant-submit"
+    kind="primary"
+    appearance="solid"
+    [label]="form.label()"
+    [disabled]="!form.canSubmit()"
+    [fullWidth]="true"
+    (click)="form.submit()"
+  />
+}

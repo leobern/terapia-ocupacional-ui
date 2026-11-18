@@ -23,42 +23,13 @@
     </div>
   }
   @case ('form') {
+    <!-- O título e a seta de voltar ficam no cabeçalho do painel (app-assistant-heading). -->
     @if (assistant.activeAction()?.form; as form) {
-      <div class="assistant-content">
-        <div class="assistant-content__heading">
-          <app-icon-button
-            kind="secondary"
-            appearance="icon"
-            size="small"
-            icon="arrow-left"
-            ariaLabel="Voltar para os atalhos"
-            (click)="assistant.back()"
-          />
-          <h2 class="assistant-content__title">{{ form.title }}</h2>
-        </div>
-        <app-assistant-form [definition]="form" (submitted)="onSubmitted()" />
-      </div>
+      <app-assistant-form [definition]="form" (submitted)="onSubmitted()" />
     }
   }
   @case ('unavailable') {
-    <div class="assistant-content">
-      <div class="assistant-content__heading">
-        <app-icon-button
-          kind="secondary"
-          appearance="icon"
-          size="small"
-          icon="arrow-left"
-          ariaLabel="Voltar para os atalhos"
-          (click)="assistant.back()"
-        />
-        <h2 class="assistant-content__title">
-          {{ assistant.activeAction()?.label }}
-        </h2>
-      </div>
-      <p class="assistant-content__body">
-        Esta ação ainda não está disponível.
-      </p>
-    </div>
+    <p class="assistant-content__body">Esta ação ainda não está disponível.</p>
   }
   @default {
     <div class="assistant-content">
@@ -74,11 +45,21 @@
       @if (assistant.conversation(); as conversation) {
         <div class="assistant-content__conversation" aria-live="polite">
           <p class="assistant-content__question">{{ conversation.question }}</p>
-          <div class="assistant-content__answer" [class.assistant-content__answer--error]="conversation.status === 'failed'">
+          <div
+            class="assistant-content__answer"
+            [class.assistant-content__answer--error]="
+              conversation.status === 'failed'
+            "
+          >
             @if (conversation.status === 'loading') {
-              <p class="assistant-content__hint" role="status">Buscando a resposta…</p>
+              <p class="assistant-content__hint" role="status">
+                Buscando a resposta…
+              </p>
             } @else if (conversation.answer; as answer) {
-              <p class="assistant-content__body" [attr.role]="conversation.status === 'failed' ? 'alert' : null">
+              <p
+                class="assistant-content__body"
+                [attr.role]="conversation.status === 'failed' ? 'alert' : null"
+              >
                 {{ answer.summary }}
               </p>
               @if (answer.items?.length) {
@@ -92,7 +73,10 @@
           </div>
         </div>
       }
-      <ul class="assistant-content__suggestions" aria-label="Sugestões de pergunta">
+      <ul
+        class="assistant-content__suggestions"
+        aria-label="Sugestões de pergunta"
+      >
         @for (suggestion of suggestions; track suggestion) {
           <li>
             <button

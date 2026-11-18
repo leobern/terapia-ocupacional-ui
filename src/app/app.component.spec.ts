@@ -200,22 +200,11 @@ describe('AppComponent', () => {
       return fixture.nativeElement.querySelector('app-bottom-sheet dialog');
     }
 
-    it('expande para tela cheia preservando o conteúdo já exibido e recolhe de volta', () => {
-      const before = openWithConversation();
-      const text = before.textContent;
+    it('não mostra botão de expandir no mobile', () => {
+      openWithConversation();
 
-      sheetButton('Expandir')?.click();
-      fixture.detectChanges();
-
-      expect(dialog().classList).toContain('bottom-sheet--full');
-      expect(fixture.nativeElement.querySelector('app-assistant-content .assistant-content')).toBe(before);
-      expect(before.textContent).toBe(text);
-
-      sheetButton('Recolher')?.click();
-      fixture.detectChanges();
-
-      expect(dialog().classList).not.toContain('bottom-sheet--full');
-      expect(fixture.nativeElement.querySelector('app-assistant-content .assistant-content')).toBe(before);
+      expect(sheetButton('Expandir')).toBeNull();
+      expect(sheetButton('Fechar')).toBeTruthy();
     });
 
     it('fecha a partir do painel compacto, devolvendo a Home com a rolagem destravada', () => {
@@ -229,14 +218,8 @@ describe('AppComponent', () => {
       expect(document.documentElement.style.overflow).not.toBe('hidden');
     });
 
-    it('fecha a partir da tela cheia e reabre no encaixe compacto', () => {
+    it('fecha e reabre no encaixe compacto', () => {
       openWithConversation();
-      sheetButton('Expandir')?.click();
-      fixture.detectChanges();
-
-      sheetButton('Recolher')?.click();
-      sheetButton('Expandir')?.click();
-      fixture.detectChanges();
       sheetButton('Fechar')?.click();
       fixture.detectChanges();
 
@@ -248,7 +231,6 @@ describe('AppComponent', () => {
 
       expect(dialog().open).toBe(true);
       expect(dialog().classList).not.toContain('bottom-sheet--full');
-      expect(sheetButton('Expandir')).toBeTruthy();
     });
   });
 
@@ -285,6 +267,23 @@ describe('AppComponent', () => {
 
     expect(el.querySelectorAll('app-bottom-nav-bar').length).toBe(1);
     expect(el.querySelectorAll('app-bottom-nav-bar nav button').length).toBe(3);
+  });
+
+  it('navigates to /notifications and closes the mobile menu when Notificações is clicked', () => {
+    const router = TestBed.inject(Router);
+
+    spyOn(router, 'navigate').and.resolveTo(true);
+    fixture.componentInstance.menuOpen.set(true);
+    fixture.detectChanges();
+    const item = Array.from<HTMLButtonElement>(
+      fixture.nativeElement.querySelectorAll('app-nav-menu .nav-menu__links .nav-menu__link'),
+    ).find(el => el.textContent?.includes('Notificações'));
+
+    item?.click();
+    fixture.detectChanges();
+
+    expect(router.navigate).toHaveBeenCalledWith(['/notifications']);
+    expect(fixture.componentInstance.menuOpen()).toBeFalse();
   });
 
   it('navigates to /home and closes the mobile menu when the Home item is clicked', () => {

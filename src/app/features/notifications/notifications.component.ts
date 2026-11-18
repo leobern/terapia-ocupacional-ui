@@ -134,11 +134,11 @@ export class NotificationsComponent implements OnDestroy {
   protected readonly hospitalName = computed(() => this.hospitalContext.selected()?.name ?? '');
   protected readonly todayLabel = computed(() => formatTodayLabel());
   /** Título com a contagem ("3 Notificações"), no mobile e no desktop. */
+  protected readonly assistant = inject(AiAssistantService);
   protected readonly title = computed(() => `${this.totalCount()} Notificações`);
 
   private readonly actions$ = inject(Actions);
   private readonly location = inject(Location);
-  private readonly assistant = inject(AiAssistantService);
   private readonly hospitalContext = inject(HospitalContextService);
   private readonly repository = inject(NotificationsRepository);
   private readonly screenActions = inject(ScreenActionsService);

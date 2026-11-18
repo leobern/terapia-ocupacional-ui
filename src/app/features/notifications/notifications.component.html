@@ -1,8 +1,15 @@
 <app-page-container>
   <div class="notifications">
-    <!-- Figma 4506:8583: sino azul (cor do ícone do menu) + título escuro; "X" à direita
-         volta para a tela anterior. -->
+    <!-- Telas de camada interna: seta de VOLTAR como primeiro elemento do cabeçalho (o mesmo botão
+         que antes era o "X"), depois o sino azul (cor do ícone do menu) e o título escuro. -->
     <header class="notifications__header">
+      <app-icon-button
+        kind="primary"
+        appearance="icon"
+        icon="arrow-left"
+        ariaLabel="Voltar"
+        (click)="onClose()"
+      />
       <span class="notifications__header-icon">
         <ph-icon name="bell" [size]="32" />
       </span>
@@ -15,16 +22,10 @@
           appearance="icon"
           icon="squares-four"
           ariaLabel="Ações da tela"
+          [disabled]="assistant.shortcutsOpen()"
           (click)="onOpenShortcuts()"
         />
       </span>
-      <app-icon-button
-        kind="primary"
-        appearance="icon"
-        icon="x"
-        ariaLabel="Fechar notificações"
-        (click)="onClose()"
-      />
     </header>
 
     <div class="notifications__local">

@@ -39,7 +39,10 @@ $icon-hit-inset: ($min-touch-target - tokens.$space-32) * 0.5;
   max-height: 100dvh;
   max-width: 100vw;
   overflow: visible;
-  padding: 0;
+  // A sidebar inteira respeita 24px de padding (topo, base e laterais); cabeçalho, conteúdo, atalhos
+  // e rodapé ficam dentro desse limite.
+  box-sizing: border-box;
+  padding: var(--space-24);
 
   // O UA stylesheet do `<dialog>` usa `position: absolute` por padrão, MESMO
   // quando modal — funciona sem isto só porque `showModal()` promove o
@@ -81,24 +84,28 @@ $icon-hit-inset: ($min-touch-target - tokens.$space-32) * 0.5;
   }
 }
 
+// Linha única: logo (ou título + voltar) à esquerda e expandir/fechar à direita, TODOS centralizados
+// na vertical. O padding de cima/esquerda é 16px menor que o antigo (24 -> 8) — a logo sobe e vai
+// para a esquerda —, e o de baixo cresce 16px para o texto abaixo ficar onde estava.
 .drawer__header {
-  align-items: flex-start;
+  align-items: center;
   display: flex;
   flex-shrink: 0;
   justify-content: space-between;
-  padding: var(--space-24);
+  padding: 0 0 var(--space-24);
 }
 
 .drawer__logo,
 .drawer__logo-placeholder {
   flex-shrink: 0;
-  height: var(--space-48);
-  width: var(--space-48);
+  height: 84px;
+  width: 84px;
 }
 
 .drawer__buttons {
   display: flex;
   flex-shrink: 0;
+  margin-left: auto;
   gap: var(--space-8);
 }
 
@@ -122,7 +129,7 @@ $icon-hit-inset: ($min-touch-target - tokens.$space-32) * 0.5;
   min-height: 0;
   overflow-y: auto;
   overscroll-behavior: contain;
-  padding: 0 var(--space-40) var(--space-40);
+  padding: 0;
 }
 
 // Faixa de atalhos: some inteira (padding incluído) quando não há atalhos —
@@ -132,14 +139,13 @@ $icon-hit-inset: ($min-touch-target - tokens.$space-32) * 0.5;
   flex-shrink: 0;
   flex-wrap: wrap;
   gap: var(--space-16);
-  padding: var(--space-8) var(--space-40);
+  padding: var(--space-16) 0 0;
 }
 
-// Preenchimento assimétrico do nó Figma (`4412:5729`) — diferente do
-// cabeçalho e da faixa de atalhos, que usam padding simétrico.
+// Rodapé (mensagem ou botão de envio): 16px acima, dentro do padding de 24px da sidebar.
 .drawer__footer {
   display: flex;
   flex-direction: column;
   flex-shrink: 0;
-  padding: var(--space-24) var(--space-24) var(--space-40) var(--space-40);
+  padding: var(--space-16) 0 0;
 }

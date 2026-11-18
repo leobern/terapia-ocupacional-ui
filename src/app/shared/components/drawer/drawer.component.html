@@ -1,4 +1,7 @@
 @if (viewportBreakpoint.isDesktop()) {
+  <!-- O <dialog> só recebe o teclado para prender o foco (Tab/Shift+Tab) quando expandido; os
+       controles dentro dele é que são focáveis. -->
+  <!-- eslint-disable-next-line @angular-eslint/template/interactive-supports-focus -->
   <dialog
     #dialogEl
     class="drawer"
@@ -6,13 +9,14 @@
     [attr.role]="roleAttr()"
     [attr.aria-modal]="ariaModalAttr()"
     [attr.aria-label]="ariaLabel()"
+    (keydown)="onKeydown($event)"
   >
     <div class="drawer__header">
       @if (showLogo()) {
         <app-icon-logo class="drawer__logo" state="default" />
       } @else {
-        <!-- Mantém o `space-between` do Figma mesmo sem o logo. -->
-        <span class="drawer__logo-placeholder" aria-hidden="true"></span>
+        <!-- Em vez da logo: o título + seta de voltar de uma ação aberta (padrão de cadastro). -->
+        <ng-content select="[drawerHeaderStart]" />
       }
 
       <div class="drawer__buttons">

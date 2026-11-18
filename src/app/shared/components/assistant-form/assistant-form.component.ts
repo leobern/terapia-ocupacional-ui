@@ -1,6 +1,8 @@
-import { ChangeDetectionStrategy, Component, computed, inject, input, output, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, DestroyRef, inject, input, output, signal } from '@angular/core';
 
+import { AutoResizeTextareaDirective } from '../../directives/auto-resize-textarea.directive';
 import { PhIconComponent } from '../../icons/ph-icon/ph-icon.component';
+import { AssistantFormController } from '../../services/assistant-form-controller.service';
 import {
   type FormActionDefinition,
   type FormFieldDefinition,
@@ -9,7 +11,6 @@ import {
 import { type DirectoryUser, UserDirectory } from '../../services/user-directory';
 import { AccordionComponent, type AccordionState } from '../accordion/accordion.component';
 import { AvatarComponent } from '../avatar/avatar.component';
-import { ButtonComponent } from '../button/button.component';
 
 /** `@` seguido de letras no FIM do texto: o trecho que o autocomplete está completando. */
 const MENTION_TOKEN = /@([^\s@]*)$/u;
@@ -23,7 +24,7 @@ const MENTION_TOKEN = /@([^\s@]*)$/u;
  */
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [AccordionComponent, AvatarComponent, ButtonComponent, PhIconComponent],
+  imports: [AccordionComponent, AutoResizeTextareaDirective, AvatarComponent, PhIconComponent],
   selector: 'app-assistant-form',
   styleUrl: './assistant-form.component.scss',
   templateUrl: './assistant-form.component.html',
@@ -45,11 +46,41 @@ export class AssistantFormComponent {
   );
 
   private readonly directory = inject(UserDirectory);
+  private readonly controller = inject(AssistantFormController);
   private readonly texts = signal<Readonly<Record<string, string>>>({});
   private readonly mentions = signal<Readonly<Record<string, readonly DirectoryUser[]>>>({});
   private readonly collapsed = signal<ReadonlySet<string>>(new Set());
   /** Descarta respostas de busca que chegam depois de uma digitação mais nova. */
   private searchToken = 0;
+
+  constructor() {
+    // O botão de envio mora no rodapé do painel: o formulário se registra para ele acioná-lo.
+    inject(DestroyRef).onDestroy(
+      this.controller.attach({
+        canSubmit: this.canSubmit,
+        label: computed(() => this.definition().submitLabel),
+        submit: () => this.onSubmit(),
+      }),
+    );
+  }
+
+  /** Chamado pelo botão de envio do rodapé (via `AssistantFormController`). */
+  async onSubmit(): Promise<void> {
+    if (!this.canSubmit()) {
+      return;
+    }
+    this.submitting.set(true);
+    this.errorMessage.set(null);
+    try {
+      await this.definition().submit(this.values());
+      this.reset();
+      this.submitted.emit();
+    } catch {
+      this.errorMessage.set('Não foi possível salvar. Tente novamente.');
+    } finally {
+      this.submitting.set(false);
+    }
+  }
 
   protected state(field: FormFieldDefinition): AccordionState {
     if (!this.collapsed().has(field.id)) {
@@ -125,23 +156,6 @@ export class AssistantFormComponent {
     const [year, month, day] = iso.split('-');
 
     return `${day}/${month}/${year}`;
-  }
-
-  protected async onSubmit(): Promise<void> {
-    if (!this.canSubmit()) {
-      return;
-    }
-    this.submitting.set(true);
-    this.errorMessage.set(null);
-    try {
-      await this.definition().submit(this.values());
-      this.reset();
-      this.submitted.emit();
-    } catch {
-      this.errorMessage.set('Não foi possível salvar. Tente novamente.');
-    } finally {
-      this.submitting.set(false);
-    }
   }
 
   private hasValue(field: FormFieldDefinition): boolean {
