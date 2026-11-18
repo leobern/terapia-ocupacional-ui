@@ -180,14 +180,15 @@ $ease-sheet: cubic-bezier(0.32, 0.72, 0, 1);
 // virar arraste (FR-022/SC-012).
 .bottom-sheet__header {
   position: relative;
-  // Logo (ou título + voltar) e expandir/fechar na mesma linha, centralizados na vertical; a logo
-  // sobe/vai 16px para a esquerda (padding 24 -> 8) e o de baixo cresce 16px (texto não se move).
+  // Todo bottom sheet respeita 16px de padding (topo, laterais e base); o cabeçalho ganha +8px no topo
+  // para se afastar da alça de arraste, que flutua fora desse limite. Logo (ou voltar + título) e
+  // expandir/fechar na mesma linha, centralizados na vertical.
   align-items: center;
   cursor: grab;
   display: flex;
   flex-shrink: 0;
   justify-content: space-between;
-  padding: var(--space-8) var(--space-24) var(--space-40) var(--space-8);
+  padding: var(--space-24) var(--space-16) var(--space-16);
   touch-action: none;
 
   &:active {
@@ -260,7 +261,7 @@ $ease-sheet: cubic-bezier(0.32, 0.72, 0, 1);
   // Impede o scroll chaining: rolar a conversa até o fim não pode continuar
   // rolando a página por baixo.
   overscroll-behavior: contain;
-  padding: var(--space-8) var(--space-40) var(--space-40);
+  padding: 0 var(--space-16);
 }
 
 // Faixa de atalhos: some inteira (padding incluído) quando não há atalhos —
@@ -270,14 +271,15 @@ $ease-sheet: cubic-bezier(0.32, 0.72, 0, 1);
   flex-shrink: 0;
   flex-wrap: wrap;
   gap: var(--space-16);
-  padding: var(--space-24);
+  padding: var(--space-16);
 }
 
 .bottom-sheet__footer {
   display: flex;
   flex-direction: column;
   flex-shrink: 0;
-  padding: 0 var(--space-24) calc(var(--space-40) + env(safe-area-inset-bottom));
+  padding: var(--space-16) var(--space-16)
+    calc(var(--space-16) + env(safe-area-inset-bottom));
 }
 
 // O arraste continua funcionando: é gesto direto, não animação decorativa.
