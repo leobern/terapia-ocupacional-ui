@@ -34,27 +34,41 @@
 
       <span class="bottom-sheet__handle" aria-hidden="true"></span>
 
-      @if (dismissible()) {
-        <!--
-          O `<span>` existe porque o host do `app-icon-button` é `display: contents`
-          e portanto NÃO gera caixa: largura, altura e padding aplicados nele são
-          inertes. É este wrapper que carrega a caixa de conteúdo de 32x32, o
-          padding que leva o alvo de toque a 44x44 (FR-017) e o `(click)` — sem ele
-          o alvo ampliado simplesmente não existiria. Ver o SCSS para as duas
-          alternativas com `::after` que foram testadas e falharam.
-        -->
-        <span class="bottom-sheet__close" (click)="onCloseClick()">
+      <div class="bottom-sheet__buttons">
+        <!-- Wrapper ampliado só no alvo de toque; o botão interno é o foco e o teclado. -->
+        <!-- eslint-disable-next-line @angular-eslint/template/click-events-have-key-events, @angular-eslint/template/interactive-supports-focus -->
+        <span class="bottom-sheet__expand" (click)="onToggleExpand()">
           <app-icon-button
             kind="secondary"
             appearance="icon"
             size="small"
-            icon="x"
-            ariaLabel="Fechar"
+            [icon]="expandIcon()"
+            [ariaLabel]="expandLabel()"
           />
         </span>
-      } @else {
-        <span class="bottom-sheet__close-placeholder" aria-hidden="true"></span>
-      }
+
+        @if (dismissible()) {
+          <!--
+            O `<span>` existe porque o host do `app-icon-button` é `display: contents`
+            e portanto NÃO gera caixa: largura, altura e padding aplicados nele são
+            inertes. É este wrapper que carrega a caixa de conteúdo de 32x32, o
+            padding que leva o alvo de toque a 44x44 (FR-017) e o `(click)` — sem ele
+            o alvo ampliado simplesmente não existiria. Ver o SCSS para as duas
+            alternativas com `::after` que foram testadas e falharam.
+          -->
+          <span class="bottom-sheet__close" (click)="onCloseClick()">
+            <app-icon-button
+              kind="secondary"
+              appearance="icon"
+              size="small"
+              icon="x"
+              ariaLabel="Fechar"
+            />
+          </span>
+        } @else {
+          <span class="bottom-sheet__close-placeholder" aria-hidden="true"></span>
+        }
+      </div>
     </div>
 
     <div class="bottom-sheet__content">
