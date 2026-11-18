@@ -96,6 +96,9 @@ export class HomeComponent implements OnInit, OnDestroy {
   /** Cursor do próximo lote; `null` quando o fim da lista foi atingido (RN-03). */
   readonly nextCursor = signal<string | null>(null);
   readonly hasMore = computed(() => this.nextCursor() !== null);
+  /** O primeiro lote do hospital em contexto já respondeu (base do estado vazio — US-003-3-05). */
+  readonly feedLoaded = signal(false);
+  readonly isFeedEmpty = computed(() => this.feedLoaded() && this.notifications().length === 0);
 
   protected readonly context = inject(HospitalContextService);
   protected readonly unreadCount = signal(0);
@@ -227,8 +230,9 @@ export class HomeComponent implements OnInit, OnDestroy {
   }
 
   // public: exercitados diretamente pelo spec.
-  onViewNotificationDetail(_: number): void {
-    // Rota de detalhe registrada na US-003-3-04 — fora do escopo desta story.
+  /** US-003-3-04 RN-01: tocar em qualquer ponto do card abre o detalhe daquela notificação. */
+  onViewNotificationDetail(id: number): void {
+    void this.router.navigate(['/notifications', id]);
   }
 
   onViewAllNotifications(): void {
@@ -289,6 +293,7 @@ export class HomeComponent implements OnInit, OnDestroy {
     this.loadingMore = false;
     this.notifications.set([]);
     this.nextCursor.set(null);
+    this.feedLoaded.set(false);
   }
 
   private async loadFirstBatch(hospitalId: string): Promise<void> {
@@ -300,6 +305,7 @@ export class HomeComponent implements OnInit, OnDestroy {
 
       if (generation === this.feedGeneration) {
         this.notifications.set(sortNotificationsNewestFirst(page.items));
+        this.feedLoaded.set(true);
         this.nextCursor.set(page.nextCursor);
       }
     } catch {

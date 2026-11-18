@@ -1,43 +1,57 @@
 import { TestBed } from '@angular/core/testing';
 
 import { AiAssistantService } from './ai-assistant.service';
+import { type ScreenAction } from './screen-actions.service';
 
 describe('AiAssistantService', () => {
-  function createService(): AiAssistantService {
-    return TestBed.inject(AiAssistantService);
-  }
+  let service: AiAssistantService;
+  const withForm: ScreenAction = {
+    form: { fields: [], submit: (): void => undefined, submitLabel: 'Criar', title: 'Criar algo' },
+    id: 'create',
+    label: 'Criar algo',
+  };
+  const withoutForm: ScreenAction = { id: 'edit', label: 'Editar algo' };
 
   beforeEach(() => {
-    TestBed.configureTestingModule({});
+    service = TestBed.inject(AiAssistantService);
   });
 
-  it('inicia fechado', () => {
-    expect(createService().isOpen()).toBeFalse();
+  it('starts closed, on the chat view', () => {
+    expect(service.isOpen()).toBeFalse();
+    expect(service.view()).toBe('chat');
   });
 
-  it('abre o painel', () => {
-    const service = createService();
-
+  it('openPanel opens the chat; openShortcuts opens the screen actions', () => {
     service.openPanel();
 
-    expect(service.isOpen()).toBeTrue();
+    expect([service.isOpen(), service.view()]).toEqual([true, 'chat']);
+
+    service.openShortcuts();
+
+    expect([service.isOpen(), service.view()]).toEqual([true, 'shortcuts']);
   });
 
-  it('fecha o painel', () => {
-    const service = createService();
+  it('openAction shows the form for a registration and the notice for an action without one', () => {
+    service.openAction(withForm);
 
-    service.openPanel();
+    expect([service.view(), service.activeAction()]).toEqual(['form', withForm]);
+
+    service.openAction(withoutForm);
+
+    expect([service.view(), service.activeAction()]).toEqual(['unavailable', withoutForm]);
+  });
+
+  it('back returns to the shortcuts and clears the active action', () => {
+    service.openAction(withForm);
+    service.back();
+
+    expect([service.view(), service.activeAction(), service.isOpen()]).toEqual(['shortcuts', null, true]);
+  });
+
+  it('closePanel closes and resets to the chat view', () => {
+    service.openAction(withForm);
     service.closePanel();
 
-    expect(service.isOpen()).toBeFalse();
-  });
-
-  it('é o mesmo estado para todo injetor (providedIn: root) — shell e telas compartilham o mesmo painel', () => {
-    const first = createService();
-    const second = TestBed.inject(AiAssistantService);
-
-    first.openPanel();
-
-    expect(second.isOpen()).toBeTrue();
+    expect([service.isOpen(), service.view(), service.activeAction()]).toEqual([false, 'chat', null]);
   });
 });

@@ -192,3 +192,13 @@
     font-weight: tokens.$font-weight-heavy;
   }
 }
+
+// US-003-3-05: sem notificações, só o card fixo + esta indicação ao lado dele.
+.home__empty {
+  align-self: center;
+  margin: 0;
+  padding: 0 tokens.$space-8;
+  font-family: tokens.$font-family-base;
+  font-size: 14px;
+  color: tokens.$color-content-4;
+}

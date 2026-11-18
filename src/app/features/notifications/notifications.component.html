@@ -1,8 +1,19 @@
 <app-page-container>
   <div class="notifications">
+    <!-- Figma 4506:8583: sino azul (cor do ícone do menu) + título escuro; "X" à direita
+         volta para a tela anterior. -->
     <header class="notifications__header">
-      <ph-icon name="bell" [size]="32" />
-      <h1 class="notifications__title">{{ totalCount() }} Notificações</h1>
+      <span class="notifications__header-icon">
+        <ph-icon name="bell" [size]="32" />
+      </span>
+      <h1 class="notifications__title">Notificações</h1>
+      <app-icon-button
+        kind="primary"
+        appearance="icon"
+        icon="x"
+        ariaLabel="Fechar notificações"
+        (click)="onClose()"
+      />
     </header>
 
     <div class="notifications__local">
@@ -10,9 +21,10 @@
         <app-tag
           type="default"
           iconLeftName="map-pin"
-          [label]="'Hospital ' + id"
+          [label]="hospitalName() || 'Hospital ' + id"
         />
       }
+      <p class="notifications__date">{{ todayLabel() }}</p>
     </div>
 
     @switch (status()) {
@@ -51,14 +63,14 @@
               [authorName]="notification.author.name"
               [authorSpecialty]="notification.author.specialty"
               [authorPhotoUrl]="notification.author.photoUrl"
-              [patientName]="notification.patient.name"
+              [patientName]="notification.patient?.name ?? ''"
               [description]="notification.description"
               [time]="formatTime(notification.createdAt)"
               [replies]="toReplies(notification)"
               [draftText]="draftText()"
               [draftAuthorName]="professionalName"
               [draftAuthorSpecialty]="professionalSpecialty"
-              (cardClick)="onCardClick(notification.patient.id)"
+              (cardClick)="onCardClick(notification.patient?.id)"
               (answerClick)="onAnswerClick(notification.id)"
               (viewRepliesClick)="onViewRepliesClick(notification.id)"
               (collapseClick)="onCollapseClick(notification.id)"
@@ -66,23 +78,27 @@
           }
 
           @if (resolvedItems().length > 0) {
-            <app-notification-section-title label="Resolvidas" />
+            <app-notification-section-title
+              class="notifications__section-title"
+              label="Resolvidas"
+            />
 
             @for (notification of resolvedItems(); track notification.id) {
               <app-card-notify
                 actionAriaLabel="Responder"
+                [resolved]="true"
                 [type]="cardType(notification.id)"
                 [authorName]="notification.author.name"
                 [authorSpecialty]="notification.author.specialty"
                 [authorPhotoUrl]="notification.author.photoUrl"
-                [patientName]="notification.patient.name"
+                [patientName]="notification.patient?.name ?? ''"
                 [description]="notification.description"
                 [time]="formatTime(notification.createdAt)"
                 [replies]="toReplies(notification)"
                 [draftText]="draftText()"
                 [draftAuthorName]="professionalName"
                 [draftAuthorSpecialty]="professionalSpecialty"
-                (cardClick)="onCardClick(notification.patient.id)"
+                (cardClick)="onCardClick(notification.patient?.id)"
                 (answerClick)="onAnswerClick(notification.id)"
                 (viewRepliesClick)="onViewRepliesClick(notification.id)"
                 (collapseClick)="onCollapseClick(notification.id)"

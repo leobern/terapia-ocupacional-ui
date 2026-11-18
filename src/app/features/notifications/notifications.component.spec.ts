@@ -1,3 +1,4 @@
+import { Location } from '@angular/common';
 import { provideHttpClient } from '@angular/common/http';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -5,6 +6,9 @@ import { Actions } from '@ngrx/effects';
 import { MockStore, provideMockStore } from '@ngrx/store/testing';
 import { Subject } from 'rxjs';
 
+import { ScreenActionsService } from '../../shared/services/screen-actions.service';
+import { LinkedHospitalsReader } from '../home/linked-hospitals';
+import { NotificationsRepository } from './data-access/notifications-repository.service';
 import { NotificationsComponent } from './notifications.component';
 import { Notification } from './notifications.models';
 import { NotificationsActions } from './state/notifications.actions';
@@ -36,6 +40,10 @@ describe('NotificationsComponent', () => {
       imports: [NotificationsComponent],
       providers: [
         provideHttpClient(),
+        {
+          provide: LinkedHospitalsReader,
+          useValue: { read: (): { id: string; name: string }[] => [{ id: '1', name: 'Hospital Vila Nova Star' }] },
+        },
         provideMockStore({ initialState: { notifications: { ...initialNotificationsState, ...overrides } } }),
         { provide: Actions, useValue: actionsSubject },
         {
@@ -52,6 +60,113 @@ describe('NotificationsComponent', () => {
     fixture = TestBed.createComponent(NotificationsComponent);
     fixture.detectChanges();
   }
+
+  // --- Cabeçalho, fechar e seções (Figma 4506:8583 / 4506:8580) ---
+
+  describe('cabeçalho e seções', () => {
+    it('mostra o sino, o título "Notificações" (sem contagem) e a tag do hospital com a data', async () => {
+      await configureStore({ hospitalId: 1, status: 'success', pendingItems: [notification(1)] });
+      createComponent();
+      const el: HTMLElement = fixture.nativeElement;
+
+      expect(el.querySelector('.notifications__header-icon ph-icon')).toBeTruthy();
+      expect(el.querySelector('.notifications__title')?.textContent?.trim()).toBe('Notificações');
+      expect(el.querySelector('.notifications__local app-tag')?.textContent).toContain('Hospital Vila Nova Star');
+      expect(el.querySelector('.notifications__date')?.textContent).toMatch(/ - \d+ de /);
+    });
+
+    it('o X volta para a tela anterior quando há histórico', async () => {
+      await configureStore({ status: 'success' });
+      createComponent();
+      const location = TestBed.inject(Location);
+
+      spyOn(location, 'back');
+      spyOnProperty(window.history, 'length').and.returnValue(3);
+      (
+        fixture.nativeElement.querySelector('.notifications__header app-icon-button button') as HTMLButtonElement
+      ).click();
+
+      expect(location.back).toHaveBeenCalledWith();
+    });
+
+    it('o X leva para a Home quando não há histórico', async () => {
+      await configureStore({ status: 'success' });
+      createComponent();
+      spyOn(router, 'navigate');
+      spyOnProperty(window.history, 'length').and.returnValue(1);
+
+      fixture.componentInstance.onClose();
+
+      expect(router.navigate).toHaveBeenCalledWith(['/home']);
+    });
+
+    it('lista as resolvidas abaixo do título "Resolvidas", em cards esmaecidos', async () => {
+      await configureStore({
+        pendingItems: [notification(1)],
+        resolvedItems: [notification(2)],
+        status: 'success',
+      });
+      createComponent();
+      const el: HTMLElement = fixture.nativeElement;
+      const cards = Array.from(el.querySelectorAll('app-card-notify .card-notify'));
+
+      expect(el.querySelector('app-notification-section-title')?.textContent).toContain('Resolvidas');
+      expect(cards.length).toBe(2);
+      expect(cards[0].classList).not.toContain('card-notify--resolved');
+      expect(cards[1].classList).toContain('card-notify--resolved');
+    });
+
+    it('não mostra o cabeçalho de paciente em notificação criada sem paciente', async () => {
+      await configureStore({ pendingItems: [notification(1, { patient: null })], status: 'success' });
+      createComponent();
+
+      expect(fixture.nativeElement.querySelector('.card-notify__patient')).toBeNull();
+    });
+  });
+
+  // --- Ações da tela no assistente (padrão de cadastro) ---
+
+  describe('ações da tela', () => {
+    it('registra Criar, Editar e Responder notificação e as remove ao sair da tela', async () => {
+      await configureStore({ status: 'success' });
+      createComponent();
+      const registry = TestBed.inject(ScreenActionsService);
+
+      expect(registry.actions().map(a => a.label)).toEqual([
+        'Criar notificação',
+        'Editar notificação',
+        'Responder notificação',
+      ]);
+
+      expect(registry.actions()[0].form?.fields.map(f => [f.kind, f.required])).toEqual([
+        ['mention', true],
+        ['text', true],
+        ['date', false],
+      ]);
+
+      fixture.destroy();
+
+      expect(registry.actions()).toEqual([]);
+    });
+
+    it('o formulário de criar grava a notificação no repositório e recarrega a lista', async () => {
+      await configureStore({ status: 'success' });
+      createComponent();
+      const repository = TestBed.inject(NotificationsRepository);
+      const dispatch = spyOn(store, 'dispatch').and.callThrough();
+      const create = TestBed.inject(ScreenActionsService).actions()[0].form;
+
+      await create?.submit({
+        dueDate: '2030-01-01',
+        message: 'Revisar',
+        recipients: [{ id: 3, name: 'Jairo Nepomuceno', photoUrl: null, specialty: 'Farmacêutico' }],
+      });
+      fixture.detectChanges();
+
+      expect(repository.list('pending', null, 50).items.some(n => n.description === 'Revisar')).toBeTrue();
+      expect(dispatch).toHaveBeenCalledWith(NotificationsActions.refreshRequested());
+    });
+  });
 
   // --- US2: navegação ao paciente (FR-006) ---
 

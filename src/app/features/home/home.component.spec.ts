@@ -164,11 +164,11 @@ describe('HomeComponent', () => {
     it('opens the AI assistant from the desktop shortcuts button', () => {
       const component = fixture.componentInstance;
 
-      spyOn(component.aiAssistant, 'openPanel');
+      spyOn(component.aiAssistant, 'openShortcuts');
 
       (q('.home__shortcuts-wrapper button') as HTMLButtonElement).click();
 
-      expect(component.aiAssistant.openPanel).toHaveBeenCalledWith();
+      expect(component.aiAssistant.openShortcuts).toHaveBeenCalledWith();
     });
   });
 
@@ -446,14 +446,31 @@ describe('HomeComponent', () => {
       expect(cards[0].querySelector('.card-notify__time ph-icon')).not.toBeNull();
     });
 
-    it('ignores the card callbacks (no navigation yet)', async () => {
-      await setup();
-      const component = fixture.componentInstance;
+    it('opens the notification detail when the card is tapped anywhere (US-003-3-04)', async () => {
+      await setup({ feed: Object.assign(new FakeNotifications(), { total: 1 }) });
+      (q('app-card-notify .card-notify') as HTMLElement).click();
 
-      expect(() => {
-        component.onViewPatients();
-        component.onViewNotificationDetail(1);
-      }).not.toThrow();
+      expect(navigate).toHaveBeenCalledWith(['/notifications', 0]);
+    });
+
+    it('shows only the fixed card plus an empty-state note when there are no notifications (US-003-3-05)', async () => {
+      await setup({ feed: Object.assign(new FakeNotifications(), { total: 0 }) });
+
+      expect(grid()[0].tagName.toLowerCase()).toBe('app-card-patients');
+      expect(el().querySelectorAll('app-card-notify').length).toBe(0);
+      expect(q('.home__empty')?.textContent).toContain('Nenhuma notificação');
+    });
+
+    it('does not show the empty-state note while there are notifications', async () => {
+      await setup();
+
+      expect(q('.home__empty')).toBeNull();
+    });
+
+    it('ignores the patients-card callback (listing screen is a separate spec)', async () => {
+      await setup();
+
+      expect(() => fixture.componentInstance.onViewPatients()).not.toThrow();
     });
   });
 

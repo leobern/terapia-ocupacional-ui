@@ -48,6 +48,8 @@ export class CardNotifyComponent {
   // Variantes & Props. `input()` (não `.required()`) porque o `resume` legado (Home)
   // nunca os passa.
   readonly patientName = input<string>('');
+  /** Notificação já resolvida: card com fundo translúcido (Figma 4506:9755). */
+  readonly resolved = input<boolean>(false);
   readonly patientAriaLabel = input<string>('Paciente');
   readonly replies = input<readonly CardNotifyReply[]>([]);
   readonly draftText = input<string>('');
@@ -71,7 +73,7 @@ export class CardNotifyComponent {
   protected readonly isDetail = computed(() => this.type() === 'detail');
   protected readonly isAnswerOpen = computed(() => this.type() === 'answer-open');
   protected readonly isAnswering = computed(() => this.type() === 'answering');
-  protected readonly showPatientHeader = computed(() => !this.isResume());
+  protected readonly showPatientHeader = computed(() => !this.isResume() && this.patientName() !== '');
   protected readonly showReplyTag = computed(() => this.isDetail() && this.replies().length > 0);
   protected readonly showActionButton = computed(() => this.isDetail() || this.isAnswerOpen());
   protected readonly showReplyBlocks = computed(() => this.isAnswerOpen() || this.isAnswering());

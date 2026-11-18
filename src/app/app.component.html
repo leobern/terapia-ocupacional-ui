@@ -10,6 +10,7 @@
       (closed)="menuOpen.set(false)"
       (logoClick)="aiAssistant.openPanel()"
       (homeClick)="onHomeClick()"
+      (acoesTelaClick)="menuOpen.set(false); aiAssistant.openShortcuts()"
       (notificacoesClick)="onNotificacoesClick()"
     />
   }
@@ -28,6 +29,7 @@
       [aiOpen]="aiAssistant.isOpen()"
       (menuClick)="menuOpen.set(true)"
       (aiClick)="aiAssistant.openPanel()"
+      (actionsClick)="aiAssistant.openShortcuts()"
     />
 
     @if (!viewportBreakpoint.isDesktop()) {
@@ -35,22 +37,12 @@
         ariaLabel="Assistente de IA"
         [open]="aiAssistant.isOpen()"
         [snap]="aiSheetSnap()"
-        [shortcuts]="aiShortcuts"
+        [shortcuts]="shortcuts()"
         (closed)="aiAssistant.closePanel()"
         (snapChange)="aiSheetSnap.set($event)"
         (shortcutSelect)="onAiShortcut($event)"
       >
-        <div bottomSheetContent class="ai-chat__message">
-          <h2 class="ai-chat__title">Como eu posso te ajudar?</h2>
-          <p class="ai-chat__body">
-            Quer tirar uma dúvida, ou quer que eu faça um resumo de todas as
-            suas tarefas do dia? Eu posso fazer praticamente tudo, só me diz o
-            que você precisa?
-          </p>
-          <p class="ai-chat__hint">
-            Você pode conversar comigo via texto ou áudio.
-          </p>
-        </div>
+        <app-assistant-content bottomSheetContent />
         <app-input-chat
           bottomSheetFooter
           placeholder="Escreva a sua mensagem"
@@ -62,22 +54,12 @@
         ariaLabel="Assistente de IA"
         [open]="aiAssistant.isOpen()"
         [snap]="aiDrawerSnap()"
-        [shortcuts]="aiShortcuts"
+        [shortcuts]="shortcuts()"
         (closed)="aiAssistant.closePanel()"
         (snapChange)="aiDrawerSnap.set($event)"
         (shortcutSelect)="onAiShortcut($event)"
       >
-        <div drawerContent class="ai-chat__message">
-          <h2 class="ai-chat__title">Como eu posso te ajudar?</h2>
-          <p class="ai-chat__body">
-            Quer tirar uma dúvida, ou quer que eu faça um resumo de todas as
-            suas tarefas do dia? Eu posso fazer praticamente tudo, só me diz o
-            que você precisa?
-          </p>
-          <p class="ai-chat__hint">
-            Você pode conversar comigo via texto ou áudio.
-          </p>
-        </div>
+        <app-assistant-content drawerContent />
         <app-input-chat
           drawerFooter
           placeholder="Escreva a sua mensagem"

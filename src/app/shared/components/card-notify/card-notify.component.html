@@ -3,6 +3,7 @@
   class="card-notify"
   [class.card-notify--expanded]="!isResume()"
   [class.card-notify--disabled]="actionDisabled()"
+  [class.card-notify--resolved]="resolved()"
   (click)="onCardClick()"
 >
   <div class="card-notify__col">

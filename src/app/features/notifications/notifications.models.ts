@@ -24,7 +24,8 @@ export interface NotificationReply {
 export interface Notification {
   id: number;
   author: ProfessionalRef;
-  patient: PatientRef;
+  /** Ausente nas notificações criadas pelo formulário (que não escolhe paciente). */
+  patient: PatientRef | null;
   description: string;
   createdAt: string;
   read: boolean;

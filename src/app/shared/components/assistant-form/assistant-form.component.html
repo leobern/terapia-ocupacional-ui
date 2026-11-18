@@ -1,0 +1,133 @@
+<div class="assistant-form">
+  @for (field of definition().fields; track field.id) {
+    <app-accordion
+      [title]="field.label"
+      [state]="state(field)"
+      [viewType]="
+        field.kind === 'mention'
+          ? 'tag'
+          : field.kind === 'date'
+            ? 'data'
+            : 'texto'
+      "
+      (toggled)="toggle(field)"
+    >
+      <div accordionInput class="assistant-form__control">
+        @switch (field.kind) {
+          @case ('mention') {
+            <input
+              type="text"
+              class="assistant-form__input"
+              autocomplete="off"
+              [attr.aria-label]="field.label"
+              [placeholder]="field.placeholder"
+              [value]="text(field)"
+              (input)="onMentionInput(field, $any($event.target).value)"
+            />
+            @if (suggestionsFor() === field.id) {
+              <ul
+                class="assistant-form__suggestions"
+                role="listbox"
+                aria-label="Usuários cadastrados"
+              >
+                @for (user of suggestions(); track user.id) {
+                  <li role="option" [attr.aria-selected]="false">
+                    <button
+                      type="button"
+                      class="assistant-form__suggestion"
+                      (click)="pick(field, user)"
+                    >
+                      <app-avatar size="small" type="user" [name]="user.name" />
+                      <span class="assistant-form__suggestion-text">
+                        <span class="assistant-form__suggestion-name">{{
+                          user.name
+                        }}</span>
+                        <span class="assistant-form__suggestion-role">{{
+                          user.specialty
+                        }}</span>
+                      </span>
+                    </button>
+                  </li>
+                } @empty {
+                  <li class="assistant-form__suggestions-empty">
+                    Nenhum usuário encontrado.
+                  </li>
+                }
+              </ul>
+            }
+            @if (selected(field).length > 0) {
+              <ul class="assistant-form__chips" aria-label="Marcados">
+                @for (user of selected(field); track user.id) {
+                  <li class="assistant-form__chip">
+                    <span>{{ user.name }}</span>
+                    <button
+                      type="button"
+                      class="assistant-form__chip-remove"
+                      [attr.aria-label]="'Remover ' + user.name"
+                      (click)="remove(field, user)"
+                    >
+                      <ph-icon name="x" [size]="12" />
+                    </button>
+                  </li>
+                }
+              </ul>
+            }
+          }
+          @case ('date') {
+            <input
+              type="date"
+              class="assistant-form__input"
+              [attr.aria-label]="field.label"
+              [min]="today"
+              [value]="text(field)"
+              (input)="onText(field, $any($event.target).value)"
+            />
+          }
+          @default {
+            <input
+              type="text"
+              class="assistant-form__input"
+              [attr.aria-label]="field.label"
+              [placeholder]="field.placeholder"
+              [value]="text(field)"
+              (input)="onText(field, $any($event.target).value)"
+            />
+          }
+        }
+      </div>
+
+      <span accordionAnswer class="assistant-form__answer">
+        @switch (field.kind) {
+          @case ('mention') {
+            @for (user of selected(field); track user.id) {
+              <span class="assistant-form__tag">
+                <app-avatar size="small" type="user" [name]="user.name" />
+                {{ user.name }}
+              </span>
+            }
+          }
+          @case ('date') {
+            {{ text(field) ? formatDate(text(field)) : '' }}
+          }
+          @default {
+            {{ text(field) }}
+          }
+        }
+      </span>
+    </app-accordion>
+  }
+
+  @if (errorMessage(); as message) {
+    <p class="assistant-form__error" role="alert">{{ message }}</p>
+  }
+
+  <app-button
+    class="assistant-form__submit"
+    kind="primary"
+    appearance="solid"
+    [label]="definition().submitLabel"
+    [disabled]="!canSubmit()"
+    [fullWidth]="true"
+    (click)="onSubmit()"
+  />
+</div>

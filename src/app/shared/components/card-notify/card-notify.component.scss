@@ -43,6 +43,12 @@
     cursor: default;
   }
 
+  // Resolvida (Figma 4506:9755): mesmo card com preenchimento branco a 50% — esmaece frente às
+  // pendentes, que são brancas sólidas.
+  &--resolved {
+    background: rgba(tokens.$color-surface, 0.5);
+  }
+
   // Variantes detail/answer-open/answering (2026-08-17, specs/004-notificacoes) — nó
   // Figma 4495:9318: o card vira uma linha (col principal + coluna lateral do botão de
   // ação), largura mínima 361px, altura livre. Cursor volta ao padrão — não há mais
@@ -194,9 +200,12 @@
   color: tokens.$color-content-4;
 }
 
+// `flex: 1 1 auto` (não `1 0 0`): com `height: auto` (desktop e variante expandida) a base 0
+// colapsava o conteúdo e a descrição vazava por cima do rodapé. Nos cards de altura fixa o
+// conteúdo continua encolhendo para caber.
 .card-notify__content {
   display: flex;
-  flex: 1 0 0;
+  flex: 1 1 auto;
   min-height: 0;
   padding: tokens.$space-8 tokens.$space-16 0;
 }

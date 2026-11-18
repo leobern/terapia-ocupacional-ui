@@ -1,7 +1,9 @@
+import { Location } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
   computed,
+  DestroyRef,
   effect,
   ElementRef,
   inject,
@@ -27,8 +29,12 @@ import { InputChatComponent } from '../../shared/components/input-chat/input-cha
 import { PageContainerComponent } from '../../shared/components/page-container/page-container.component';
 import { TagComponent } from '../../shared/components/tag/tag.component';
 import { PhIconComponent } from '../../shared/icons/ph-icon/ph-icon.component';
+import { type ScreenAction, ScreenActionsService } from '../../shared/services/screen-actions.service';
+import { type DirectoryUser } from '../../shared/services/user-directory';
+import { HospitalContextService } from '../home/hospital-context.service';
 import { ConfirmDialogComponent } from './components/confirm-dialog/confirm-dialog.component';
 import { NotificationSectionTitleComponent } from './components/notification-section-title/notification-section-title.component';
+import { NotificationsRepository } from './data-access/notifications-repository.service';
 import { Notification } from './notifications.models';
 import { NotificationsActions } from './state/notifications.actions';
 import {
@@ -44,6 +50,16 @@ import {
   selectSubmitting,
   selectTotalCount,
 } from './state/notifications.reducer';
+
+function formatTodayLabel(): string {
+  const parts = new Intl.DateTimeFormat('pt-BR', { day: 'numeric', month: 'long', weekday: 'long' }).formatToParts(
+    new Date(),
+  );
+  const value = (type: string): string => parts.find(p => p.type === type)?.value ?? '';
+  const weekday = value('weekday');
+
+  return `${weekday.charAt(0).toUpperCase()}${weekday.slice(1)} - ${value('day')} de ${value('month')}`;
+}
 
 /** Distância mínima de arraste, em px, para disparar o pull-to-refresh (FR-004b). */
 const PULL_TO_REFRESH_THRESHOLD = 80;
@@ -114,7 +130,15 @@ export class NotificationsComponent implements OnDestroy {
   protected readonly professionalName = 'Michelle Franklin';
   protected readonly professionalSpecialty = 'Nutróloga';
 
+  protected readonly hospitalName = computed(() => this.hospitalContext.selected()?.name ?? '');
+  protected readonly todayLabel = computed(() => formatTodayLabel());
+
   private readonly actions$ = inject(Actions);
+  private readonly location = inject(Location);
+  private readonly hospitalContext = inject(HospitalContextService);
+  private readonly repository = inject(NotificationsRepository);
+  private readonly screenActions = inject(ScreenActionsService);
+  private readonly destroyRef = inject(DestroyRef);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly injector = inject(Injector);
@@ -134,6 +158,22 @@ export class NotificationsComponent implements OnDestroy {
     const hospitalId = hospitalIdParam ? Number(hospitalIdParam) : null;
 
     this.store.dispatch(NotificationsActions.pageOpened({ hospitalId }));
+
+    // Ações da tela no assistente (padrão de cadastro): "Criar notificação" abre o formulário;
+    // Editar e Responder já aparecem nos atalhos mas ainda não têm fluxo.
+    this.destroyRef.onDestroy(this.screenActions.register(this.screenActionsList()));
+
+    // Uma notificação criada/respondida muda o repositório: recarrega a lista.
+    let seenVersion = this.repository.version();
+
+    effect(() => {
+      const version = this.repository.version();
+
+      if (version !== seenVersion) {
+        seenVersion = version;
+        this.store.dispatch(NotificationsActions.refreshRequested());
+      }
+    });
 
     // Observa o sentinel de fim de lista (FR-004a), mesmo padrão de home.component.ts.
     effect(
@@ -180,8 +220,19 @@ export class NotificationsComponent implements OnDestroy {
 
   /** FR-006 (US2) — navega para o paciente relacionado; `app-card-notify` já suprime
    *  `cardClick` sozinho quando `type="answering"` (Acceptance Scenario 2). */
-  onCardClick(patientId: number): void {
-    this.router.navigate(['/patients', patientId]);
+  onCardClick(patientId: number | undefined): void {
+    if (patientId !== undefined) {
+      void this.router.navigate(['/patients', patientId]);
+    }
+  }
+
+  /** "X" do cabeçalho: volta para a tela em que o usuário estava (ou para a Home, se não há histórico). */
+  onClose(): void {
+    if (window.history.length > 1) {
+      this.location.back();
+    } else {
+      void this.router.navigate(['/home']);
+    }
   }
 
   onViewRepliesClick(id: number): void {
@@ -288,5 +339,50 @@ export class NotificationsComponent implements OnDestroy {
       this.store.dispatch(NotificationsActions.refreshRequested());
     });
     this.store.dispatch(NotificationsActions.discardConfirmationRequested());
+  }
+
+  private screenActionsList(): readonly ScreenAction[] {
+    return [
+      {
+        form: {
+          fields: [
+            {
+              id: 'recipients',
+              kind: 'mention',
+              label: 'Quem será notificado:',
+              placeholder: '@nome da pessoa',
+              required: true,
+            },
+            {
+              id: 'message',
+              kind: 'text',
+              label: 'Qual é a mensagem da notificação?',
+              placeholder: 'Escreva a mensagem',
+              required: true,
+            },
+            {
+              id: 'dueDate',
+              kind: 'date',
+              label: 'Data para resolução?',
+              placeholder: 'Selecione uma data final',
+              required: false,
+            },
+          ],
+          submit: (values): void => {
+            this.repository.create({
+              dueDate: values['dueDate'] as string,
+              message: values['message'] as string,
+              recipients: (values['recipients'] as readonly DirectoryUser[]).map(user => ({ ...user })),
+            });
+          },
+          submitLabel: 'Criar notificação',
+          title: 'Criar notificação',
+        },
+        id: 'create',
+        label: 'Criar notificação',
+      },
+      { id: 'edit', label: 'Editar notificação' },
+      { id: 'reply', label: 'Responder notificação' },
+    ];
   }
 }
