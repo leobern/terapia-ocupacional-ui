@@ -1,6 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 
 import { AiAssistantService } from './ai-assistant.service';
+import { ASSISTANT_QUERY_RESOLVERS, type AssistantQueryResolver } from './assistant-query-resolver';
 import { type ScreenAction, ScreenActionsService } from './screen-actions.service';
 
 describe('AiAssistantService', () => {
@@ -114,6 +115,86 @@ describe('AiAssistantService', () => {
       service.closePanel();
 
       expect([service.view(), service.activeAction()]).toEqual(['chat', null]);
+    });
+  });
+
+  describe('ask', () => {
+    const flush = (): Promise<void> => new Promise(resolve => setTimeout(resolve));
+    let resolve: (answer: { summary: string }) => void;
+    let reject: () => void;
+    let resolver: AssistantQueryResolver;
+
+    beforeEach(() => {
+      resolver = {
+        matches: (q: string): boolean => q === 'known',
+        resolve: (): Promise<{ summary: string }> =>
+          new Promise((res, rej) => {
+            resolve = res;
+            reject = (): void => rej(new Error('x'));
+          }),
+      };
+      TestBed.resetTestingModule();
+      TestBed.configureTestingModule({
+        providers: [{ provide: ASSISTANT_QUERY_RESOLVERS, useValue: [resolver] }],
+      });
+      service = TestBed.inject(AiAssistantService);
+    });
+
+    it('starts without a conversation', () => {
+      expect(service.conversation()).toBeNull();
+    });
+
+    it('is loading while the resolver works, then shows the answer', async () => {
+      service.ask('known');
+
+      expect(service.conversation()).toEqual({ answer: null, question: 'known', status: 'loading' });
+
+      resolve({ summary: 'ok' });
+      await flush();
+
+      expect(service.conversation()).toEqual({ answer: { summary: 'ok' }, question: 'known', status: 'answered' });
+    });
+
+    it('shows a generic error when the resolver fails', async () => {
+      service.ask('known');
+      reject();
+      await flush();
+
+      expect([service.conversation()?.status, service.conversation()?.answer?.summary]).toEqual([
+        'failed',
+        'Não foi possível obter a resposta agora. Tente novamente em instantes.',
+      ]);
+    });
+
+    it('answers an unrecognized question with the default "not yet" answer', () => {
+      service.ask('outra coisa');
+
+      expect(service.conversation()).toEqual({
+        answer: { summary: 'Ainda não sei responder a essa pergunta.' },
+        question: 'outra coisa',
+        status: 'answered',
+      });
+    });
+
+    it('ignores a stale answer when a newer question was asked', async () => {
+      service.ask('known');
+      const staleResolve = resolve;
+
+      service.ask('outra coisa');
+      staleResolve({ summary: 'velha' });
+      await flush();
+
+      expect(service.conversation()?.question).toBe('outra coisa');
+    });
+
+    it('closePanel clears the conversation and drops pending answers', async () => {
+      service.openPanel();
+      service.ask('known');
+      service.closePanel();
+      resolve({ summary: 'tarde' });
+      await flush();
+
+      expect([service.conversation(), service.lastQuestion()]).toEqual([null, null]);
     });
   });
 });
