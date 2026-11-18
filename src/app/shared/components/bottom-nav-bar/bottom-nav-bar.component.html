@@ -37,6 +37,7 @@
     icon="squares-four"
     [ariaLabel]="actionsLabel"
     [ariaExpanded]="actionsOpen()"
+    [disabled]="actionsOpen()"
     (click)="actionsClick.emit()"
   />
 </nav>

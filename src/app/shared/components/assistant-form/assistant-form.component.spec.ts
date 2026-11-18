@@ -1,5 +1,6 @@
 import { type ComponentFixture, TestBed } from '@angular/core/testing';
 
+import { AssistantFormController } from '../../services/assistant-form-controller.service';
 import { type FormActionDefinition, type FormValues } from '../../services/screen-actions.service';
 import { type DirectoryUser, UserDirectory } from '../../services/user-directory';
 import { AssistantFormComponent } from './assistant-form.component';
@@ -50,7 +51,20 @@ describe('AssistantFormComponent', () => {
     await fixture.whenStable();
     fixture.detectChanges();
   };
-  const submit = (): HTMLButtonElement => el().querySelector('.assistant-form__submit button') as HTMLButtonElement;
+  const footer = (): { label: string; disabled: boolean; click: () => Promise<void> } => {
+    const form = TestBed.inject(AssistantFormController).active();
+
+    return {
+      click: () => form?.submit() ?? Promise.resolve(),
+      disabled: !form?.canSubmit(),
+      label: form?.label() ?? '',
+    };
+  };
+  const submit = (): { disabled: boolean; textContent: string; click: () => void } => {
+    const f = footer();
+
+    return { click: () => void f.click(), disabled: f.disabled, textContent: f.label };
+  };
   const suggestions = (): string[] =>
     Array.from(el().querySelectorAll('.assistant-form__suggestion-name')).map(e => e.textContent?.trim() ?? '');
   const pick = async (): Promise<void> => {
@@ -71,7 +85,7 @@ describe('AssistantFormComponent', () => {
     fixture.detectChanges();
   });
 
-  it('renders one card per question, all open, plus a disabled submit button', () => {
+  it('renders one card per question, all open, and registers a disabled submit with the footer', () => {
     expect(el().querySelectorAll('app-accordion').length).toBe(3);
     expect(Array.from(el().querySelectorAll('.accordion__header')).map(h => h.getAttribute('aria-expanded'))).toEqual([
       'true',
@@ -147,6 +161,18 @@ describe('AssistantFormComponent', () => {
     expect(submit().disabled).toBeFalse();
   });
 
+  it('unregisters from the footer when destroyed', () => {
+    fixture.destroy();
+
+    expect(TestBed.inject(AssistantFormController).active()).toBeNull();
+  });
+
+  it('ignores a submit while required answers are missing', async () => {
+    await footer().click();
+
+    expect(saved).toBeNull();
+  });
+
   it('the date field does not accept days in the past', () => {
     expect(input(2).min).toBe(new Date().toISOString().slice(0, 10));
   });
@@ -159,8 +185,7 @@ describe('AssistantFormComponent', () => {
     await pick();
     await type(1, '  Revisar  ');
     await type(2, '2030-05-04');
-    submit().click();
-    await fixture.whenStable();
+    await footer().click();
     fixture.detectChanges();
 
     expect(saved).toEqual({ date: '2030-05-04', text: 'Revisar', who: [USERS[0]] });
@@ -174,8 +199,7 @@ describe('AssistantFormComponent', () => {
     await type(0, '@jai');
     await pick();
     await type(1, 'Revisar');
-    submit().click();
-    await fixture.whenStable();
+    await footer().click();
     fixture.detectChanges();
 
     expect(el().querySelector('.assistant-form__error')?.textContent).toContain('Não foi possível salvar');

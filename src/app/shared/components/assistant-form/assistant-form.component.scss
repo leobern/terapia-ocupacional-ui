@@ -15,26 +15,40 @@
   gap: tokens.$space-8;
 }
 
+// O campo NÃO tem caixa própria: o accordion já é o card (título + seta); o campo é só o texto,
+// ocupando toda a largura útil do accordion, sem borda nem fundo.
 .assistant-form__input {
   box-sizing: border-box;
   width: 100%;
-  min-height: 48px;
-  padding: tokens.$space-12 tokens.$space-16;
-  border: 1px solid tokens.$color-border-2;
-  border-radius: tokens.$radius-sm;
+  min-height: 24px;
+  margin: 0;
+  padding: 0;
+  border: 0;
   outline: none;
-  background: tokens.$color-surface;
+  background: transparent;
   font-family: tokens.$font-family-interactive;
   font-size: tokens.$font-size-interactive;
+  line-height: 1.35;
   color: tokens.$color-content-1;
 
   &::placeholder {
     color: tokens.$color-content-5;
   }
+}
 
-  &:focus-visible {
-    border-color: tokens.$color-secondary;
-  }
+// Texto livre (mensagem): mesmo comportamento do input de chat — o campo cresce em altura com o
+// conteúdo até o teto de 160px (a diretiva acompanha o conteúdo) e, passando dele, rola.
+.assistant-form__grow {
+  max-height: 160px;
+  overflow: clip auto;
+}
+
+.assistant-form__input--multiline {
+  display: block;
+  overflow: hidden;
+  resize: none;
+  white-space: pre-wrap;
+  word-break: break-word;
 }
 
 // Lista do autocomplete do `@`: abre logo abaixo do campo, por cima dos outros cards.
@@ -150,9 +164,4 @@
   font-family: tokens.$font-family-interactive;
   font-size: tokens.$font-size-subsection;
   color: tokens.$color-comm-alert;
-}
-
-.assistant-form__submit {
-  display: block;
-  margin-top: tokens.$space-8;
 }

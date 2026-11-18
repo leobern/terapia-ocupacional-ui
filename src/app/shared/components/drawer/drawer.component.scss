@@ -81,12 +81,15 @@ $icon-hit-inset: ($min-touch-target - tokens.$space-32) * 0.5;
   }
 }
 
+// Linha única: logo (ou título + voltar) à esquerda e expandir/fechar à direita, TODOS centralizados
+// na vertical. O padding de cima/esquerda é 16px menor que o antigo (24 -> 8) — a logo sobe e vai
+// para a esquerda —, e o de baixo cresce 16px para o texto abaixo ficar onde estava.
 .drawer__header {
-  align-items: flex-start;
+  align-items: center;
   display: flex;
   flex-shrink: 0;
   justify-content: space-between;
-  padding: var(--space-24);
+  padding: var(--space-8) var(--space-24) var(--space-40) var(--space-8);
 }
 
 .drawer__logo,
@@ -99,6 +102,7 @@ $icon-hit-inset: ($min-touch-target - tokens.$space-32) * 0.5;
 .drawer__buttons {
   display: flex;
   flex-shrink: 0;
+  margin-left: auto;
   gap: var(--space-8);
 }
 

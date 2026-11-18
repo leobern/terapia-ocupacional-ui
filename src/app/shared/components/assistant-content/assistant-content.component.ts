@@ -4,7 +4,6 @@ import { AiAssistantService } from '../../services/ai-assistant.service';
 import { ScreenActionsService } from '../../services/screen-actions.service';
 import { AssistantFormComponent } from '../assistant-form/assistant-form.component';
 import { ButtonComponent } from '../button/button.component';
-import { IconButtonComponent } from '../icon-button/icon-button.component';
 
 /** Atalhos de pergunta exibidos ao abrir o assistente (lista simples e substituível). */
 export const ASSISTANT_SUGGESTIONS: readonly string[] = [
@@ -23,7 +22,7 @@ export const ASSISTANT_SUGGESTIONS: readonly string[] = [
  */
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [AssistantFormComponent, ButtonComponent, IconButtonComponent],
+  imports: [AssistantFormComponent, ButtonComponent],
   selector: 'app-assistant-content',
   styleUrl: './assistant-content.component.scss',
   templateUrl: './assistant-content.component.html',

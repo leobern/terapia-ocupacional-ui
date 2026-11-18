@@ -90,7 +90,7 @@ describe('NotificationsComponent', () => {
       expect(fixture.nativeElement.querySelector('.notifications__title')?.textContent?.trim()).toBe('3 Notificações');
     });
 
-    it('o botão de atalhos fica antes do X e abre o assistente nas ações da tela', async () => {
+    it('o botão de voltar vem primeiro, e o de atalhos abre o assistente nas ações da tela', async () => {
       await configureStore({ status: 'success' });
       createComponent();
       const buttons = Array.from(
@@ -98,15 +98,30 @@ describe('NotificationsComponent', () => {
       ) as HTMLButtonElement[];
       const assistant = TestBed.inject(AiAssistantService);
 
-      expect(buttons.map(b => b.getAttribute('aria-label'))).toEqual(['Ações da tela', 'Fechar notificações']);
+      expect(buttons.map(b => b.getAttribute('aria-label'))).toEqual(['Voltar', 'Ações da tela']);
 
-      buttons[0].click();
+      buttons[1].click();
 
       expect(assistant.isOpen()).toBeTrue();
       expect(assistant.view()).toBe('shortcuts');
     });
 
-    it('o X volta para a tela anterior quando há histórico', async () => {
+    it('o botão de atalhos fica desabilitado enquanto o menu de atalhos está aberto', async () => {
+      await configureStore({ status: 'success' });
+      createComponent();
+      const assistant = TestBed.inject(AiAssistantService);
+      const button = (): HTMLButtonElement =>
+        fixture.nativeElement.querySelector('.notifications__shortcuts button') as HTMLButtonElement;
+
+      expect(button().disabled).toBeFalse();
+
+      assistant.openShortcuts();
+      fixture.detectChanges();
+
+      expect(button().disabled).toBeTrue();
+    });
+
+    it('o botão voltar volta para a tela anterior quando há histórico', async () => {
       await configureStore({ status: 'success' });
       createComponent();
       const location = TestBed.inject(Location);
@@ -114,15 +129,13 @@ describe('NotificationsComponent', () => {
       spyOn(location, 'back');
       spyOnProperty(window.history, 'length').and.returnValue(3);
       (
-        fixture.nativeElement.querySelector(
-          '.notifications__header button[aria-label="Fechar notificações"]',
-        ) as HTMLButtonElement
+        fixture.nativeElement.querySelector('.notifications__header button[aria-label="Voltar"]') as HTMLButtonElement
       ).click();
 
       expect(location.back).toHaveBeenCalledWith();
     });
 
-    it('o X leva para a Home quando não há histórico', async () => {
+    it('o botão voltar leva para a Home quando não há histórico', async () => {
       await configureStore({ status: 'success' });
       createComponent();
       spyOn(router, 'navigate');

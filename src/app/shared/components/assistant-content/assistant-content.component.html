@@ -23,42 +23,13 @@
     </div>
   }
   @case ('form') {
+    <!-- O título e a seta de voltar ficam no cabeçalho do painel (app-assistant-heading). -->
     @if (assistant.activeAction()?.form; as form) {
-      <div class="assistant-content">
-        <div class="assistant-content__heading">
-          <app-icon-button
-            kind="secondary"
-            appearance="icon"
-            size="small"
-            icon="arrow-left"
-            ariaLabel="Voltar para os atalhos"
-            (click)="assistant.back()"
-          />
-          <h2 class="assistant-content__title">{{ form.title }}</h2>
-        </div>
-        <app-assistant-form [definition]="form" (submitted)="onSubmitted()" />
-      </div>
+      <app-assistant-form [definition]="form" (submitted)="onSubmitted()" />
     }
   }
   @case ('unavailable') {
-    <div class="assistant-content">
-      <div class="assistant-content__heading">
-        <app-icon-button
-          kind="secondary"
-          appearance="icon"
-          size="small"
-          icon="arrow-left"
-          ariaLabel="Voltar para os atalhos"
-          (click)="assistant.back()"
-        />
-        <h2 class="assistant-content__title">
-          {{ assistant.activeAction()?.label }}
-        </h2>
-      </div>
-      <p class="assistant-content__body">
-        Esta ação ainda não está disponível.
-      </p>
-    </div>
+    <p class="assistant-content__body">Esta ação ainda não está disponível.</p>
   }
   @default {
     <div class="assistant-content">

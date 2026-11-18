@@ -4,6 +4,8 @@ import { NavigationEnd, Router, RouterOutlet } from '@angular/router';
 import { filter, map } from 'rxjs';
 
 import { AssistantContentComponent } from './shared/components/assistant-content/assistant-content.component';
+import { AssistantHeadingComponent } from './shared/components/assistant-header/assistant-heading.component';
+import { AssistantSubmitComponent } from './shared/components/assistant-submit/assistant-submit.component';
 import { BackgroundMeshComponent } from './shared/components/background-mesh/background-mesh.component';
 import { BottomNavBarComponent } from './shared/components/bottom-nav-bar/bottom-nav-bar.component';
 import {
@@ -33,6 +35,8 @@ import { ViewportBreakpointService } from './shared/services/viewport-breakpoint
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     AssistantContentComponent,
+    AssistantHeadingComponent,
+    AssistantSubmitComponent,
     BackgroundMeshComponent,
     BottomNavBarComponent,
     BottomSheetComponent,
@@ -65,6 +69,9 @@ export class AppComponent {
   protected readonly aiChatMode = signal<InputChatMode>('text');
 
   /** Faixa de botões do painel: perguntas rápidas só no chat; as ações da tela aparecem no próprio conteúdo. */
+  /** Ação aberta (formulário ou aviso): o cabeçalho do painel mostra título + voltar no lugar da logo. */
+  protected readonly showAssistantHeading = computed(() => ['form', 'unavailable'].includes(this.aiAssistant.view()));
+
   protected readonly shortcuts = computed<readonly ChatShortcut[]>(() =>
     this.aiAssistant.view() === 'chat' ? this.aiShortcuts : [],
   );

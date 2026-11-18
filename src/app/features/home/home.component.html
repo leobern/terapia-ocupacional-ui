@@ -43,6 +43,7 @@
           appearance="icon"
           icon="squares-four"
           ariaLabel="Ações da tela"
+          [disabled]="aiAssistant.shortcutsOpen()"
           (click)="aiAssistant.openShortcuts()"
         />
       </span>

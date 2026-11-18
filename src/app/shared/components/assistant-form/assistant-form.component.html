@@ -84,14 +84,22 @@
             />
           }
           @default {
-            <input
-              type="text"
-              class="assistant-form__input"
-              [attr.aria-label]="field.label"
-              [placeholder]="field.placeholder"
-              [value]="text(field)"
-              (input)="onText(field, $any($event.target).value)"
-            />
+            <!--
+              Texto livre: cresce em altura conforme o conteúdo, até o teto, e depois rola — o mesmo
+              comportamento do input de chat (a diretiva acompanha o conteúdo; o teto e a rolagem
+              vivem no contêiner).
+            -->
+            <div class="assistant-form__grow">
+              <textarea
+                class="assistant-form__input assistant-form__input--multiline"
+                rows="1"
+                [appAutoResizeTextarea]="text(field)"
+                [attr.aria-label]="field.label"
+                [placeholder]="field.placeholder"
+                [value]="text(field)"
+                (input)="onText(field, $any($event.target).value)"
+              ></textarea>
+            </div>
           }
         }
       </div>
@@ -120,14 +128,4 @@
   @if (errorMessage(); as message) {
     <p class="assistant-form__error" role="alert">{{ message }}</p>
   }
-
-  <app-button
-    class="assistant-form__submit"
-    kind="primary"
-    appearance="solid"
-    [label]="definition().submitLabel"
-    [disabled]="!canSubmit()"
-    [fullWidth]="true"
-    (click)="onSubmit()"
-  />
 </div>

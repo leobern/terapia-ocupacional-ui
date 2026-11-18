@@ -7,6 +7,7 @@
   @if (showShell()) {
     <app-nav-menu
       [open]="menuOpen()"
+      [actionsOpen]="aiAssistant.shortcutsOpen()"
       (closed)="menuOpen.set(false)"
       (logoClick)="aiAssistant.openPanel()"
       (homeClick)="onHomeClick()"
@@ -27,6 +28,7 @@
     <app-bottom-nav-bar
       [menuOpen]="menuOpen()"
       [aiOpen]="aiAssistant.isOpen()"
+      [actionsOpen]="aiAssistant.shortcutsOpen()"
       (menuClick)="menuOpen.set(true)"
       (aiClick)="aiAssistant.openPanel()"
       (actionsClick)="aiAssistant.openShortcuts()"
@@ -36,39 +38,53 @@
       <app-bottom-sheet
         ariaLabel="Assistente de IA"
         [open]="aiAssistant.isOpen()"
+        [showLogo]="!showAssistantHeading()"
         [snap]="aiSheetSnap()"
         [shortcuts]="shortcuts()"
         (closed)="aiAssistant.closePanel()"
         (snapChange)="aiSheetSnap.set($event)"
         (shortcutSelect)="onAiShortcut($event)"
       >
+        <app-assistant-heading bottomSheetHeaderStart />
         <app-assistant-content bottomSheetContent />
-        <app-input-chat
-          bottomSheetFooter
-          placeholder="Escreva a sua mensagem"
-          [(value)]="aiChatValue"
-          [(mode)]="aiChatMode"
-          (send)="onAiSend($event)"
-        />
+        <!-- Cadastro aberto: o botão de envio ocupa o rodapé no lugar da mensagem/áudio. -->
+        @if (aiAssistant.view() === 'form') {
+          <app-assistant-submit bottomSheetFooter />
+        } @else {
+          <app-input-chat
+            bottomSheetFooter
+            placeholder="Escreva a sua mensagem"
+            [(value)]="aiChatValue"
+            [(mode)]="aiChatMode"
+            (send)="onAiSend($event)"
+          />
+        }
       </app-bottom-sheet>
     } @else {
       <app-drawer
         ariaLabel="Assistente de IA"
         [open]="aiAssistant.isOpen()"
+        [showLogo]="!showAssistantHeading()"
         [snap]="aiDrawerSnap()"
         [shortcuts]="shortcuts()"
         (closed)="aiAssistant.closePanel()"
         (snapChange)="aiDrawerSnap.set($event)"
         (shortcutSelect)="onAiShortcut($event)"
       >
+        <app-assistant-heading drawerHeaderStart />
         <app-assistant-content drawerContent />
-        <app-input-chat
-          drawerFooter
-          placeholder="Escreva a sua mensagem"
-          [(value)]="aiChatValue"
-          [(mode)]="aiChatMode"
-          (send)="onAiSend($event)"
-        />
+        <!-- Cadastro aberto: o botão de envio ocupa o rodapé no lugar da mensagem/áudio. -->
+        @if (aiAssistant.view() === 'form') {
+          <app-assistant-submit drawerFooter />
+        } @else {
+          <app-input-chat
+            drawerFooter
+            placeholder="Escreva a sua mensagem"
+            [(value)]="aiChatValue"
+            [(mode)]="aiChatMode"
+            (send)="onAiSend($event)"
+          />
+        }
       </app-drawer>
     }
   }
