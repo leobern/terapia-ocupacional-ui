@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject, Signal, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, Signal, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { NavigationEnd, Router, RouterOutlet } from '@angular/router';
 import { filter, map } from 'rxjs';
@@ -12,7 +12,7 @@ import {
   type ChatShortcut,
 } from './shared/components/bottom-sheet/bottom-sheet.component';
 import { DrawerComponent, type DrawerSnap } from './shared/components/drawer/drawer.component';
-import { InputChatComponent } from './shared/components/input-chat/input-chat.component';
+import { InputChatComponent, type InputChatMode } from './shared/components/input-chat/input-chat.component';
 import { NavMenuComponent } from './shared/components/nav-menu/nav-menu.component';
 import { AiAssistantService } from './shared/services/ai-assistant.service';
 import { ViewportBreakpointService } from './shared/services/viewport-breakpoint.service';
@@ -61,6 +61,8 @@ export class AppComponent {
   protected readonly backgroundShowColor2 = computed(() => !this.isNotificationsRoute());
   protected readonly aiSheetSnap = signal<BottomSheetSnap>('default');
   protected readonly aiDrawerSnap = signal<DrawerSnap>('default');
+  protected readonly aiChatValue = signal('');
+  protected readonly aiChatMode = signal<InputChatMode>('text');
 
   /** Faixa de botões do painel: perguntas rápidas só no chat; as ações da tela aparecem no próprio conteúdo. */
   protected readonly shortcuts = computed<readonly ChatShortcut[]>(() =>
@@ -87,6 +89,18 @@ export class AppComponent {
   );
 
   constructor() {
+    // RN-03: toda abertura começa limpa. Qualquer caminho de fechamento (botão, scrim,
+    // Esc, arrastar) chega em `isOpen() === false`; a visão/ação já são zeradas pelo
+    // serviço, aqui zera o que vive no shell: encaixe e campo de mensagem.
+    effect(() => {
+      if (!this.aiAssistant.isOpen()) {
+        this.aiSheetSnap.set('default');
+        this.aiDrawerSnap.set('default');
+        this.aiChatValue.set('');
+        this.aiChatMode.set('text');
+      }
+    });
+
     this.showShell = toSignal(
       this.router.events.pipe(
         filter(event => event instanceof NavigationEnd),
