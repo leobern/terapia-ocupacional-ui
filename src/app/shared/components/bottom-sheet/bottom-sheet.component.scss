@@ -30,8 +30,8 @@ $min-touch-target: 44px;
 // deriva medidas de `tokens.$space-56` em Sass.
 $close-hit-inset: ($min-touch-target - tokens.$space-32) * 0.5;
 $duration-enter: 300ms;
-$duration-exit: 250ms;
-$duration-reduced: 150ms;
+$duration-exit: 120ms;
+$duration-reduced: 60ms;
 
 // Curva de desaceleração de sheets nativos: rápida no início, assentamento suave.
 // Sem origem no Figma (`get_motion_context` retornou vazio) — proposta de
@@ -188,7 +188,8 @@ $ease-sheet: cubic-bezier(0.32, 0.72, 0, 1);
   display: flex;
   flex-shrink: 0;
   justify-content: space-between;
-  padding: var(--space-24) var(--space-16);
+  // Sem padding à esquerda (a logo encosta na borda); só 24px à direita.
+  padding: var(--space-24) var(--space-24) var(--space-24) 0;
   touch-action: none;
 
   &:active {
@@ -260,7 +261,7 @@ $ease-sheet: cubic-bezier(0.32, 0.72, 0, 1);
   // Impede o scroll chaining: rolar a conversa até o fim não pode continuar
   // rolando a página por baixo.
   overscroll-behavior: contain;
-  padding: 0 var(--space-16);
+  padding: 0;
 }
 
 // Faixa de atalhos: some inteira (padding incluído) quando não há atalhos —
@@ -270,14 +271,14 @@ $ease-sheet: cubic-bezier(0.32, 0.72, 0, 1);
   flex-shrink: 0;
   flex-wrap: wrap;
   gap: var(--space-16);
-  padding: var(--space-16);
+  padding: var(--space-16) var(--space-24);
 }
 
 .bottom-sheet__footer {
   display: flex;
   flex-direction: column;
   flex-shrink: 0;
-  padding: var(--space-16) var(--space-16)
+  padding: var(--space-16) var(--space-24)
     calc(var(--space-16) + env(safe-area-inset-bottom));
 }
 
