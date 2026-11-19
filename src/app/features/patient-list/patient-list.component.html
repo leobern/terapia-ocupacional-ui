@@ -109,25 +109,130 @@
             class="patient-list__table-card"
             [class.patient-list__table-card--scrolls]="tableScrolls()"
           >
-            <table class="patient-list__table">
+            <table
+              class="patient-list__table"
+              [style.min-width.px]="tableMinWidth()"
+            >
               <colgroup>
-                <col class="patient-list__col-name" />
-                <col class="patient-list__col-age" />
-                <col class="patient-list__col-therapy" />
-                <col class="patient-list__col-goal" />
-                <col class="patient-list__col-goal" />
-                <col class="patient-list__col-location" />
-                <col class="patient-list__col-first" />
+                <col [style.width.px]="widths().name" />
+                <col [style.width.px]="widths().age" />
+                <col [style.width.px]="widths().therapy" />
+                <col [style.width.px]="widths().caloric" />
+                <col [style.width.px]="widths().protein" />
+                <col [style.width.px]="widths().location" />
+                <col [style.width.px]="widths().first" />
                 <col class="patient-list__col-action" />
               </colgroup>
               <thead>
                 <tr>
-                  <th scope="col">Paciente</th>
-                  <th scope="col">Idade<br />Início da terapia</th>
-                  <th scope="col">Terapia</th>
-                  <th scope="col">Adequação calórica</th>
-                  <th scope="col">Adequação proteica</th>
-                  <th scope="col">Localização</th>
+                  <th scope="col">
+                    Paciente
+                    <span
+                      class="patient-list__resizer"
+                      role="separator"
+                      aria-orientation="vertical"
+                      aria-label="Ajustar a largura da coluna Paciente"
+                      tabindex="0"
+                      [class.patient-list__resizer--active]="
+                        resizing() === 'name'
+                      "
+                      (pointerdown)="startResize($event, 'name')"
+                      (keydown)="resizeByKey($event, 'name')"
+                      (click)="$event.stopPropagation()"
+                    >
+                      <ph-icon name="dots-six-vertical" [size]="16" />
+                    </span>
+                  </th>
+                  <th scope="col">
+                    Idade<br />Início da terapia
+                    <span
+                      class="patient-list__resizer"
+                      role="separator"
+                      aria-orientation="vertical"
+                      aria-label="Ajustar a largura da coluna Idade e início da terapia"
+                      tabindex="0"
+                      [class.patient-list__resizer--active]="
+                        resizing() === 'age'
+                      "
+                      (pointerdown)="startResize($event, 'age')"
+                      (keydown)="resizeByKey($event, 'age')"
+                      (click)="$event.stopPropagation()"
+                    >
+                      <ph-icon name="dots-six-vertical" [size]="16" />
+                    </span>
+                  </th>
+                  <th scope="col">
+                    Terapia
+                    <span
+                      class="patient-list__resizer"
+                      role="separator"
+                      aria-orientation="vertical"
+                      aria-label="Ajustar a largura da coluna Terapia"
+                      tabindex="0"
+                      [class.patient-list__resizer--active]="
+                        resizing() === 'therapy'
+                      "
+                      (pointerdown)="startResize($event, 'therapy')"
+                      (keydown)="resizeByKey($event, 'therapy')"
+                      (click)="$event.stopPropagation()"
+                    >
+                      <ph-icon name="dots-six-vertical" [size]="16" />
+                    </span>
+                  </th>
+                  <th scope="col">
+                    Adequação calórica
+                    <span
+                      class="patient-list__resizer"
+                      role="separator"
+                      aria-orientation="vertical"
+                      aria-label="Ajustar a largura da coluna Adequação calórica"
+                      tabindex="0"
+                      [class.patient-list__resizer--active]="
+                        resizing() === 'caloric'
+                      "
+                      (pointerdown)="startResize($event, 'caloric')"
+                      (keydown)="resizeByKey($event, 'caloric')"
+                      (click)="$event.stopPropagation()"
+                    >
+                      <ph-icon name="dots-six-vertical" [size]="16" />
+                    </span>
+                  </th>
+                  <th scope="col">
+                    Adequação proteica
+                    <span
+                      class="patient-list__resizer"
+                      role="separator"
+                      aria-orientation="vertical"
+                      aria-label="Ajustar a largura da coluna Adequação proteica"
+                      tabindex="0"
+                      [class.patient-list__resizer--active]="
+                        resizing() === 'protein'
+                      "
+                      (pointerdown)="startResize($event, 'protein')"
+                      (keydown)="resizeByKey($event, 'protein')"
+                      (click)="$event.stopPropagation()"
+                    >
+                      <ph-icon name="dots-six-vertical" [size]="16" />
+                    </span>
+                  </th>
+                  <th scope="col">
+                    Localização
+                    <span
+                      class="patient-list__resizer"
+                      role="separator"
+                      aria-orientation="vertical"
+                      aria-label="Ajustar a largura da coluna Localização"
+                      tabindex="0"
+                      [class.patient-list__resizer--active]="
+                        resizing() === 'location'
+                      "
+                      (pointerdown)="startResize($event, 'location')"
+                      (keydown)="resizeByKey($event, 'location')"
+                      (click)="$event.stopPropagation()"
+                    >
+                      <ph-icon name="dots-six-vertical" [size]="16" />
+                    </span>
+                  </th>
                   <th scope="col">
                     <span class="patient-list__sr">Avaliação</span>
                   </th>
@@ -248,6 +353,14 @@
                         (click)="openPatient(patient.id)"
                       >
                         <span class="patient-list__info">
+                          @if (patient.firstEvaluation) {
+                            <span class="patient-list__first">
+                              <app-therapy-tag
+                                tone="active"
+                                label="Primeira avaliação"
+                              />
+                            </span>
+                          }
                           <span class="patient-list__name">{{
                             patient.name
                           }}</span>
@@ -258,14 +371,6 @@
                           <span class="patient-list__location"
                             >{{ patient.ward }} · Leito {{ patient.bed }}</span
                           >
-                          @if (patient.firstEvaluation) {
-                            <span class="patient-list__first">
-                              <app-therapy-tag
-                                tone="active"
-                                label="Primeira avaliação"
-                              />
-                            </span>
-                          }
                         </span>
                         <span class="patient-list__gauge">
                           @if (hasAdequacy(patient.adequacy)) {
@@ -275,6 +380,10 @@
                               [bottomPercentage]="patient.adequacy.protein ?? 0"
                               [ariaLabel]="adequacyLabel(patient.adequacy)"
                             />
+                          } @else {
+                            <span class="patient-list__gauge-na"
+                              >Indisponível</span
+                            >
                           }
                           <span class="patient-list__gauge-tag">
                             <app-therapy-tag

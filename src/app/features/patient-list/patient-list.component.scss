@@ -227,7 +227,19 @@
 }
 
 .patient-list__first {
-  margin-top: tokens.$space-4;
+  margin-bottom: tokens.$space-4;
+}
+
+// Sem gráfico: só a palavra, na mesma fonte da tag de terapia, sem a caixa.
+.patient-list__gauge-na {
+  position: absolute;
+  top: 4px;
+  left: 50%;
+  color: tokens.c(content-3);
+  transform: translateX(-50%);
+  white-space: nowrap;
+
+  @include typography.label-sm;
 }
 
 .patient-list__skeleton-row {
@@ -320,28 +332,7 @@
     }
   }
 
-  // Larguras mínimas por coluna (texto em até 2 linhas): a coluna do nome absorve o que sobra e,
-  // abaixo da soma das mínimas, o card rola na horizontal.
-  .patient-list__col-age {
-    width: 150px;
-  }
-
-  .patient-list__col-therapy {
-    width: 120px;
-  }
-
-  .patient-list__col-goal {
-    width: 160px;
-  }
-
-  .patient-list__col-location {
-    width: 140px;
-  }
-
-  .patient-list__col-first {
-    width: 160px;
-  }
-
+  // Larguras vêm do componente (ajustáveis pelo usuário); só a coluna da seta é fixa.
   .patient-list__col-action {
     width: 72px;
   }
@@ -424,6 +415,56 @@
     align-items: center;
     gap: tokens.$space-4 tokens.$space-12;
     min-width: 0;
+  }
+
+  // Divisória de coluna ajustável: invisível até o mouse passar no cabeçalho (surge com fade).
+  .patient-list__table th {
+    position: relative;
+  }
+
+  .patient-list__resizer {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 16px;
+    color: tokens.c(content-5);
+    cursor: col-resize;
+    opacity: 0;
+    touch-action: none;
+    transition: opacity 0.2s ease;
+    user-select: none;
+
+    &::before {
+      content: '';
+      position: absolute;
+      top: 8px;
+      right: 0;
+      bottom: 8px;
+      width: 1px;
+      background: tokens.c(border-2);
+    }
+
+    ph-icon {
+      position: relative;
+      margin-right: 1px;
+      background: tokens.c(surface-2);
+      border-radius: tokens.$radius-xs;
+    }
+  }
+
+  .patient-list__table th:hover .patient-list__resizer,
+  .patient-list__resizer:focus-visible,
+  .patient-list__resizer--active {
+    opacity: 1;
+  }
+
+  .patient-list__resizer--active::before {
+    background: tokens.c(secondary);
+    width: 2px;
   }
 
   // Idade em cima e início da terapia embaixo.

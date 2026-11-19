@@ -47,6 +47,31 @@ function isOutOfTarget(adequacy: PatientCard['adequacy']): boolean {
   return lowestGoal(adequacy) < 50;
 }
 
+export type ColumnKey = 'name' | 'age' | 'therapy' | 'caloric' | 'protein' | 'location' | 'first';
+
+/** Larguras padrão (px) da tabela do desktop; o usuário ajusta arrastando a divisória do cabeçalho. */
+const DEFAULT_WIDTHS: Readonly<Record<ColumnKey, number>> = {
+  age: 150,
+  caloric: 170,
+  first: 160,
+  location: 170,
+  name: 280,
+  protein: 170,
+  therapy: 120,
+};
+const MIN_WIDTH: Readonly<Record<ColumnKey, number>> = {
+  age: 100,
+  caloric: 120,
+  first: 130,
+  location: 110,
+  name: 160,
+  protein: 120,
+  therapy: 90,
+};
+const MAX_WIDTH = 560;
+const ACTION_COLUMN_WIDTH = 72;
+const KEY_STEP = 16;
+
 export type PatientListStatus = 'loading' | 'ready' | 'error';
 
 const PATIENT_LIST_ACTIONS: readonly ScreenAction[] = [
@@ -84,6 +109,12 @@ export class PatientListComponent implements OnInit {
   readonly patients = signal<readonly PatientCard[]>([]);
   readonly hospitalName = computed(() => this.context.selected()?.name ?? '');
   readonly unreadCount = signal(0);
+  /** Larguras das colunas (V1: só nesta sessão; a persistência por usuário fica para a V2 com o perfil). */
+  readonly widths = signal<Readonly<Record<ColumnKey, number>>>(DEFAULT_WIDTHS);
+  readonly resizing = signal<ColumnKey | null>(null);
+  readonly tableMinWidth = computed(
+    () => Object.values(this.widths()).reduce((sum, w) => sum + w, 0) + ACTION_COLUMN_WIDTH,
+  );
   /** A tabela do desktop ganhou rolagem horizontal (mostra a borda da coluna fixa). */
   readonly tableScrolls = signal(false);
   /** Prioridade: quem está fora da meta primeiro, do mais crítico ao menos (Figma: "Ordenar: prioridade"). */
@@ -190,6 +221,42 @@ export class PatientListComponent implements OnInit {
     void this.router.navigate(['/notifications']);
   }
 
+  /** Arrasta a divisória do cabeçalho para ajustar a largura da coluna. */
+  startResize(event: PointerEvent, key: ColumnKey): void {
+    const handle = event.currentTarget as HTMLElement;
+    const startX = event.clientX;
+    const startWidth = handle.closest('th')?.getBoundingClientRect().width ?? this.widths()[key];
+
+    event.preventDefault();
+    event.stopPropagation();
+    handle.setPointerCapture(event.pointerId);
+    this.resizing.set(key);
+
+    const move = (e: PointerEvent): void => this.setWidth(key, startWidth + e.clientX - startX);
+    const stop = (): void => {
+      handle.removeEventListener('pointermove', move);
+      handle.removeEventListener('pointerup', stop);
+      handle.removeEventListener('pointercancel', stop);
+      this.resizing.set(null);
+    };
+
+    handle.addEventListener('pointermove', move);
+    handle.addEventListener('pointerup', stop);
+    handle.addEventListener('pointercancel', stop);
+  }
+
+  /** Teclado: setas esquerda e direita ajustam a coluna em passos de 16px; Home volta ao padrão. */
+  resizeByKey(event: KeyboardEvent, key: ColumnKey): void {
+    if (event.key === 'Home') {
+      this.setWidth(key, DEFAULT_WIDTHS[key]);
+    } else if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
+      this.setWidth(key, this.widths()[key] + (event.key === 'ArrowRight' ? KEY_STEP : -KEY_STEP));
+    } else {
+      return;
+    }
+    event.preventDefault();
+  }
+
   /** Cadastro pertence à FT-002-1: aqui só navega (FR-027). */
   registerPatient(): void {
     void this.router.navigate(['/home']);
@@ -225,5 +292,11 @@ export class PatientListComponent implements OnInit {
 
   protected therapyLabel(therapy: TherapyType): string {
     return THERAPY_LABEL[therapy];
+  }
+
+  private setWidth(key: ColumnKey, width: number): void {
+    const clamped = Math.round(Math.min(MAX_WIDTH, Math.max(MIN_WIDTH[key], width)));
+
+    this.widths.update(current => ({ ...current, [key]: clamped }));
   }
 }

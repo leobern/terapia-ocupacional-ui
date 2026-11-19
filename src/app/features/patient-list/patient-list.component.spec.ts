@@ -158,6 +158,83 @@ describe('PatientListComponent', () => {
     expect((q('.patient-list__cluster .patient-list__row') as HTMLElement).textContent).toContain('Crítico Um');
   });
 
+  describe('colunas ajustáveis (desktop)', () => {
+    const handle = (index = 0): HTMLElement => fixture.nativeElement.querySelectorAll('.patient-list__resizer')[index];
+    const width = (key: 'name' | 'age'): number => fixture.componentInstance.widths()[key];
+
+    beforeEach(async () => {
+      source.result = Promise.resolve(census(2));
+      await create();
+    });
+
+    it('tem uma divisória por coluna ajustável, com rótulo acessível', () => {
+      const handles = fixture.nativeElement.querySelectorAll('.patient-list__resizer');
+
+      expect(handles.length).toBe(6);
+      expect(handle(0).getAttribute('role')).toBe('separator');
+      expect(handle(0).getAttribute('aria-label')).toContain('Paciente');
+    });
+
+    it('ajusta pelo teclado em passos de 16px, respeita o mínimo e volta ao padrão com Home', () => {
+      const start = width('name');
+
+      handle(0).dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight' }));
+
+      expect(width('name')).toBe(start + 16);
+
+      for (let i = 0; i < 40; i++) {
+        handle(0).dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowLeft' }));
+      }
+
+      expect(width('name')).toBe(160);
+
+      handle(0).dispatchEvent(new KeyboardEvent('keydown', { key: 'Home' }));
+
+      expect(width('name')).toBe(start);
+
+      const ignored = new KeyboardEvent('keydown', { cancelable: true, key: 'a' });
+
+      handle(0).dispatchEvent(ignored);
+
+      expect(ignored.defaultPrevented).toBeFalse();
+    });
+
+    it('ajusta arrastando a divisória (mouse) e respeita o máximo', () => {
+      const el = handle(1);
+
+      el.setPointerCapture = (): void => undefined;
+      const th = el.closest('th') as HTMLElement;
+      const startWidth = th.getBoundingClientRect().width;
+
+      el.dispatchEvent(
+        new PointerEvent('pointerdown', { bubbles: true, cancelable: true, clientX: 100, pointerId: 1 }),
+      );
+
+      expect(fixture.componentInstance.resizing()).toBe('age');
+
+      el.dispatchEvent(new PointerEvent('pointermove', { clientX: 400, pointerId: 1 }));
+
+      expect(width('age')).toBe(Math.min(560, Math.max(100, Math.round(startWidth + 300))));
+
+      el.dispatchEvent(new PointerEvent('pointermove', { clientX: 5000, pointerId: 1 }));
+
+      expect(width('age')).toBe(560);
+
+      el.dispatchEvent(new PointerEvent('pointerup', { pointerId: 1 }));
+
+      expect(fixture.componentInstance.resizing()).toBeNull();
+    });
+  });
+
+  it('mostra Indisponível no lugar do gráfico e a Primeira avaliação antes do nome no mobile', async () => {
+    source.result = Promise.resolve([{ ...census(1)[0], adequacy: null, completedCycles: 0, id: 'n' }]);
+    await create();
+    const info = q('.patient-list__row .patient-list__info') as HTMLElement;
+
+    expect(q('.patient-list__gauge-na')?.textContent).toContain('Indisponível');
+    expect((info.firstElementChild as HTMLElement).className).toContain('patient-list__first');
+  });
+
   it('registra as ações principais da tela nos atalhos', async () => {
     await create();
 
