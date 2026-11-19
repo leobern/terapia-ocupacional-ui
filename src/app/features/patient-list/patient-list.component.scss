@@ -34,6 +34,17 @@
   cursor: pointer;
 }
 
+.patient-list__bell {
+  margin-left: auto;
+}
+
+.patient-list__day-adequacy {
+  margin: 0;
+  color: tokens.c(content-3);
+
+  @include typography.caption;
+}
+
 .patient-list__header-text {
   display: flex;
   flex-direction: column;

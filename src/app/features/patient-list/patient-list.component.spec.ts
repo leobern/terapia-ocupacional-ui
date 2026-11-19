@@ -120,6 +120,16 @@ describe('PatientListComponent', () => {
     );
   });
 
+  it('cabeçalho mostra adequação do dia em texto e o sino leva às notificações', async () => {
+    source.result = Promise.resolve(census(2));
+    await create();
+
+    expect(text()).toContain('Adequação do dia: Calórica 80% · Proteica 70%');
+    q('[aria-label="Notificações"]')?.click();
+
+    expect(router.navigate).toHaveBeenCalledWith(['/notifications']);
+  });
+
   it('usa singular com um paciente', async () => {
     source.result = Promise.resolve(census(1));
     await create();

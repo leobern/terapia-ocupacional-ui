@@ -19,7 +19,22 @@
         </h1>
         <p class="patient-list__subtitle">{{ hospitalName() }}</p>
       </div>
+      <button
+        type="button"
+        class="patient-list__back patient-list__bell"
+        aria-label="Notificações"
+        (click)="openNotifications()"
+      >
+        <ph-icon name="bell" [size]="24" />
+      </button>
     </header>
+
+    @if (status() === 'ready') {
+      <p class="patient-list__day-adequacy">
+        Adequação do dia:
+        {{ adequacyLabel(dayAdequacy()) }}
+      </p>
+    }
 
     <app-date-strip
       [selected]="selectedDate()"

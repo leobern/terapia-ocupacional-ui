@@ -9,7 +9,7 @@ import { PageContainerComponent } from '../../shared/components/page-container/p
 import { TagComponent } from '../../shared/components/tag/tag.component';
 import { PhIconComponent } from '../../shared/icons/ph-icon/ph-icon.component';
 import { HospitalContextService } from '../home/hospital-context.service';
-import { adequacyLabel, hasAdequacy, therapyStartLabel } from './patient-card-labels';
+import { adequacyLabel, dailyAdequacy, hasAdequacy, therapyStartLabel } from './patient-card-labels';
 import { PatientCard, TherapyType } from './patient-list.models';
 import { assemblePatientList } from './patient-list-assembly';
 import { PatientListSource } from './patient-list-source';
@@ -42,6 +42,7 @@ export class PatientListComponent {
   readonly status = signal<PatientListStatus>('loading');
   readonly patients = signal<readonly PatientCard[]>([]);
   readonly hospitalName = computed(() => this.context.selected()?.name ?? '');
+  readonly dayAdequacy = computed(() => dailyAdequacy(this.patients()));
   readonly countLabel = computed(() => {
     const n = this.patients().length;
 
@@ -108,6 +109,10 @@ export class PatientListComponent {
 
   openPatient(id: string): void {
     void this.router.navigate(['/patients', id]);
+  }
+
+  openNotifications(): void {
+    void this.router.navigate(['/notifications']);
   }
 
   back(): void {

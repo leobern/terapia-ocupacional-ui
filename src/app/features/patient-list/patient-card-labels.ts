@@ -27,3 +27,17 @@ export function adequacyLabel(adequacy: Adequacy | null): string {
 export function hasAdequacy(adequacy: Adequacy | null): adequacy is Adequacy {
   return adequacy !== null && (adequacy.caloric !== null || adequacy.protein !== null);
 }
+
+/**
+ * Média do dia das adequações já presentes na lista (FR-006): só agrega os valores recebidos,
+ * sem recalcular a adequação individual. `null` quando ninguém tem o valor.
+ */
+export function dailyAdequacy(list: readonly { readonly adequacy: Adequacy | null }[]): Adequacy | null {
+  const mean = (values: readonly number[]): number | null =>
+    values.length === 0 ? null : Math.round(values.reduce((a, b) => a + b, 0) / values.length);
+  const pick = (key: keyof Adequacy): number[] =>
+    list.flatMap(p => (p.adequacy?.[key] === null || p.adequacy === null ? [] : [p.adequacy[key] as number]));
+  const result = { caloric: mean(pick('caloric')), protein: mean(pick('protein')) };
+
+  return hasAdequacy(result) ? result : null;
+}

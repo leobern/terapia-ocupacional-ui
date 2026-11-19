@@ -1,4 +1,4 @@
-import { adequacyLabel, hasAdequacy, therapyStartLabel } from './patient-card-labels';
+import { adequacyLabel, dailyAdequacy, hasAdequacy, therapyStartLabel } from './patient-card-labels';
 
 describe('patient-card-labels', () => {
   it('formata o início da terapia', () => {
@@ -18,5 +18,17 @@ describe('patient-card-labels', () => {
     expect(hasAdequacy(null)).toBe(false);
     expect(hasAdequacy({ caloric: null, protein: 1 })).toBe(true);
     expect(hasAdequacy({ caloric: null, protein: null })).toBe(false);
+  });
+
+  it('agrega a adequação do dia só com os valores presentes', () => {
+    expect(dailyAdequacy([])).toBeNull();
+    expect(dailyAdequacy([{ adequacy: null }])).toBeNull();
+    expect(
+      dailyAdequacy([
+        { adequacy: { caloric: 80, protein: null } },
+        { adequacy: { caloric: 41, protein: 60 } },
+        { adequacy: null },
+      ]),
+    ).toEqual({ caloric: 61, protein: 60 });
   });
 });
