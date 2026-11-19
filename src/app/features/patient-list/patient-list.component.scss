@@ -352,6 +352,10 @@
     right: 0;
     z-index: 1;
     background: tokens.c(surface);
+  }
+
+  // A borda à esquerda só aparece quando a tabela ganha rolagem horizontal.
+  .patient-list__table-card--scrolls .patient-list__sticky {
     box-shadow: inset 1px 0 0 tokens.c(border);
   }
 

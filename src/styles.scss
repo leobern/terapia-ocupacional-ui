@@ -46,3 +46,40 @@ body {
 
   font-family: var(--font-family-base);
 }
+
+// Barra de rolagem discreta (Thiago, 2026-11-19): fina, sem fundo, só o polegar em `border-2`
+// (mais forte no hover). `color-scheme` evita os controles nativos claros no tema escuro.
+:root {
+  color-scheme: light;
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+}
+
+* {
+  scrollbar-color: var(--color-border-2) transparent;
+  scrollbar-width: thin;
+}
+
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+*::-webkit-scrollbar-track,
+*::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+  border: 2px solid transparent;
+  border-radius: 400px;
+  background: var(--color-border-2);
+  background-clip: content-box;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: var(--color-content-5);
+  background-clip: content-box;
+}

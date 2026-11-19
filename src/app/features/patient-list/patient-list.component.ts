@@ -4,9 +4,11 @@ import {
   computed,
   DestroyRef,
   effect,
+  type ElementRef,
   inject,
   OnInit,
   signal,
+  viewChild,
 } from '@angular/core';
 import { Router } from '@angular/router';
 
@@ -81,6 +83,8 @@ export class PatientListComponent implements OnInit {
   readonly patients = signal<readonly PatientCard[]>([]);
   readonly hospitalName = computed(() => this.context.selected()?.name ?? '');
   readonly unreadCount = signal(0);
+  /** A tabela do desktop ganhou rolagem horizontal (mostra a borda da coluna fixa). */
+  readonly tableScrolls = signal(false);
   /** Prioridade: quem está fora da meta primeiro, do mais crítico ao menos (Figma: "Ordenar: prioridade"). */
   readonly groups = computed<readonly PatientGroup[]>(() => {
     const out = this.patients()
@@ -112,6 +116,7 @@ export class PatientListComponent implements OnInit {
   private readonly context = inject(HospitalContextService);
   private readonly source = inject(PatientListSource);
   private readonly router = inject(Router);
+  private readonly tableCard = viewChild<ElementRef<HTMLElement>>('tableCard');
   private readonly unread = inject(UnreadNotificationsReader);
   private readonly screenActions = inject(ScreenActionsService);
   private generation = 0;
@@ -119,6 +124,24 @@ export class PatientListComponent implements OnInit {
   constructor() {
     // Atalhos da tela (padrão de cadastro): ações principais; os formulários chegam com a US-004-1-07.
     inject(DestroyRef).onDestroy(this.screenActions.register(PATIENT_LIST_ACTIONS));
+
+    // Observa o card da tabela: rolagem horizontal só existe quando o conteúdo passa da largura.
+    effect(onCleanup => {
+      const card = this.tableCard()?.nativeElement;
+
+      if (card === undefined || typeof ResizeObserver === 'undefined') {
+        return;
+      }
+      const update = (): void => this.tableScrolls.set(card.scrollWidth > card.clientWidth + 1);
+      const observer = new ResizeObserver(update);
+
+      observer.observe(card);
+      if (card.firstElementChild !== null) {
+        observer.observe(card.firstElementChild);
+      }
+      update();
+      onCleanup(() => observer.disconnect());
+    });
 
     effect(() => {
       const hospitalId = this.context.selected()?.id;

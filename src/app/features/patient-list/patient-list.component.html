@@ -104,7 +104,11 @@
             </p>
           </div>
         } @else {
-          <div class="patient-list__table-card">
+          <div
+            #tableCard
+            class="patient-list__table-card"
+            [class.patient-list__table-card--scrolls]="tableScrolls()"
+          >
             <table class="patient-list__table">
               <colgroup>
                 <col class="patient-list__col-name" />
