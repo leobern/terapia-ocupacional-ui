@@ -4,9 +4,20 @@
     quadro). Em unidades de bounding box, isso é um vetor de (0,0) a (0,2422; 1,1566), então o
     mesmo desenho vale em qualquer tamanho de tela.
   -->
-  <svg class="background-mesh__gradient" preserveAspectRatio="none" viewBox="0 0 1 1">
+  <svg
+    class="background-mesh__gradient"
+    preserveAspectRatio="none"
+    viewBox="0 0 1 1"
+  >
     <defs>
-      <linearGradient id="bg-gradient" gradientUnits="objectBoundingBox" x1="0" y1="0" x2="0.24218" y2="1.15655">
+      <linearGradient
+        id="bg-gradient"
+        gradientUnits="objectBoundingBox"
+        x1="0"
+        y1="0"
+        x2="0.24218"
+        y2="1.15655"
+      >
         <stop class="background-mesh__stop-1" offset="0.102" />
         <stop class="background-mesh__stop-2" [attr.offset]="stop2Offset()" />
         <stop class="background-mesh__stop-3" offset="0.6986" />
@@ -15,26 +26,26 @@
     <rect width="1" height="1" fill="url(#bg-gradient)" />
   </svg>
 } @else {
-<div class="background-mesh__blobs">
-  @if (showColor3()) {
-    <span
-      class="background-mesh__blob background-mesh__blob--3"
-      [style.background-color]="color3()"
-    ></span>
-  }
-  @if (showColor2()) {
-    <span
-      class="background-mesh__blob background-mesh__blob--2"
-      [style.background-color]="color2()"
-    ></span>
-  }
-  @if (showColor1()) {
-    <span
-      class="background-mesh__blob background-mesh__blob--1"
-      [style.background-color]="color1()"
-    ></span>
-  }
-</div>
+  <div class="background-mesh__blobs">
+    @if (showColor3()) {
+      <span
+        class="background-mesh__blob background-mesh__blob--3"
+        [style.background-color]="color3()"
+      ></span>
+    }
+    @if (showColor2()) {
+      <span
+        class="background-mesh__blob background-mesh__blob--2"
+        [style.background-color]="color2()"
+      ></span>
+    }
+    @if (showColor1()) {
+      <span
+        class="background-mesh__blob background-mesh__blob--1"
+        [style.background-color]="color1()"
+      ></span>
+    }
+  </div>
 }
 
 <svg

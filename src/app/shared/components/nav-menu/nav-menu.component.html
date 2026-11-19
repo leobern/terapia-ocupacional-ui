@@ -71,7 +71,9 @@
       <button
         type="button"
         class="nav-menu__theme-button"
-        [class.nav-menu__theme-button--active]="themeService.theme() === theme.value"
+        [class.nav-menu__theme-button--active]="
+          themeService.theme() === theme.value
+        "
         [class.keyboard-focus]="keyboardFocused()"
         [attr.aria-pressed]="themeService.theme() === theme.value"
         [attr.aria-label]="theme.label"
@@ -96,7 +98,12 @@
         `type="user"` resolve as iniciais a partir de `name` — sem foto de perfil
         enquanto não houver serviço de sessão.
       -->
-      <app-avatar class="nav-menu__avatar" size="medium" type="user" [name]="professionalName" />
+      <app-avatar
+        class="nav-menu__avatar"
+        size="medium"
+        type="user"
+        [name]="professionalName"
+      />
       <div class="nav-menu__profile-text">
         <span class="nav-menu__profile-name">{{ professionalName }}</span>
         <span class="nav-menu__profile-role">{{ professionalRole }}</span>
@@ -111,12 +118,7 @@
       (focus)="onFocus()"
       (blur)="onBlur()"
     >
-      <ph-icon
-        class="nav-menu__icon"
-        name="power"
-        weight="bold"
-        [size]="24"
-      />
+      <ph-icon class="nav-menu__icon" name="power" weight="bold" [size]="24" />
       <span class="nav-menu__label">Sair</span>
     </button>
   </div>

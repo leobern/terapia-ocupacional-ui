@@ -61,7 +61,11 @@ $duration-collapse: 90ms;
   top: 0;
   left: 0;
   bottom: 0;
-  width: min(320px, calc(100vw - #{tokens.$space-16})); // Figma v2/NavMenu mobile-drawer
+  width: min(
+    320px,
+    calc(100vw - #{tokens.$space-16})
+  ); // Figma v2/NavMenu mobile-drawer
+
   background: #{tokens.c(surface)};
   border-top-right-radius: tokens.$radius-lg;
   border-bottom-right-radius: tokens.$radius-lg;
@@ -114,7 +118,11 @@ $duration-collapse: 90ms;
     bottom: 0;
     width: 100%;
     // Figma v2/NavRail: trilho de 72px com superfície glass e borda à direita.
-    background: color-mix(in srgb, #{tokens.c(surface-glass-1)} 80%, transparent);
+    background: color-mix(
+      in srgb,
+      #{tokens.c(surface-glass-1)} 80%,
+      transparent
+    );
     border-top-right-radius: 0;
     border-bottom-right-radius: 0;
     box-shadow: none;
@@ -561,7 +569,9 @@ $duration-collapse: 90ms;
 // os demais; o vermelho (comm-alert) aparece com o rótulo "Sair" (menu expandido).
 @include breakpoints.md {
   :host(:not(:hover, :focus-within, .nav-menu--open)) .nav-menu__link--logout,
-  :host(:not(:hover, :focus-within, .nav-menu--open)) .nav-menu__link--logout .nav-menu__icon {
+  :host(:not(:hover, :focus-within, .nav-menu--open))
+    .nav-menu__link--logout
+    .nav-menu__icon {
     color: #{tokens.c(primary)};
   }
 }

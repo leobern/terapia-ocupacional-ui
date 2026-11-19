@@ -47,10 +47,7 @@
   // trocar de `state`) sobrescrever a cor por herança de custom property, sem tocar
   // no `data-state`. Sem a property setada por um ancestral, o fallback reproduz
   // exatamente o comportamento anterior — nenhum consumidor existente muda.
-  --icon-logo-accent: var(
-    --icon-logo-accent-override,
-    #{tokens.c(secondary)}
-  );
+  --icon-logo-accent: var(--icon-logo-accent-override, #{tokens.c(secondary)});
 
   // A caixa inclui o transbordamento das luzes e do halo, para que nenhum
   // ancestral com `overflow: hidden` corte a auréola (FR-017).
@@ -63,17 +60,11 @@
 }
 
 :host([data-state='button']) {
-  --icon-logo-accent: var(
-    --icon-logo-accent-override,
-    #{tokens.c(primary)}
-  );
+  --icon-logo-accent: var(--icon-logo-accent-override, #{tokens.c(primary)});
 }
 
 :host([data-state='disabled']) {
-  --icon-logo-accent: var(
-    --icon-logo-accent-override,
-    #{tokens.c(border-2)}
-  );
+  --icon-logo-accent: var(--icon-logo-accent-override, #{tokens.c(border-2)});
 
   // 1px @48px — o Figma afina a borda no disabled.
   --icon-logo-border-width: calc(var(--icon-logo-resolved-size) / 48);

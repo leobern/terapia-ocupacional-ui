@@ -27,7 +27,9 @@ $ai-symbol-bleed: calc($ai-symbol-size * -0.375); // (1 - 1.75) / 2
 // texto longo cresceria por cima dos botões de menu e de ações.
 // 3 × space-8 = dois respiros do icon-button (um por lado) + a folga extra.
 $ai-gap: tokens.$space-8 * 3;
-$ai-clearance: calc(#{tokens.$space-24} + #{tokens.$control-height-lg} + #{$ai-gap});
+$ai-clearance: calc(
+  #{tokens.$space-24} + #{tokens.$control-height-lg} + #{$ai-gap}
+);
 
 :host {
   bottom: 0;
@@ -68,7 +70,9 @@ $ai-clearance: calc(#{tokens.$space-24} + #{tokens.$control-height-lg} + #{$ai-g
 
 .bottom-nav-bar {
   align-items: flex-start;
-  min-height: calc(#{tokens.$bottom-nav-bar-height} + env(safe-area-inset-bottom, 0px));
+  min-height: calc(
+    #{tokens.$bottom-nav-bar-height} + env(safe-area-inset-bottom, 0px)
+  );
 
   // O prefixo é FUNCIONALMENTE necessário: Safari/iOS só aplica o desfoque de
   // fundo com `-webkit-backdrop-filter`, e um aparelho iOS é justamente o alvo
@@ -84,7 +88,10 @@ $ai-clearance: calc(#{tokens.$space-24} + #{tokens.$control-height-lg} + #{$ai-g
   // medida literal permitida neste arquivo (spec.md FR-012).
   background: color-mix(in srgb, #{tokens.c(surface-glass-1)} 92%, transparent);
   border-radius: tokens.$radius-lg tokens.$radius-lg 0 0;
-  box-shadow: var(--shadow-elevation-bottomsheet, #{tokens.$shadow-elevation-bottomsheet});
+  box-shadow: var(
+    --shadow-elevation-bottomsheet,
+    #{tokens.$shadow-elevation-bottomsheet}
+  );
   box-sizing: border-box;
   display: flex;
   justify-content: space-between;
