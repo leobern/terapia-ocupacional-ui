@@ -292,8 +292,7 @@
 
   .patient-list__table-card {
     display: block;
-    overflow-x: auto;
-    overflow-y: hidden;
+    overflow: auto hidden;
     border: 1px solid tokens.c(border);
     border-radius: tokens.$radius-md;
     background: tokens.c(surface);
@@ -309,6 +308,7 @@
     @include typography.body-md;
 
     th {
+      position: relative;
       height: 48px;
       padding: tokens.$space-12 tokens.$space-16 tokens.$space-12
         tokens.$space-24;
@@ -377,6 +377,7 @@
   }
 
   .patient-list__table th.patient-list__sticky {
+    position: sticky;
     background: tokens.c(surface-2);
   }
 
@@ -419,14 +420,6 @@
 
   // Divisória de coluna ajustável: alça invisível no cabeçalho (cursor de redimensionar). No hover
   // do cabeçalho a linha de divisória surge com fade e segue a coluna inteira (`data-line`).
-  .patient-list__table th {
-    position: relative;
-  }
-
-  .patient-list__table th.patient-list__sticky {
-    position: sticky;
-  }
-
   .patient-list__resizer {
     position: absolute;
     top: 0;
