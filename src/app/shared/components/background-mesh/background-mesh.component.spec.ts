@@ -128,6 +128,16 @@ describe('BackgroundMeshComponent', () => {
     expect(el.querySelector('linearGradient')?.getAttribute('y2')).toBe('1.15655');
   });
 
+  it('variant=patients no escuro move a 2ª parada para 51,4% (Figma, Pacientes Dark)', async () => {
+    await create({ theme: 'dark' });
+    fixture.componentRef.setInput('variant', 'patients');
+    fixture.detectChanges();
+    const stop = (fixture.nativeElement as HTMLElement).querySelectorAll('linearGradient stop')[1];
+
+    expect(stop.getAttribute('offset')).toBe('0.514');
+    TestBed.inject(ThemeService).set('light');
+  });
+
   it('variant=gradient no escuro move a 2ª parada para 45% (Figma, Dark v2)', async () => {
     await create({ theme: 'dark' });
     fixture.componentRef.setInput('variant', 'gradient');

@@ -126,8 +126,8 @@ $color-on-data-tag: #002233; // fixed/on-data-tag — texto/ícone sobre ela
 $color-nav-active: #f5f7f8;
 
 // fundo-gradiente-pacientes/* — gradiente EXCLUSIVO da tela de Pacientes (2 paradas; ver
-// docs/artefatos/uso-de-cores.md §3). Claro: ciano claro → superfície; escuro: teal → superfície.
-$color-bg-gradient-patients-1: #dbfcff;
+// docs/artefatos/uso-de-cores.md §3). Claro: azul muito claro → superfície; escuro: azul-marinho → superfície.
+$color-bg-gradient-patients-1: #e9f5fb;
 $color-bg-gradient-patients-2: #f0f3f5;
 
 // decorative/* — usados só no background animado das telas (não são Color
@@ -527,7 +527,7 @@ $shadow-elevation-bottomsheet: 0 -4px 24px rgba($color-primary, 0.08);
   --color-nav-active: #182125;
   --color-bg-gradient-2: #182c35;
   --color-bg-gradient-3: #182125;
-  --color-bg-gradient-patients-1: #005e66;
+  --color-bg-gradient-patients-1: #102f41;
   --color-bg-gradient-patients-2: #182125;
   --color-primary: #8cd0ff;
   --color-secondary: #43b9ff;
