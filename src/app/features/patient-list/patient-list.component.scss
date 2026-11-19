@@ -279,7 +279,8 @@
 
   .patient-list__table-card {
     display: block;
-    overflow: hidden;
+    overflow-x: auto;
+    overflow-y: hidden;
     border: 1px solid tokens.c(border);
     border-radius: tokens.$radius-md;
     background: tokens.c(surface);
@@ -287,6 +288,7 @@
 
   .patient-list__table {
     width: 100%;
+    min-width: 880px;
     border-collapse: collapse;
     table-layout: fixed;
     color: tokens.c(content-1);
@@ -306,6 +308,7 @@
     }
 
     td {
+      min-height: 64px;
       height: 64px;
       padding: tokens.$space-12 tokens.$space-16 tokens.$space-12
         tokens.$space-24;
@@ -316,27 +319,27 @@
 
   // Proporções da grade do Figma (420 · 220 · 220 · 200 · 230 · 230 · resto), em % para acompanhar a largura.
   .patient-list__col-name {
-    width: 25%;
+    width: 22%;
   }
 
   .patient-list__col-age {
-    width: 14%;
-  }
-
-  .patient-list__col-therapy {
-    width: 12%;
-  }
-
-  .patient-list__col-location {
     width: 13%;
   }
 
+  .patient-list__col-therapy {
+    width: 11%;
+  }
+
+  .patient-list__col-location {
+    width: 12%;
+  }
+
   .patient-list__col-goal {
-    width: 16%;
+    width: 15%;
   }
 
   .patient-list__col-action {
-    width: 4%;
+    width: 80px;
   }
 
   .patient-list__tr {
@@ -347,19 +350,48 @@
     }
   }
 
+  // Texto da tabela: quebra em até 2 linhas e, a partir da terceira, reticências.
+  .patient-list__table td,
+  .patient-list__name {
+    overflow-wrap: anywhere;
+  }
+
+  .patient-list__clamp,
+  .patient-list__table td > .patient-list__name,
+  .patient-list__name-cell .patient-list__name {
+    display: -webkit-box;
+    overflow: hidden;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    white-space: normal;
+  }
+
   .patient-list__name-cell {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
-    gap: tokens.$space-12;
+    gap: tokens.$space-4 tokens.$space-12;
     min-width: 0;
   }
 
   .patient-list__cell-location {
     color: tokens.c(content-3);
+
+    @include typography.body-md;
   }
 
+  .patient-list__cell-location > span {
+    display: -webkit-box;
+    overflow: hidden;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+  }
+
+  // Seta afastada da borda, como no Figma (padding do card + 8 de respiro).
   .patient-list__cell-action {
-    padding-right: tokens.$space-16;
+    padding-right: tokens.$space-24;
     text-align: right;
   }
 
@@ -378,11 +410,14 @@
   }
 
   // Barra de meta (Figma: trilho 80×8 com raio 4 + texto Label/Md).
+  // Barra em cima e texto (percentual e situação) embaixo, sempre: sem quebras estranhas ao encolher.
   .patient-list__goal {
     display: inline-flex;
-    align-items: center;
-    gap: tokens.$space-12;
-    white-space: nowrap;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: tokens.$space-4;
+    min-width: 80px;
+    overflow-wrap: anywhere;
 
     @include typography.label-md;
   }

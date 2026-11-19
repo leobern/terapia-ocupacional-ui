@@ -303,7 +303,7 @@ $duration-collapse: 90ms;
   min-height: tokens.$control-height-lg;
   padding: 0 tokens.$space-12;
   border: 0;
-  border-radius: tokens.$radius-12;
+  border-radius: tokens.$radius-pill;
   background: transparent;
   color: #{tokens.c(content-1)};
   cursor: pointer;

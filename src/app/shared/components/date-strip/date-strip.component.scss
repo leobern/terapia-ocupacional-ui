@@ -47,58 +47,32 @@
   }
 }
 
-// Itens afunilam a partir do selecionado: 60 → 54 → 48 de altura.
+// Todos os dias têm o tamanho do selecionado (48×60, Label 12 / Title 20); só o selecionado tem fundo.
 .date-strip__day {
   flex-direction: column;
-  width: 38.4px;
-  height: 48px;
-  padding: 0;
-  border-radius: 12.8px;
-
-  .date-strip__weekday {
-    font-size: 9.6px;
-    line-height: 12.8px;
-  }
-
-  .date-strip__number {
-    font-size: 16px;
-    line-height: 22.4px;
-  }
-}
-
-.date-strip__day--near {
-  width: 43.2px;
-  height: 54px;
-  border-radius: 14.4px;
-
-  .date-strip__weekday {
-    font-size: 10.8px;
-    line-height: 14.4px;
-  }
-
-  .date-strip__number {
-    font-size: 18px;
-    line-height: 25.2px;
-  }
-}
-
-// Dia selecionado em azul (secondary), como no Figma.
-.date-strip__day--selected {
   width: 48px;
   height: 60px;
+  padding: 0;
   border-radius: tokens.$radius-sm;
-  background: tokens.c(secondary);
 
   .date-strip__weekday {
-    color: tokens.c(content-6);
     font-size: 12px;
     line-height: 16px;
   }
 
   .date-strip__number {
-    color: tokens.c(content-6);
     font-size: 20px;
     line-height: 28px;
+  }
+}
+
+// Dia selecionado em azul (secondary), como no Figma.
+.date-strip__day--selected {
+  background: tokens.c(secondary);
+
+  .date-strip__weekday,
+  .date-strip__number {
+    color: tokens.c(content-6);
   }
 }
 

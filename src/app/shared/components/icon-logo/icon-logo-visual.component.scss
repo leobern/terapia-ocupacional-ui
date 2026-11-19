@@ -197,6 +197,11 @@ $mesh-fade-mask: radial-gradient(
   --icon-logo-light-opacity: 0.3;
 }
 
+// No escuro: hard-light com pouca opacidade, só um brilho bem claro (Thiago, 2026-11-19).
+:host-context([data-theme='dark']) {
+  --icon-logo-light-opacity: 0.25;
+}
+
 // Figma (Dark v2): no tema escuro as luzes atrás da logo usam "hard light" — sem isso o modo
 // `color` as deixa muito claras sobre a superfície escura.
 :host-context([data-theme='dark']) .icon-logo__light {

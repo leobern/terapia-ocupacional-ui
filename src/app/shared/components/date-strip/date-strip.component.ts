@@ -7,8 +7,6 @@ export interface DateStripDay {
   readonly weekday: string;
   readonly dayOfMonth: number;
   readonly selected: boolean;
-  /** Distância (em dias) até o selecionado, limitada a 2: define o tamanho do item (60/54/48). */
-  readonly distance: 0 | 1 | 2;
   readonly label: string;
 }
 
@@ -66,14 +64,12 @@ export class DateStripComponent {
 
     return Array.from({ length: VISIBLE_DAYS }, (_, i) => {
       const date = addDays(start, i);
-      const distance = Math.min(Math.abs(diffDays(date, selected)), 2) as 0 | 1 | 2;
 
       return {
         date,
         dayOfMonth: date.getDate(),
-        distance,
         label: `${WEEKDAYS_LONG[date.getDay()]}, ${date.getDate()}`,
-        selected: distance === 0,
+        selected: diffDays(date, selected) === 0,
         weekday: WEEKDAYS[date.getDay()],
       };
     });
