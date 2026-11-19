@@ -1,7 +1,4 @@
-<app-background-mesh
-  [color1]="backgroundColor1()"
-  [showColor2]="backgroundShowColor2()"
-/>
+<app-background-mesh [showColor3Desktop]="!isNotificationsRoute()" />
 
 <div class="app-shell">
   @if (showShell()) {

@@ -9,6 +9,8 @@ describe('BackgroundMeshComponent', () => {
     overrides: {
       color1?: string;
       color2?: string;
+      color3?: string;
+      showColor3Desktop?: boolean;
       meshGradientCoreColor?: string;
       meshGradientEdgeColor?: string;
     } = {},
@@ -20,6 +22,12 @@ describe('BackgroundMeshComponent', () => {
     }
     if (overrides.color2 !== undefined) {
       fixture.componentRef.setInput('color2', overrides.color2);
+    }
+    if (overrides.color3 !== undefined) {
+      fixture.componentRef.setInput('color3', overrides.color3);
+    }
+    if (overrides.showColor3Desktop !== undefined) {
+      fixture.componentRef.setInput('showColor3Desktop', overrides.showColor3Desktop);
     }
     if (overrides.meshGradientCoreColor !== undefined) {
       fixture.componentRef.setInput('meshGradientCoreColor', overrides.meshGradientCoreColor);
@@ -34,7 +42,7 @@ describe('BackgroundMeshComponent', () => {
     return fixture.nativeElement;
   }
 
-  function blob(index: 1 | 2): HTMLElement {
+  function blob(index: 1 | 2 | 3): HTMLElement {
     return fixture.nativeElement.querySelector(`.background-mesh__blob--${index}`);
   }
 
@@ -45,8 +53,10 @@ describe('BackgroundMeshComponent', () => {
   it('usa os hex default quando nenhum input é informado', async () => {
     await create();
 
-    expect(blob(1).style.backgroundColor).toBe('rgb(211, 255, 233)'); // #D3FFE9
+    // Figma "Conductia - V1", componente `background`: verde, ciano e azul-marinho.
+    expect(blob(1).style.backgroundColor).toBe('rgb(13, 119, 66)'); // #0d7742
     expect(blob(2).style.backgroundColor).toBe('rgb(166, 251, 251)'); // #a6fbfb
+    expect(blob(3).style.backgroundColor).toBe('rgb(0, 68, 102)'); // #004466
 
     const stops = gradientStops();
 
@@ -54,11 +64,45 @@ describe('BackgroundMeshComponent', () => {
     expect(stops[1].getAttribute('stop-color')).toBe('#4D5154');
   });
 
-  it('propaga color1/color2 para os 2 blobs quando informados', async () => {
-    await create({ color1: '#ff0000', color2: '#00ff00' });
+  it('propaga color1/color2/color3 para os 3 blobs quando informados', async () => {
+    await create({ color1: '#ff0000', color2: '#00ff00', color3: '#0000ff' });
 
     expect(blob(1).style.backgroundColor).toBe('rgb(255, 0, 0)');
     expect(blob(2).style.backgroundColor).toBe('rgb(0, 255, 0)');
+    expect(blob(3).style.backgroundColor).toBe('rgb(0, 0, 255)');
+  });
+
+  it('usa a geometria do Figma: blur 100px e círculos de 560/560/240px no mobile', async () => {
+    await create();
+
+    expect(getComputedStyle(blob(3)).filter).toBe('blur(100px)');
+    expect(blob(3).offsetWidth).toBe(560);
+    expect(blob(2).offsetWidth).toBe(560);
+    expect(blob(1).offsetWidth).toBe(240);
+  });
+
+  it('claro: a camada dos círculos mistura em "color" com 100% de opacidade (Figma, Light v2)', async () => {
+    await create();
+    const layer = fixture.nativeElement.querySelector('.background-mesh__blobs') as HTMLElement;
+
+    expect(getComputedStyle(layer).mixBlendMode).toBe('color');
+    expect(getComputedStyle(layer).opacity).toBe('1');
+  });
+
+  it('escuro: a camada dos círculos fica com 20% de opacidade e mistura plus-lighter (Figma, Dark v2)', async () => {
+    document.documentElement.setAttribute('data-theme', 'dark');
+    await create();
+    const layer = fixture.nativeElement.querySelector('.background-mesh__blobs') as HTMLElement;
+
+    expect(getComputedStyle(layer).mixBlendMode).toBe('plus-lighter');
+    expect(getComputedStyle(layer).opacity).toBe('0.2');
+    document.documentElement.removeAttribute('data-theme');
+  });
+
+  it('showColor3Desktop=false marca o host para esconder o 3º círculo no desktop (Notificações)', async () => {
+    await create({ showColor3Desktop: false });
+
+    expect(host().classList).toContain('background-mesh--without-third-blob-desktop');
   });
 
   it('propaga meshGradientCoreColor/meshGradientEdgeColor para os 2 stops do gradiente', async () => {

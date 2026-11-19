@@ -71,10 +71,6 @@ export class AppComponent {
   });
 
   protected readonly isNotificationsRoute = computed(() => this.currentUrl().startsWith('/notifications'));
-  // '#D3FFE9' é o default do próprio app-background-mesh — repetido aqui só
-  // porque o binding precisa de um valor concreto nas duas pontas do ternário.
-  protected readonly backgroundColor1 = computed(() => (this.isNotificationsRoute() ? '#a6fbfb' : '#D3FFE9'));
-  protected readonly backgroundShowColor2 = computed(() => !this.isNotificationsRoute());
   protected readonly aiSheetSnap = signal<BottomSheetSnap>('default');
   protected readonly aiDrawerSnap = signal<DrawerSnap>('default');
   protected readonly aiChatValue = signal('');
