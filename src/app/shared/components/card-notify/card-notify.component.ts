@@ -70,6 +70,8 @@ export class CardNotifyComponent {
   readonly answerClick = output();
   readonly viewRepliesClick = output();
   readonly collapseClick = output();
+  /** Botão ✓ (Figma v2/NotificationThread): marcar como resolvida. */
+  readonly resolveClick = output();
 
   protected readonly isResume = computed(() => this.type() === 'resume');
   protected readonly isDetail = computed(() => this.type() === 'detail');
@@ -79,7 +81,14 @@ export class CardNotifyComponent {
   protected readonly showReplyTag = computed(() => this.isDetail() && this.replies().length > 0);
   // Figma 4506:9462: só o card pendente tem a coluna do balão (responder). Aberto com as respostas
   // (4496:11888) e resolvido (4506:9755) não têm.
-  protected readonly showActionButton = computed(() => this.isDetail() && !this.resolved());
+  // Figma v2/NotificationThread: pendente mostra responder + resolver, também com as
+  // respostas abertas; resolvida não tem ações.
+  protected readonly showActionButton = computed(() => (this.isDetail() || this.isAnswerOpen()) && !this.resolved());
+  protected readonly repliesLabel = computed(() => {
+    const total = this.replies().length;
+
+    return `${total} ${total === 1 ? 'resposta' : 'respostas'}`;
+  });
   protected readonly showReplyBlocks = computed(() => this.isAnswerOpen() || this.isAnswering());
 
   protected readonly avatarType = computed<AvatarType>(() => (this.authorPhotoUrl() ? 'photo' : 'user'));
@@ -103,6 +112,11 @@ export class CardNotifyComponent {
   protected onViewRepliesClick(event: Event): void {
     event.stopPropagation();
     this.viewRepliesClick.emit();
+  }
+
+  protected onResolveClick(event: Event): void {
+    event.stopPropagation();
+    this.resolveClick.emit();
   }
 
   protected onCollapseClick(event: Event): void {

@@ -47,6 +47,11 @@ export const NotificationsActions = createActionGroup({
     // navegação/refresh que descartaria um rascunho não enviado; `onConfirm` é
     // executado pelo componente ao confirmar (não modelado como estado NgRx
     // porque é uma ação de navegação, não um dado da tela).
+    // Botão ✓ do card (Figma v2/NotificationThread): marca a notificação como resolvida.
+    'Resolve Requested': props<{ notificationId: number }>(),
+    'Resolve Success': props<{ notificationId: number }>(),
+    'Resolve Failure': props<{ notificationId: number; message: string }>(),
+
     'Discard Confirmation Requested': emptyProps(),
     'Discard Confirmation Cancelled': emptyProps(),
   },

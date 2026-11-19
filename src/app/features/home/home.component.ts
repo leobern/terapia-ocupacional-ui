@@ -23,6 +23,7 @@ import { PageContainerComponent } from '../../shared/components/page-container/p
 import { TagComponent } from '../../shared/components/tag/tag.component';
 import { PhIconComponent } from '../../shared/icons/ph-icon/ph-icon.component';
 import { AiAssistantService } from '../../shared/services/ai-assistant.service';
+import { formatRelativeTime } from '../../shared/utils/relative-time';
 import { HomeErrorComponent } from './components/home-error/home-error.component';
 import { HomeSkeletonComponent } from './components/home-skeleton/home-skeleton.component';
 import { DailyPatientsSource, DailyPatientsSummary } from './daily-patients';
@@ -253,7 +254,7 @@ export class HomeComponent implements OnInit, OnDestroy {
   }
 
   formatTime(isoDate: string): string {
-    return new Intl.DateTimeFormat('pt-BR', { hour: '2-digit', minute: '2-digit' }).format(new Date(isoDate));
+    return formatRelativeTime(isoDate); // Figma: "Hoje, 10:42"
   }
 
   protected bellLabel(): string {

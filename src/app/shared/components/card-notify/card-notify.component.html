@@ -41,12 +41,10 @@
   </div>
 
   @if (showPatientHeader()) {
-    <div class="card-notify__patient" [attr.aria-label]="patientAriaLabel()">
-      <app-avatar size="small" type="user" [name]="patientName()" />
-      <span class="card-notify__patient-text">
-        <span class="card-notify__patient-label">{{ patientAriaLabel() }}:</span>
-        <span class="card-notify__patient-name">{{ patientName() }}</span>
-      </span>
+    <!-- Figma v2/NotificationThread: chip só com texto (sem foto do paciente). -->
+    <div class="card-notify__patient">
+      <span class="card-notify__patient-label">{{ patientAriaLabel() }}:</span>
+      <span class="card-notify__patient-name">{{ patientName() }}</span>
     </div>
   }
 
@@ -115,7 +113,7 @@
         class="card-notify__reply-tag"
         (click)="onViewRepliesClick($event)"
       >
-        <span>{{ replies().length }} {{ replies().length === 1 ? 'resposta' : 'respostas' }}</span>
+        <span>{{ repliesLabel() }}</span>
         <ph-icon name="caret-down" [size]="20" />
       </button>
     }
@@ -124,9 +122,10 @@
       <button
         type="button"
         class="card-notify__collapse"
+        aria-label="Recolher respostas"
         (click)="onCollapseClick($event)"
       >
-        <span>Ver menos</span>
+        <span>{{ repliesLabel() }}</span>
         <ph-icon name="caret-up" [size]="20" />
       </button>
     }
@@ -141,6 +140,15 @@
           [ariaLabel]="actionAriaLabel()"
           [disabled]="actionDisabled()"
           (click)="onActionClick($event)"
+        />
+        <app-icon-button
+          kind="success"
+          appearance="tonal"
+          size="small"
+          icon="check"
+          ariaLabel="Resolver"
+          [disabled]="actionDisabled()"
+          (click)="onResolveClick($event)"
         />
       </span>
     }

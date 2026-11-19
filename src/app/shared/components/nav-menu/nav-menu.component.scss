@@ -437,3 +437,12 @@ $duration-collapse: 90ms;
   cursor: not-allowed;
   opacity: 0.4;
 }
+
+// Figma v2/NavRail: no trilho recolhido o ícone de sair segue a cor primária, como
+// os demais; o vermelho (comm-alert) aparece com o rótulo "Sair" (menu expandido).
+@include breakpoints.md {
+  :host(:not(:hover, :focus-within, .nav-menu--open)) .nav-menu__link--logout,
+  :host(:not(:hover, :focus-within, .nav-menu--open)) .nav-menu__link--logout .nav-menu__icon {
+    color: #{tokens.c(primary)};
+  }
+}

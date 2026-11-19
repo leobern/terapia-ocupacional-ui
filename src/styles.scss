@@ -2,6 +2,7 @@
 // Import Angular Material theme and PrimeNG here
 
 // Design tokens (Color Styles do Figma "Conductia" — specs/003-home)
+@use 'app/shared/styles/breakpoints';
 @use 'app/shared/styles/tokens';
 
 // @font-face do Inter/Lora — só aqui (folha de estilo global), nunca a
@@ -35,6 +36,12 @@ body {
   // Cor de base de toda tela — o background-mesh (z-index 0, ver seu SCSS)
   // desenha por cima disso; sem essa cor aqui o mesh some atrás do canvas
   // branco padrão do navegador (o body nunca pinta um background sozinho).
-  background: tokens.$color-surface-2;
+  // Figma: telas mobile em surface; desktop em surface-2.
+  background: tokens.c(surface);
+
+  @include breakpoints.md {
+    background: tokens.c(surface-2);
+  }
+
   font-family: var(--font-family-base);
 }

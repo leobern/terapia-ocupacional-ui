@@ -8,7 +8,7 @@ import { KeyboardFocusService } from '../../services/keyboard-focus.service';
  * convenção de nomenclatura do `ButtonComponent` (evita colisão com o atributo HTML
  * nativo `type` do elemento `<button>`).
  */
-export type IconButtonKind = 'primary' | 'secondary' | 'tertiary';
+export type IconButtonKind = 'primary' | 'secondary' | 'tertiary' | 'success';
 
 /**
  * Mapeia a propriedade Figma `variant`. Tem uma variante a mais que `ButtonAppearance`

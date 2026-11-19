@@ -34,15 +34,18 @@
   }
   @default {
     <div class="assistant-content">
-      <h2 class="assistant-content__title">Como eu posso te ajudar?</h2>
-      <p class="assistant-content__body">
-        Quer tirar uma dúvida, ou quer que eu faça um resumo de todas as suas
-        tarefas do dia? Eu posso fazer praticamente tudo, só me diz o que você
-        precisa?
-      </p>
-      <p class="assistant-content__hint">
-        Você pode conversar comigo via texto ou áudio.
-      </p>
+      <!-- Figma (seção 09): com uma conversa em andamento, a mensagem de boas-vindas sai. -->
+      @if (!assistant.conversation()) {
+        <h2 class="assistant-content__title">Como eu posso te ajudar?</h2>
+        <p class="assistant-content__body">
+          Quer tirar uma dúvida, ou quer que eu faça um resumo de todas as suas
+          tarefas do dia? Eu posso fazer praticamente tudo, só me diz o que você
+          precisa?
+        </p>
+        <p class="assistant-content__hint">
+          Você pode conversar comigo via texto ou áudio.
+        </p>
+      }
       @if (assistant.conversation(); as conversation) {
         <div class="assistant-content__conversation" aria-live="polite">
           <p class="assistant-content__question">{{ conversation.question }}</p>
@@ -94,9 +97,12 @@
                 <ul class="assistant-content__answer-items">
                   @for (item of answer.items; track $index) {
                     <li class="assistant-content__answer-item">
-                      <span class="assistant-content__answer-text">{{
-                        itemText(item)
-                      }}</span>
+                      <span class="assistant-content__answer-text">
+                        @if (itemTitle(item); as title) {
+                          <strong>{{ title }}</strong>:
+                        }
+                        {{ itemText(item) }}
+                      </span>
                       @if (itemRoute(item); as route) {
                         <app-icon-button
                           kind="primary"
@@ -124,22 +130,7 @@
           </div>
         </div>
       }
-      <ul
-        class="assistant-content__suggestions"
-        aria-label="Sugestões de pergunta"
-      >
-        @for (suggestion of suggestions; track suggestion) {
-          <li>
-            <button
-              type="button"
-              class="assistant-content__chip"
-              (click)="assistant.ask(suggestion)"
-            >
-              {{ suggestion }}
-            </button>
-          </li>
-        }
-      </ul>
+
     </div>
   }
 }

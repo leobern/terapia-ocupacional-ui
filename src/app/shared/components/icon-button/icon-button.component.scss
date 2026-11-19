@@ -70,6 +70,11 @@
   --icon-button-color: #{tokens.c(content-3)};
 }
 
+// Ação positiva (ex.: ✓ "Resolver" — Figma v2/NotificationThread).
+.icon-button--success {
+  --icon-button-color: #{tokens.c(comm-success)};
+}
+
 // --- appearances --------------------------------------------------------------
 .icon-button--tonal {
   background: tokens.c(surface-2);

@@ -104,30 +104,34 @@
   }
 }
 
-// --- paciente (chip, avatar encostado à esquerda) ------------------------------
+// --- paciente (Figma v2/NotificationThread: chip só com texto, sem foto) ----------
 .card-notify__patient {
   box-sizing: border-box;
   display: inline-flex;
   align-items: center;
   align-self: flex-start;
-  gap: tokens.$space-8;
+  gap: tokens.$space-4;
+  max-width: 100%;
   height: tokens.$control-height-sm;
-  padding-right: tokens.$space-12;
+  padding: 0 tokens.$space-12;
   border: 1px solid tokens.c(border);
   border-radius: tokens.$radius-pill;
   background: tokens.c(surface);
-  max-width: 100%;
+  color: tokens.c(content-1);
+  white-space: nowrap;
 }
 
-.card-notify__patient-text {
-  display: inline-flex;
-  gap: tokens.$space-4;
+.card-notify__patient-label {
+  @include typography.label-sm;
+}
+
+.card-notify__patient-name {
   overflow: hidden;
-  color: tokens.c(content-1);
   text-overflow: ellipsis;
-  white-space: nowrap;
 
   @include typography.label-md;
+
+  font-weight: tokens.$font-weight-semibold;
 }
 
 // --- descrição ----------------------------------------------------------------
@@ -236,5 +240,6 @@
 
 .card-notify__actions {
   display: inline-flex;
+  gap: tokens.$space-8;
   margin-left: auto;
 }

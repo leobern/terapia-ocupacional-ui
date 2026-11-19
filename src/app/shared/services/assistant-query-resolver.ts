@@ -5,7 +5,9 @@ import { InjectionToken } from '@angular/core';
  * Item da resposta: texto simples ou texto com destino. Com `route`, o item ganha a
  * seta de 40px que leva ao detalhe (Figma v2/ChatMessage Type=answer-list).
  */
-export type AssistantAnswerItem = string | { readonly text: string; readonly route: string };
+export type AssistantAnswerItem =
+  | string
+  | { readonly text: string; readonly route: string; /** Prefixo em negrito (ex.: autor). */ readonly title?: string };
 
 export interface AssistantAnswer {
   readonly summary: string;

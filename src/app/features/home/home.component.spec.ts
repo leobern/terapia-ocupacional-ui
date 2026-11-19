@@ -401,7 +401,7 @@ describe('HomeComponent', () => {
       expect(grid()[1].textContent).toContain('Notificações');
       expect(grid()[2].tagName.toLowerCase()).toBe('app-card-notify');
       expect(grid()[2].textContent).toContain('Notificação 0');
-      expect(fixture.componentInstance.formatTime('2026-11-17T10:30:00')).toBe('10:30');
+      expect(fixture.componentInstance.formatTime('2026-11-17T10:30:00')).toContain('10:30');
     });
 
     it('shows author data, initials avatar, 2-line clamps and the bell icon on the card (US-003-3-03)', async () => {

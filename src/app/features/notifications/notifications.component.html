@@ -12,7 +12,10 @@
       />
       <!-- Figma v2/PageHeader: título Headline + contexto (hospital · data). -->
       <div class="notifications__heading">
-        <h1 class="notifications__title">{{ title() }}</h1>
+        <div class="notifications__title-row">
+          <ph-icon class="notifications__title-icon" name="bell" [size]="24" />
+          <h1 class="notifications__title">{{ title() }}</h1>
+        </div>
         <p class="notifications__subtitle">
           @if (hospitalId(); as id) {
             {{ hospitalName() || 'Hospital ' + id }} ·
@@ -62,14 +65,24 @@
           (touchend)="onTouchEnd($event)"
         >
           @if (isEmpty()) {
-            <p class="notifications__empty">Nenhuma notificação por aqui.</p>
+            <!-- Figma (seção 07, tela 6 · Vazio) -->
+            <div class="notifications__empty" role="status">
+              <ph-icon name="bell" [size]="48" />
+              <p class="notifications__empty-title">Tudo em dia por aqui</p>
+              <p class="notifications__empty-text">
+                Quando alguém da equipe mencionar você ou um paciente seu, a
+                notificação aparece aqui.
+              </p>
+            </div>
           }
 
+          <!-- Figma (seção 07): no desktop, Pendentes e Resolvidas lado a lado. -->
+          <section class="notifications__column" aria-label="Pendentes">
           @if (pendingItems().length > 0) {
             <app-notification-section-title
               class="notifications__section-title"
               label="Pendentes"
-              [count]="pendingItems().length"
+              [count]="pendingCount()"
             />
           }
           @for (notification of pendingItems(); track notification.id) {
@@ -91,14 +104,17 @@
               (answerClick)="onAnswerClick(notification.id)"
               (viewRepliesClick)="onViewRepliesClick(notification.id)"
               (collapseClick)="onCollapseClick(notification.id)"
+              (resolveClick)="onResolveClick(notification.id)"
             />
           }
+          </section>
 
+          <section class="notifications__column" aria-label="Resolvidas">
           @if (resolvedItems().length > 0) {
             <app-notification-section-title
               class="notifications__section-title"
               label="Resolvidas"
-              [count]="resolvedItems().length"
+              [count]="resolvedCount()"
             />
 
             @for (notification of resolvedItems(); track notification.id) {
@@ -123,6 +139,7 @@
               />
             }
           }
+          </section>
 
           <div #scrollSentinel class="notifications__scroll-sentinel"></div>
 

@@ -75,9 +75,9 @@ describe('PendingNotificationsQueryResolver', () => {
 
     expect(answer.summary).toBe('Você tem 3 pendências:');
     expect(answer.items).toEqual([
-      { route: '/notifications/1', text: 'Ana (Nutricionista): a' },
-      { route: '/notifications/2', text: 'Bia (Nutricionista): b' },
-      { route: '/notifications/3', text: 'Caio (Nutricionista): c' },
+      { route: '/notifications/1', text: 'a', title: 'Ana (Nutricionista)' },
+      { route: '/notifications/2', text: 'b', title: 'Bia (Nutricionista)' },
+      { route: '/notifications/3', text: 'c', title: 'Caio (Nutricionista)' },
     ]);
 
     expect(answer.link).toEqual({ label: 'Ver todas em Notificações', route: '/notifications' });

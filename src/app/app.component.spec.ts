@@ -239,6 +239,12 @@ describe('AppComponent', () => {
     expect(() => fixture.componentInstance.onAiSend('mensagem')).not.toThrow();
   });
 
+  it('onAiShortcut sends the chip label as the question (Figma: chips do painel)', () => {
+    fixture.componentInstance.onAiShortcut({ id: 'pendencias', label: 'Quais são minhas pendências de hoje?' });
+
+    expect(fixture.componentInstance.aiAssistant.lastQuestion()).toBe('Quais são minhas pendências de hoje?');
+  });
+
   it('onAiSend forwards the typed question to the assistant', () => {
     fixture.componentInstance.onAiSend('mensagem livre');
 

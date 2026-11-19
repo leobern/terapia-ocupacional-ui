@@ -31,6 +31,7 @@ import { PhIconComponent } from '../../shared/icons/ph-icon/ph-icon.component';
 import { AiAssistantService } from '../../shared/services/ai-assistant.service';
 import { type ScreenAction, ScreenActionsService } from '../../shared/services/screen-actions.service';
 import { type DirectoryUser } from '../../shared/services/user-directory';
+import { formatRelativeTime } from '../../shared/utils/relative-time';
 import { HospitalContextService } from '../home/hospital-context.service';
 import { ConfirmDialogComponent } from './components/confirm-dialog/confirm-dialog.component';
 import { NotificationSectionTitleComponent } from './components/notification-section-title/notification-section-title.component';
@@ -45,10 +46,11 @@ import {
   selectHasMore,
   selectHospitalId,
   selectPendingItems,
+  selectPendingTotalCount,
   selectResolvedItems,
+  selectResolvedTotalCount,
   selectStatus,
   selectSubmitting,
-  selectTotalCount,
 } from './state/notifications.reducer';
 
 function formatTodayLabel(): string {
@@ -120,7 +122,9 @@ export class NotificationsComponent implements OnDestroy {
   // Convergence T053: contagem real do backend (`NotificationPage.totalCount`), não
   // mais uma aproximação pelos itens já paginados no cliente (que subcontava antes
   // de toda a paginação carregar).
-  protected readonly totalCount = toSignal(this.store.select(selectTotalCount), { initialValue: 0 });
+  // Figma (seção 07): o título conta as pendentes; cada seção mostra o próprio total.
+  protected readonly pendingCount = toSignal(this.store.select(selectPendingTotalCount), { initialValue: 0 });
+  protected readonly resolvedCount = toSignal(this.store.select(selectResolvedTotalCount), { initialValue: 0 });
   protected readonly isEmpty = computed(
     () => this.status() === 'success' && this.pendingItems().length === 0 && this.resolvedItems().length === 0,
   );
@@ -134,7 +138,7 @@ export class NotificationsComponent implements OnDestroy {
   /** Título com a contagem ("3 Notificações"), no mobile e no desktop. */
   protected readonly assistant = inject(AiAssistantService);
   protected readonly title = computed(() => {
-    const total = this.totalCount();
+    const total = this.pendingCount();
 
     if (total === 0) {
       return 'Notificações';
@@ -257,6 +261,11 @@ export class NotificationsComponent implements OnDestroy {
     this.expandedIds.set(next);
   }
 
+  /** Botão ✓ do card (Figma v2/NotificationThread): marca como resolvida. */
+  onResolveClick(id: number): void {
+    this.store.dispatch(NotificationsActions.resolveRequested({ notificationId: id }));
+  }
+
   onCollapseClick(id: number): void {
     const next = new Set(this.expandedIds());
 
@@ -320,7 +329,7 @@ export class NotificationsComponent implements OnDestroy {
   }
 
   protected formatTime(isoDate: string): string {
-    return new Intl.DateTimeFormat('pt-BR', { hour: '2-digit', minute: '2-digit' }).format(new Date(isoDate));
+    return formatRelativeTime(isoDate); // Figma: "Hoje, 10:42"
   }
 
   // Pull-to-refresh (FR-004b) — gesto simples de arrastar para baixo a partir do

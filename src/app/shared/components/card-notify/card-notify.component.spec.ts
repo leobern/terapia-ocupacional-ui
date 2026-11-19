@@ -191,7 +191,7 @@ describe('CardNotifyComponent', () => {
       expect(instance.appearance()).toBe('outlined');
     });
 
-    it('card resolvido ou com as respostas abertas não tem a coluna do balão', async () => {
+    it('card resolvido não tem ações; com as respostas abertas mantém responder e resolver (Figma v2/NotificationThread)', async () => {
       await createDetail({ resolved: true });
 
       expect(fixture.nativeElement.querySelector('.card-notify__actions')).toBeNull();
@@ -200,7 +200,7 @@ describe('CardNotifyComponent', () => {
       fixture.componentRef.setInput('type', 'answer-open');
       fixture.detectChanges();
 
-      expect(fixture.nativeElement.querySelector('.card-notify__actions')).toBeNull();
+      expect(fixture.nativeElement.querySelectorAll('.card-notify__actions app-icon-button').length).toBe(2);
     });
 
     it('a tag de respostas mostra "N respostas" com alvo de 40px (Figma v2/NotificationThread)', async () => {
@@ -222,7 +222,7 @@ describe('CardNotifyComponent', () => {
       expect(blocks[0].top).toBeGreaterThanOrEqual(main.bottom - 1);
       expect(blocks[1].top).toBeGreaterThanOrEqual(blocks[0].bottom - 1);
       expect(blocks[0].width).toBeGreaterThan(0);
-      expect(fixture.nativeElement.querySelector('.card-notify__collapse').textContent).toContain('Ver menos');
+      expect(fixture.nativeElement.querySelector('.card-notify__collapse').textContent).toContain('2 respostas'); // Figma: "N respostas" com seta para cima
     });
 
     it('o texto aparece inteiro (sem corte em 2 linhas)', async () => {

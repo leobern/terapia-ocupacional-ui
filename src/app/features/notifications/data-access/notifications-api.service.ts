@@ -1,7 +1,7 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { environment } from '@environments/environment';
-import { Observable } from 'rxjs';
+import { map, Observable } from 'rxjs';
 
 import { NotificationPage, NotificationReply, NotificationStatus } from '../notifications.models';
 
@@ -36,5 +36,10 @@ export class NotificationsApiService {
 
   createReply(notificationId: number, text: string): Observable<NotificationReply> {
     return this.http.post<NotificationReply>(`${this.baseUrl}/${notificationId}/replies`, { text });
+  }
+
+  /** Marca a notificação como resolvida (botão ✓ do card — Figma v2/NotificationThread). */
+  resolve(notificationId: number): Observable<void> {
+    return this.http.post<undefined>(`${this.baseUrl}/${notificationId}/resolve`, {}).pipe(map(() => undefined));
   }
 }

@@ -42,21 +42,15 @@ describe('AssistantContentComponent', () => {
     expect(text('.assistant-content__hint')).toContain('texto ou áudio');
   });
 
-  it('chat: shows at least two suggestion chips, including the pending-tasks one', () => {
-    const chips = Array.from(el().querySelectorAll('.assistant-content__chip')).map(b => b.textContent?.trim());
-
-    expect(chips.length).toBeGreaterThanOrEqual(2);
-    expect(chips).toContain('Quais são minhas pendências de hoje?');
+  it('chat: shows the welcome message while there is no conversation (Figma v2/AssistantPanel)', () => {
+    expect(el().querySelector('.assistant-content__title')?.textContent).toContain('Como eu posso te ajudar?');
   });
 
-  it('tapping a chip sends exactly that question', () => {
-    const chip = Array.from(el().querySelectorAll<HTMLButtonElement>('.assistant-content__chip')).find(
-      b => b.textContent?.trim() === 'Quais são minhas pendências de hoje?',
-    );
+  it('chat: hides the welcome message once a question was asked (Figma, seção 09 · A2)', () => {
+    assistant.ask('Quais são minhas pendências de hoje?');
+    fixture.detectChanges();
 
-    chip?.click();
-
-    expect(assistant.lastQuestion()).toBe('Quais são minhas pendências de hoje?');
+    expect(el().querySelector('.assistant-content__title')).toBeNull();
   });
 
   it('free text that is not a suggestion goes through the same entry point unchanged', () => {

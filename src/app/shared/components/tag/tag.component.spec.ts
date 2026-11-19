@@ -85,7 +85,7 @@ describe('TagComponent', () => {
       expect(icon.componentInstance.name()).toBe('arrows-clockwise');
       // Valor literal do binding — resolver a custom property em si depende do
       // stylesheet global (_tokens.scss), não carregado neste teste isolado.
-      expect((icon.nativeElement as HTMLElement).style.color).toBe('var(--color-content-3)');
+      expect((icon.nativeElement as HTMLElement).style.color).toBe('var(--color-content-1)');
     });
 
     it('applies a custom iconRightName/iconRightColor', () => {

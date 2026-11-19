@@ -51,7 +51,8 @@
 
 .card-patients__legend {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap; // Figma: as duas metas na mesma linha
+  white-space: nowrap;
   gap: tokens.$space-4 tokens.$space-12;
   padding-top: 6px;
 }
@@ -84,9 +85,13 @@
   flex-shrink: 0;
   align-items: center;
   justify-content: center;
-  width: tokens.$control-height-md;
+  // Figma: seta de 24px; a área de toque (40px) é ampliada com padding + margem
+  // negativa, sem roubar largura do texto.
+  box-sizing: content-box;
+  width: tokens.$icon-size-default;
   height: tokens.$control-height-md;
-  padding: 0;
+  margin: 0 (-(tokens.$space-8));
+  padding: 0 tokens.$space-8;
   border: 0;
   border-radius: tokens.$radius-pill;
   background: transparent;

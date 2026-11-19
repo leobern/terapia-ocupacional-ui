@@ -81,6 +81,9 @@ $color-comm-warning: #ffd400;
 $color-comm-focus: #de43dc;
 // Amarelo para ícones e gráficos (o comm-warning fica só como fundo de aviso).
 $color-comm-warning-strong: #edc000;
+// Texto/ícone sobre comm-warning: navy nos dois temas (Figma: content-1 no Light,
+// content-6 no Dark — ambos #002233).
+$color-on-warning: #002233;
 
 // focus/* — padrão único de foco por teclado para TODO elemento clicável do
 // design system (decisão do usuário, 2026-07-23, não vem de nenhum nó Figma
@@ -145,6 +148,7 @@ $color-map: (
   'comm-warning': $color-comm-warning,
   'comm-focus': $color-comm-focus,
   'comm-warning-strong': $color-comm-warning-strong,
+  'on-warning': $color-on-warning,
   'focus-ring': $color-focus-ring,
   'input-focus-ring': $color-input-focus-ring,
   'logo-1': $color-logo-1,
@@ -389,6 +393,7 @@ $shadow-elevation-bottomsheet: 0 -4px 24px rgba($color-primary, 0.08);
   --color-comm-warning: #{$color-comm-warning};
   --color-comm-focus: #{$color-comm-focus};
   --color-comm-warning-strong: #{$color-comm-warning-strong};
+  --color-on-warning: #{$color-on-warning};
   --color-logo-1: #{$color-logo-1};
   --color-logo-2: #{$color-logo-2};
   --color-logo-3: #{$color-logo-3};
@@ -506,8 +511,9 @@ $shadow-elevation-bottomsheet: 0 -4px 24px rgba($color-primary, 0.08);
   --color-comm-info: #ffa0fb;
   --color-comm-alert: #ff847c;
   --color-comm-success: #4ccd53;
-  --color-comm-warning: #534400;
+  --color-comm-warning: #ffd400; // Figma Dark v2: o aviso continua amarelo-vivo
   --color-comm-warning-strong: #edc000;
+  --color-on-warning: #002233;
   --color-comm-focus: #f66ff4;
   --color-focus-ring: #f66ff4;
   --color-input-focus-ring: rgb(245 247 248 / 60%);

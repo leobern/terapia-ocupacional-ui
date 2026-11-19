@@ -35,6 +35,17 @@
   min-width: 0;
 }
 
+.notifications__title-row {
+  display: flex;
+  align-items: center;
+  gap: tokens.$space-8;
+}
+
+.notifications__title-icon {
+  flex-shrink: 0;
+  color: tokens.c(secondary);
+}
+
 .notifications__title {
   margin: 0;
   color: tokens.c(content-1);
@@ -77,19 +88,27 @@
 // Grade de cards (Figma 4506:8580): 1 coluna no mobile, colunas de no mínimo 360px no desktop
 // (3 em 1328px). Os cards preenchem a coluna (`--card-width`) e o título "Resolvidas" ocupa a
 // linha inteira.
+// Figma (seção 07): mobile empilha Pendentes e depois Resolvidas; desktop coloca as
+// duas seções lado a lado, cada uma com seu título e cards empilhados (gap 16).
 .notifications__list {
-  --card-width: 100%;
-  --card-min-width: 0;
-
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  gap: var(--layout-grid-gap, 12px);
+  gap: tokens.$space-16;
+  align-items: start;
   padding-bottom: calc(var(--bottom-nav-bar-height) + #{tokens.$space-16});
 
   @include breakpoints.md {
-    grid-template-columns: repeat(auto-fill, minmax(420px, 1fr));
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: tokens.$space-24;
     padding-bottom: tokens.$space-32;
   }
+}
+
+.notifications__column {
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$space-16;
+  min-width: 0;
 }
 
 .notifications__section-title,
@@ -100,9 +119,29 @@
 }
 
 .notifications__empty {
-  padding: tokens.$space-24 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: tokens.$space-8;
+  max-width: 300px;
+  margin: 0 auto;
+  padding-top: 120px;
+  color: tokens.c(content-3);
   text-align: center;
+}
+
+.notifications__empty-title {
+  margin: 0;
+  color: tokens.c(content-1);
+
+  @include typography.title-lg;
+}
+
+.notifications__empty-text {
+  margin: 0;
   color: tokens.c(content-4);
+
+  @include typography.body-md;
 }
 
 .notifications__scroll-sentinel {

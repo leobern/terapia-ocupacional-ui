@@ -170,7 +170,7 @@ describe('NotificationsComponent — rolagem, rascunho e gestos', () => {
       const [reply] = internals().toReplies(notification(1));
 
       expect([reply.authorName, reply.text]).toEqual(['Ana', 'Ok']);
-      expect(reply.time).toMatch(/^\d{2}:\d{2}$/);
+      expect(reply.time).toMatch(/\d{2}:\d{2}$/); // "Hoje, 10:42" / "Ontem, 10:42"
     });
   });
 

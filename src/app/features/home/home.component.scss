@@ -91,7 +91,7 @@
   padding: 10px tokens.$space-16;
   border-radius: tokens.$radius-12;
   background: tokens.c(comm-warning);
-  color: tokens.c(content-1);
+  color: tokens.c(on-warning); // escuro nos dois temas (Figma Dark v2)
 
   @include typography.label-md;
 

@@ -6,6 +6,7 @@
 <div class="app-shell">
   @if (showShell()) {
     <app-nav-menu
+      [activeItem]="activeNavItem()"
       [open]="menuOpen()"
       [actionsOpen]="aiAssistant.shortcutsOpen()"
       (closed)="menuOpen.set(false)"

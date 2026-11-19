@@ -11,12 +11,6 @@ import { IconButtonComponent } from '../icon-button/icon-button.component';
 import { IconLogoComponent } from '../icon-logo/icon-logo.component';
 
 /** Atalhos de pergunta exibidos ao abrir o assistente (lista simples e substituível). */
-export const ASSISTANT_SUGGESTIONS: readonly string[] = [
-  'Quais são minhas pendências de hoje?',
-  'Quantos pacientes tenho para atender hoje?',
-  'Resuma as notificações não lidas',
-];
-
 /**
  * Corpo do assistente de IA (compartilhado pelo `app-bottom-sheet` e pelo `app-drawer`,
  * que o projetam): escolhe o que mostrar conforme `AiAssistantService.view()` — saudação
@@ -34,13 +28,16 @@ export const ASSISTANT_SUGGESTIONS: readonly string[] = [
 })
 export class AssistantContentComponent {
   protected readonly assistant = inject(AiAssistantService);
-  protected readonly suggestions = ASSISTANT_SUGGESTIONS;
   protected readonly screenActions = inject(ScreenActionsService);
 
   private readonly router = inject(Router);
 
   protected itemText(item: AssistantAnswerItem): string {
     return typeof item === 'string' ? item : item.text;
+  }
+
+  protected itemTitle(item: AssistantAnswerItem): string | null {
+    return typeof item === 'string' ? null : (item.title ?? null);
   }
 
   protected itemRoute(item: AssistantAnswerItem): string | null {

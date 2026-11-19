@@ -101,3 +101,11 @@ $background-mesh-desktop-breakpoint: 1200px;
   aspect-ratio: 620 / 620;
   max-width: 940px;
 }
+
+// Figma (Home Dark v2, nó 4638:22438): no tema escuro o fundo inteiro fica com 20% de
+// opacidade e mistura "linear dodge" (CSS: plus-lighter), clareando de leve a
+// superfície escura em vez de manchá-la. Vale para todas as telas que usam o fundo.
+:host-context([data-theme='dark']) {
+  mix-blend-mode: plus-lighter;
+  opacity: 0.2;
+}
