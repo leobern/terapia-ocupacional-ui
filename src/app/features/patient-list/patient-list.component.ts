@@ -113,12 +113,19 @@ export class PatientListComponent implements OnInit {
   /** Larguras das colunas (V1: só nesta sessão; a persistência por usuário fica para a V2 com o perfil). */
   readonly widths = signal<Readonly<Record<ColumnKey, number>>>(DEFAULT_WIDTHS);
   readonly resizing = signal<ColumnKey | null>(null);
+  /** Botão de ajustar: só aparece quando as colunas precisam de ajuste (usuário mexeu ou há rolagem). */
+  readonly fitState = signal<'needs' | 'fitted'>('fitted');
   /** Coluna sob o mouse no cabeçalho: mostra a linha de divisória contínua. */
   readonly hoverColumn = signal<ColumnKey | null>(null);
   readonly lineIndex = computed(() => {
-    const key = this.resizing() ?? this.hoverColumn();
+    const dragging = this.resizing();
 
-    return key === null || key === 'first' ? null : COLUMN_ORDER.indexOf(key) + 1;
+    if (dragging !== null) {
+      return COLUMN_ORDER.indexOf(dragging) + 2;
+    }
+    const hovered = this.hoverColumn();
+
+    return hovered === null || hovered === 'name' ? null : COLUMN_ORDER.indexOf(hovered) + 1;
   });
   readonly tableMinWidth = computed(
     () => Object.values(this.widths()).reduce((sum, w) => sum + w, 0) + ACTION_COLUMN_WIDTH,
@@ -174,7 +181,16 @@ export class PatientListComponent implements OnInit {
         return;
       }
       // O ResizeObserver roda fora da zona: reentra nela para a tela atualizar na hora.
-      const update = (): void => zone.run(() => this.tableScrolls.set(card.scrollWidth > card.clientWidth + 1));
+      const update = (): void =>
+        zone.run(() => {
+          const scrolls = card.scrollWidth > card.clientWidth + 1;
+
+          // Rolagem que passa a existir volta a oferecer o botão de ajustar.
+          if (scrolls && !this.tableScrolls()) {
+            this.fitState.set('needs');
+          }
+          this.tableScrolls.set(scrolls);
+        });
       const observer = new ResizeObserver(update);
 
       observer.observe(card);
@@ -233,7 +249,9 @@ export class PatientListComponent implements OnInit {
   startResize(event: PointerEvent, key: ColumnKey): void {
     const handle = event.currentTarget as HTMLElement;
     const startX = event.clientX;
-    const startWidth = handle.closest('th')?.getBoundingClientRect().width ?? this.widths()[key];
+    // A alça fica na borda esquerda do cabeçalho seguinte: a coluna ajustada é a anterior.
+    const startWidth =
+      handle.closest('th')?.previousElementSibling?.getBoundingClientRect().width ?? this.widths()[key];
 
     event.preventDefault();
     event.stopPropagation();
@@ -279,6 +297,7 @@ export class PatientListComponent implements OnInit {
     }
 
     this.widths.set(result);
+    this.fitState.set('fitted');
   }
 
   /** Teclado: setas esquerda e direita ajustam a coluna em passos de 16px; Home volta ao padrão. */
@@ -334,5 +353,6 @@ export class PatientListComponent implements OnInit {
     const clamped = Math.round(Math.min(MAX_WIDTH, Math.max(MIN_WIDTH[key], width)));
 
     this.widths.update(current => ({ ...current, [key]: clamped }));
+    this.fitState.set('needs');
   }
 }

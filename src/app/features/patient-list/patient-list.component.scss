@@ -423,8 +423,8 @@
   .patient-list__resizer {
     position: absolute;
     top: 0;
-    right: 0;
     bottom: 0;
+    left: 0;
     width: 12px;
     cursor: col-resize;
     touch-action: none;
@@ -432,7 +432,7 @@
 
     &:focus-visible {
       outline: none;
-      box-shadow: inset -2px 0 0 tokens.c(secondary);
+      box-shadow: inset 2px 0 0 tokens.c(secondary);
     }
   }
 
@@ -441,15 +441,15 @@
     transition: box-shadow 0.2s ease;
   }
 
-  @for $i from 1 through 6 {
+  @for $i from 2 through 7 {
     .patient-list__table[data-line='#{$i}'] tr > :nth-child(#{$i}) {
-      box-shadow: inset -1px 0 0 tokens.c(border-2);
+      box-shadow: inset 1px 0 0 tokens.c(border-2);
     }
 
     .patient-list__table[data-line='#{$i}'][data-resizing]
       tr
       > :nth-child(#{$i}) {
-      box-shadow: inset -2px 0 0 tokens.c(secondary);
+      box-shadow: inset 2px 0 0 tokens.c(secondary);
     }
   }
 

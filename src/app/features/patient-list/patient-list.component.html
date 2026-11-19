@@ -133,6 +133,12 @@
                     (mouseleave)="hoverColumn.set(null)"
                   >
                     Paciente
+                  </th>
+                  <th
+                    scope="col"
+                    (mouseenter)="hoverColumn.set('age')"
+                    (mouseleave)="hoverColumn.set(null)"
+                  >
                     <span
                       class="patient-list__resizer"
                       role="separator"
@@ -145,15 +151,14 @@
                       (pointerdown)="startResize($event, 'name')"
                       (keydown)="resizeByKey($event, 'name')"
                       (click)="$event.stopPropagation()"
-                    >
-                    </span>
+                    ></span>
+                    Idade<br />Início da terapia
                   </th>
                   <th
                     scope="col"
-                    (mouseenter)="hoverColumn.set('age')"
+                    (mouseenter)="hoverColumn.set('therapy')"
                     (mouseleave)="hoverColumn.set(null)"
                   >
-                    Idade<br />Início da terapia
                     <span
                       class="patient-list__resizer"
                       role="separator"
@@ -166,15 +171,14 @@
                       (pointerdown)="startResize($event, 'age')"
                       (keydown)="resizeByKey($event, 'age')"
                       (click)="$event.stopPropagation()"
-                    >
-                    </span>
+                    ></span>
+                    Terapia
                   </th>
                   <th
                     scope="col"
-                    (mouseenter)="hoverColumn.set('therapy')"
+                    (mouseenter)="hoverColumn.set('caloric')"
                     (mouseleave)="hoverColumn.set(null)"
                   >
-                    Terapia
                     <span
                       class="patient-list__resizer"
                       role="separator"
@@ -187,15 +191,14 @@
                       (pointerdown)="startResize($event, 'therapy')"
                       (keydown)="resizeByKey($event, 'therapy')"
                       (click)="$event.stopPropagation()"
-                    >
-                    </span>
+                    ></span>
+                    Adequação calórica
                   </th>
                   <th
                     scope="col"
-                    (mouseenter)="hoverColumn.set('caloric')"
+                    (mouseenter)="hoverColumn.set('protein')"
                     (mouseleave)="hoverColumn.set(null)"
                   >
-                    Adequação calórica
                     <span
                       class="patient-list__resizer"
                       role="separator"
@@ -208,15 +211,14 @@
                       (pointerdown)="startResize($event, 'caloric')"
                       (keydown)="resizeByKey($event, 'caloric')"
                       (click)="$event.stopPropagation()"
-                    >
-                    </span>
+                    ></span>
+                    Adequação proteica
                   </th>
                   <th
                     scope="col"
-                    (mouseenter)="hoverColumn.set('protein')"
+                    (mouseenter)="hoverColumn.set('location')"
                     (mouseleave)="hoverColumn.set(null)"
                   >
-                    Adequação proteica
                     <span
                       class="patient-list__resizer"
                       role="separator"
@@ -229,15 +231,14 @@
                       (pointerdown)="startResize($event, 'protein')"
                       (keydown)="resizeByKey($event, 'protein')"
                       (click)="$event.stopPropagation()"
-                    >
-                    </span>
+                    ></span>
+                    Localização
                   </th>
                   <th
                     scope="col"
-                    (mouseenter)="hoverColumn.set('location')"
+                    (mouseenter)="hoverColumn.set('first')"
                     (mouseleave)="hoverColumn.set(null)"
                   >
-                    Localização
                     <span
                       class="patient-list__resizer"
                       role="separator"
@@ -250,22 +251,21 @@
                       (pointerdown)="startResize($event, 'location')"
                       (keydown)="resizeByKey($event, 'location')"
                       (click)="$event.stopPropagation()"
-                    >
-                    </span>
-                  </th>
-                  <th scope="col">
+                    ></span>
                     <span class="patient-list__sr">Avaliação</span>
                   </th>
                   <th scope="col" class="patient-list__sticky">
-                    <button
-                      type="button"
-                      class="patient-list__fit"
-                      aria-label="Ajustar as colunas à largura disponível"
-                      title="Ajustar as colunas à largura disponível"
-                      (click)="fitColumns()"
-                    >
-                      <ph-icon name="arrows-in-line-horizontal" [size]="20" />
-                    </button>
+                    @if (fitState() === 'needs') {
+                      <button
+                        type="button"
+                        class="patient-list__fit"
+                        aria-label="Ajustar as colunas à largura disponível"
+                        title="Ajustar as colunas à largura disponível"
+                        (click)="fitColumns()"
+                      >
+                        <ph-icon name="arrows-in-line-horizontal" [size]="20" />
+                      </button>
+                    }
                   </th>
                 </tr>
               </thead>

@@ -203,7 +203,7 @@ describe('PatientListComponent', () => {
       const el = handle(1);
 
       el.setPointerCapture = (): void => undefined;
-      const th = el.closest('th') as HTMLElement;
+      const th = (el.closest('th') as HTMLElement).previousElementSibling as HTMLElement;
       const startWidth = th.getBoundingClientRect().width;
 
       el.dispatchEvent(
@@ -211,6 +211,10 @@ describe('PatientListComponent', () => {
       );
 
       expect(fixture.componentInstance.resizing()).toBe('age');
+      fixture.detectChanges();
+
+      // durante o arrasto a linha fica na borda esquerda do cabeçalho seguinte (Terapia = 3ª coluna)
+      expect(q('.patient-list__table')?.getAttribute('data-line')).toBe('3');
 
       el.dispatchEvent(new PointerEvent('pointermove', { clientX: 400, pointerId: 1 }));
 
@@ -232,7 +236,11 @@ describe('PatientListComponent', () => {
       const card = q('.patient-list__table-card') as HTMLElement;
 
       Object.defineProperty(card, 'clientWidth', { configurable: true, value: clientWidth });
+      // O botão só aparece depois que o usuário ajusta alguma coluna.
+      fixture.componentInstance.fitState.set('needs');
+      fixture.detectChanges();
       (q('.patient-list__fit') as HTMLElement).click();
+      fixture.detectChanges();
     };
 
     beforeEach(async () => {
@@ -273,6 +281,23 @@ describe('PatientListComponent', () => {
     });
   });
 
+  it('o botão de ajustar some depois de usado e volta quando o usuário redimensiona', async () => {
+    source.result = Promise.resolve(census(2));
+    await create();
+
+    expect(q('.patient-list__fit')).toBeNull();
+
+    q('.patient-list__resizer')?.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight' }));
+    fixture.detectChanges();
+
+    expect(q('.patient-list__fit')).not.toBeNull();
+
+    (q('.patient-list__fit') as HTMLElement).click();
+    fixture.detectChanges();
+
+    expect(q('.patient-list__fit')).toBeNull();
+  });
+
   it('mostra a linha de divisória da coluna sob o mouse no cabeçalho', async () => {
     source.result = Promise.resolve(census(2));
     await create();
@@ -284,6 +309,12 @@ describe('PatientListComponent', () => {
     expect(q('.patient-list__table')?.getAttribute('data-line')).toBe('2');
 
     th.dispatchEvent(new MouseEvent('mouseleave'));
+    fixture.detectChanges();
+
+    expect(q('.patient-list__table')?.getAttribute('data-line')).toBeNull();
+
+    // a primeira coluna não tem divisória à esquerda
+    (q('.patient-list__table th:nth-child(1)') as HTMLElement).dispatchEvent(new MouseEvent('mouseenter'));
     fixture.detectChanges();
 
     expect(q('.patient-list__table')?.getAttribute('data-line')).toBeNull();
