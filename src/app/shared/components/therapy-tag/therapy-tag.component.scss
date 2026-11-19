@@ -24,3 +24,7 @@
   background: tokens.c(comm-success);
   color: tokens.c(content-1);
 }
+
+:host(.therapy-tag--box) {
+  border-radius: tokens.$radius-xs;
+}

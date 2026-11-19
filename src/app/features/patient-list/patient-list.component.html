@@ -11,8 +11,30 @@
             Pacientes
           }
         </h1>
-        <p class="patient-list__subtitle">{{ hospitalName() }}</p>
+        <p class="patient-list__subtitle">
+          {{ hospitalName() }}
+          @if (status() === 'ready') {
+            · {{ outOfTargetCount() }} fora da meta
+          }
+        </p>
       </div>
+      <!-- Primeira tela da área: notificações + atalhos (telas internas mantêm só os atalhos). -->
+      <span class="patient-list__notify">
+        <app-icon-button
+          kind="primary"
+          appearance="icon"
+          icon="bell"
+          [ariaLabel]="bellLabel()"
+          (click)="openNotifications()"
+        />
+        @if (unreadCount() > 0) {
+          <app-badge
+            class="patient-list__notify-badge"
+            type="numeral"
+            [value]="unreadCount()"
+          />
+        }
+      </span>
       <!--
         Só no desktop: no mobile a barra inferior já traz o mesmo atalho. Wrapper <span> porque o
         host do botão é display: contents (mesmo padrão da Home).
@@ -28,13 +50,6 @@
         />
       </span>
     </header>
-
-    @if (status() === 'ready') {
-      <p class="patient-list__day-adequacy">
-        Adequação do dia:
-        {{ adequacyLabel(dayAdequacy()) }}
-      </p>
-    }
 
     <div class="patient-list__toolbar">
       <app-date-strip
@@ -114,7 +129,7 @@
                 </tr>
               </thead>
               <tbody>
-                @for (patient of patients(); track patient.id) {
+                @for (patient of prioritized(); track patient.id) {
                   <tr
                     class="patient-list__tr"
                     (click)="openPatient(patient.id)"
@@ -201,54 +216,69 @@
               </tbody>
             </table>
           </div>
-          <ul class="patient-list__rows">
-            @for (patient of patients(); track patient.id) {
-              <li>
-                <button
-                  type="button"
-                  class="patient-list__row"
-                  (click)="openPatient(patient.id)"
-                >
-                  <app-avatar
-                    type="patient"
-                    size="medium"
-                    [name]="patient.name"
-                  />
-                  <span class="patient-list__info">
-                    <span class="patient-list__name">{{ patient.name }}</span>
-                    <span class="patient-list__meta"
-                      >{{ patient.age }} anos ·
-                      {{ therapyStartLabel(patient.therapyDays) }}</span
-                    >
-                    <span class="patient-list__location"
-                      >{{ patient.ward }} · Leito {{ patient.bed }}</span
-                    >
-                    <span class="patient-list__adequacy">
-                      @if (hasAdequacy(patient.adequacy)) {
-                        <app-graph-meta
-                          size="small"
-                          [topPercentage]="patient.adequacy.caloric ?? 0"
-                          [bottomPercentage]="patient.adequacy.protein ?? 0"
-                          [ariaLabel]="adequacyLabel(patient.adequacy)"
-                        />
-                      }
-                      <span>{{ adequacyLabel(patient.adequacy) }}</span>
-                    </span>
-                    @if (patient.firstEvaluation) {
-                      <span class="patient-list__first">
-                        <app-therapy-tag
-                          tone="success"
-                          label="Primeira avaliação"
-                        />
-                      </span>
-                    }
-                  </span>
-                  <app-therapy-tag [label]="therapyLabel(patient.therapy)" />
-                  <ph-icon name="caret-right" [size]="24" />
-                </button>
-              </li>
+          <div class="patient-list__clusters">
+            @for (group of groups(); track group.key) {
+              <section class="patient-list__cluster">
+                <h2 class="patient-list__section-title">
+                  <span>{{ group.title }}</span>
+                  <span class="patient-list__section-count">{{
+                    group.patients.length
+                  }}</span>
+                </h2>
+                <ul class="patient-list__rows">
+                  @for (patient of group.patients; track patient.id) {
+                    <li>
+                      <button
+                        type="button"
+                        class="patient-list__row"
+                        (click)="openPatient(patient.id)"
+                      >
+                        <span class="patient-list__info">
+                          <span class="patient-list__name">{{
+                            patient.name
+                          }}</span>
+                          <span class="patient-list__meta"
+                            >{{ patient.age }} anos ·
+                            {{ therapyStartLabel(patient.therapyDays) }}</span
+                          >
+                          <span class="patient-list__location"
+                            >{{ patient.ward }} · Leito {{ patient.bed }}</span
+                          >
+                          @if (patient.firstEvaluation) {
+                            <span class="patient-list__first">
+                              <app-therapy-tag
+                                tone="success"
+                                label="Primeira avaliação"
+                              />
+                            </span>
+                          }
+                        </span>
+                        <span class="patient-list__gauge">
+                          @if (hasAdequacy(patient.adequacy)) {
+                            <app-graph-meta
+                              size="small"
+                              [topPercentage]="patient.adequacy.caloric ?? 0"
+                              [bottomPercentage]="patient.adequacy.protein ?? 0"
+                              [ariaLabel]="adequacyLabel(patient.adequacy)"
+                            />
+                          }
+                          <span class="patient-list__gauge-tag">
+                            <app-therapy-tag
+                              shape="box"
+                              [label]="therapyLabel(patient.therapy)"
+                            />
+                          </span>
+                        </span>
+                        <span class="patient-list__chevron">
+                          <ph-icon name="caret-right" [size]="24" />
+                        </span>
+                      </button>
+                    </li>
+                  }
+                </ul>
+              </section>
             }
-          </ul>
+          </div>
         }
       }
     }

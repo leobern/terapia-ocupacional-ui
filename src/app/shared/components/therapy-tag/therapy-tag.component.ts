@@ -10,7 +10,7 @@ export type TherapyTagTone = 'neutral' | 'success';
  */
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
-  host: { '[class]': '"therapy-tag therapy-tag--" + tone()' },
+  host: { '[class]': '"therapy-tag therapy-tag--" + tone() + " therapy-tag--" + shape()' },
   selector: 'app-therapy-tag',
   styleUrl: './therapy-tag.component.scss',
   template: '{{ label() }}',
@@ -18,4 +18,6 @@ export type TherapyTagTone = 'neutral' | 'success';
 export class TherapyTagComponent {
   readonly label = input.required<string>();
   readonly tone = input<TherapyTagTone>('neutral');
+  /** `pill` (padrão) ou `box` (raio xs; usado sobre o gauge na linha mobile). */
+  readonly shape = input<'pill' | 'box'>('pill');
 }

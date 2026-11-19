@@ -29,6 +29,11 @@
   align-items: center;
   gap: tokens.$space-8;
   min-height: 56px;
+  padding-inline: tokens.$space-16;
+
+  @include breakpoints.md {
+    padding-inline: 0;
+  }
 }
 
 .patient-list__header-text {
@@ -46,6 +51,11 @@
   color: tokens.c(content-1);
 
   @include typography.headline;
+
+  // Ícone de título em azul (Figma v2/PageHeader).
+  ph-icon {
+    color: tokens.c(secondary);
+  }
 }
 
 .patient-list__subtitle {
@@ -55,19 +65,24 @@
   @include typography.caption;
 }
 
+.patient-list__notify {
+  position: relative;
+  display: inline-flex;
+}
+
+// Mesma posição do badge da Home: 26px da esquerda e 4px do topo do botão de 48px.
+.patient-list__notify-badge {
+  position: absolute;
+  top: tokens.$space-4;
+  left: 26px;
+}
+
 .patient-list__shortcuts {
   display: none;
 
   @include breakpoints.md {
     display: inline-flex;
   }
-}
-
-.patient-list__day-adequacy {
-  margin: 0;
-  color: tokens.c(content-3);
-
-  @include typography.caption;
 }
 
 .patient-list__toolbar {
@@ -89,16 +104,56 @@
   }
 }
 
+.patient-list__clusters {
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$space-16;
+}
+
+.patient-list__cluster {
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$space-8;
+}
+
+// Figma v2/SectionTitle: Title/Md + contador, 40px de altura, recuado em space-16.
+.patient-list__section-title {
+  display: flex;
+  align-items: center;
+  gap: tokens.$space-8;
+  height: 40px;
+  margin: 0;
+  padding: tokens.$space-8 tokens.$space-16;
+  color: tokens.c(content-1);
+
+  @include typography.title-md;
+}
+
+.patient-list__section-title > span:first-child {
+  flex: 1 0 0;
+}
+
+.patient-list__section-count {
+  color: tokens.c(content-4);
+
+  @include typography.label-md;
+}
+
 .patient-list__rows,
 .patient-list__skeleton {
   display: flex;
   flex-direction: column;
   margin: 0;
   padding: 0;
+  border: 1px solid tokens.c(border);
   border-radius: tokens.$radius-md;
   background: tokens.c(surface);
   list-style: none;
   overflow: hidden;
+}
+
+.patient-list__rows li + li {
+  border-top: 1px solid tokens.c(border);
 }
 
 .patient-list__row {
@@ -120,6 +175,7 @@
   flex: 1 0 0;
   flex-direction: column;
   align-items: flex-start;
+  gap: 2px;
   min-width: 0;
 }
 
@@ -133,20 +189,40 @@
   @include typography.label-lg;
 }
 
-.patient-list__meta,
-.patient-list__location {
+.patient-list__meta {
   color: tokens.c(content-4);
 
   @include typography.caption;
 }
 
-.patient-list__adequacy {
-  display: flex;
-  align-items: center;
-  gap: tokens.$space-8;
-  color: tokens.c(content-3);
+.patient-list__location {
+  color: tokens.c(content-2);
 
-  @include typography.caption;
+  @include typography.label-sm;
+}
+
+// Gauge de 40px com a via de terapia sobreposta na base (Figma v2/PatientRow).
+.patient-list__gauge {
+  position: relative;
+  flex: none;
+  width: 40px;
+  height: 48px;
+}
+
+.patient-list__gauge-tag {
+  position: absolute;
+  top: 26px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.patient-list__chevron {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
 }
 
 .patient-list__first {
@@ -197,7 +273,7 @@
 }
 
 @include breakpoints.md {
-  .patient-list__rows {
+  .patient-list__clusters {
     display: none;
   }
 

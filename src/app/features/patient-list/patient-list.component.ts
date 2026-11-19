@@ -1,7 +1,16 @@
-import { ChangeDetectionStrategy, Component, computed, DestroyRef, effect, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  DestroyRef,
+  effect,
+  inject,
+  OnInit,
+  signal,
+} from '@angular/core';
 import { Router } from '@angular/router';
 
-import { AvatarComponent } from '../../shared/components/avatar/avatar.component';
+import { BadgeComponent } from '../../shared/components/badge/badge.component';
 import { ButtonComponent } from '../../shared/components/button/button.component';
 import { DateStripComponent } from '../../shared/components/date-strip/date-strip.component';
 import { GraphMetaComponent } from '../../shared/components/graph-meta/graph-meta.component';
@@ -12,10 +21,28 @@ import { PhIconComponent } from '../../shared/icons/ph-icon/ph-icon.component';
 import { AiAssistantService } from '../../shared/services/ai-assistant.service';
 import { type ScreenAction, ScreenActionsService } from '../../shared/services/screen-actions.service';
 import { HospitalContextService } from '../home/hospital-context.service';
-import { adequacyLabel, dailyAdequacy, goalLabel, hasAdequacy, therapyStartLabel } from './patient-card-labels';
+import { UnreadNotificationsReader } from '../home/unread-notifications-reader';
+import { adequacyLabel, goalLabel, hasAdequacy, therapyStartLabel } from './patient-card-labels';
 import { PatientCard, TherapyType } from './patient-list.models';
 import { assemblePatientList } from './patient-list-assembly';
 import { PatientListSource } from './patient-list-source';
+
+export interface PatientGroup {
+  readonly key: 'out' | 'in';
+  readonly title: string;
+  readonly patients: readonly PatientCard[];
+}
+
+function lowestGoal(adequacy: PatientCard['adequacy']): number {
+  const values = [adequacy?.caloric ?? null, adequacy?.protein ?? null].filter((v): v is number => v !== null);
+
+  return values.length === 0 ? Number.POSITIVE_INFINITY : Math.min(...values);
+}
+
+/** Fora da meta: ao menos uma adequação disponível abaixo de 50% (faixas alerta e crítico). */
+function isOutOfTarget(adequacy: PatientCard['adequacy']): boolean {
+  return lowestGoal(adequacy) < 50;
+}
 
 export type PatientListStatus = 'loading' | 'ready' | 'error';
 
@@ -35,7 +62,7 @@ const THERAPY_LABEL: Record<TherapyType, string> = { MISTA: 'VO · NE · NP', NE
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
-    AvatarComponent,
+    BadgeComponent,
     ButtonComponent,
     DateStripComponent,
     GraphMetaComponent,
@@ -48,12 +75,26 @@ const THERAPY_LABEL: Record<TherapyType, string> = { MISTA: 'VO · NE · NP', NE
   styleUrl: './patient-list.component.scss',
   templateUrl: './patient-list.component.html',
 })
-export class PatientListComponent {
+export class PatientListComponent implements OnInit {
   readonly selectedDate = signal(new Date());
   readonly status = signal<PatientListStatus>('loading');
   readonly patients = signal<readonly PatientCard[]>([]);
   readonly hospitalName = computed(() => this.context.selected()?.name ?? '');
-  readonly dayAdequacy = computed(() => dailyAdequacy(this.patients()));
+  readonly unreadCount = signal(0);
+  /** Prioridade: quem está fora da meta primeiro, do mais crítico ao menos (Figma: "Ordenar: prioridade"). */
+  readonly groups = computed<readonly PatientGroup[]>(() => {
+    const out = this.patients()
+      .filter(p => isOutOfTarget(p.adequacy))
+      .sort((a, b) => lowestGoal(a.adequacy) - lowestGoal(b.adequacy));
+    const within = this.patients().filter(p => !isOutOfTarget(p.adequacy));
+
+    return [
+      { key: 'out' as const, patients: out, title: 'Fora da meta' },
+      { key: 'in' as const, patients: within, title: 'Dentro da meta' },
+    ].filter(g => g.patients.length > 0);
+  });
+  readonly prioritized = computed(() => this.groups().flatMap(g => g.patients));
+  readonly outOfTargetCount = computed(() => this.groups().find(g => g.key === 'out')?.patients.length ?? 0);
   readonly countLabel = computed(() => {
     const n = this.patients().length;
 
@@ -71,6 +112,7 @@ export class PatientListComponent {
   private readonly context = inject(HospitalContextService);
   private readonly source = inject(PatientListSource);
   private readonly router = inject(Router);
+  private readonly unread = inject(UnreadNotificationsReader);
   private readonly screenActions = inject(ScreenActionsService);
   private generation = 0;
 
@@ -86,6 +128,10 @@ export class PatientListComponent {
         void this.load(hospitalId, day);
       }
     });
+  }
+
+  async ngOnInit(): Promise<void> {
+    this.unreadCount.set(await this.unread.countUnread());
   }
 
   async load(hospitalId: string, day: Date = this.selectedDate()): Promise<void> {
@@ -114,6 +160,10 @@ export class PatientListComponent {
     }
   }
 
+  openNotifications(): void {
+    void this.router.navigate(['/notifications']);
+  }
+
   /** Cadastro pertence à FT-002-1: aqui só navega (FR-027). */
   registerPatient(): void {
     void this.router.navigate(['/home']);
@@ -126,6 +176,12 @@ export class PatientListComponent {
 
   openPatient(id: string): void {
     void this.router.navigate(['/patients', id]);
+  }
+
+  protected bellLabel(): string {
+    const count = this.unreadCount();
+
+    return count > 0 ? `Notificações, ${count} não lidas` : 'Notificações';
   }
 
   /** Tom da barra de meta: crítico <20, alerta <50, na meta; sem dado não há barra. */

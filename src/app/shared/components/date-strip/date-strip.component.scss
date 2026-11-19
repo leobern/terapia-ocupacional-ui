@@ -82,19 +82,21 @@
   }
 }
 
-// Decisão do design (2026-11-19): o destaque do dia selecionado é cinza (não azul).
+// Dia selecionado em azul (secondary), como no Figma.
 .date-strip__day--selected {
   width: 48px;
   height: 60px;
   border-radius: tokens.$radius-sm;
-  background: tokens.c(surface-2);
+  background: tokens.c(secondary);
 
   .date-strip__weekday {
+    color: tokens.c(content-6);
     font-size: 12px;
     line-height: 16px;
   }
 
   .date-strip__number {
+    color: tokens.c(content-6);
     font-size: 20px;
     line-height: 28px;
   }

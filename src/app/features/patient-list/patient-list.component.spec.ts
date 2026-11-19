@@ -4,6 +4,7 @@ import { provideRouter, Router } from '@angular/router';
 import { AiAssistantService } from '../../shared/services/ai-assistant.service';
 import { ScreenActionsService } from '../../shared/services/screen-actions.service';
 import { LinkedHospitalsReader } from '../home/linked-hospitals';
+import { UnreadNotificationsReader } from '../home/unread-notifications-reader';
 import { PatientListComponent } from './patient-list.component';
 import { CensusPatient } from './patient-list.models';
 import { PatientListSource } from './patient-list-source';
@@ -52,6 +53,7 @@ describe('PatientListComponent', () => {
       providers: [
         provideRouter([]),
         { provide: PatientListSource, useValue: source },
+        { provide: UnreadNotificationsReader, useValue: { countUnread: (): Promise<number> => Promise.resolve(2) } },
         {
           provide: LinkedHospitalsReader,
           useValue: { read: (): { id: string; name: string }[] => [{ id: 'h1', name: 'Hospital Um' }] },
@@ -83,7 +85,7 @@ describe('PatientListComponent', () => {
     expect(fixture.nativeElement.querySelectorAll('.patient-list__row').length).toBe(3);
   });
 
-  it('mostra início da terapia, adequação em texto, gauge e primeira avaliação', async () => {
+  it('mostra início da terapia, gauge (sem rótulo de adequação) e primeira avaliação', async () => {
     source.result = Promise.resolve([
       ...census(2),
       { ...census(1)[0], adequacy: null, id: 'n' },
@@ -91,10 +93,8 @@ describe('PatientListComponent', () => {
     ]);
     await create();
 
-    expect(text()).toContain('Calórica 80% · Proteica 70%');
-    expect(text()).toContain('Adequação indisponível');
-    expect(text()).not.toContain('0%  ');
-    expect(text()).toContain('Calórica 10% · Proteica indisponível');
+    expect(text()).not.toContain('Calórica');
+    expect(text()).not.toContain('Adequação indisponível');
     expect(text()).toContain('TN há');
     expect(fixture.nativeElement.querySelectorAll('app-graph-meta').length).toBe(3);
     expect(fixture.nativeElement.querySelectorAll('.patient-list__first app-therapy-tag').length).toBe(1);
@@ -125,17 +125,37 @@ describe('PatientListComponent', () => {
     );
   });
 
-  it('cabeçalho mostra adequação do dia, sem botão de voltar nem sino, e o atalho abre as ações da tela', async () => {
+  it('cabeçalho tem sino e atalhos (sem voltar), sem rótulo de adequação do dia, e o sino abre as notificações', async () => {
     source.result = Promise.resolve(census(2));
     await create();
 
-    expect(text()).toContain('Adequação do dia: Calórica 80% · Proteica 70%');
+    expect(text()).not.toContain('Adequação do dia');
     expect(q('[aria-label="Voltar"]')).toBeNull();
-    expect(q('[aria-label="Notificações"]')).toBeNull();
+    q('[aria-label^="Notificações"]')?.click();
+
+    expect(router.navigate).toHaveBeenCalledWith(['/notifications']);
     expect(q('.patient-list__title ph-icon i')?.className).toContain('ph-bold');
     q('[aria-label="Ações da tela"]')?.click();
 
     expect(TestBed.inject(AiAssistantService).view()).toBe('shortcuts');
+  });
+
+  it('agrupa em Fora da meta e Dentro da meta com contagem e mostra no subtítulo', async () => {
+    source.result = Promise.resolve([
+      ...census(2),
+      { ...census(1)[0], adequacy: { caloric: 10, protein: 60 }, id: 'out1', name: 'Crítico Um' },
+      { ...census(1)[0], adequacy: { caloric: 30, protein: null }, id: 'out2' },
+      { ...census(1)[0], adequacy: null, id: 'none' },
+    ]);
+    await create();
+    const titles = Array.from(
+      (fixture.nativeElement as HTMLElement).querySelectorAll('.patient-list__section-title'),
+    ).map(t => t.textContent?.replace(/\s+/g, ' ').trim());
+
+    expect(titles).toEqual(['Fora da meta2', 'Dentro da meta3']);
+    expect(text()).toContain('2 fora da meta');
+    // o mais crítico (10%) vem primeiro
+    expect((q('.patient-list__cluster .patient-list__row') as HTMLElement).textContent).toContain('Crítico Um');
   });
 
   it('registra as ações principais da tela nos atalhos', async () => {
