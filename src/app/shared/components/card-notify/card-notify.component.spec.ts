@@ -221,6 +221,19 @@ describe('CardNotifyComponent', () => {
       expect(fixture.nativeElement.querySelectorAll('.card-notify__actions app-icon-button').length).toBe(1);
     });
 
+    it('clicar em Resolver emite resolveClick sem acionar o card', async () => {
+      await createDetail();
+      const resolveClick = jasmine.createSpy('resolveClick');
+      const cardClick = jasmine.createSpy('cardClick');
+
+      fixture.componentInstance.resolveClick.subscribe(resolveClick);
+      fixture.componentInstance.cardClick.subscribe(cardClick);
+      (fixture.nativeElement.querySelector('.card-notify__row app-icon-button button') as HTMLButtonElement).click();
+
+      expect(resolveClick).toHaveBeenCalledTimes(1);
+      expect(cardClick).not.toHaveBeenCalled();
+    });
+
     it('a tag de respostas mostra "N respostas" com alvo de 40px (Figma v2/NotificationThread)', async () => {
       await createDetail();
       const tag = fixture.nativeElement.querySelector('.card-notify__reply-tag') as HTMLElement;

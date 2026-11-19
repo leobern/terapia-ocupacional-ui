@@ -49,4 +49,14 @@ describe('ThemeService', () => {
     expect(service.theme()).toBe('dark');
     expect(document.documentElement.getAttribute('data-theme')).toBe('dark');
   });
+
+  it('mantém o tema na sessão quando o armazenamento falha', () => {
+    spyOn(Storage.prototype, 'setItem').and.throwError('bloqueado');
+    spyOn(Storage.prototype, 'getItem').and.throwError('bloqueado');
+    const service = TestBed.inject(ThemeService);
+
+    service.set('dark');
+
+    expect(service.theme()).toBe('dark');
+  });
 });

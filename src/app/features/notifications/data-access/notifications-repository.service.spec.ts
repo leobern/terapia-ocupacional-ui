@@ -47,4 +47,15 @@ describe('NotificationsRepository', () => {
     expect(updated?.replies[updated.replies.length - 1].text).toBe('ok');
     expect(repository.version()).toBe(version + 1);
   });
+
+  it('resolve move de Pendentes para Resolvidas e incrementa a versão', () => {
+    const target = repository.list('pending', null, 1).items[0];
+    const version = repository.version();
+
+    repository.resolve(target.id);
+
+    expect(repository.list('pending', null, 50).items.some(n => n.id === target.id)).toBeFalse();
+    expect(repository.list('resolved', null, 50).items.some(n => n.id === target.id)).toBeTrue();
+    expect(repository.version()).toBe(version + 1);
+  });
 });

@@ -1,5 +1,6 @@
 import { type ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
+import { Router } from '@angular/router';
 
 import { AiAssistantService } from '../../services/ai-assistant.service';
 import { ASSISTANT_QUERY_RESOLVERS } from '../../services/assistant-query-resolver';
@@ -188,5 +189,44 @@ describe('AssistantContentComponent', () => {
     fixture.detectChanges();
 
     expect(assistant.view()).toBe('shortcuts');
+  });
+
+  describe('helpers de resposta', () => {
+    interface Internals {
+      itemRoute(item: unknown): string | null;
+      itemText(item: unknown): string;
+      itemTitle(item: unknown): string | null;
+      openRoute(route: string): void;
+      retry(question: string): void;
+    }
+    const internals = (): Internals => fixture.componentInstance as unknown as Internals;
+
+    it('lê texto, título e rota de itens em string ou objeto', () => {
+      expect(internals().itemText('abc')).toBe('abc');
+      expect(internals().itemText({ route: '/x', text: 'def' })).toBe('def');
+      expect(internals().itemTitle('abc')).toBeNull();
+      expect(internals().itemTitle({ route: '/x', text: 'def' })).toBeNull();
+      expect(internals().itemTitle({ route: '/x', text: 'def', title: 'T' })).toBe('T');
+      expect(internals().itemRoute('abc')).toBeNull();
+      expect(internals().itemRoute({ route: '/x', text: 'def' })).toBe('/x');
+    });
+
+    it('openRoute fecha o painel e navega para o destino', () => {
+      spyOn(assistant, 'closePanel');
+      const navigate = spyOn(TestBed.inject(Router), 'navigateByUrl').and.resolveTo(true);
+
+      internals().openRoute('/notifications');
+
+      expect(assistant.closePanel).toHaveBeenCalledWith();
+      expect(navigate).toHaveBeenCalledWith('/notifications');
+    });
+
+    it('retry repete a pergunta no assistente', () => {
+      spyOn(assistant, 'ask');
+
+      internals().retry('Quais notificações?');
+
+      expect(assistant.ask).toHaveBeenCalledWith('Quais notificações?');
+    });
   });
 });
