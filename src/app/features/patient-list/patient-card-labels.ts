@@ -41,3 +41,19 @@ export function dailyAdequacy(list: readonly { readonly adequacy: Adequacy | nul
 
   return hasAdequacy(result) ? result : null;
 }
+
+/** Meta em % com texto de situação (a cor nunca é o único sinal): crítico <20, alerta <50, na meta. */
+export function goalLabel(value: number | null): string {
+  if (value === null) {
+    return 'Indisponível';
+  }
+  let status = 'na meta';
+
+  if (value < 20) {
+    status = 'crítico';
+  } else if (value < 50) {
+    status = 'alerta';
+  }
+
+  return `${value}% · ${status}`;
+}

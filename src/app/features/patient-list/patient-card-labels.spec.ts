@@ -1,4 +1,4 @@
-import { adequacyLabel, dailyAdequacy, hasAdequacy, therapyStartLabel } from './patient-card-labels';
+import { adequacyLabel, dailyAdequacy, goalLabel, hasAdequacy, therapyStartLabel } from './patient-card-labels';
 
 describe('patient-card-labels', () => {
   it('formata o início da terapia', () => {
@@ -30,5 +30,12 @@ describe('patient-card-labels', () => {
         { adequacy: null },
       ]),
     ).toEqual({ caloric: 61, protein: 60 });
+  });
+
+  it('meta com texto de situação', () => {
+    expect(goalLabel(null)).toBe('Indisponível');
+    expect(goalLabel(10)).toBe('10% · crítico');
+    expect(goalLabel(30)).toBe('30% · alerta');
+    expect(goalLabel(50)).toBe('50% · na meta');
   });
 });

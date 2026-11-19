@@ -1,4 +1,5 @@
 @use '../../shared/styles/tokens';
+@use '../../shared/styles/breakpoints';
 @use '../../shared/styles/typography';
 
 // Figma "Conductia - V1", seção 08 (Listagem de Pacientes), mobile 402.
@@ -158,4 +159,72 @@
   color: tokens.c(content-4);
 
   @include typography.body-md;
+}
+
+// Desktop (Figma 1920): a mesma lista vira tabela; no mobile só a lista de linhas aparece.
+.patient-list__table {
+  display: none;
+}
+
+.patient-list__sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+
+@include breakpoints.md {
+  .patient-list__rows {
+    display: none;
+  }
+
+  .patient-list__table {
+    display: table;
+    width: 100%;
+    border-collapse: collapse;
+    border-radius: tokens.$radius-md;
+    background: tokens.c(surface);
+    color: tokens.c(content-1);
+    overflow: hidden;
+
+    @include typography.body-md;
+
+    th {
+      padding: tokens.$space-12 tokens.$space-16;
+      background: tokens.c(surface-2);
+      color: tokens.c(content-4);
+      text-align: left;
+
+      @include typography.label-md;
+    }
+
+    td {
+      padding: tokens.$space-12 tokens.$space-16;
+      border-top: 1px solid tokens.c(border);
+    }
+  }
+
+  .patient-list__tr {
+    cursor: pointer;
+  }
+
+  .patient-list__td-name {
+    display: flex;
+    align-items: center;
+    gap: tokens.$space-12;
+    max-width: 420px;
+  }
+
+  .patient-list__open {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 44px;
+    min-height: 44px;
+    border: 0;
+    background: transparent;
+    color: tokens.c(content-1);
+    cursor: pointer;
+  }
 }

@@ -9,7 +9,7 @@ import { PageContainerComponent } from '../../shared/components/page-container/p
 import { TagComponent } from '../../shared/components/tag/tag.component';
 import { PhIconComponent } from '../../shared/icons/ph-icon/ph-icon.component';
 import { HospitalContextService } from '../home/hospital-context.service';
-import { adequacyLabel, dailyAdequacy, hasAdequacy, therapyStartLabel } from './patient-card-labels';
+import { adequacyLabel, dailyAdequacy, goalLabel, hasAdequacy, therapyStartLabel } from './patient-card-labels';
 import { PatientCard, TherapyType } from './patient-list.models';
 import { assemblePatientList } from './patient-list-assembly';
 import { PatientListSource } from './patient-list-source';
@@ -52,6 +52,7 @@ export class PatientListComponent {
   protected readonly therapyStartLabel = therapyStartLabel;
   protected readonly adequacyLabel = adequacyLabel;
   protected readonly hasAdequacy = hasAdequacy;
+  protected readonly goalLabel = goalLabel;
 
   protected readonly skeletonRows = [1, 2, 3, 4, 5];
 

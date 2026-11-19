@@ -84,6 +84,53 @@
             />
           </div>
         } @else {
+          <table class="patient-list__table">
+            <thead>
+              <tr>
+                <th scope="col">Paciente</th>
+                <th scope="col">Idade · início da terapia</th>
+                <th scope="col">Localização</th>
+                <th scope="col">Terapia</th>
+                <th scope="col">Adequação calórica</th>
+                <th scope="col">Adequação proteica</th>
+                <th scope="col">
+                  <span class="patient-list__sr">Abrir paciente</span>
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (patient of patients(); track patient.id) {
+                <tr class="patient-list__tr" (click)="openPatient(patient.id)">
+                  <td class="patient-list__td-name">
+                    <span class="patient-list__name">{{ patient.name }}</span>
+                    @if (patient.firstEvaluation) {
+                      <app-tag type="status" label="Primeira avaliação" />
+                    }
+                  </td>
+                  <td>
+                    {{ patient.age }} anos ·
+                    {{ therapyStartLabel(patient.therapyDays) }}
+                  </td>
+                  <td>{{ patient.ward }} · Leito {{ patient.bed }}</td>
+                  <td>{{ therapyLabel(patient.therapy) }}</td>
+                  <td>{{ goalLabel(patient.adequacy?.caloric ?? null) }}</td>
+                  <td>{{ goalLabel(patient.adequacy?.protein ?? null) }}</td>
+                  <td>
+                    <button
+                      type="button"
+                      class="patient-list__open"
+                      [attr.aria-label]="'Abrir ' + patient.name"
+                      (click)="
+                        $event.stopPropagation(); openPatient(patient.id)
+                      "
+                    >
+                      <ph-icon name="caret-right" [size]="24" />
+                    </button>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
           <ul class="patient-list__rows">
             @for (patient of patients(); track patient.id) {
               <li>

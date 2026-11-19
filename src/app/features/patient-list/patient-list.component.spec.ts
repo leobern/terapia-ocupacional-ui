@@ -95,7 +95,7 @@ describe('PatientListComponent', () => {
     expect(text()).toContain('Calórica 10% · Proteica indisponível');
     expect(text()).toContain('TN há');
     expect(fixture.nativeElement.querySelectorAll('app-graph-meta').length).toBe(3);
-    expect(fixture.nativeElement.querySelectorAll('app-tag').length).toBe(1);
+    expect(fixture.nativeElement.querySelectorAll('.patient-list__rows app-tag').length).toBe(1);
     expect(text()).toContain('Primeira avaliação');
   });
 
@@ -128,6 +128,25 @@ describe('PatientListComponent', () => {
     q('[aria-label="Notificações"]')?.click();
 
     expect(router.navigate).toHaveBeenCalledWith(['/notifications']);
+  });
+
+  it('tabela desktop: colunas sem data de nascimento, metas com texto e clique na linha abre o Hub', async () => {
+    source.result = Promise.resolve([...census(2), { ...census(1)[0], adequacy: null, id: 'n' }]);
+    await create();
+    const heads = Array.from(fixture.nativeElement.querySelectorAll('th')).map(th =>
+      (th as HTMLElement).textContent?.trim(),
+    );
+
+    expect(heads).toContain('Adequação calórica');
+    expect(text()).toContain('80% · na meta');
+    expect(text()).toContain('Indisponível');
+    expect(text()).not.toContain('01/01/1980');
+    q('.patient-list__tr')?.click();
+
+    expect(router.navigate).toHaveBeenCalledWith(['/patients', 'p0']);
+    (fixture.nativeElement.querySelector('.patient-list__open') as HTMLElement).click();
+
+    expect(router.navigate).toHaveBeenCalledTimes(2);
   });
 
   it('usa singular com um paciente', async () => {
