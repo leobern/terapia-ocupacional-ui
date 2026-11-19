@@ -8,14 +8,17 @@ import { PatientListSource } from './patient-list-source';
 
 const census = (n: number, name = 'Paciente'): CensusPatient[] =>
   Array.from({ length: n }, (_, i) => ({
+    adequacy: { caloric: 80, protein: 70 },
     admissionStatus: 'ADMITTED_BY_EMTN',
     bed: String(i + 1),
     birthDate: '1980-01-01',
+    completedCycles: i === 1 ? 0 : 1,
     hospitalId: 'h1',
     id: `p${i}`,
     name: `${name} ${i}`,
     registeredInConductia: true,
     therapy: i === 0 ? 'MISTA' : 'NE',
+    therapyStartDate: '2026-01-01',
     ward: 'Ala 1',
   }));
 
@@ -76,6 +79,24 @@ describe('PatientListComponent', () => {
     expect(text()).toContain('VO · NE · NP');
     expect(text()).not.toContain('01/01/1980');
     expect(fixture.nativeElement.querySelectorAll('.patient-list__row').length).toBe(3);
+  });
+
+  it('mostra início da terapia, adequação em texto, gauge e primeira avaliação', async () => {
+    source.result = Promise.resolve([
+      ...census(2),
+      { ...census(1)[0], adequacy: null, id: 'n' },
+      { ...census(1)[0], adequacy: { caloric: 10, protein: null }, id: 'q' },
+    ]);
+    await create();
+
+    expect(text()).toContain('Calórica 80% · Proteica 70%');
+    expect(text()).toContain('Adequação indisponível');
+    expect(text()).not.toContain('0%  ');
+    expect(text()).toContain('Calórica 10% · Proteica indisponível');
+    expect(text()).toContain('TN há');
+    expect(fixture.nativeElement.querySelectorAll('app-graph-meta').length).toBe(3);
+    expect(fixture.nativeElement.querySelectorAll('app-tag').length).toBe(1);
+    expect(text()).toContain('Primeira avaliação');
   });
 
   it('usa singular com um paciente', async () => {

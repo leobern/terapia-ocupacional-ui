@@ -103,6 +103,15 @@
   @include typography.caption;
 }
 
+.patient-list__adequacy {
+  display: flex;
+  align-items: center;
+  gap: tokens.$space-8;
+  color: tokens.c(content-3);
+
+  @include typography.caption;
+}
+
 .patient-list__therapy {
   flex: none;
   color: tokens.c(content-2);

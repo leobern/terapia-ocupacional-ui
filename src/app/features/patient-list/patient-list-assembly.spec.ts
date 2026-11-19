@@ -2,14 +2,17 @@ import { CensusPatient } from './patient-list.models';
 import { assemblePatientList } from './patient-list-assembly';
 
 const base: CensusPatient = {
+  adequacy: { caloric: 80, protein: 70 },
   admissionStatus: 'ADMITTED_BY_EMTN',
   bed: '1',
   birthDate: '2000-01-19',
+  completedCycles: 1,
   hospitalId: 'h1',
   id: 'a',
   name: 'Ana',
   registeredInConductia: true,
   therapy: 'VO',
+  therapyStartDate: '2026-01-08',
   ward: 'Ala 1',
 };
 
@@ -54,5 +57,17 @@ describe('assemblePatientList', () => {
     );
 
     expect(list.map(p => p.id)).toEqual(['z', 'y', 'x']);
+  });
+
+  it('deriva tempo de terapia, adequação espelhada e primeira avaliação', () => {
+    const [first] = assemblePatientList([{ ...base, completedCycles: 0 }], 'h1', day);
+    const [done] = assemblePatientList([base], 'h1', day);
+    const [future] = assemblePatientList([{ ...base, therapyStartDate: '2026-02-01' }], 'h1', day);
+
+    expect(done.therapyDays).toBe(10);
+    expect(future.therapyDays).toBe(0);
+    expect(done.adequacy).toEqual({ caloric: 80, protein: 70 });
+    expect(first.firstEvaluation).toBe(true);
+    expect(done.firstEvaluation).toBe(false);
   });
 });

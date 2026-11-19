@@ -80,11 +80,26 @@
                   <span class="patient-list__info">
                     <span class="patient-list__name">{{ patient.name }}</span>
                     <span class="patient-list__meta"
-                      >{{ patient.age }} anos</span
+                      >{{ patient.age }} anos ·
+                      {{ therapyStartLabel(patient.therapyDays) }}</span
                     >
                     <span class="patient-list__location"
                       >{{ patient.ward }} · Leito {{ patient.bed }}</span
                     >
+                    <span class="patient-list__adequacy">
+                      @if (hasAdequacy(patient.adequacy)) {
+                        <app-graph-meta
+                          size="small"
+                          [topPercentage]="patient.adequacy.caloric ?? 0"
+                          [bottomPercentage]="patient.adequacy.protein ?? 0"
+                          [ariaLabel]="adequacyLabel(patient.adequacy)"
+                        />
+                      }
+                      <span>{{ adequacyLabel(patient.adequacy) }}</span>
+                    </span>
+                    @if (patient.firstEvaluation) {
+                      <app-tag type="status" label="Primeira avaliação" />
+                    }
                   </span>
                   <span class="patient-list__therapy">{{
                     therapyLabel(patient.therapy)

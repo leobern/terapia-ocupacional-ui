@@ -3,9 +3,12 @@ import { Router } from '@angular/router';
 
 import { AvatarComponent } from '../../shared/components/avatar/avatar.component';
 import { ButtonComponent } from '../../shared/components/button/button.component';
+import { GraphMetaComponent } from '../../shared/components/graph-meta/graph-meta.component';
 import { PageContainerComponent } from '../../shared/components/page-container/page-container.component';
+import { TagComponent } from '../../shared/components/tag/tag.component';
 import { PhIconComponent } from '../../shared/icons/ph-icon/ph-icon.component';
 import { HospitalContextService } from '../home/hospital-context.service';
+import { adequacyLabel, hasAdequacy, therapyStartLabel } from './patient-card-labels';
 import { PatientCard, TherapyType } from './patient-list.models';
 import { assemblePatientList } from './patient-list-assembly';
 import { PatientListSource } from './patient-list-source';
@@ -20,7 +23,14 @@ const THERAPY_LABEL: Record<TherapyType, string> = { MISTA: 'VO · NE · NP', NE
  */
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [AvatarComponent, ButtonComponent, PageContainerComponent, PhIconComponent],
+  imports: [
+    AvatarComponent,
+    ButtonComponent,
+    GraphMetaComponent,
+    PageContainerComponent,
+    PhIconComponent,
+    TagComponent,
+  ],
   selector: 'app-patient-list',
   styleUrl: './patient-list.component.scss',
   templateUrl: './patient-list.component.html',
@@ -34,6 +44,10 @@ export class PatientListComponent {
 
     return `${n} ${n === 1 ? 'paciente' : 'pacientes'}`;
   });
+
+  protected readonly therapyStartLabel = therapyStartLabel;
+  protected readonly adequacyLabel = adequacyLabel;
+  protected readonly hasAdequacy = hasAdequacy;
 
   protected readonly skeletonRows = [1, 2, 3, 4, 5];
 
