@@ -175,6 +175,27 @@ describe('PatientListComponent', () => {
       expect(handle(0).getAttribute('aria-label')).toContain('Paciente');
     });
 
+    it('sem coluna anterior no DOM, parte da largura guardada ao arrastar', () => {
+      const detached = document.createElement('span');
+      const event = {
+        clientX: 0,
+        currentTarget: detached,
+        pointerId: 1,
+        preventDefault: (): void => undefined,
+        stopPropagation: (): void => undefined,
+      } as unknown as PointerEvent;
+
+      detached.setPointerCapture = (): void => undefined;
+      fixture.componentInstance.startResize(event, 'name');
+      detached.dispatchEvent(new PointerEvent('pointermove', { clientX: 20 }));
+
+      expect(width('name')).toBe(300);
+
+      detached.dispatchEvent(new PointerEvent('pointerup'));
+
+      expect(fixture.componentInstance.resizing()).toBeNull();
+    });
+
     it('ajusta pelo teclado em passos de 16px, respeita o mínimo e volta ao padrão com Home', () => {
       const start = width('name');
 
@@ -296,6 +317,119 @@ describe('PatientListComponent', () => {
     fixture.detectChanges();
 
     expect(q('.patient-list__fit')).toBeNull();
+  });
+
+  describe('ordenação da tabela', () => {
+    const rowNames = (): string[] =>
+      Array.from((fixture.nativeElement as HTMLElement).querySelectorAll('.patient-list__table tbody tr')).map(
+        r => r.querySelector('.patient-list__name')?.textContent?.trim() ?? '',
+      );
+    const sortButton = (index: number): HTMLElement =>
+      (fixture.nativeElement as HTMLElement).querySelectorAll<HTMLElement>('.patient-list__sort')[index];
+    const arrow = (): string[] =>
+      Array.from((fixture.nativeElement as HTMLElement).querySelectorAll('.patient-list__sort ph-icon')).map(
+        i => i.getAttribute('ng-reflect-name') ?? i.querySelector('i')?.className ?? '',
+      );
+
+    beforeEach(async () => {
+      source.result = Promise.resolve([
+        {
+          ...census(1)[0],
+          adequacy: { caloric: 80, protein: 70 },
+          bed: '2',
+          birthDate: '1986-01-01',
+          id: 'a',
+          name: 'Bruna',
+          therapy: 'VO',
+          ward: 'Ala 2',
+        },
+        {
+          ...census(1)[0],
+          adequacy: { caloric: 20, protein: null },
+          bed: '10',
+          birthDate: '1996-01-01',
+          id: 'b',
+          name: 'Ana',
+          therapy: 'NE',
+          ward: 'Ala 1',
+        },
+        {
+          ...census(1)[0],
+          adequacy: null,
+          bed: '3',
+          birthDate: '1976-01-01',
+          id: 'c',
+          name: 'Carla',
+          therapy: 'NP',
+          ward: 'Ala 1',
+        },
+      ]);
+      await create();
+    });
+
+    it('começa ordenada por localização, crescente (ala e leito numérico), com a seta na coluna', () => {
+      expect(rowNames()).toEqual(['Carla', 'Ana', 'Bruna']);
+      expect(fixture.componentInstance.sortKey()).toBe('location');
+      expect(arrow().length).toBe(1);
+      expect((fixture.nativeElement as HTMLElement).querySelector('th[aria-sort="ascending"]')?.textContent).toContain(
+        'Localização',
+      );
+    });
+
+    it('clicar numa coluna ordena crescente; clicar de novo, decrescente; outra coluna reinicia', () => {
+      sortButton(0).click();
+      fixture.detectChanges();
+
+      expect(rowNames()).toEqual(['Ana', 'Bruna', 'Carla']);
+
+      sortButton(0).click();
+      fixture.detectChanges();
+
+      expect(rowNames()).toEqual(['Carla', 'Bruna', 'Ana']);
+      expect(fixture.componentInstance.sortDir()).toBe('desc');
+
+      sortButton(1).click();
+      fixture.detectChanges();
+
+      expect(rowNames()).toEqual(['Ana', 'Bruna', 'Carla']);
+      expect(fixture.componentInstance.sortDir()).toBe('asc');
+      expect(arrow().length).toBe(1);
+    });
+
+    it('ordena por adequação com indisponível sempre no fim, nas duas direções', () => {
+      sortButton(3).click();
+      fixture.detectChanges();
+
+      expect(rowNames()).toEqual(['Ana', 'Bruna', 'Carla']);
+
+      sortButton(3).click();
+      fixture.detectChanges();
+
+      expect(rowNames()).toEqual(['Bruna', 'Ana', 'Carla']);
+    });
+
+    it('ordena por idade e por terapia', () => {
+      sortButton(1).click();
+      fixture.detectChanges();
+
+      expect(rowNames()).toEqual(['Ana', 'Bruna', 'Carla']);
+
+      sortButton(1).click();
+      fixture.detectChanges();
+
+      expect(rowNames()).toEqual(['Carla', 'Bruna', 'Ana']);
+      expect((fixture.nativeElement as HTMLElement).querySelector('th[aria-sort="descending"]')).not.toBeNull();
+
+      sortButton(2).click();
+      fixture.detectChanges();
+
+      expect(rowNames()).toEqual(['Ana', 'Carla', 'Bruna']);
+
+      sortButton(4).click();
+      fixture.detectChanges();
+
+      expect(rowNames()).toEqual(['Bruna', 'Carla', 'Ana']);
+    });
   });
 
   it('mostra a linha de divisória da coluna sob o mouse no cabeçalho', async () => {

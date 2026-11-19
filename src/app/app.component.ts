@@ -6,7 +6,10 @@ import { filter, map } from 'rxjs';
 import { AssistantContentComponent } from './shared/components/assistant-content/assistant-content.component';
 import { AssistantHeadingComponent } from './shared/components/assistant-header/assistant-heading.component';
 import { AssistantSubmitComponent } from './shared/components/assistant-submit/assistant-submit.component';
-import { BackgroundMeshComponent } from './shared/components/background-mesh/background-mesh.component';
+import {
+  BackgroundMeshComponent,
+  type BackgroundMeshVariant,
+} from './shared/components/background-mesh/background-mesh.component';
 import { BottomNavBarComponent } from './shared/components/bottom-nav-bar/bottom-nav-bar.component';
 import {
   BottomSheetComponent,
@@ -75,9 +78,15 @@ export class AppComponent {
   });
 
   // Home usa o gradiente de fundo do Figma; as demais telas seguem com os círculos por enquanto.
-  protected readonly backgroundVariant = computed(() =>
-    ['/home', '/patients'].some(r => this.currentUrl().startsWith(r)) ? 'gradient' : 'blobs',
-  );
+  protected readonly backgroundVariant = computed<BackgroundMeshVariant>(() => {
+    const url = this.currentUrl();
+
+    if (url.startsWith('/patients')) {
+      return 'patients';
+    }
+
+    return url.startsWith('/home') ? 'gradient' : 'blobs';
+  });
   protected readonly isNotificationsRoute = computed(() => this.currentUrl().startsWith('/notifications'));
   protected readonly aiSheetSnap = signal<BottomSheetSnap>('default');
   protected readonly aiDrawerSnap = signal<DrawerSnap>('default');

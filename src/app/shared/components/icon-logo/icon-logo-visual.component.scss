@@ -134,6 +134,12 @@ $mesh-fade-mask: radial-gradient(
   transparent 75.9615%
 );
 
+// Figma (Dark v2, ajuste do Thiago): no escuro a malha é mais clara/visível — a máscara vai de
+// 20% a 88% do raio (no claro, 0% a 76%).
+:host-context([data-theme='dark']) .icon-logo__mesh {
+  mask-image: radial-gradient(circle closest-side, black 20%, transparent 88%);
+}
+
 .icon-logo__mesh {
   // `currentColor` no `stroke` do path — o traço herda o acento do estado.
   color: var(--icon-logo-accent);

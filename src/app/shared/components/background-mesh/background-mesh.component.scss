@@ -120,6 +120,14 @@
   stop-color: var(--color-bg-gradient-3, #f0f3f5);
 }
 
+.background-mesh__pstop-1 {
+  stop-color: var(--color-bg-gradient-patients-1, #dbfcff);
+}
+
+.background-mesh__pstop-2 {
+  stop-color: var(--color-bg-gradient-patients-2, #f0f3f5);
+}
+
 .background-mesh__static {
   position: fixed;
   z-index: 0;

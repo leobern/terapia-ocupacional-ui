@@ -123,12 +123,13 @@ $duration-collapse: 90ms;
       #{tokens.c(surface-glass-1)} 80%,
       transparent
     );
-    border-top-right-radius: 0;
+    // Figma (2026-11-19): raio só no topo à direita, sem borda lateral, logo a 44px do topo.
+    border-top-right-radius: tokens.$radius-md;
     border-bottom-right-radius: 0;
+    padding-top: 44px;
     box-shadow: none;
     z-index: auto;
     translate: 0 0;
-    border-right: 1px solid #{tokens.c(border)};
     // Sem `right: 0` de propósito — a largura é controlada só por `width`
     // (100% colapsado, `--space-280` expandido). Combinar `left`/`right`/
     // `width` ao mesmo tempo deixaria o cálculo sobre-restringido.
@@ -148,7 +149,6 @@ $duration-collapse: 90ms;
       width: var(--space-280);
       background: #{tokens.c(surface)};
       box-shadow: 0 4px 16px rgb(0 0 0 / 16%);
-      border-right: 1px solid #{tokens.c(border)};
       // Acima do conteúdo da rota — o painel flutua por cima em vez de
       // compartilhar espaço com ele (feedback do usuário: comportamento de
       // sobreposição, não de "arrastar" os elementos da tela).

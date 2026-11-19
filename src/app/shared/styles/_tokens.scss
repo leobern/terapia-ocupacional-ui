@@ -125,6 +125,11 @@ $color-on-data-tag: #002233; // fixed/on-data-tag — texto/ícone sobre ela
 // surface/nav-active — fundo do item ativo do menu lateral (no escuro é mais escuro que o menu).
 $color-nav-active: #f5f7f8;
 
+// fundo-gradiente-pacientes/* — gradiente EXCLUSIVO da tela de Pacientes (2 paradas; ver
+// docs/artefatos/uso-de-cores.md §3). Claro: ciano claro → superfície; escuro: teal → superfície.
+$color-bg-gradient-patients-1: #dbfcff;
+$color-bg-gradient-patients-2: #f0f3f5;
+
 // decorative/* — usados só no background animado das telas (não são Color
 // Style nomeado no Figma, só um fill solto nos blobs de fundo).
 $color-decorative-forest: #0d7742;
@@ -170,6 +175,8 @@ $color-map: (
   'bg-gradient-1': $color-bg-gradient-1,
   'bg-gradient-2': $color-bg-gradient-2,
   'bg-gradient-3': $color-bg-gradient-3,
+  'bg-gradient-patients-1': $color-bg-gradient-patients-1,
+  'bg-gradient-patients-2': $color-bg-gradient-patients-2,
   'decorative-forest': $color-decorative-forest,
   'data-tag': $color-data-tag,
   'on-data-tag': $color-on-data-tag,
@@ -418,6 +425,8 @@ $shadow-elevation-bottomsheet: 0 -4px 24px rgba($color-primary, 0.08);
   --color-bg-gradient-1: #{$color-bg-gradient-1};
   --color-bg-gradient-2: #{$color-bg-gradient-2};
   --color-bg-gradient-3: #{$color-bg-gradient-3};
+  --color-bg-gradient-patients-1: #{$color-bg-gradient-patients-1};
+  --color-bg-gradient-patients-2: #{$color-bg-gradient-patients-2};
   --color-logo-4: #{$color-logo-4};
   --color-decorative-forest: #{$color-decorative-forest};
   --color-data-tag: #{$color-data-tag};
@@ -518,6 +527,8 @@ $shadow-elevation-bottomsheet: 0 -4px 24px rgba($color-primary, 0.08);
   --color-nav-active: #182125;
   --color-bg-gradient-2: #182c35;
   --color-bg-gradient-3: #182125;
+  --color-bg-gradient-patients-1: #005e66;
+  --color-bg-gradient-patients-2: #182125;
   --color-primary: #8cd0ff;
   --color-secondary: #43b9ff;
   --color-tertiary: #005050;

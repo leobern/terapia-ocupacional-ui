@@ -73,6 +73,9 @@ const MAX_WIDTH = 560;
 const ACTION_COLUMN_WIDTH = 72;
 const KEY_STEP = 16;
 
+export type SortKey = 'name' | 'age' | 'therapy' | 'caloric' | 'protein' | 'location';
+export type SortDirection = 'asc' | 'desc';
+
 export type PatientListStatus = 'loading' | 'ready' | 'error';
 
 const PATIENT_LIST_ACTIONS: readonly ScreenAction[] = [
@@ -83,6 +86,16 @@ const PATIENT_LIST_ACTIONS: readonly ScreenAction[] = [
 ];
 
 const THERAPY_LABEL: Record<TherapyType, string> = { MISTA: 'VO · NE · NP', NE: 'NE', NP: 'NP', VO: 'VO' };
+
+/** Valor de ordenação de cada coluna; `null` = indisponível. */
+const SORT_VALUE: Readonly<Record<SortKey, (p: PatientCard) => number | string | null>> = {
+  age: p => p.age,
+  caloric: p => p.adequacy?.caloric ?? null,
+  location: p => `${p.ward} ${p.bed}`,
+  name: p => p.name,
+  protein: p => p.adequacy?.protein ?? null,
+  therapy: p => THERAPY_LABEL[p.therapy],
+};
 
 /**
  * Jornada Clínica — lista de pacientes da EMTN do hospital em contexto, na data de hoje
@@ -144,7 +157,26 @@ export class PatientListComponent implements OnInit {
       { key: 'in' as const, patients: within, title: 'Dentro da meta' },
     ].filter(g => g.patients.length > 0);
   });
-  readonly prioritized = computed(() => this.groups().flatMap(g => g.patients));
+  /** Ordenação da tabela: uma coluna ordena todas as outras. Padrão: localização, crescente. */
+  readonly sortKey = signal<SortKey>('location');
+  readonly sortDir = signal<SortDirection>('asc');
+  readonly sorted = computed(() => {
+    const value = SORT_VALUE[this.sortKey()];
+    const sign = this.sortDir() === 'asc' ? 1 : -1;
+    const collator = new Intl.Collator('pt-BR', { numeric: true, sensitivity: 'base' });
+    const present = this.patients().filter(p => value(p) !== null);
+    // Sem dado (indisponível) fica sempre no fim, em qualquer direção.
+    const missing = this.patients().filter(p => value(p) === null);
+
+    present.sort((a, b) => {
+      const x = value(a) as number | string;
+      const y = value(b) as number | string;
+
+      return (typeof x === 'number' && typeof y === 'number' ? x - y : collator.compare(String(x), String(y))) * sign;
+    });
+
+    return [...present, ...missing];
+  });
   readonly outOfTargetCount = computed(() => this.groups().find(g => g.key === 'out')?.patients.length ?? 0);
   readonly countLabel = computed(() => {
     const n = this.patients().length;
@@ -245,6 +277,16 @@ export class PatientListComponent implements OnInit {
     void this.router.navigate(['/notifications']);
   }
 
+  /** Clique no título: nova coluna ordena crescente; a mesma coluna alterna crescente e decrescente. */
+  sortBy(key: SortKey): void {
+    if (this.sortKey() === key) {
+      this.sortDir.update(d => (d === 'asc' ? 'desc' : 'asc'));
+    } else {
+      this.sortKey.set(key);
+      this.sortDir.set('asc');
+    }
+  }
+
   /** Arrasta a divisória do cabeçalho para ajustar a largura da coluna. */
   startResize(event: PointerEvent, key: ColumnKey): void {
     const handle = event.currentTarget as HTMLElement;
@@ -343,6 +385,14 @@ export class PatientListComponent implements OnInit {
     }
 
     return value < 50 ? 'warning' : 'success';
+  }
+
+  protected ariaSort(key: SortKey): 'ascending' | 'descending' | 'none' {
+    if (this.sortKey() !== key) {
+      return 'none';
+    }
+
+    return this.sortDir() === 'asc' ? 'ascending' : 'descending';
   }
 
   protected therapyLabel(therapy: TherapyType): string {

@@ -2,8 +2,9 @@ import { ChangeDetectionStrategy, Component, computed, inject, input } from '@an
 
 import { ThemeService } from '../../services/theme.service';
 
-/** `blobs`: 3 círculos com blur; `gradient`: gradiente de fundo (Figma, tokens bg-gradient). */
-export type BackgroundMeshVariant = 'blobs' | 'gradient';
+/** `blobs`: 3 círculos com blur; `gradient`: gradiente de fundo (Figma, tokens bg-gradient);
+ * `patients`: gradiente exclusivo da tela de Pacientes (tokens bg-gradient-patients). */
+export type BackgroundMeshVariant = 'blobs' | 'gradient' | 'patients';
 
 /**
  * Fundo decorativo puramente visual (DS-component-background-mesh): 3 círculos de cor

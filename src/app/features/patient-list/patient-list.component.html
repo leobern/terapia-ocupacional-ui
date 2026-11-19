@@ -18,6 +18,14 @@
           }
         </p>
       </div>
+      <span class="patient-list__register">
+        <app-button
+          size="md"
+          iconLeft="plus"
+          label="Cadastrar paciente"
+          (click)="registerPatient()"
+        />
+      </span>
       <!-- Primeira tela da área: notificações + atalhos (telas internas mantêm só os atalhos). -->
       <span class="patient-list__notify">
         <app-icon-button
@@ -56,15 +64,6 @@
         [selected]="selectedDate()"
         (dateChange)="selectDate($event)"
       />
-      <span class="patient-list__toolbar-spacer"></span>
-      <span class="patient-list__register">
-        <app-button
-          size="md"
-          iconLeft="plus"
-          label="Cadastrar paciente"
-          (click)="registerPatient()"
-        />
-      </span>
     </div>
 
     @switch (status()) {
@@ -129,13 +128,29 @@
                 <tr>
                   <th
                     scope="col"
+                    [attr.aria-sort]="ariaSort('name')"
                     (mouseenter)="hoverColumn.set('name')"
                     (mouseleave)="hoverColumn.set(null)"
                   >
-                    Paciente
+                    <button
+                      type="button"
+                      class="patient-list__sort"
+                      (click)="sortBy('name')"
+                    >
+                      <span>Paciente</span>
+                      @if (sortKey() === 'name') {
+                        <ph-icon
+                          [name]="
+                            sortDir() === 'asc' ? 'arrow-up' : 'arrow-down'
+                          "
+                          [size]="14"
+                        />
+                      }
+                    </button>
                   </th>
                   <th
                     scope="col"
+                    [attr.aria-sort]="ariaSort('age')"
                     (mouseenter)="hoverColumn.set('age')"
                     (mouseleave)="hoverColumn.set(null)"
                   >
@@ -152,10 +167,25 @@
                       (keydown)="resizeByKey($event, 'name')"
                       (click)="$event.stopPropagation()"
                     ></span>
-                    Idade<br />Início da terapia
+                    <button
+                      type="button"
+                      class="patient-list__sort"
+                      (click)="sortBy('age')"
+                    >
+                      <span>Idade<br />Início da terapia</span>
+                      @if (sortKey() === 'age') {
+                        <ph-icon
+                          [name]="
+                            sortDir() === 'asc' ? 'arrow-up' : 'arrow-down'
+                          "
+                          [size]="14"
+                        />
+                      }
+                    </button>
                   </th>
                   <th
                     scope="col"
+                    [attr.aria-sort]="ariaSort('therapy')"
                     (mouseenter)="hoverColumn.set('therapy')"
                     (mouseleave)="hoverColumn.set(null)"
                   >
@@ -172,10 +202,25 @@
                       (keydown)="resizeByKey($event, 'age')"
                       (click)="$event.stopPropagation()"
                     ></span>
-                    Terapia
+                    <button
+                      type="button"
+                      class="patient-list__sort"
+                      (click)="sortBy('therapy')"
+                    >
+                      <span>Terapia</span>
+                      @if (sortKey() === 'therapy') {
+                        <ph-icon
+                          [name]="
+                            sortDir() === 'asc' ? 'arrow-up' : 'arrow-down'
+                          "
+                          [size]="14"
+                        />
+                      }
+                    </button>
                   </th>
                   <th
                     scope="col"
+                    [attr.aria-sort]="ariaSort('caloric')"
                     (mouseenter)="hoverColumn.set('caloric')"
                     (mouseleave)="hoverColumn.set(null)"
                   >
@@ -192,10 +237,25 @@
                       (keydown)="resizeByKey($event, 'therapy')"
                       (click)="$event.stopPropagation()"
                     ></span>
-                    Adequação calórica
+                    <button
+                      type="button"
+                      class="patient-list__sort"
+                      (click)="sortBy('caloric')"
+                    >
+                      <span>Adequação calórica</span>
+                      @if (sortKey() === 'caloric') {
+                        <ph-icon
+                          [name]="
+                            sortDir() === 'asc' ? 'arrow-up' : 'arrow-down'
+                          "
+                          [size]="14"
+                        />
+                      }
+                    </button>
                   </th>
                   <th
                     scope="col"
+                    [attr.aria-sort]="ariaSort('protein')"
                     (mouseenter)="hoverColumn.set('protein')"
                     (mouseleave)="hoverColumn.set(null)"
                   >
@@ -212,10 +272,25 @@
                       (keydown)="resizeByKey($event, 'caloric')"
                       (click)="$event.stopPropagation()"
                     ></span>
-                    Adequação proteica
+                    <button
+                      type="button"
+                      class="patient-list__sort"
+                      (click)="sortBy('protein')"
+                    >
+                      <span>Adequação proteica</span>
+                      @if (sortKey() === 'protein') {
+                        <ph-icon
+                          [name]="
+                            sortDir() === 'asc' ? 'arrow-up' : 'arrow-down'
+                          "
+                          [size]="14"
+                        />
+                      }
+                    </button>
                   </th>
                   <th
                     scope="col"
+                    [attr.aria-sort]="ariaSort('location')"
                     (mouseenter)="hoverColumn.set('location')"
                     (mouseleave)="hoverColumn.set(null)"
                   >
@@ -232,7 +307,21 @@
                       (keydown)="resizeByKey($event, 'protein')"
                       (click)="$event.stopPropagation()"
                     ></span>
-                    Localização
+                    <button
+                      type="button"
+                      class="patient-list__sort"
+                      (click)="sortBy('location')"
+                    >
+                      <span>Localização</span>
+                      @if (sortKey() === 'location') {
+                        <ph-icon
+                          [name]="
+                            sortDir() === 'asc' ? 'arrow-up' : 'arrow-down'
+                          "
+                          [size]="14"
+                        />
+                      }
+                    </button>
                   </th>
                   <th
                     scope="col"
@@ -270,7 +359,7 @@
                 </tr>
               </thead>
               <tbody>
-                @for (patient of prioritized(); track patient.id) {
+                @for (patient of sorted(); track patient.id) {
                   <tr
                     class="patient-list__tr"
                     (click)="openPatient(patient.id)"
