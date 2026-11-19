@@ -90,7 +90,7 @@ describe('AvatarComponent', () => {
           expect(getComputedStyle(avatarEl()).backgroundColor).toBe('rgb(133, 224, 224)'); // --color-tertiary #85E0E0
         });
 
-        it('type="patient" renders initials and var(--color-state-disabled) background', () => {
+        it('type="patient" renders initials and var(--color-tertiary) background (v2)', () => {
           fixture.componentRef.setInput('type', 'patient');
           fixture.componentRef.setInput('name', 'Julia Nogueira');
           attachToDom();
@@ -98,7 +98,7 @@ describe('AvatarComponent', () => {
 
           expect(avatarEl().querySelector('img.avatar__image')).toBeNull();
           expect(avatarEl().querySelector('.avatar__initials')?.textContent?.trim()).toBe('JN');
-          expect(getComputedStyle(avatarEl()).backgroundColor).toBe('rgb(199, 204, 209)'); // --color-state-disabled #C7CCD1
+          expect(getComputedStyle(avatarEl()).backgroundColor).toBe('rgb(133, 224, 224)'); // v2: --color-tertiary #85E0E0
         });
       });
     }
@@ -280,8 +280,8 @@ describe('AvatarComponent', () => {
   describe('initials typography per size (Figma nó 4046:2289, reconfirmado 2026-07-30)', () => {
     const expectations: ['small' | 'default' | 'big', string, string, string][] = [
       // [size, font-size, font-weight, line-height] — "Label - SemiBold" / "Default - SemiBold" / "Section"
-      ['small', '12px', '600', '16.2px'], // 12px * 1.35
-      ['default', '16px', '600', '21.6px'], // 16px * 1.35
+      ['small', '12px', '500', '16px'], // v2/Label/Sm
+      ['default', '16px', '600', '24px'], // v2/Title/Md
       ['big', '40px', '500', 'normal'],
     ];
 

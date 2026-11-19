@@ -35,6 +35,14 @@ body {
   // Cor de base de toda tela — o background-mesh (z-index 0, ver seu SCSS)
   // desenha por cima disso; sem essa cor aqui o mesh some atrás do canvas
   // branco padrão do navegador (o body nunca pinta um background sozinho).
-  background: tokens.$color-surface-2;
+  // Figma: o fundo animado mistura "color" com esta superfície, então o claro precisa ser
+  // `surface-2` (#F5F7F8) — em branco puro a mistura apaga os círculos. No escuro a
+  // superfície é `surface` (#182125), a mesma do frame Dark v2.
+  background: tokens.c(surface-2);
+
+  :root[data-theme='dark'] & {
+    background: tokens.c(surface);
+  }
+
   font-family: var(--font-family-base);
 }

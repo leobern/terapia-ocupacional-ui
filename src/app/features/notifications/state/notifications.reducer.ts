@@ -118,6 +118,26 @@ function moveToResolved(state: NotificationsState, notificationId: number): Noti
   };
 }
 
+/** Botão ✓: move da seção Pendentes para Resolvidas, sem mexer na contagem de respostas. */
+function resolveNotification(state: NotificationsState, notificationId: number): NotificationsState {
+  const notification = state.pendingItems.find(item => item.id === notificationId);
+
+  if (!notification) {
+    return state;
+  }
+  const resolvedItems = [...state.resolvedItems, notification].sort(
+    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+  );
+
+  return {
+    ...state,
+    pendingItems: state.pendingItems.filter(item => item.id !== notificationId),
+    pendingTotalCount: Math.max(0, state.pendingTotalCount - 1),
+    resolvedItems,
+    resolvedTotalCount: state.resolvedTotalCount + 1,
+  };
+}
+
 export const notificationsFeature = createFeature({
   name: 'notifications',
   reducer: createReducer(
@@ -240,6 +260,9 @@ export const notificationsFeature = createFeature({
       discardConfirmPending: false,
     })),
 
+    on(NotificationsActions.resolveSuccess, (state, { notificationId }): NotificationsState =>
+      resolveNotification(state, notificationId),
+    ),
     on(NotificationsActions.discardConfirmationRequested, (state): NotificationsState => ({
       ...state,
       discardConfirmPending: hasUnsavedDraft(state),

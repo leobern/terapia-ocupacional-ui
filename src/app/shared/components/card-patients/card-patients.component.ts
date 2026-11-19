@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
 
+import { PhIconComponent } from '../../icons/ph-icon/ph-icon.component';
 import { GraphMetaComponent } from '../graph-meta/graph-meta.component';
-import { IconButtonComponent } from '../icon-button/icon-button.component';
 
 /**
  * Card de resumo diário de carga de trabalho por profissional (DS-component-card-patients).
@@ -11,7 +11,7 @@ import { IconButtonComponent } from '../icon-button/icon-button.component';
  */
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [GraphMetaComponent, IconButtonComponent],
+  imports: [GraphMetaComponent, PhIconComponent],
   selector: 'app-card-patients',
   styleUrl: './card-patients.component.scss',
   templateUrl: './card-patients.component.html',
@@ -40,19 +40,21 @@ export class CardPatientsComponent {
 
   protected readonly isZero = computed(() => this.patientCount() === 0);
 
+  // Figma v2/CardPatients: "N pacientes" / "aguardando atendimento hoje"; zerado →
+  // título "Todos os pacientes foram atendidos" e subtítulo "metas médias do dia".
   // FR-001: contagem > 0 → título "N Pacientes"; zerado → título oculto (só a
   // fonte do título some, o subtitle assume a mensagem — ver `subtitle`
   // abaixo, ajuste pedido pelo usuário em 2026-07-25).
-  protected readonly title = computed(() => (this.isZero() ? '' : `${this.patientCount()} Pacientes`));
+  protected readonly title = computed(() =>
+    this.isZero() ? 'Todos os pacientes foram atendidos' : `${this.patientCount()} pacientes`,
+  );
 
   // Rótulo fixo do Figma (nó 4041:1472, "Aguardando atendimento") no estado
   // default. FR-002: no estado zerado, o mesmo slot de subtítulo passa a
   // exibir a mensagem de "todos atendidos" (em vez do título, que fica
   // oculto) — decisão do usuário em 2026-07-25, substitui o comportamento
   // anterior (mensagem no título, subtítulo oculto).
-  protected readonly subtitle = computed(() =>
-    this.isZero() ? 'Todos os pacientes foram atendidos' : 'Aguardando atendimento',
-  );
+  protected readonly subtitle = computed(() => (this.isZero() ? 'metas médias do dia' : 'aguardando atendimento hoje'));
 
   // FR-004: CTA desabilitado quando não há pacientes OU quando o consumidor
   // desabilita explicitamente a ação.

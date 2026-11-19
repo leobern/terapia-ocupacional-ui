@@ -10,7 +10,7 @@ import {
   Injector,
   OnDestroy,
   signal,
-  viewChild,
+  viewChildren,
 } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -27,11 +27,11 @@ import {
 import { IconButtonComponent } from '../../shared/components/icon-button/icon-button.component';
 import { InputChatComponent } from '../../shared/components/input-chat/input-chat.component';
 import { PageContainerComponent } from '../../shared/components/page-container/page-container.component';
-import { TagComponent } from '../../shared/components/tag/tag.component';
 import { PhIconComponent } from '../../shared/icons/ph-icon/ph-icon.component';
 import { AiAssistantService } from '../../shared/services/ai-assistant.service';
 import { type ScreenAction, ScreenActionsService } from '../../shared/services/screen-actions.service';
 import { type DirectoryUser } from '../../shared/services/user-directory';
+import { formatRelativeTime } from '../../shared/utils/relative-time';
 import { HospitalContextService } from '../home/hospital-context.service';
 import { ConfirmDialogComponent } from './components/confirm-dialog/confirm-dialog.component';
 import { NotificationSectionTitleComponent } from './components/notification-section-title/notification-section-title.component';
@@ -46,10 +46,11 @@ import {
   selectHasMore,
   selectHospitalId,
   selectPendingItems,
+  selectPendingTotalCount,
   selectResolvedItems,
+  selectResolvedTotalCount,
   selectStatus,
   selectSubmitting,
-  selectTotalCount,
 } from './state/notifications.reducer';
 
 function formatTodayLabel(): string {
@@ -59,7 +60,7 @@ function formatTodayLabel(): string {
   const value = (type: string): string => parts.find(p => p.type === type)?.value ?? '';
   const weekday = value('weekday');
 
-  return `${weekday.charAt(0).toUpperCase()}${weekday.slice(1)} - ${value('day')} de ${value('month')}`;
+  return `${weekday.charAt(0).toUpperCase()}${weekday.slice(1)}, ${value('day')} de ${value('month')}`;
 }
 
 /** Distância mínima de arraste, em px, para disparar o pull-to-refresh (FR-004b). */
@@ -89,7 +90,6 @@ const PULL_TO_REFRESH_THRESHOLD = 80;
     NotificationSectionTitleComponent,
     PageContainerComponent,
     PhIconComponent,
-    TagComponent,
   ],
   selector: 'app-notifications',
   styleUrl: './notifications.component.scss',
@@ -115,6 +115,8 @@ export class NotificationsComponent implements OnDestroy {
   protected readonly answerErrorMessage = toSignal(this.store.select(selectAnswerErrorMessage), {
     initialValue: null,
   });
+  /** Notificação aguardando a confirmação de "Resolver" (null = diálogo fechado). */
+  protected readonly resolveConfirmId = signal<number | null>(null);
   protected readonly discardConfirmPending = toSignal(this.store.select(selectDiscardConfirmPending), {
     initialValue: false,
   });
@@ -122,7 +124,9 @@ export class NotificationsComponent implements OnDestroy {
   // Convergence T053: contagem real do backend (`NotificationPage.totalCount`), não
   // mais uma aproximação pelos itens já paginados no cliente (que subcontava antes
   // de toda a paginação carregar).
-  protected readonly totalCount = toSignal(this.store.select(selectTotalCount), { initialValue: 0 });
+  // Figma (seção 07): o título conta as pendentes; cada seção mostra o próprio total.
+  protected readonly pendingCount = toSignal(this.store.select(selectPendingTotalCount), { initialValue: 0 });
+  protected readonly resolvedCount = toSignal(this.store.select(selectResolvedTotalCount), { initialValue: 0 });
   protected readonly isEmpty = computed(
     () => this.status() === 'success' && this.pendingItems().length === 0 && this.resolvedItems().length === 0,
   );
@@ -135,7 +139,15 @@ export class NotificationsComponent implements OnDestroy {
   protected readonly todayLabel = computed(() => formatTodayLabel());
   /** Título com a contagem ("3 Notificações"), no mobile e no desktop. */
   protected readonly assistant = inject(AiAssistantService);
-  protected readonly title = computed(() => `${this.totalCount()} Notificações`);
+  protected readonly title = computed(() => {
+    const total = this.pendingCount();
+
+    if (total === 0) {
+      return 'Notificações';
+    }
+
+    return `${total} ${total === 1 ? 'notificação' : 'notificações'}`;
+  });
 
   private readonly actions$ = inject(Actions);
   private readonly location = inject(Location);
@@ -153,7 +165,8 @@ export class NotificationsComponent implements OnDestroy {
   // navegação nem precisa ser compartilhado.
   private readonly expandedIds = signal<ReadonlySet<number>>(new Set());
 
-  private readonly scrollSentinel = viewChild<ElementRef<HTMLElement>>('scrollSentinel');
+  // Um sentinel por coluna: no desktop cada coluna tem o próprio scroll.
+  private readonly scrollSentinels = viewChildren<ElementRef<HTMLElement>>('scrollSentinel');
   private intersectionObserver?: IntersectionObserver;
   private pullStartY: number | null = null;
 
@@ -182,10 +195,10 @@ export class NotificationsComponent implements OnDestroy {
     // Observa o sentinel de fim de lista (FR-004a), mesmo padrão de home.component.ts.
     effect(
       () => {
-        const element = this.scrollSentinel()?.nativeElement;
+        const elements = this.scrollSentinels();
 
         this.intersectionObserver?.disconnect();
-        if (!element) {
+        if (elements.length === 0) {
           return;
         }
         this.intersectionObserver = new IntersectionObserver(entries => {
@@ -196,7 +209,7 @@ export class NotificationsComponent implements OnDestroy {
             this.store.dispatch(NotificationsActions.loadNextBatchRequested());
           }
         });
-        this.intersectionObserver.observe(element);
+        elements.forEach(element => this.intersectionObserver?.observe(element.nativeElement));
       },
       { injector: this.injector },
     );
@@ -249,6 +262,25 @@ export class NotificationsComponent implements OnDestroy {
 
     next.add(id);
     this.expandedIds.set(next);
+  }
+
+  /** Botão ✓ do card (Figma v2/NotificationThread): marca como resolvida. */
+  onResolveClick(id: number): void {
+    this.resolveConfirmId.set(id);
+  }
+
+  /** "Sim" no diálogo: resolve de fato a notificação. */
+  onConfirmResolve(): void {
+    const id = this.resolveConfirmId();
+
+    this.resolveConfirmId.set(null);
+    if (id !== null) {
+      this.store.dispatch(NotificationsActions.resolveRequested({ notificationId: id }));
+    }
+  }
+
+  onCancelResolve(): void {
+    this.resolveConfirmId.set(null);
   }
 
   onCollapseClick(id: number): void {
@@ -314,7 +346,7 @@ export class NotificationsComponent implements OnDestroy {
   }
 
   protected formatTime(isoDate: string): string {
-    return new Intl.DateTimeFormat('pt-BR', { hour: '2-digit', minute: '2-digit' }).format(new Date(isoDate));
+    return formatRelativeTime(isoDate); // Figma: "Hoje, 10:42"
   }
 
   // Pull-to-refresh (FR-004b) — gesto simples de arrastar para baixo a partir do

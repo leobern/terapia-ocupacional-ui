@@ -1,11 +1,12 @@
 <app-background-mesh
-  [color1]="backgroundColor1()"
-  [showColor2]="backgroundShowColor2()"
+  [variant]="backgroundVariant()"
+  [showColor3Desktop]="!isNotificationsRoute()"
 />
 
 <div class="app-shell">
   @if (showShell()) {
     <app-nav-menu
+      [activeItem]="activeNavItem()"
       [open]="menuOpen()"
       [actionsOpen]="aiAssistant.shortcutsOpen()"
       (closed)="menuOpen.set(false)"

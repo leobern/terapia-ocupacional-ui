@@ -1,42 +1,49 @@
-<!-- O card inteiro é uma área de toque estendida; o acionamento por teclado é do <button> da
-     seta (focável), então o <article> não precisa de handler de teclado nem de foco. -->
+<!--
+  Figma "Conductia - V1" `v2/CardPatients`: card fixo em largura total, anel de
+  metas (88px), título, subtítulo e legenda com os percentuais em texto.
+  O card inteiro é área de toque; o teclado usa o <button> da seta.
+-->
 <!-- eslint-disable-next-line @angular-eslint/template/click-events-have-key-events, @angular-eslint/template/interactive-supports-focus -->
 <article
   class="card-patients"
   [class.card-patients--disabled]="ctaDisabled()"
   (click)="onCardClick()"
 >
-  <div class="card-patients__row">
-    <div class="card-patients__content">
-      <app-graph-meta
-        [topPercentage]="averageCaloricPercentage()"
-        [bottomPercentage]="averageProteinPercentage()"
-        [ariaLabel]="
-          'Aporte calórico ' +
-          averageCaloricPercentage() +
-          '%, aporte protéico ' +
-          averageProteinPercentage() +
-          '%'
-        "
-      />
+  <app-graph-meta
+    size="large"
+    [topPercentage]="averageCaloricPercentage()"
+    [bottomPercentage]="averageProteinPercentage()"
+    [centerLabel]="isZero() ? '✓' : '' + patientCount()"
+    [ariaLabel]="
+      'Aporte calórico ' +
+      averageCaloricPercentage() +
+      '%, aporte protéico ' +
+      averageProteinPercentage() +
+      '%'
+    "
+  />
+
+  <div class="card-patients__label">
+    <p class="card-patients__title">{{ title() }}</p>
+    <p class="card-patients__subtitle">{{ subtitle() }}</p>
+    <div class="card-patients__legend">
+      <span class="card-patients__legend-item">
+        <span class="card-patients__dot card-patients__dot--caloric"></span>
+        Calórico {{ averageCaloricPercentage() }}%
+      </span>
+      <span class="card-patients__legend-item">
+        <span class="card-patients__dot card-patients__dot--protein"></span>
+        Protéico {{ averageProteinPercentage() }}%
+      </span>
     </div>
   </div>
 
-  <div class="card-patients__label">
-    @if (title()) {
-      <p class="card-patients__title">{{ title() }}</p>
-    }
-    <p class="card-patients__subtitle">{{ subtitle() }}</p>
-  </div>
-
-  <div class="card-patients__actions">
-    <app-icon-button
-      kind="secondary"
-      appearance="outlined"
-      size="small"
-      icon="arrow-right"
-      [ariaLabel]="actionAriaLabel()"
-      [disabled]="ctaDisabled()"
-    />
-  </div>
+  <button
+    type="button"
+    class="card-patients__cta"
+    [attr.aria-label]="actionAriaLabel()"
+    [disabled]="ctaDisabled()"
+  >
+    <ph-icon name="caret-right" [size]="24" />
+  </button>
 </article>

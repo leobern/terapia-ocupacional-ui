@@ -43,7 +43,7 @@
             },
             "production": {
               "budgets": [
-                { "maximumWarning": "6kb", "type": "anyComponentStyle" }
+                { "maximumWarning": "10kb", "maximumError": "16kb", "type": "anyComponentStyle" }
               ],
               "fileReplacements": [
                 {
@@ -58,7 +58,7 @@
             },
             "analyze": {
               "budgets": [
-                { "maximumWarning": "6kb", "type": "anyComponentStyle" }
+                { "maximumWarning": "10kb", "maximumError": "16kb", "type": "anyComponentStyle" }
               ],
               "fileReplacements": [
                 {

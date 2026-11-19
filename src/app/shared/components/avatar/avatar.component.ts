@@ -4,7 +4,7 @@ import { ChangeDetectionStrategy, Component, computed, input, output } from '@an
 import { BadgeComponent } from '../badge/badge.component';
 
 /** Mapeia a propriedade Figma `Size` (specs/ds/DS-component-avatar/spec.md). */
-export type AvatarSize = 'small' | 'default' | 'big';
+export type AvatarSize = 'small' | 'medium' | 'default' | 'big';
 
 /** Mapeia a propriedade Figma `Type` (specs/ds/DS-component-avatar/spec.md). */
 export type AvatarType = 'photo' | 'user' | 'patient';

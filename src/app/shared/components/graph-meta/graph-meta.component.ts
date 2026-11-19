@@ -8,17 +8,19 @@ import { ChangeDetectionStrategy, Component, computed, input } from '@angular/co
  * originais vinham colados do nome da propriedade no Figma e faziam deste o único
  * componente com convenção própria de API.
  */
-export type GraphMetaSize = 'default' | 'small';
+export type GraphMetaSize = 'large' | 'default' | 'small';
 
 function clamp(value: number): number {
   return Math.max(0, Math.min(100, value));
 }
 
-function progressDasharray(halfCircumference: number, percentage: number): string {
-  const progressLength = halfCircumference * (percentage / 100);
-  const fullCircumference = halfCircumference * 2;
+/** Figma v2 (`v2/MiniGauge`, `v2/CardPatients`): arco de 270°, abrindo para baixo. */
+const SWEEP = 0.75;
 
-  return `${progressLength} ${fullCircumference - progressLength}`;
+function arcDasharray(circumference: number, percentage: number): string {
+  const length = circumference * SWEEP * (percentage / 100);
+
+  return `${length} ${circumference}`;
 }
 
 /**
@@ -41,7 +43,8 @@ function colorForPercentage(value: number, normalColor: string): string {
     return 'var(--color-comm-alert)';
   }
   if (value < 50) {
-    return 'var(--color-comm-warning)';
+    // v2: amarelo "forte" para gráficos; comm-warning ficou só como fundo de aviso.
+    return 'var(--color-comm-warning-strong)';
   }
 
   return normalColor;
@@ -80,6 +83,8 @@ export class GraphMetaComponent {
   readonly bottomPercentage = input.required<number>();
   readonly size = input<GraphMetaSize>('default');
   readonly ariaLabel = input.required<string>();
+  /** Texto no centro do anel (ex.: nº de pacientes) — só no size="large". */
+  readonly centerLabel = input<string>('');
 
   protected readonly clampedTop = computed(() => clamp(this.topPercentage()));
   protected readonly clampedBottom = computed(() => clamp(this.bottomPercentage()));
@@ -88,34 +93,33 @@ export class GraphMetaComponent {
   // traço proporcional (6 em 48) — não corresponde a nenhuma variável Figma
   // retornada por get_variable_defs (research.md §5), mantida como constante
   // derivada do diâmetro, não um token.
-  protected readonly diameter = computed(() => (this.size() === 'small' ? 32 : 48));
-  protected readonly strokeWidth = computed(() => this.diameter() / 8);
+  // large 88 (card de pacientes) · default 48 · small 40 (linha de paciente).
+  protected readonly diameter = computed(() => ({ large: 88, default: 48, small: 40 })[this.size()]);
+  protected readonly strokeWidth = computed(() => (this.size() === 'large' ? 8 : Math.round(this.diameter() * 0.14)));
+  protected readonly innerDiameter = computed(() =>
+    this.size() === 'large' ? 64 : Math.round(this.diameter() * 0.65),
+  );
 
   protected readonly center = computed(() => this.diameter() / 2);
   protected readonly outerRadius = computed(() => this.diameter() / 2 - this.strokeWidth() / 2);
-  protected readonly innerRadius = computed(() => this.diameter() / 4 - this.strokeWidth() / 2);
+  protected readonly innerRadius = computed(() => this.innerDiameter() / 2 - this.strokeWidth() / 2);
 
-  protected readonly viewBoxHeight = computed(() => this.outerRadius() + this.strokeWidth());
-  protected readonly cy = computed(() => this.outerRadius() + this.strokeWidth() / 2);
-  protected readonly rotation = computed(() => `rotate(180 ${this.center()} ${this.cy()})`);
+  protected readonly viewBoxHeight = computed(() => this.diameter());
+  protected readonly cy = computed(() => this.diameter() / 2);
+  protected readonly rotation = computed(() => `rotate(135 ${this.center()} ${this.cy()})`);
 
-  protected readonly outerHalfCircumference = computed(() => Math.PI * this.outerRadius());
-  protected readonly innerHalfCircumference = computed(() => Math.PI * this.innerRadius());
+  protected readonly outerCircumference = computed(() => 2 * Math.PI * this.outerRadius());
+  protected readonly innerCircumference = computed(() => 2 * Math.PI * this.innerRadius());
 
-  protected readonly outerTrackDasharray = computed(
-    () => `${this.outerHalfCircumference()} ${this.outerHalfCircumference()}`,
-  );
-  protected readonly innerTrackDasharray = computed(
-    () => `${this.innerHalfCircumference()} ${this.innerHalfCircumference()}`,
-  );
-
+  protected readonly outerTrackDasharray = computed(() => arcDasharray(this.outerCircumference(), 100));
+  protected readonly innerTrackDasharray = computed(() => arcDasharray(this.innerCircumference(), 100));
   protected readonly outerProgressDasharray = computed(() =>
-    progressDasharray(this.outerHalfCircumference(), this.clampedTop()),
+    arcDasharray(this.outerCircumference(), this.clampedTop()),
   );
   protected readonly innerProgressDasharray = computed(() =>
-    progressDasharray(this.innerHalfCircumference(), this.clampedBottom()),
+    arcDasharray(this.innerCircumference(), this.clampedBottom()),
   );
 
   protected readonly outerColor = computed(() => colorForPercentage(this.clampedTop(), 'var(--color-comm-success)'));
-  protected readonly innerColor = computed(() => colorForPercentage(this.clampedBottom(), 'var(--color-content-2)'));
+  protected readonly innerColor = computed(() => colorForPercentage(this.clampedBottom(), 'var(--color-secondary)'));
 }

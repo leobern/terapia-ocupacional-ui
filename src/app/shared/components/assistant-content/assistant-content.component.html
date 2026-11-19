@@ -9,8 +9,9 @@
       <div class="assistant-content__actions">
         @for (action of screenActions.actions(); track action.id) {
           <app-button
-            kind="secondary"
+            kind="primary"
             appearance="outlined"
+            [fullWidth]="true"
             [label]="action.label"
             (click)="assistant.openAction(action)"
           />
@@ -33,62 +34,103 @@
   }
   @default {
     <div class="assistant-content">
-      <h2 class="assistant-content__title">Como eu posso te ajudar?</h2>
-      <p class="assistant-content__body">
-        Quer tirar uma dúvida, ou quer que eu faça um resumo de todas as suas
-        tarefas do dia? Eu posso fazer praticamente tudo, só me diz o que você
-        precisa?
-      </p>
-      <p class="assistant-content__hint">
-        Você pode conversar comigo via texto ou áudio.
-      </p>
+      <!-- Figma (seção 09): com uma conversa em andamento, a mensagem de boas-vindas sai. -->
+      @if (!assistant.conversation()) {
+        <h2 class="assistant-content__title">Como eu posso te ajudar?</h2>
+        <p class="assistant-content__body">
+          Quer tirar uma dúvida, ou quer que eu faça um resumo de todas as suas
+          tarefas do dia? Eu posso fazer praticamente tudo, só me diz o que você
+          precisa?
+        </p>
+        <p class="assistant-content__hint">
+          Você pode conversar comigo via texto ou áudio.
+        </p>
+      }
       @if (assistant.conversation(); as conversation) {
         <div class="assistant-content__conversation" aria-live="polite">
           <p class="assistant-content__question">{{ conversation.question }}</p>
+          <!-- Figma v2/ChatMessage: logo + "Assistente", resposta em Lora, itens em cards. -->
           <div
             class="assistant-content__answer"
-            [class.assistant-content__answer--error]="
+            [class.assistant-content__answer--failed]="
               conversation.status === 'failed'
             "
           >
+            <div
+              class="assistant-content__answer-head"
+              [attr.role]="conversation.status === 'loading' ? 'status' : null"
+            >
+              <app-icon-logo
+                class="assistant-content__answer-logo"
+                [state]="conversation.status === 'loading' ? 'anim' : 'default'"
+              />
+              <span>{{
+                conversation.status === 'loading'
+                  ? 'Buscando a resposta…'
+                  : 'Assistente'
+              }}</span>
+            </div>
             @if (conversation.status === 'loading') {
-              <p class="assistant-content__hint" role="status">
-                Buscando a resposta…
-              </p>
+              <div class="assistant-content__skeleton" aria-hidden="true">
+                <span></span>
+                <span></span>
+              </div>
             } @else if (conversation.answer; as answer) {
-              <p
-                class="assistant-content__body"
-                [attr.role]="conversation.status === 'failed' ? 'alert' : null"
-              >
-                {{ answer.summary }}
-              </p>
+              @if (conversation.status === 'failed') {
+                <div class="assistant-content__error" role="alert">
+                  <ph-icon name="warning-diamond" [size]="20" />
+                  <p>{{ answer.summary }}</p>
+                </div>
+                <div>
+                  <app-button
+                    kind="primary"
+                    appearance="outlined"
+                    size="sm"
+                    label="Tentar novamente"
+                    (click)="retry(conversation.question)"
+                  />
+                </div>
+              } @else {
+                <p class="assistant-content__body">{{ answer.summary }}</p>
+              }
               @if (answer.items?.length) {
                 <ul class="assistant-content__answer-items">
                   @for (item of answer.items; track $index) {
-                    <li class="assistant-content__body">{{ item }}</li>
+                    <li class="assistant-content__answer-item">
+                      <span class="assistant-content__answer-text">
+                        @if (itemTitle(item); as title) {
+                          <strong>{{ title }}</strong
+                          >:
+                        }
+                        {{ itemText(item) }}
+                      </span>
+                      @if (itemRoute(item); as route) {
+                        <app-icon-button
+                          kind="primary"
+                          appearance="icon"
+                          size="small"
+                          icon="caret-right"
+                          ariaLabel="Abrir"
+                          (click)="openRoute(route)"
+                        />
+                      }
+                    </li>
                   }
                 </ul>
+              }
+              @if (answer.link; as link) {
+                <button
+                  type="button"
+                  class="assistant-content__link"
+                  (click)="openRoute(link.route)"
+                >
+                  {{ link.label }}
+                </button>
               }
             }
           </div>
         </div>
       }
-      <ul
-        class="assistant-content__suggestions"
-        aria-label="Sugestões de pergunta"
-      >
-        @for (suggestion of suggestions; track suggestion) {
-          <li>
-            <button
-              type="button"
-              class="assistant-content__chip"
-              (click)="assistant.ask(suggestion)"
-            >
-              {{ suggestion }}
-            </button>
-          </li>
-        }
-      </ul>
     </div>
   }
 }

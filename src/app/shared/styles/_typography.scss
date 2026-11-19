@@ -1,0 +1,168 @@
+// =============================================================================
+// Tipografia v2 — um mixin por Text Style "v2/*" do Figma "Conductia - V1"
+// (fonte da verdade). Uso: `@include typography.title-md;`
+//
+// Cada mixin define família, peso, tamanho, altura de linha e espaçamento entre
+// letras, exatamente como o estilo do Figma. Não sobrescreva font-size ou
+// line-height depois de incluir um mixin: se a tela pede outro tamanho, ela deve
+// usar outro estilo da escala.
+// =============================================================================
+@use 'tokens';
+
+@mixin text-style(
+  $family,
+  $weight,
+  $size,
+  $line-height,
+  $tracking: normal,
+  $style: normal
+) {
+  font-family: $family;
+  font-size: $size;
+  font-style: $style;
+  font-weight: $weight;
+  letter-spacing: $tracking;
+  line-height: $line-height;
+}
+
+// Frase de destaque da tela ("Tarefas diárias do hospital").
+@mixin display-italic-lg {
+  @include text-style(
+    tokens.$font-family-base,
+    tokens.$font-weight-light,
+    tokens.$font-size-display-lg,
+    tokens.$line-height-44,
+    -0.01em,
+    italic
+  );
+}
+
+@mixin display-italic-md {
+  @include text-style(
+    tokens.$font-family-base,
+    tokens.$font-weight-light,
+    tokens.$font-size-display-md,
+    tokens.$line-height-36,
+    -0.01em,
+    italic
+  );
+}
+
+// Nome do usuário, título de tela.
+@mixin headline {
+  @include text-style(
+    tokens.$font-family-base,
+    tokens.$font-weight-bold,
+    tokens.$font-size-headline,
+    tokens.$line-height-32,
+    -0.01em
+  );
+}
+
+// Título de seção e de painel.
+@mixin title-lg {
+  @include text-style(
+    tokens.$font-family-base,
+    tokens.$font-weight-semibold,
+    tokens.$font-size-title-lg,
+    tokens.$line-height-28
+  );
+}
+
+// Título de card (nome do autor, número de pacientes).
+@mixin title-md {
+  @include text-style(
+    tokens.$font-family-base,
+    tokens.$font-weight-semibold,
+    tokens.$font-size-interactive,
+    tokens.$line-height-24
+  );
+}
+
+@mixin body-lg {
+  @include text-style(
+    tokens.$font-family-base,
+    tokens.$font-weight-roman,
+    tokens.$font-size-interactive,
+    tokens.$line-height-24
+  );
+}
+
+// Texto de card (descrição da notificação).
+@mixin body-md {
+  @include text-style(
+    tokens.$font-family-base,
+    tokens.$font-weight-roman,
+    tokens.$font-size-subsection,
+    tokens.$line-height-20
+  );
+}
+
+// Texto de botão lg/md.
+@mixin label-lg {
+  @include text-style(
+    tokens.$font-family-base,
+    tokens.$font-weight-semibold,
+    tokens.$font-size-interactive,
+    tokens.$line-height-24
+  );
+}
+
+// Tags, chips, itens de menu, botão sm.
+@mixin label-md {
+  @include text-style(
+    tokens.$font-family-base,
+    tokens.$font-weight-medium,
+    tokens.$font-size-subsection,
+    tokens.$line-height-20
+  );
+}
+
+// Rótulos curtos (barra inferior, badges).
+@mixin label-sm {
+  @include text-style(
+    tokens.$font-family-base,
+    tokens.$font-weight-medium,
+    tokens.$font-size-label,
+    tokens.$line-height-16
+  );
+}
+
+// Metadados: especialidade, horário, data.
+@mixin caption {
+  @include text-style(
+    tokens.$font-family-base,
+    tokens.$font-weight-roman,
+    tokens.$font-size-label,
+    tokens.$line-height-16
+  );
+}
+
+// Conteúdo das mensagens da IA (Lora). O chrome do painel continua em Inter.
+@mixin chat-title {
+  @include text-style(
+    tokens.$font-family-chat,
+    tokens.$font-weight-bold,
+    tokens.$font-size-headline,
+    tokens.$line-height-32,
+    -0.01em
+  );
+}
+
+@mixin chat-body {
+  @include text-style(
+    tokens.$font-family-chat,
+    tokens.$font-weight-roman,
+    tokens.$font-size-interactive,
+    tokens.$line-height-24
+  );
+}
+
+@mixin chat-hint {
+  @include text-style(
+    tokens.$font-family-chat,
+    tokens.$font-weight-roman,
+    tokens.$font-size-subsection,
+    tokens.$line-height-20
+  );
+}

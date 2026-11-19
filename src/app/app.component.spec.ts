@@ -141,6 +141,27 @@ describe('AppComponent', () => {
     expect(fixture.componentInstance.aiAssistant.isOpen()).toBe(false);
   });
 
+  it('marca Notificações como item ativo do menu em /notifications e nenhum em outras rotas', async () => {
+    const component = fixture.componentInstance as unknown as { activeNavItem(): string | null };
+
+    TestBed.inject(Router).resetConfig([
+      { children: [], path: 'home' },
+      { children: [], path: 'notifications' },
+      { children: [], path: 'login' },
+    ]);
+    await TestBed.inject(Router).navigateByUrl('/home');
+
+    expect(component.activeNavItem()).toBe('home');
+
+    await TestBed.inject(Router).navigateByUrl('/notifications');
+
+    expect(component.activeNavItem()).toBe('notificacoes');
+
+    await TestBed.inject(Router).navigateByUrl('/login');
+
+    expect(component.activeNavItem()).toBeNull();
+  });
+
   describe('conversa limpa a cada abertura (RN-03)', () => {
     function reopen(): void {
       fixture.componentInstance.aiAssistant.closePanel();
@@ -237,6 +258,12 @@ describe('AppComponent', () => {
   it('onAiShortcut and onAiSend do not throw (sem serviço de conversa com a IA ainda)', () => {
     expect(() => fixture.componentInstance.onAiShortcut({ id: 'x', label: 'X' })).not.toThrow();
     expect(() => fixture.componentInstance.onAiSend('mensagem')).not.toThrow();
+  });
+
+  it('onAiShortcut sends the chip label as the question (Figma: chips do painel)', () => {
+    fixture.componentInstance.onAiShortcut({ id: 'pendencias', label: 'Quais são minhas pendências de hoje?' });
+
+    expect(fixture.componentInstance.aiAssistant.lastQuestion()).toBe('Quais são minhas pendências de hoje?');
   });
 
   it('onAiSend forwards the typed question to the assistant', () => {

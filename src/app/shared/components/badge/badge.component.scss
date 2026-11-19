@@ -1,4 +1,5 @@
 @use '../../styles/tokens';
+@use '../../styles/typography';
 
 // O host É a caixa visual do badge (ver nota em badge.component.ts) — nenhum
 // `display: contents` aqui, ao contrário de Button/IconButton: o consumidor posiciona
@@ -20,24 +21,20 @@
 // usuário (spec.md § Fidelidade ao Design System, desvio 1). Não existe prop de cor
 // para este type; não deve existir binding de cor aqui.
 :host(.badge--numeral) {
-  min-width: tokens.$space-24;
-  height: tokens.$space-24;
-  padding-inline: tokens.$space-8;
-  background: tokens.$color-secondary;
+  // Figma v2/Badge Type=numeral: 20px de altura, mín. 20 de largura, comm-alert.
+  min-width: 20px;
+  height: 20px;
+  padding-inline: 6px;
+  background: tokens.c(comm-alert);
 }
 
 .badge__label {
-  color: tokens.$color-content-6;
-  font-family: tokens.$font-family-interactive;
-  font-weight: tokens.$font-weight-bold;
-  font-size: tokens.$font-size-label;
-  line-height: normal;
+  color: tokens.c(content-6);
   white-space: nowrap;
+
+  @include typography.label-sm;
 }
 
-// --- type="icon" --------------------------------------------------------------------
-// Fundo vem de `backgroundColor` (bindado via [style.background] no host, badge.component.ts)
-// — nenhuma cor própria aqui, "qualquer cor" é responsabilidade do consumidor (research.md §3).
 :host(.badge--icon) {
   width: tokens.$space-24;
   height: tokens.$space-24;

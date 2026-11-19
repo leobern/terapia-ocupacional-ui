@@ -224,7 +224,7 @@ describe('ButtonComponent', () => {
 
     expect(cs.outlineWidth).toBe('2px');
     expect(cs.outlineStyle).toBe('solid');
-    expect(cs.outlineColor).toBe('rgb(255, 51, 187)'); // comm-focus #FF33BB
+    expect(cs.outlineColor).toBe('rgb(222, 67, 220)'); // comm-focus #DE43DC
     expect(cs.outlineOffset).toBe('4px');
   });
 

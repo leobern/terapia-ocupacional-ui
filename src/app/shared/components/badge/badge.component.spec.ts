@@ -75,7 +75,7 @@ describe('BadgeComponent', () => {
 
     const cs = getComputedStyle(badgeEl());
 
-    expect(cs.backgroundColor).toBe('rgb(0, 170, 255)'); // --color-secondary #00AAFF
+    expect(cs.backgroundColor).toBe('rgb(173, 0, 25)'); // v2: --color-comm-alert #AD0019
     expect(cs.borderRadius).toBe('400px'); // --radius-pill
     const label = badgeEl().querySelector('.badge__label') as HTMLElement;
 

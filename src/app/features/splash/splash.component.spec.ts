@@ -129,7 +129,7 @@ describe('SplashComponent', () => {
     await tick(0);
     fixture.detectChanges();
 
-    expect(text()).toContain('Sem conexão. Verifique sua internet.');
+    expect(text()).toContain('Sem conexão');
     expect(text()).toContain('Tentar novamente');
     expect(navigate).not.toHaveBeenCalled();
     await tick(SPLASH_TIMEOUT_MS);
@@ -146,7 +146,7 @@ describe('SplashComponent', () => {
     await tick(1);
     fixture.detectChanges();
 
-    expect(text()).toContain('Sem conexão. Verifique sua internet.');
+    expect(text()).toContain('Sem conexão');
   });
 
   it('C8: retry returns to INITIALIZING, reruns init and restarts timers', async () => {

@@ -12,92 +12,151 @@
 // pelo usuário, 2026-07-26): os blobs e o SVG são filhos diretos do host.
 // `aria-hidden="true"` migrou para o host via metadata do componente (`host:`
 // no `@Component`), já que não há mais um elemento de template para carregá-lo.
+@use '../../styles/breakpoints';
+
 :host {
-  position: fixed;
-  inset: 0;
-  // Zero, não negativo: um z-index negativo pinta ATRÁS do canvas do próprio
-  // `body` (o "background do elemento raiz" vira o fundo da viewport inteira,
-  // por cima de qualquer descendente com z-index < 0 — regra do CSS 2.1 §
-  // E.2). Como o `body` agora sempre pinta `surface-2` (ver styles.scss), um
-  // z-index negativo aqui deixava o mesh permanentemente invisível. Em 0, ele
-  // pinta acima desse canvas e abaixo de todo conteúdo normal (que vem depois
-  // dele no DOM, ver app.component.html).
-  z-index: 0;
-  overflow: hidden;
+  // O host não gera caixa nem contexto de empilhamento: as duas camadas abaixo são
+  // `position: fixed` e participam direto do empilhamento da página. Assim o
+  // `mix-blend-mode` delas enxerga o fundo do `body` (um host `fixed` isolaria o grupo e
+  // os círculos nunca se misturariam com a superfície — foi o que quebrou o claro).
+  display: contents;
   pointer-events: none;
 }
 
-// -----------------------------------------------------------------------------
-// Blobs de cor (canto superior-esquerdo) — SEMPRE circulares (largura ==
-// altura), variando de tamanho conforme a tela via `width: 100%` + `max-width`
-// (o único valor que muda por blob) + `aspect-ratio: 1/1` (deriva a altura da
-// largura, nunca o contrário). Corrigido em 2026-07-26 (achado do
-// `/speckit-converge`, T013): a versão anterior usava `top:0; bottom:0`
-// (2 insets opostos), o que força uma altura definida igual à altura cheia do
-// host e ANULA o `aspect-ratio` sempre que essa altura excede o `max-width` —
-// produzindo uma cápsula alongada em vez de um círculo. Ancoragem por um único
-// inset por eixo (`top`/`left`, nunca `top`+`bottom` juntos), mesmo princípio
-// já usado no mesh estático abaixo (`bottom`+`right`, nunca 2 insets opostos).
-// Sem animação (removida pelo usuário, 2026-07-26).
-// -----------------------------------------------------------------------------
-// Breakpoint de desktop replicado aqui como valor literal (não via
-// `@use '../../styles/breakpoints'`) porque esse arquivo pertence a outra
-// sessão/trabalho ainda não commitado neste branch no momento em que este
-// componente foi escrito — evita depender de um arquivo que pode não existir
-// no histórico do git ainda. Migrar para `breakpoints.md` (1200px, mesmo
-// valor) quando esse arquivo estiver commitado e disponível para import.
-$background-mesh-desktop-breakpoint: 1200px;
+// Camada dos círculos. Figma ("Conductia - V1", componente `background`):
+//   claro  → círculos com modo "color" contra a superfície (azul-marinho vira um azul
+//            bem claro; o ciano, um ciano claro);
+//   escuro → o contêiner inteiro com 20% de opacidade e "linear dodge" (CSS:
+//            plus-lighter), com os círculos em cor pura dentro do grupo.
+// Zero, não negativo: um z-index negativo pinta ATRÁS do canvas do próprio `body`
+// (CSS 2.1 § E.2) e deixaria o fundo invisível. Em 0, ele pinta acima do canvas e abaixo
+// de todo conteúdo normal (que vem depois dele no DOM, ver app.component.html).
+.background-mesh__blobs {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+  mix-blend-mode: color;
+}
 
+// -----------------------------------------------------------------------------
+// Círculos de cor — SEMPRE circulares, com tamanho e posição fixos em px (sem
+// animação, removida em 2026-07-26).
+// Geometria do Figma (componente `background`, instância 402×874 no mobile). Os círculos
+// têm tamanho e posição fixos em px — não escalam com a tela. Em ≥1200px (desktop) o
+// Figma usa a versão ampliada (692/692/297). Blur 200 do Figma = blur(100px) em CSS.
+// A ordem no DOM (3 → 2 → 1) é a ordem de empilhamento do Figma, de baixo para cima.
 .background-mesh__blob {
   position: absolute;
-  top: 0;
-  width: 100%;
-  aspect-ratio: 1 / 1;
   border-radius: 50%;
-  filter: blur(160px);
-  mix-blend-mode: color;
+  filter: blur(100px);
 
-  // Ajuste de posicionamento mobile × desktop (2026-07-26) — valores
-  // ajustados manualmente pelo usuário via DevTools, olhando os dois
-  // dispositivos separadamente. Continua valendo a regra de FR-001/FR-006:
-  // círculo sempre perfeito, só `max-width` (e aqui também `left`/`top`)
-  // mudam por breakpoint — nunca `width`/`height` explícitos.
-  &--1 {
-    top: -40px;
-    left: -60px;
-    max-width: 320px;
+  &--3 {
+    top: 51px;
+    left: 16px;
+    width: 560px;
+    height: 560px;
 
-    @media (min-width: $background-mesh-desktop-breakpoint) {
-      top: 0;
-      left: 0;
-      max-width: 560px;
+    @include breakpoints.md {
+      top: 63px;
+      width: 692px;
+      height: 692px;
+
+      // Figma (Notificações, desktop): sem o círculo azul-marinho.
+      :host(.background-mesh--without-third-blob-desktop) & {
+        display: none;
+      }
     }
   }
 
   &--2 {
-    left: 200px;
-    max-width: 360px;
+    top: -259px;
+    left: -52px;
+    width: 560px;
+    height: 560px;
 
-    @media (min-width: $background-mesh-desktop-breakpoint) {
-      // Offset de `left` removido no desktop (não apenas trocado de valor) —
-      // ajuste do usuário; `left: 0` deixa o comportamento determinístico
-      // (mesma âncora do blob-1) em vez de depender do fallback `auto`.
-      left: 0;
-      max-width: 800px;
+    @include breakpoints.md {
+      top: -320px;
+      width: 692px;
+      height: 692px;
+    }
+  }
+
+  &--1 {
+    top: -128px;
+    left: -133px;
+    width: 240px;
+    height: 240px;
+
+    @include breakpoints.md {
+      top: -158px;
+      width: 297px;
+      height: 297px;
     }
   }
 }
 
-// -----------------------------------------------------------------------------
-// Mesh estático (canto inferior-direito) — sem animação. Ajustado pelo
-// usuário via DevTools (2026-07-26): ancorado direto no canto (`bottom:0;
-// right:0`, sem `top` nem `display:block`), tamanho limitado por
-// `max-width` em vez do `top`/`bottom`% original do Figma (research.md §5).
-// -----------------------------------------------------------------------------
+.background-mesh__gradient {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+// Paradas ligadas aos tokens fundo-gradiente/1..3 (Light v2 / Dark v2). No escuro a segunda
+// parada fica em 45% e no claro em 23,8% (offset definido no template, por tema).
+.background-mesh__stop-1 {
+  stop-color: var(--color-bg-gradient-1, #dcfdf3);
+}
+
+.background-mesh__stop-2 {
+  stop-color: var(--color-bg-gradient-2, #dbfcff);
+}
+
+.background-mesh__stop-3 {
+  stop-color: var(--color-bg-gradient-3, #f0f3f5);
+}
+
 .background-mesh__static {
-  position: absolute;
-  bottom: 0;
-  right: 0;
-  aspect-ratio: 620 / 620;
-  max-width: 940px;
+  position: fixed;
+  z-index: 0;
+  // Figma (componente `background`, instância `static`): mobile 620×620 em (0, 459) da tela;
+  // desktop 766×766 em (892, 567) — 72px do trilho + 820 dentro do conteúdo. Modo multiply;
+  // opacidade 10% (mobile) / 30% (desktop) no claro e 100% no escuro.
+  top: 459px;
+  left: 0;
+  width: 620px;
+  height: 620px;
+  pointer-events: none;
+  mix-blend-mode: multiply;
+  opacity: 0.1;
+
+  @include breakpoints.md {
+    top: 567px;
+    left: 892px;
+    width: 766px;
+    height: 766px;
+    opacity: 0.3;
+  }
+}
+
+// Figma (Home Dark v2, nó 4638:22438): no tema escuro o fundo inteiro fica com 20% de
+// opacidade e mistura "linear dodge" (CSS: plus-lighter), clareando de leve a
+// superfície escura em vez de manchá-la. Vale para todas as telas que usam o fundo.
+
+// Figma (Home Dark v2, nó 4638:22438/22439): no escuro o contêiner fica com 20% de opacidade
+// e mistura "linear dodge" (CSS: plus-lighter), clareando de leve a superfície escura.
+// Vale para todas as telas que usam o fundo.
+:host-context([data-theme='dark']) {
+  .background-mesh__blobs {
+    mix-blend-mode: plus-lighter;
+    opacity: 0.2;
+  }
+
+  .background-mesh__static {
+    opacity: 1;
+  }
 }

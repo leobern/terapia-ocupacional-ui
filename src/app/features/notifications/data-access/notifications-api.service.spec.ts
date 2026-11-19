@@ -42,4 +42,16 @@ describe('NotificationsApiService', () => {
     expect(req.request.body).toEqual({ text: 'feito' });
     req.flush({});
   });
+
+  it('resolve: POST /v1/notifications/:id/resolve', () => {
+    let done = false;
+
+    api.resolve(9).subscribe(() => (done = true));
+    const req = http.expectOne(r => r.url.endsWith('/v1/notifications/9/resolve'));
+
+    expect(req.request.method).toBe('POST');
+    req.flush(null);
+
+    expect(done).toBeTrue();
+  });
 });

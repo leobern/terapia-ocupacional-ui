@@ -1,6 +1,11 @@
 import { Notification } from '../notifications.models';
 import { NotificationsActions } from './notifications.actions';
-import { initialNotificationsState, notificationsFeature, selectHasMore } from './notifications.reducer';
+import {
+  initialNotificationsState,
+  notificationsFeature,
+  selectHasMore,
+  selectTotalCount,
+} from './notifications.reducer';
 
 const { reducer } = notificationsFeature;
 
@@ -292,5 +297,31 @@ describe('notificationsFeature reducer', () => {
     expect(state.status).toBe('loading-initial');
     expect(state.errorMessage).toBeNull();
     expect(state.hospitalId).toBe(1);
+  });
+
+  it('resolveSuccess move a notificação de Pendentes para Resolvidas e ajusta as contagens', () => {
+    const loaded = reducer(
+      initialNotificationsState,
+      NotificationsActions.loadPendingPageSuccess({
+        page: { items: [notification(1), notification(2)], nextCursor: null, totalCount: 2 },
+      }),
+    );
+
+    const state = reducer(loaded, NotificationsActions.resolveSuccess({ notificationId: 1 }));
+
+    expect(state.pendingItems.map(n => n.id)).toEqual([2]);
+    expect(state.resolvedItems.map(n => n.id)).toEqual([1]);
+    expect(state.pendingTotalCount).toBe(1);
+    expect(state.resolvedTotalCount).toBe(1);
+  });
+
+  it('resolveSuccess de uma notificação desconhecida não altera o estado', () => {
+    const state = reducer(initialNotificationsState, NotificationsActions.resolveSuccess({ notificationId: 99 }));
+
+    expect(state).toBe(initialNotificationsState);
+  });
+
+  it('selectTotalCount soma pendentes e resolvidas', () => {
+    expect(selectTotalCount.projector(3, 4)).toBe(7);
   });
 });

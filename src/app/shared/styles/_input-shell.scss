@@ -26,8 +26,8 @@
 /// Aplicar no container do campo (o elemento que tem a borda visível).
 @mixin chrome {
   align-items: flex-start;
-  background: tokens.$color-surface;
-  border: 1px solid tokens.$color-border-2;
+  background: tokens.c(surface);
+  border: 1px solid tokens.c(border-2); // v2: borda de campo com 3:1
   border-radius: tokens.$radius-sm;
   box-sizing: border-box;
   display: flex;
@@ -43,8 +43,8 @@
   // cor mais box-shadow, nunca de espessura — evita layout shift
   // (DS-component-input-select FR-010/SC-008).
   &:focus-within {
-    border-color: tokens.$color-content-1;
-    box-shadow: 0 0 0 2px tokens.$color-input-focus-ring;
+    border-color: tokens.c(primary);
+    box-shadow: 0 0 0 1px tokens.c(primary); // v2/FormField State=focus: borda primary de 2px
   }
 
   // Anel rosa sistêmico, só em navegação por teclado. Coexiste com o box-shadow
@@ -53,7 +53,7 @@
   // por `KeyboardFocusService`, não `:focus-visible` puro: o heurístico nativo
   // casaria também em clique de mouse para `<input>`/`<textarea>`.
   &.keyboard-focus:focus-within {
-    outline: tokens.$focus-ring-width solid tokens.$color-focus-ring;
+    outline: tokens.$focus-ring-width solid tokens.c(focus-ring);
     outline-offset: tokens.$focus-ring-offset;
   }
 }
@@ -68,17 +68,17 @@
 /// `disabled`, NENHUMA cor de estado normal pode vazar — nem parcialmente. O
 /// consumidor MUST aplicar `disabled-content` em todo texto/ícone junto com isto.
 @mixin disabled-chrome {
-  background: tokens.$color-state-disabled;
-  border-color: tokens.$color-state-disabled;
+  background: tokens.c(state-disabled);
+  border-color: tokens.c(state-disabled);
   cursor: not-allowed;
 }
 
 /// Cor única de todo conteúdo (texto, placeholder, ícones) no estado desabilitado.
 @mixin disabled-content {
-  color: tokens.$color-state-disabled-2;
+  color: tokens.c(state-disabled-2);
 
   &::placeholder {
-    color: tokens.$color-state-disabled-2;
+    color: tokens.c(state-disabled-2);
   }
 }
 
@@ -94,15 +94,16 @@
 
 /// Tipografia do campo no estado vazio/placeholder (Figma "Interactive/Default").
 @mixin field-typography {
-  color: tokens.$color-content-5;
-  font-family: tokens.$font-family-interactive;
+  // v2: Body/Lg (16px — também evita o zoom automático do iOS ao focar).
+  color: tokens.c(content-1);
+  font-family: tokens.$font-family-base;
   font-size: tokens.$font-size-interactive;
-  font-weight: tokens.$font-weight-medium;
-  line-height: normal;
+  font-weight: tokens.$font-weight-roman;
+  line-height: tokens.$line-height-24;
 }
 
 /// Tipografia do campo preenchido (Figma "Interactive/Default - Bold").
 @mixin field-filled {
-  color: tokens.$color-content-1;
-  font-weight: tokens.$font-weight-bold;
+  color: tokens.c(content-1);
+  font-weight: tokens.$font-weight-roman;
 }

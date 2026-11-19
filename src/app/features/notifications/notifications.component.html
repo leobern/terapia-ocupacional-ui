@@ -10,10 +10,19 @@
         ariaLabel="Voltar"
         (click)="onClose()"
       />
-      <span class="notifications__header-icon">
-        <ph-icon name="bell" [size]="32" />
-      </span>
-      <h1 class="notifications__title">{{ title() }}</h1>
+      <!-- Figma v2/PageHeader: título Headline + contexto (hospital · data). -->
+      <div class="notifications__heading">
+        <div class="notifications__title-row">
+          <ph-icon class="notifications__title-icon" name="bell" [size]="24" />
+          <h1 class="notifications__title">{{ title() }}</h1>
+        </div>
+        <p class="notifications__subtitle">
+          @if (hospitalId(); as id) {
+            {{ hospitalName() || 'Hospital ' + id }} ·
+          }
+          {{ todayLabel() }}
+        </p>
+      </div>
       <!-- Ações da tela (Figma 4506:8583): só no desktop; no mobile o mesmo destino é o botão da
            barra inferior. -->
       <span class="notifications__shortcuts">
@@ -27,17 +36,6 @@
         />
       </span>
     </header>
-
-    <div class="notifications__local">
-      @if (hospitalId(); as id) {
-        <app-tag
-          type="default"
-          iconLeftName="map-pin"
-          [label]="hospitalName() || 'Hospital ' + id"
-        />
-      }
-      <p class="notifications__date">{{ todayLabel() }}</p>
-    </div>
 
     @switch (status()) {
       @case ('error') {
@@ -65,44 +63,34 @@
           (touchend)="onTouchEnd($event)"
         >
           @if (isEmpty()) {
-            <p class="notifications__empty">Nenhuma notificação por aqui.</p>
+            <!-- Figma (seção 07, tela 6 · Vazio) -->
+            <div class="notifications__empty" role="status">
+              <ph-icon name="bell" [size]="48" />
+              <p class="notifications__empty-title">Tudo em dia por aqui</p>
+              <p class="notifications__empty-text">
+                Quando alguém da equipe mencionar você ou um paciente seu, a
+                notificação aparece aqui.
+              </p>
+            </div>
           }
 
-          @for (notification of pendingItems(); track notification.id) {
-            <app-card-notify
-              actionAriaLabel="Responder"
-              [type]="cardType(notification.id)"
-              [authorName]="notification.author.name"
-              [authorSpecialty]="notification.author.specialty"
-              [authorPhotoUrl]="notification.author.photoUrl"
-              [patientName]="notification.patient?.name ?? ''"
-              [description]="notification.description"
-              [time]="formatTime(notification.createdAt)"
-              [replies]="toReplies(notification)"
-              [draftText]="draftText()"
-              [draftAuthorName]="professionalName"
-              [draftAuthorSpecialty]="professionalSpecialty"
-              (cardClick)="onCardClick(notification.patient?.id)"
-              (answerClick)="onAnswerClick(notification.id)"
-              (viewRepliesClick)="onViewRepliesClick(notification.id)"
-              (collapseClick)="onCollapseClick(notification.id)"
-            />
-          }
-
-          @if (resolvedItems().length > 0) {
-            <app-notification-section-title
-              class="notifications__section-title"
-              label="Resolvidas"
-            />
-
-            @for (notification of resolvedItems(); track notification.id) {
+          <!-- Figma (seção 07): no desktop, Pendentes e Resolvidas lado a lado. -->
+          <section class="notifications__column" aria-label="Pendentes">
+            @if (pendingItems().length > 0) {
+              <app-notification-section-title
+                class="notifications__section-title"
+                label="Pendentes"
+                [count]="pendingCount()"
+              />
+            }
+            @for (notification of pendingItems(); track notification.id) {
               <app-card-notify
                 actionAriaLabel="Responder"
-                [resolved]="true"
                 [type]="cardType(notification.id)"
                 [authorName]="notification.author.name"
                 [authorSpecialty]="notification.author.specialty"
                 [authorPhotoUrl]="notification.author.photoUrl"
+                [unread]="!notification.read"
                 [patientName]="notification.patient?.name ?? ''"
                 [description]="notification.description"
                 [time]="formatTime(notification.createdAt)"
@@ -114,11 +102,44 @@
                 (answerClick)="onAnswerClick(notification.id)"
                 (viewRepliesClick)="onViewRepliesClick(notification.id)"
                 (collapseClick)="onCollapseClick(notification.id)"
+                (resolveClick)="onResolveClick(notification.id)"
               />
             }
-          }
+            <div #scrollSentinel class="notifications__scroll-sentinel"></div>
+          </section>
 
-          <div #scrollSentinel class="notifications__scroll-sentinel"></div>
+          <section class="notifications__column" aria-label="Resolvidas">
+            @if (resolvedItems().length > 0) {
+              <app-notification-section-title
+                class="notifications__section-title"
+                label="Resolvidas"
+                [count]="resolvedCount()"
+              />
+
+              @for (notification of resolvedItems(); track notification.id) {
+                <app-card-notify
+                  actionAriaLabel="Responder"
+                  [resolved]="true"
+                  [type]="cardType(notification.id)"
+                  [authorName]="notification.author.name"
+                  [authorSpecialty]="notification.author.specialty"
+                  [authorPhotoUrl]="notification.author.photoUrl"
+                  [patientName]="notification.patient?.name ?? ''"
+                  [description]="notification.description"
+                  [time]="formatTime(notification.createdAt)"
+                  [replies]="toReplies(notification)"
+                  [draftText]="draftText()"
+                  [draftAuthorName]="professionalName"
+                  [draftAuthorSpecialty]="professionalSpecialty"
+                  (cardClick)="onCardClick(notification.patient?.id)"
+                  (answerClick)="onAnswerClick(notification.id)"
+                  (viewRepliesClick)="onViewRepliesClick(notification.id)"
+                  (collapseClick)="onCollapseClick(notification.id)"
+                />
+              }
+            }
+            <div #scrollSentinel class="notifications__scroll-sentinel"></div>
+          </section>
 
           @if (
             status() === 'loading-more-pending' ||
@@ -154,6 +175,16 @@
     (send)="onSendDraft()"
   />
 </app-bottom-sheet>
+
+<app-confirm-dialog
+  title="Resolver notificação?"
+  message="Deseja realmente colocar esta notificação como resolvida?"
+  confirmLabel="Sim"
+  cancelLabel="Não"
+  [open]="resolveConfirmId() !== null"
+  (confirmed)="onConfirmResolve()"
+  (cancelled)="onCancelResolve()"
+/>
 
 <app-confirm-dialog
   [open]="discardConfirmPending()"

@@ -28,6 +28,12 @@ export class ProvisionalNotificationsApiService extends NotificationsApiService 
   override createReply(notificationId: number, text: string): Observable<NotificationReply> {
     return of(this.repository.addReply(notificationId, text));
   }
+
+  override resolve(notificationId: number): Observable<void> {
+    this.repository.resolve(notificationId);
+
+    return of(undefined);
+  }
 }
 
 /** Provisório: um único hospital, o mesmo da Home (`MockLinkedHospitalsReader`). */

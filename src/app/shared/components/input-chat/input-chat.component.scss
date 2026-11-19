@@ -25,6 +25,7 @@
 .input-chat__shell {
   @include input-shell.chrome;
 
+  border-radius: tokens.$radius-pill; // Figma v2/InputChat
   flex: 1 0 0;
   min-width: 0;
 
@@ -87,8 +88,7 @@
   word-break: break-word;
 
   &::placeholder {
-    color: tokens.$color-content-5;
-    font-weight: tokens.$font-weight-medium;
+    color: tokens.c(content-4); // v2: placeholder com contraste de texto
   }
 
   &--filled {
@@ -110,6 +110,7 @@
 .input-chat__audio {
   @include input-shell.chrome;
 
+  border-radius: tokens.$radius-pill;
   align-items: center;
   flex: 1 0 0;
   min-width: 0;

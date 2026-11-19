@@ -1,4 +1,5 @@
 @use '../../styles/tokens';
+@use '../../styles/typography';
 
 // O host É a caixa visual do accordion (mesmo padrão de app-avatar/app-badge, sem
 // `display: contents`) — não um controle interativo próprio; quem é focável/clicável é o
@@ -9,13 +10,14 @@
 // gap do flex do host — um `gap` do host somaria espaço mesmo com os dois `.accordion__slot`
 // colapsados a 0px (eles continuam no DOM, só sem altura), quebrando o layout justo de
 // `collapsed-empty` (nó 4499:12360, sem nenhum espaço abaixo do header).
+// Figma v2/FormField: card de 24px de raio, borda border, padding 16.
 :host {
   display: flex;
   flex-direction: column;
   padding: tokens.$space-16;
-  border: 1px solid tokens.$color-border-2;
-  border-radius: tokens.$radius-sm;
-  background: tokens.$color-surface;
+  border: 1px solid tokens.c(border);
+  border-radius: tokens.$radius-md;
+  background: tokens.c(surface);
 }
 
 // `all: unset` reseta a UA stylesheet do <button> (borda, fundo, padding, fonte) antes de
@@ -39,27 +41,26 @@
 }
 
 .accordion__title {
-  font-family: tokens.$font-family-interactive;
-  font-size: tokens.$font-size-interactive;
-  font-weight: tokens.$font-weight-semibold;
-  color: tokens.$color-content-1;
+  color: tokens.c(content-1);
   word-break: break-word;
+
+  @include typography.label-lg;
 }
 
 // state="collapsed-filled": o título vira um rótulo pequeno (14px regular) acima do valor
 // projetado — MAS continua em content-1 (escuro), diferente do placeholder cinza de
 // collapsed-empty. Confirmado nos nós 4500:12730/4500:12737/4500:12744 do Figma.
 .accordion__title--label {
-  font-size: tokens.$font-size-subsection;
-  font-weight: tokens.$font-weight-roman;
+  color: tokens.c(content-4);
+
+  @include typography.label-md;
 }
 
 .accordion__placeholder {
-  font-family: tokens.$font-family-interactive;
-  font-size: tokens.$font-size-subsection;
-  font-weight: tokens.$font-weight-roman;
-  color: tokens.$color-content-4;
+  color: tokens.c(content-4);
   word-break: break-word;
+
+  @include typography.caption;
 }
 
 .accordion__icon {
@@ -68,8 +69,8 @@
   align-items: center;
   justify-content: center;
   padding: tokens.$space-8;
-  border-radius: tokens.$radius-sm;
-  color: tokens.$color-content-1;
+  border-radius: tokens.$radius-pill;
+  color: tokens.c(content-1);
   transition: transform 200ms ease-in-out;
 }
 

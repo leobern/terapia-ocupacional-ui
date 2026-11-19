@@ -6,7 +6,7 @@
 
 .skeleton {
   box-sizing: border-box;
-  background: tokens.$color-surface-glass-2;
+  background: tokens.c(surface-glass-2);
   animation: skeleton-pulse 1.2s ease-in-out infinite;
 
   // Mesmas dimensões e cantos de input-select (48px, radius-sm).

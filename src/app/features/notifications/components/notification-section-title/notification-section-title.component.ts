@@ -13,4 +13,5 @@ import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 })
 export class NotificationSectionTitleComponent {
   readonly label = input.required<string>();
+  readonly count = input<number | null>(null);
 }

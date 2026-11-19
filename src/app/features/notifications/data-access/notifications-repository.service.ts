@@ -180,4 +180,12 @@ export class NotificationsRepository {
 
     return reply;
   }
+
+  /** Move a notificação para "resolvida" (botão ✓ do card). */
+  resolve(notificationId: number): void {
+    this.items = this.items.map(item =>
+      item.notification.id === notificationId ? { ...item, status: 'resolved' } : item,
+    );
+    this.versionSignal.update(version => version + 1);
+  }
 }

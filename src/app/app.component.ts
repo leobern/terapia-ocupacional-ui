@@ -15,7 +15,7 @@ import {
 } from './shared/components/bottom-sheet/bottom-sheet.component';
 import { DrawerComponent, type DrawerSnap } from './shared/components/drawer/drawer.component';
 import { InputChatComponent, type InputChatMode } from './shared/components/input-chat/input-chat.component';
-import { NavMenuComponent } from './shared/components/nav-menu/nav-menu.component';
+import { NavMenuComponent, type NavMenuItemKey } from './shared/components/nav-menu/nav-menu.component';
 import { AiAssistantService } from './shared/services/ai-assistant.service';
 import { ViewportBreakpointService } from './shared/services/viewport-breakpoint.service';
 
@@ -58,11 +58,21 @@ export class AppComponent {
   protected readonly viewportBreakpoint = inject(ViewportBreakpointService);
   /** Rotas com `data.hideShell` (ex.: splash) ocultam a navegação e o assistente. */
   protected readonly showShell: Signal<boolean>;
+
+  /** Item ativo do menu (Figma v2/NavRail: Home destacada na Home, Notificações em Notificações). */
+  protected readonly activeNavItem = computed<NavMenuItemKey | null>(() => {
+    const url = this.currentUrl() ?? '';
+
+    if (url.startsWith('/home')) {
+      return 'home';
+    }
+
+    return url.startsWith('/notifications') ? 'notificacoes' : null;
+  });
+
+  // Home usa o gradiente de fundo do Figma; as demais telas seguem com os círculos por enquanto.
+  protected readonly backgroundVariant = computed(() => (this.currentUrl().startsWith('/home') ? 'gradient' : 'blobs'));
   protected readonly isNotificationsRoute = computed(() => this.currentUrl().startsWith('/notifications'));
-  // '#D3FFE9' é o default do próprio app-background-mesh — repetido aqui só
-  // porque o binding precisa de um valor concreto nas duas pontas do ternário.
-  protected readonly backgroundColor1 = computed(() => (this.isNotificationsRoute() ? '#a6fbfb' : '#D3FFE9'));
-  protected readonly backgroundShowColor2 = computed(() => !this.isNotificationsRoute());
   protected readonly aiSheetSnap = signal<BottomSheetSnap>('default');
   protected readonly aiDrawerSnap = signal<DrawerSnap>('default');
   protected readonly aiChatValue = signal('');
@@ -72,8 +82,12 @@ export class AppComponent {
   /** Ação aberta (formulário ou aviso): o cabeçalho do painel mostra título + voltar no lugar da logo. */
   protected readonly showAssistantHeading = computed(() => ['form', 'unavailable'].includes(this.aiAssistant.view()));
 
+  // Figma (seção 09): os chips ficam junto do campo de mensagem e somem quando a
+  // resposta já foi exibida (tela A2); continuam durante a busca e no aviso de falha.
   protected readonly shortcuts = computed<readonly ChatShortcut[]>(() =>
-    this.aiAssistant.view() === 'chat' ? this.aiShortcuts : [],
+    this.aiAssistant.view() === 'chat' && this.aiAssistant.conversation()?.status !== 'answered'
+      ? this.aiShortcuts
+      : [],
   );
 
   protected readonly aiShortcuts: readonly ChatShortcut[] = [
@@ -126,9 +140,9 @@ export class AppComponent {
   }
 
   // public: exercitados diretamente pelo spec (ver `menuOpen`/`aiAssistant` acima).
-  onAiShortcut(_: ChatShortcut): void {
-    // Conduzir a conversa com a IA fica para quando o serviço de chat existir
-    // — por enquanto só fecha o atalho selecionado, sem enviar nada de verdade.
+  /** Chip de sugestão: envia a pergunta ao assistente (mesmo fluxo de digitar). */
+  onAiShortcut(shortcut: ChatShortcut): void {
+    this.aiAssistant.ask(shortcut.label);
   }
 
   onAiSend(question: string): void {

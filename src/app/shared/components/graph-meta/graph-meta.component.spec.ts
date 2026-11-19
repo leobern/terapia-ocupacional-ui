@@ -73,8 +73,8 @@ describe('GraphMetaComponent', () => {
       await createWith({ topPercentage: 20, bottomPercentage: 49 });
       const [outer, inner] = progressCircles();
 
-      expect(outer.getAttribute('stroke')).toBe('var(--color-comm-warning)');
-      expect(inner.getAttribute('stroke')).toBe('var(--color-comm-warning)');
+      expect(outer.getAttribute('stroke')).toBe('var(--color-comm-warning-strong)');
+      expect(inner.getAttribute('stroke')).toBe('var(--color-comm-warning-strong)');
     });
 
     it('50–100% usa verde no arco de topo e azul no arco de base', async () => {
@@ -82,7 +82,7 @@ describe('GraphMetaComponent', () => {
       const [outer, inner] = progressCircles();
 
       expect(outer.getAttribute('stroke')).toBe('var(--color-comm-success)');
-      expect(inner.getAttribute('stroke')).toBe('var(--color-content-2)');
+      expect(inner.getAttribute('stroke')).toBe('var(--color-secondary)');
     });
 
     it('cada arco resolve sua cor de forma totalmente independente do outro', async () => {
@@ -90,7 +90,7 @@ describe('GraphMetaComponent', () => {
       const [outer, inner] = progressCircles();
 
       expect(outer.getAttribute('stroke')).toBe('var(--color-comm-success)');
-      expect(inner.getAttribute('stroke')).toBe('var(--color-comm-warning)');
+      expect(inner.getAttribute('stroke')).toBe('var(--color-comm-warning-strong)');
     });
 
     // Achado de /speckit-converge (T013): valor decimal no intervalo aberto
@@ -100,8 +100,8 @@ describe('GraphMetaComponent', () => {
       await createWith({ topPercentage: 49.5, bottomPercentage: 49.99 });
       const [outer, inner] = progressCircles();
 
-      expect(outer.getAttribute('stroke')).toBe('var(--color-comm-warning)');
-      expect(inner.getAttribute('stroke')).toBe('var(--color-comm-warning)');
+      expect(outer.getAttribute('stroke')).toBe('var(--color-comm-warning-strong)');
+      expect(inner.getAttribute('stroke')).toBe('var(--color-comm-warning-strong)');
     });
   });
 
@@ -111,7 +111,7 @@ describe('GraphMetaComponent', () => {
 
     // -10 clampado para 0 → disabled; 150 clampado para 100 → faixa 50-100
     expect(outer.getAttribute('stroke')).toBe('var(--color-state-disabled)');
-    expect(inner.getAttribute('stroke')).toBe('var(--color-content-2)');
+    expect(inner.getAttribute('stroke')).toBe('var(--color-secondary)');
 
     const [innerLength] = dasharrayOf(inner);
     const innerTrack = trackCircles()[1];
@@ -124,8 +124,8 @@ describe('GraphMetaComponent', () => {
     await createWith({ topPercentage: 0, bottomPercentage: 100 });
     const [outerTrack, innerTrack] = trackCircles();
 
-    expect(outerTrack.getAttribute('stroke')).toBe('var(--color-border)');
-    expect(innerTrack.getAttribute('stroke')).toBe('var(--color-border)');
+    expect(outerTrack.getAttribute('stroke')).toBe('var(--color-border, #dce2e5)');
+    expect(innerTrack.getAttribute('stroke')).toBe('var(--color-border, #dce2e5)');
   });
 
   describe('size', () => {
@@ -135,20 +135,20 @@ describe('GraphMetaComponent', () => {
     // ser cortada pelo viewBox — mesma decisão validada em produção, reaproveitada
     // aqui (research.md §1). Por isso a asserção é "é uma meia-circunferência"
     // (altura < largura), não um valor exato de altura.
-    it('size="default" (ou omitido) produz largura 48, meia-circunferência (altura < largura)', async () => {
+    it('size="default" (ou omitido) produz um anel de 48x48 (arco de 270°, v2)', async () => {
       await createWith({ size: 'default' });
       const svg = fixture.nativeElement.querySelector('svg');
 
       expect(Number(svg.getAttribute('width'))).toBe(48);
-      expect(Number(svg.getAttribute('height'))).toBeLessThan(48);
+      expect(Number(svg.getAttribute('height'))).toBe(48);
     });
 
-    it('size="small" produz largura 32, meia-circunferência (altura < largura)', async () => {
+    it('size="small" produz o mini anel de 40x40 (Figma v2/MiniGauge)', async () => {
       await createWith({ size: 'small' });
       const svg = fixture.nativeElement.querySelector('svg');
 
-      expect(Number(svg.getAttribute('width'))).toBe(32);
-      expect(Number(svg.getAttribute('height'))).toBeLessThan(32);
+      expect(Number(svg.getAttribute('width'))).toBe(40);
+      expect(Number(svg.getAttribute('height'))).toBe(40);
     });
   });
 });

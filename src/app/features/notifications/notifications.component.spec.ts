@@ -71,23 +71,22 @@ describe('NotificationsComponent', () => {
   // --- Cabeçalho, fechar e seções (Figma 4506:8583 / 4506:8580) ---
 
   describe('cabeçalho e seções', () => {
-    it('desktop: mostra o sino, o título com a contagem e a tag do hospital com a data', async () => {
+    it('mostra o título com a contagem e o contexto (hospital · data) no subtítulo (Figma v2/PageHeader)', async () => {
       await configureStore({ hospitalId: 1, pendingTotalCount: 3, status: 'success', pendingItems: [notification(1)] });
       createComponent();
       const el: HTMLElement = fixture.nativeElement;
 
-      expect(el.querySelector('.notifications__header-icon ph-icon')).toBeTruthy();
-      expect(el.querySelector('.notifications__title')?.textContent?.trim()).toBe('3 Notificações');
-      expect(el.querySelector('.notifications__local app-tag')?.textContent).toContain('Hospital Vila Nova Star');
-      expect(el.querySelector('.notifications__date')?.textContent).toMatch(/ - \d+ de /);
+      expect(el.querySelector('.notifications__title')?.textContent?.trim()).toBe('3 notificações');
+      expect(el.querySelector('.notifications__subtitle')?.textContent).toContain('Hospital Vila Nova Star');
+      expect(el.querySelector('.notifications__subtitle')?.textContent).toContain(' de ');
     });
 
-    it('mobile: o título também leva a contagem ("3 Notificações")', async () => {
+    it('mobile: o título também leva a contagem ("3 notificações")', async () => {
       isDesktop.set(false);
       await configureStore({ hospitalId: 1, pendingTotalCount: 3, status: 'success' });
       createComponent();
 
-      expect(fixture.nativeElement.querySelector('.notifications__title')?.textContent?.trim()).toBe('3 Notificações');
+      expect(fixture.nativeElement.querySelector('.notifications__title')?.textContent?.trim()).toBe('3 notificações');
     });
 
     it('o botão de voltar vem primeiro, e o de atalhos abre o assistente nas ações da tela', async () => {
@@ -156,7 +155,10 @@ describe('NotificationsComponent', () => {
       const el: HTMLElement = fixture.nativeElement;
       const cards = Array.from(el.querySelectorAll('app-card-notify .card-notify'));
 
-      expect(el.querySelector('app-notification-section-title')?.textContent).toContain('Resolvidas');
+      const titles = Array.from(el.querySelectorAll('app-notification-section-title')).map(t => t.textContent ?? '');
+
+      expect(titles[0]).toContain('Pendentes');
+      expect(titles[1]).toContain('Resolvidas');
       expect(cards.length).toBe(2);
       expect(cards[0].classList).not.toContain('card-notify--resolved');
       expect(cards[1].classList).toContain('card-notify--resolved');
@@ -289,6 +291,32 @@ describe('NotificationsComponent', () => {
     // `isExpanded` continua true mesmo com `answeringId === 1` — o template
     // usa isso para não colapsar o histórico ao entrar em modo "answering".
     expect(fixture.componentInstance.isExpanded(1)).toBeTrue();
+  });
+
+  it('Resolver pede confirmação: só despacha resolveRequested após "Sim"', async () => {
+    await configureStore({ status: 'success' });
+    createComponent();
+    spyOn(store, 'dispatch');
+
+    fixture.componentInstance.onResolveClick(7);
+
+    expect(store.dispatch).not.toHaveBeenCalled();
+
+    fixture.componentInstance.onConfirmResolve();
+
+    expect(store.dispatch).toHaveBeenCalledWith(NotificationsActions.resolveRequested({ notificationId: 7 }));
+  });
+
+  it('"Não" no diálogo de Resolver não despacha nada', async () => {
+    await configureStore({ status: 'success' });
+    createComponent();
+    spyOn(store, 'dispatch');
+
+    fixture.componentInstance.onResolveClick(7);
+    fixture.componentInstance.onCancelResolve();
+    fixture.componentInstance.onConfirmResolve();
+
+    expect(store.dispatch).not.toHaveBeenCalled();
   });
 
   // --- Fluxo de resposta (US3) ---

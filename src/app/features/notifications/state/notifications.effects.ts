@@ -2,7 +2,7 @@ import { inject } from '@angular/core';
 import { Actions, createEffect, ofType } from '@ngrx/effects';
 import { concatLatestFrom } from '@ngrx/operators';
 import { Store } from '@ngrx/store';
-import { catchError, filter, map, of, switchMap } from 'rxjs';
+import { catchError, concatMap, filter, map, of, switchMap } from 'rxjs';
 
 import { HomeApiService } from '../../home/data-access/home-api.service';
 import { NotificationsApiService } from '../data-access/notifications-api.service';
@@ -133,6 +133,29 @@ export const submitReply$ = createEffect(
           map(reply => NotificationsActions.answerSubmitSuccess({ notificationId, reply })),
           catchError(() =>
             of(NotificationsActions.answerSubmitFailure({ notificationId, message: ERROR_SUBMIT_REPLY })),
+          ),
+        ),
+      ),
+    );
+  },
+  { functional: true },
+);
+
+/** Botão ✓ do card: marca como resolvida e move o card para a seção Resolvidas. */
+export const resolveNotification$ = createEffect(
+  (actions$ = inject(Actions), api = inject(NotificationsApiService)) => {
+    return actions$.pipe(
+      ofType(NotificationsActions.resolveRequested),
+      concatMap(({ notificationId }) =>
+        api.resolve(notificationId).pipe(
+          map(() => NotificationsActions.resolveSuccess({ notificationId })),
+          catchError(() =>
+            of(
+              NotificationsActions.resolveFailure({
+                notificationId,
+                message: 'Não foi possível resolver a notificação.',
+              }),
+            ),
           ),
         ),
       ),

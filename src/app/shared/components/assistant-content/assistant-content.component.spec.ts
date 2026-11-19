@@ -1,5 +1,6 @@
 import { type ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
+import { Router } from '@angular/router';
 
 import { AiAssistantService } from '../../services/ai-assistant.service';
 import { ASSISTANT_QUERY_RESOLVERS } from '../../services/assistant-query-resolver';
@@ -42,21 +43,15 @@ describe('AssistantContentComponent', () => {
     expect(text('.assistant-content__hint')).toContain('texto ou áudio');
   });
 
-  it('chat: shows at least two suggestion chips, including the pending-tasks one', () => {
-    const chips = Array.from(el().querySelectorAll('.assistant-content__chip')).map(b => b.textContent?.trim());
-
-    expect(chips.length).toBeGreaterThanOrEqual(2);
-    expect(chips).toContain('Quais são minhas pendências de hoje?');
+  it('chat: shows the welcome message while there is no conversation (Figma v2/AssistantPanel)', () => {
+    expect(el().querySelector('.assistant-content__title')?.textContent).toContain('Como eu posso te ajudar?');
   });
 
-  it('tapping a chip sends exactly that question', () => {
-    const chip = Array.from(el().querySelectorAll<HTMLButtonElement>('.assistant-content__chip')).find(
-      b => b.textContent?.trim() === 'Quais são minhas pendências de hoje?',
-    );
+  it('chat: hides the welcome message once a question was asked (Figma, seção 09 · A2)', () => {
+    assistant.ask('Quais são minhas pendências de hoje?');
+    fixture.detectChanges();
 
-    chip?.click();
-
-    expect(assistant.lastQuestion()).toBe('Quais são minhas pendências de hoje?');
+    expect(el().querySelector('.assistant-content__title')).toBeNull();
   });
 
   it('free text that is not a suggestion goes through the same entry point unchanged', () => {
@@ -194,5 +189,44 @@ describe('AssistantContentComponent', () => {
     fixture.detectChanges();
 
     expect(assistant.view()).toBe('shortcuts');
+  });
+
+  describe('helpers de resposta', () => {
+    interface Internals {
+      itemRoute(item: unknown): string | null;
+      itemText(item: unknown): string;
+      itemTitle(item: unknown): string | null;
+      openRoute(route: string): void;
+      retry(question: string): void;
+    }
+    const internals = (): Internals => fixture.componentInstance as unknown as Internals;
+
+    it('lê texto, título e rota de itens em string ou objeto', () => {
+      expect(internals().itemText('abc')).toBe('abc');
+      expect(internals().itemText({ route: '/x', text: 'def' })).toBe('def');
+      expect(internals().itemTitle('abc')).toBeNull();
+      expect(internals().itemTitle({ route: '/x', text: 'def' })).toBeNull();
+      expect(internals().itemTitle({ route: '/x', text: 'def', title: 'T' })).toBe('T');
+      expect(internals().itemRoute('abc')).toBeNull();
+      expect(internals().itemRoute({ route: '/x', text: 'def' })).toBe('/x');
+    });
+
+    it('openRoute fecha o painel e navega para o destino', () => {
+      spyOn(assistant, 'closePanel');
+      const navigate = spyOn(TestBed.inject(Router), 'navigateByUrl').and.resolveTo(true);
+
+      internals().openRoute('/notifications');
+
+      expect(assistant.closePanel).toHaveBeenCalledWith();
+      expect(navigate).toHaveBeenCalledWith('/notifications');
+    });
+
+    it('retry repete a pergunta no assistente', () => {
+      spyOn(assistant, 'ask');
+
+      internals().retry('Quais notificações?');
+
+      expect(assistant.ask).toHaveBeenCalledWith('Quais notificações?');
+    });
   });
 });

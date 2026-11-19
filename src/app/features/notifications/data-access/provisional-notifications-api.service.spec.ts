@@ -35,6 +35,19 @@ describe('Provisional notification APIs', () => {
     expect(reply.text).toBe('feito');
   });
 
+  it('resolve move a notificação para Resolvidas', async () => {
+    TestBed.configureTestingModule({ providers: [provideHttpClient(), ProvisionalNotificationsApiService] });
+    const api = TestBed.inject(ProvisionalNotificationsApiService);
+    const repository = TestBed.inject(NotificationsRepository);
+    const target = repository.list('pending', null, 1).items[0];
+    const resolvedBefore = repository.list('resolved', null, 50).totalCount;
+
+    await firstValueFrom(api.resolve(target.id));
+
+    expect(repository.list('resolved', null, 50).totalCount).toBe(resolvedBefore + 1);
+    expect(repository.list('pending', null, 50).items.some(n => n.id === target.id)).toBeFalse();
+  });
+
   it('lists a single hospital, the same one the Home shows', async () => {
     TestBed.configureTestingModule({ providers: [provideHttpClient(), ProvisionalHomeApiService] });
 

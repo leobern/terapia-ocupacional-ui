@@ -47,10 +47,7 @@
   // trocar de `state`) sobrescrever a cor por herança de custom property, sem tocar
   // no `data-state`. Sem a property setada por um ancestral, o fallback reproduz
   // exatamente o comportamento anterior — nenhum consumidor existente muda.
-  --icon-logo-accent: var(
-    --icon-logo-accent-override,
-    #{tokens.$color-secondary}
-  );
+  --icon-logo-accent: var(--icon-logo-accent-override, #{tokens.c(secondary)});
 
   // A caixa inclui o transbordamento das luzes e do halo, para que nenhum
   // ancestral com `overflow: hidden` corte a auréola (FR-017).
@@ -63,17 +60,11 @@
 }
 
 :host([data-state='button']) {
-  --icon-logo-accent: var(
-    --icon-logo-accent-override,
-    #{tokens.$color-primary}
-  );
+  --icon-logo-accent: var(--icon-logo-accent-override, #{tokens.c(primary)});
 }
 
 :host([data-state='disabled']) {
-  --icon-logo-accent: var(
-    --icon-logo-accent-override,
-    #{tokens.$color-border-2}
-  );
+  --icon-logo-accent: var(--icon-logo-accent-override, #{tokens.c(border-2)});
 
   // 1px @48px — o Figma afina a borda no disabled.
   --icon-logo-border-width: calc(var(--icon-logo-resolved-size) / 48);
@@ -93,7 +84,7 @@
 // do stylelint e não tem relação com isso.
 // -----------------------------------------------------------------------------
 .icon-logo__base {
-  background: tokens.$color-surface;
+  background: tokens.c(surface);
   border: var(--icon-logo-border-width) solid var(--icon-logo-accent);
   border-radius: 50%;
   box-sizing: border-box;
@@ -111,7 +102,7 @@
 // Rebaixa levemente a luminosidade do miolo — sem ela o blend `color` das camadas
 // acima não teria onde "pegar" (branco puro mantém a luminosidade no blend color).
 .icon-logo__surface {
-  background: tokens.$color-surface-2;
+  background: tokens.c(surface-2);
   border-radius: 50%;
   filter: blur(calc(var(--icon-logo-resolved-size) / 12));
   height: var(--icon-logo-surface-size);
@@ -180,7 +171,7 @@ $mesh-fade-mask: radial-gradient(
   --icon-logo-angle: 206.565deg;
   --icon-logo-radius: calc(var(--icon-logo-resolved-size) * 0.372678);
 
-  background: tokens.$color-logo-3;
+  background: tokens.c(logo-3);
   filter: blur(calc(var(--icon-logo-resolved-size) / 6));
 }
 
@@ -188,7 +179,7 @@ $mesh-fade-mask: radial-gradient(
   --icon-logo-angle: 319.399deg;
   --icon-logo-radius: calc(var(--icon-logo-resolved-size) * 0.384148);
 
-  background: tokens.$color-logo-2;
+  background: tokens.c(logo-2);
   filter: blur(calc(var(--icon-logo-resolved-size) / 6));
 }
 
@@ -196,8 +187,14 @@ $mesh-fade-mask: radial-gradient(
   --icon-logo-angle: 90deg;
   --icon-logo-radius: calc(var(--icon-logo-resolved-size) * 0.291667);
 
-  background: tokens.$color-logo-1;
+  background: tokens.c(logo-1);
   filter: blur(calc(var(--icon-logo-resolved-size) / 4));
+}
+
+// Figma (Dark v2): no tema escuro as luzes atrás da logo usam "hard light" — sem isso o modo
+// `color` as deixa muito claras sobre a superfície escura.
+:host-context([data-theme='dark']) .icon-logo__light {
+  mix-blend-mode: hard-light;
 }
 
 // Visíveis em `anim` (animadas) e no hover do botão (estáticas).

@@ -1,82 +1,107 @@
 @use '../../styles/tokens';
+@use '../../styles/mixins';
+@use '../../styles/typography';
 
-// Dimensões e cantos exatos do card "mobile" do Figma (nó 4041:1472). Card de
-// tamanho fixo (não cresce) — corrige o desvio de 168px de altura presente na
-// implementação legada `patient-count-card` (research.md §5).
+// Figma "Conductia - V1" `v2/CardPatients` — largura total, borda tertiary de 2px
+// para diferenciar do feed (SC-004), padding da coleção Layout.
+:host {
+  display: block;
+  min-width: 0;
+}
+
 .card-patients {
   box-sizing: border-box;
   display: flex;
-  flex-direction: column;
-  flex: 0 0 auto;
-  // Ver `--card-width` em card-notify: a grade da Home faz o card preencher a coluna.
-  width: var(--card-width, 180px);
-  height: 180px;
-  min-width: var(--card-min-width, 180px);
-  background: tokens.$color-surface;
-  // TL TR BR BL — canto superior-direito usa o novo token --radius-xl (research.md §4).
-  border-radius: tokens.$radius-md tokens.$radius-xl tokens.$radius-md
-    tokens.$radius-lg;
-  // Área de toque estendida (2026-07-25): o card inteiro é clicável, não só
-  // o icon-button — cursor comunica isso visualmente (mouse); o estado
-  // desabilitado volta ao cursor padrão.
-  cursor: pointer;
-
-  &--disabled {
-    cursor: default;
-  }
-}
-
-.card-patients__row {
-  display: flex;
-  flex-direction: column;
   align-items: center;
-  justify-content: center;
-  height: tokens.$space-64;
-  padding-bottom: tokens.$space-8;
-  // Divisor do header como borda CSS, não como imagem (research.md §3).
-  border-bottom: 1px solid tokens.$color-border;
+  gap: tokens.$space-16;
+  width: 100%;
+  height: 100%;
+  padding: var(--layout-card-padding, #{tokens.$space-16});
+  border: 2px solid tokens.c(tertiary);
+  border-radius: tokens.$radius-md;
+  background: tokens.c(surface);
+  cursor: pointer;
 }
 
-.card-patients__content {
-  display: flex;
-  align-items: flex-start;
-  padding: tokens.$space-16 tokens.$space-16 0;
+.card-patients--disabled {
+  cursor: default;
 }
 
 .card-patients__label {
-  flex: 1 0 0;
   display: flex;
+  flex: 1 1 0;
   flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 0 tokens.$space-8;
-  text-align: center;
-  color: tokens.$color-content-2;
+  gap: 2px;
+  min-width: 0;
 }
 
 .card-patients__title {
   margin: 0;
-  width: 100%;
-  font-family: tokens.$font-family-base;
-  // "Default - Heavy" (get_variable_defs, nó 4041:1472) = peso 800, não 900 —
-  // achado em /speckit-converge T013 (2026-07-25): comparação estruturada
-  // contra os dados do Figma, não screenshot.
-  font-weight: tokens.$font-weight-heavy;
-  font-size: 16px;
-  line-height: 1.35;
+  color: tokens.c(content-1);
+
+  @include typography.title-lg;
 }
 
 .card-patients__subtitle {
   margin: 0;
-  width: 100%;
-  font-family: tokens.$font-family-base;
-  font-weight: tokens.$font-weight-roman;
-  font-size: 12px;
-  line-height: 1.35;
+  color: tokens.c(content-4);
+
+  @include typography.caption;
 }
 
-.card-patients__actions {
+.card-patients__legend {
   display: flex;
-  justify-content: flex-end;
-  padding: 0 tokens.$space-8 tokens.$space-8 0;
+  flex-wrap: nowrap; // Figma: as duas metas na mesma linha
+  white-space: nowrap;
+  gap: tokens.$space-4 tokens.$space-12;
+  padding-top: 6px;
+}
+
+.card-patients__legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: tokens.c(content-1);
+
+  @include typography.label-sm;
+}
+
+.card-patients__dot {
+  width: tokens.$space-8;
+  height: tokens.$space-8;
+  border-radius: tokens.$radius-pill;
+}
+
+.card-patients__dot--caloric {
+  background: tokens.c(comm-success);
+}
+
+.card-patients__dot--protein {
+  background: tokens.c(secondary);
+}
+
+.card-patients__cta {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  // Figma: seta de 24px; a área de toque (40px) é ampliada com padding + margem
+  // negativa, sem roubar largura do texto.
+  box-sizing: content-box;
+  width: tokens.$icon-size-default;
+  height: tokens.$control-height-md;
+  margin: 0 (-(tokens.$space-8));
+  padding: 0 tokens.$space-8;
+  border: 0;
+  border-radius: tokens.$radius-pill;
+  background: transparent;
+  color: tokens.c(primary);
+  cursor: pointer;
+
+  @include mixins.focus-ring;
+
+  &:disabled {
+    color: tokens.c(state-disabled-2);
+    cursor: default;
+  }
 }

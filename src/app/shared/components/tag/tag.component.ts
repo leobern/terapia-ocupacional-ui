@@ -52,8 +52,9 @@ export class TagComponent {
   readonly iconLeftName = input<string>('');
   readonly iconRightName = input<string>('');
 
-  readonly iconLeftColor = input<string>('var(--color-content-3)');
-  readonly iconRightColor = input<string>('var(--color-content-3)');
+  // Figma v2/SelectTag: ícones na mesma cor do texto (content-1).
+  readonly iconLeftColor = input<string>('var(--color-content-1)');
+  readonly iconRightColor = input<string>('var(--color-content-1)');
 
   // Só relevante para type="default"/"status" — sem efeito em type="user" (fundo
   // sempre var(--color-surface), ver hostBackground).

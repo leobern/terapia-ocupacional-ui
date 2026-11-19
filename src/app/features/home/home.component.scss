@@ -1,76 +1,79 @@
 @use '../../shared/styles/breakpoints';
 @use '../../shared/styles/tokens';
+@use '../../shared/styles/typography';
 
-// O gutter lateral da Home vem do próprio conteúdo (16px, como no Figma `4360:7018`),
-// não da margem de 24px do container de página.
+// =============================================================================
+// Home v2 — Figma "Conductia - V1", seção 05 (Fluxo Home).
+//   Mobile: coluna única, margem 16, espaço entre cards 12, card de pacientes
+//   em destaque no topo e título "Notificações" antes do feed.
+//   Desktop: grade de 3 colunas (com side-IA) ou 4 (sem), cards com altura
+//   igual por linha, divisor abaixo do cabeçalho.
+// Margens e espaçamentos vêm da coleção Layout (--layout-*).
+// =============================================================================
+
 :host {
-  // Precisa da unidade: entra em `calc(100% - 2 * var(...))` no container.
-  // stylelint-disable-next-line length-zero-no-unit
-  --page-container-margin: 0px;
+  --page-container-margin: var(--layout-page-margin, 16px);
 }
 
 .home {
   display: flex;
   flex-direction: column;
-  // Altura da tela MENOS o espaço da barra inferior que o container já reserva: com
-  // 100vh cheio a página sempre rolava ~104px mesmo sem conteúdo. No desktop não há barra.
+  gap: var(--layout-section-gap, 24px);
   min-height: calc(100dvh - var(--bottom-nav-bar-height));
+  padding-top: tokens.$space-16;
+  padding-bottom: tokens.$space-24;
 
   @include breakpoints.md {
     min-height: 100dvh;
+    padding: tokens.$space-24 var(--layout-page-margin, 32px) tokens.$space-32;
   }
-  // Sem background sólido: o fundo decorativo (app-background-mesh, montado
-  // no shell da aplicação) precisa aparecer por trás de todo o espaço vazio
-  // da tela.
 }
 
+// --- cabeçalho -------------------------------------------------------------------
 .home__header {
   display: flex;
   align-items: center;
-  gap: tokens.$space-8;
-  padding: tokens.$space-16 tokens.$space-16 tokens.$space-8;
+  gap: tokens.$space-12;
+
+  @include breakpoints.md {
+    padding-bottom: tokens.$space-16;
+    border-bottom: 1px solid tokens.c(border);
+  }
 }
 
 .home__header-text {
   display: flex;
-  flex-direction: column;
   flex: 1 0 0;
+  flex-direction: column;
   min-width: 0;
 }
 
 .home__header-title {
   margin: 0;
-  font-family: tokens.$font-family-base;
-  font-weight: tokens.$font-weight-roman;
-  font-size: 12px;
-  color: tokens.$color-content-4;
+  color: tokens.c(content-4);
+
+  @include typography.caption;
 }
 
 .home__header-name {
   margin: 0;
-  font-family: tokens.$font-family-base;
-  font-weight: tokens.$font-weight-heavy;
-  font-size: 24px;
-  line-height: 1.2;
-  color: tokens.$color-content-1;
+  color: tokens.c(content-1);
+
+  @include typography.headline;
 }
 
-// `app-badge` "flutua" composto sobre o `app-icon-button` — posicionamento
-// exigido do consumidor pelo próprio contrato do badge (ver
-// badge.component.ts docblock).
 .home__notify-wrapper {
   position: relative;
   display: inline-flex;
 }
 
+// Figma: badge a 26px da esquerda e 4px do topo do botão de 48px.
 .home__notify-badge {
   position: absolute;
-  top: -4px;
-  right: -4px;
+  top: tokens.$space-4;
+  left: 26px;
 }
 
-// Botão de atalhos (abre o assistente de IA) — só no desktop; no mobile/
-// tablet a bottom-nav-bar já cobre a mesma ação (ver comentário no template).
 .home__shortcuts-wrapper {
   display: none;
 
@@ -79,126 +82,200 @@
   }
 }
 
+// --- banner offline (v2/Banner Type=offline) ----------------------------------------
 .home__stale-banner {
-  margin: 0 tokens.$space-16 tokens.$space-8;
-  padding: tokens.$space-8 tokens.$space-16;
-  border-radius: tokens.$radius-sm;
-  background: tokens.$color-comm-warning;
-  color: tokens.$color-content-1;
-  font-family: tokens.$font-family-base;
-  font-size: 12px;
-  text-align: center;
+  display: flex;
+  align-items: center;
+  gap: tokens.$space-8;
+  margin: 0;
+  padding: 10px tokens.$space-16;
+  border-radius: tokens.$radius-12;
+  background: tokens.c(comm-warning);
+  color: tokens.c(on-warning); // escuro nos dois temas (Figma Dark v2)
+
+  @include typography.label-md;
+
+  ph-icon {
+    flex-shrink: 0;
+  }
 }
 
+// --- contexto (hospital + frase + data) ------------------------------------------
 .home__local {
   display: flex;
-  flex-wrap: wrap;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: tokens.$space-16;
-  padding: tokens.$space-24 tokens.$space-16;
-  border-top: 1px solid tokens.$color-border;
-}
-
-.home__local-col {
-  display: flex;
   flex-direction: column;
-  flex: 1 0 0;
-  gap: tokens.$space-16;
-  min-width: 220px;
-}
-
-// Estilo Figma "Section - italic" (Inter Extra Light Italic 40px) — único uso
-// desse estilo no produto; content-3 (verde-azulado) é a cor do próprio nó.
-.home__headline {
-  margin: 0;
-  font-family: tokens.$font-family-base;
-  font-weight: tokens.$font-weight-thin;
-  font-style: italic;
-  font-size: 40px;
-  line-height: normal;
-  color: tokens.$color-content-3;
-}
-
-.home__date {
-  margin: 0;
-  font-family: tokens.$font-family-base;
-  font-size: 14px;
-  color: tokens.$color-content-4;
-  white-space: nowrap;
-}
-
-// Grade de cards (Figma "Layout" 4572:9798): mobile = SEMPRE 2 colunas (cards de ~181px,
-// gap 8); desktop = colunas de no mínimo 320px (4 em 1328px, 3 em 1050px), gap 16.
-// Os cards preenchem a coluna via `--card-width`/`--card-min-width` (ver card-notify).
-.home__grid {
-  --card-width: 100%;
-  --card-min-width: 0;
-
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: tokens.$space-8;
-  padding: 0 tokens.$space-16 tokens.$space-16;
+  gap: tokens.$space-12;
 
   @include breakpoints.md {
-    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    flex-direction: row;
+    align-items: flex-end;
+    justify-content: space-between;
     gap: tokens.$space-16;
   }
 }
 
-// Ocupa a linha inteira da grade (não vira uma célula de card).
-.home__scroll-sentinel {
-  grid-column: 1 / -1;
-  height: 1px;
-  width: 100%;
+.home__local-col {
+  position: relative;
+  display: flex;
+  flex: 1 0 0;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: tokens.$space-12;
+  min-width: 0;
 }
 
-.home__loading-more {
-  padding: tokens.$space-16;
-  text-align: center;
-  font-family: tokens.$font-family-base;
-  font-size: 12px;
-  color: tokens.$color-content-4;
+.home__headline {
+  margin: 0;
+  color: tokens.c(content-3);
+
+  @include typography.display-italic-md;
+
+  @include breakpoints.md {
+    @include typography.display-italic-lg;
+  }
 }
 
-// Seletor de hospital (US-003-1-03): a tag do Figma vira o gatilho quando há mais
-// de um hospital vinculado; com um só, a tag segue como no desenho.
+.home__date {
+  margin: 0;
+  color: tokens.c(content-4);
+
+  @include typography.body-md;
+
+  @include breakpoints.md {
+    white-space: nowrap;
+  }
+}
+
 .home__hospital-trigger {
   display: inline-flex;
-  align-self: flex-start;
   margin: 0;
   padding: 0;
   border: 0;
+  border-radius: tokens.$radius-pill;
   background: none;
   cursor: pointer;
 }
 
+// Lista flutuante do seletor (Figma tela 6): itens de 48px, check no selecionado.
 .home__hospital-list {
+  position: absolute;
+  top: 48px;
+  left: 0;
+  z-index: tokens.$z-index-overlay;
   display: flex;
   flex-direction: column;
+  min-width: 300px;
   margin: 0;
-  padding: tokens.$space-8;
+  padding: tokens.$space-8 0;
+  border-radius: tokens.$radius-sm;
+  background: tokens.c(surface);
+  box-shadow: 0 4px 16px rgb(0 0 0 / 16%);
   list-style: none;
-  font-family: tokens.$font-family-base;
-  font-weight: tokens.$font-weight-roman;
-  color: tokens.$color-content-1;
 }
 
 .home__hospital-option {
-  padding: tokens.$space-8;
+  display: flex;
+  align-items: center;
+  min-height: tokens.$control-height-lg;
+  padding: 0 tokens.$space-16;
+  color: tokens.c(content-1);
   cursor: pointer;
 
+  @include typography.body-lg;
+
   &[aria-selected='true'] {
-    font-weight: tokens.$font-weight-heavy;
+    background: tokens.c(surface-2);
+
+    @include typography.label-lg;
   }
 }
 
-// US-003-3-05: sem notificações, só o card fixo + esta indicação ao lado dele.
-.home__empty {
-  align-self: center;
+// --- grade de cards -------------------------------------------------------------
+.home__grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--layout-grid-gap, 12px);
+
+  @include breakpoints.sm {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  @include breakpoints.md {
+    grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+  }
+}
+
+.home__patients {
+  @include breakpoints.sm {
+    grid-column: 1 / -1;
+  }
+
+  @include breakpoints.md {
+    grid-column: auto;
+  }
+}
+
+.home__feed-title {
+  display: flex;
+  grid-column: 1 / -1;
+  align-items: center;
+  gap: tokens.$space-8;
+  padding-top: tokens.$space-12;
+
+  @include breakpoints.md {
+    display: none;
+  }
+}
+
+.home__feed-heading {
+  flex: 1 1 0;
   margin: 0;
-  padding: 0 tokens.$space-8;
-  font-family: tokens.$font-family-base;
-  font-size: 14px;
-  color: tokens.$color-content-4;
+  color: tokens.c(content-1);
+
+  @include typography.title-md;
+}
+
+.home__feed-count {
+  color: tokens.c(content-2);
+
+  @include typography.label-md;
+}
+
+.home__scroll-sentinel {
+  grid-column: 1 / -1;
+  width: 100%;
+  height: 1px;
+}
+
+.home__loading-more {
+  padding: tokens.$space-16;
+  color: tokens.c(content-4);
+  text-align: center;
+
+  @include typography.caption;
+}
+
+.home__empty {
+  display: flex;
+  grid-column: 1 / -1;
+  flex-direction: column;
+  align-items: center;
+  gap: tokens.$space-8;
+  padding: tokens.$space-32 0;
+  color: tokens.c(content-3);
+  text-align: center;
+}
+
+.home__empty-title {
+  margin: 0;
+  color: tokens.c(content-1);
+
+  @include typography.title-md;
+}
+
+.home__empty-text {
+  margin: 0;
+  color: tokens.c(content-4);
+
+  @include typography.body-md;
 }

@@ -1,9 +1,19 @@
 import { InjectionToken } from '@angular/core';
 
 /** Resposta de uma consulta de leitura: um resumo e, opcionalmente, itens listados abaixo dele. */
+/**
+ * Item da resposta: texto simples ou texto com destino. Com `route`, o item ganha a
+ * seta de 40px que leva ao detalhe (Figma v2/ChatMessage Type=answer-list).
+ */
+export type AssistantAnswerItem =
+  | string
+  | { readonly text: string; readonly route: string; /** Prefixo em negrito (ex.: autor). */ readonly title?: string };
+
 export interface AssistantAnswer {
   readonly summary: string;
-  readonly items?: readonly string[];
+  readonly items?: readonly AssistantAnswerItem[];
+  /** Atalho no fim da resposta (ex.: "Ver todas em Notificações"). */
+  readonly link?: { readonly label: string; readonly route: string };
 }
 
 /**
