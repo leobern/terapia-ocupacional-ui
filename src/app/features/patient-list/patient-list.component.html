@@ -111,6 +111,8 @@
           >
             <table
               class="patient-list__table"
+              [attr.data-line]="lineIndex()"
+              [attr.data-resizing]="resizing() ? '' : null"
               [style.min-width.px]="tableMinWidth()"
             >
               <colgroup>
@@ -125,7 +127,11 @@
               </colgroup>
               <thead>
                 <tr>
-                  <th scope="col">
+                  <th
+                    scope="col"
+                    (mouseenter)="hoverColumn.set('name')"
+                    (mouseleave)="hoverColumn.set(null)"
+                  >
                     Paciente
                     <span
                       class="patient-list__resizer"
@@ -140,10 +146,13 @@
                       (keydown)="resizeByKey($event, 'name')"
                       (click)="$event.stopPropagation()"
                     >
-                      <ph-icon name="dots-six-vertical" [size]="16" />
                     </span>
                   </th>
-                  <th scope="col">
+                  <th
+                    scope="col"
+                    (mouseenter)="hoverColumn.set('age')"
+                    (mouseleave)="hoverColumn.set(null)"
+                  >
                     Idade<br />Início da terapia
                     <span
                       class="patient-list__resizer"
@@ -158,10 +167,13 @@
                       (keydown)="resizeByKey($event, 'age')"
                       (click)="$event.stopPropagation()"
                     >
-                      <ph-icon name="dots-six-vertical" [size]="16" />
                     </span>
                   </th>
-                  <th scope="col">
+                  <th
+                    scope="col"
+                    (mouseenter)="hoverColumn.set('therapy')"
+                    (mouseleave)="hoverColumn.set(null)"
+                  >
                     Terapia
                     <span
                       class="patient-list__resizer"
@@ -176,10 +188,13 @@
                       (keydown)="resizeByKey($event, 'therapy')"
                       (click)="$event.stopPropagation()"
                     >
-                      <ph-icon name="dots-six-vertical" [size]="16" />
                     </span>
                   </th>
-                  <th scope="col">
+                  <th
+                    scope="col"
+                    (mouseenter)="hoverColumn.set('caloric')"
+                    (mouseleave)="hoverColumn.set(null)"
+                  >
                     Adequação calórica
                     <span
                       class="patient-list__resizer"
@@ -194,10 +209,13 @@
                       (keydown)="resizeByKey($event, 'caloric')"
                       (click)="$event.stopPropagation()"
                     >
-                      <ph-icon name="dots-six-vertical" [size]="16" />
                     </span>
                   </th>
-                  <th scope="col">
+                  <th
+                    scope="col"
+                    (mouseenter)="hoverColumn.set('protein')"
+                    (mouseleave)="hoverColumn.set(null)"
+                  >
                     Adequação proteica
                     <span
                       class="patient-list__resizer"
@@ -212,10 +230,13 @@
                       (keydown)="resizeByKey($event, 'protein')"
                       (click)="$event.stopPropagation()"
                     >
-                      <ph-icon name="dots-six-vertical" [size]="16" />
                     </span>
                   </th>
-                  <th scope="col">
+                  <th
+                    scope="col"
+                    (mouseenter)="hoverColumn.set('location')"
+                    (mouseleave)="hoverColumn.set(null)"
+                  >
                     Localização
                     <span
                       class="patient-list__resizer"
@@ -230,14 +251,21 @@
                       (keydown)="resizeByKey($event, 'location')"
                       (click)="$event.stopPropagation()"
                     >
-                      <ph-icon name="dots-six-vertical" [size]="16" />
                     </span>
                   </th>
                   <th scope="col">
                     <span class="patient-list__sr">Avaliação</span>
                   </th>
                   <th scope="col" class="patient-list__sticky">
-                    <span class="patient-list__sr">Abrir paciente</span>
+                    <button
+                      type="button"
+                      class="patient-list__fit"
+                      aria-label="Ajustar as colunas à largura disponível"
+                      title="Ajustar as colunas à largura disponível"
+                      (click)="fitColumns()"
+                    >
+                      <ph-icon name="arrows-in-line-horizontal" [size]="20" />
+                    </button>
                   </th>
                 </tr>
               </thead>

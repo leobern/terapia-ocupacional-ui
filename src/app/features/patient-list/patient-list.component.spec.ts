@@ -186,7 +186,7 @@ describe('PatientListComponent', () => {
         handle(0).dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowLeft' }));
       }
 
-      expect(width('name')).toBe(160);
+      expect(width('name')).toBe(180);
 
       handle(0).dispatchEvent(new KeyboardEvent('keydown', { key: 'Home' }));
 
@@ -214,7 +214,7 @@ describe('PatientListComponent', () => {
 
       el.dispatchEvent(new PointerEvent('pointermove', { clientX: 400, pointerId: 1 }));
 
-      expect(width('age')).toBe(Math.min(560, Math.max(100, Math.round(startWidth + 300))));
+      expect(width('age')).toBe(Math.min(560, Math.max(110, Math.round(startWidth + 300))));
 
       el.dispatchEvent(new PointerEvent('pointermove', { clientX: 5000, pointerId: 1 }));
 
@@ -224,6 +224,69 @@ describe('PatientListComponent', () => {
 
       expect(fixture.componentInstance.resizing()).toBeNull();
     });
+  });
+
+  describe('ajustar colunas', () => {
+    const widths = (): number[] => Object.values(fixture.componentInstance.widths());
+    const clickFit = (clientWidth: number): void => {
+      const card = q('.patient-list__table-card') as HTMLElement;
+
+      Object.defineProperty(card, 'clientWidth', { configurable: true, value: clientWidth });
+      (q('.patient-list__fit') as HTMLElement).click();
+    };
+
+    beforeEach(async () => {
+      source.result = Promise.resolve(census(2));
+      await create();
+    });
+
+    it('encaixa todas as colunas na largura útil (sem rolagem horizontal)', () => {
+      clickFit(1272);
+
+      const sum = widths().reduce((a, b) => a + b, 0);
+
+      expect(sum).toBeLessThanOrEqual(1200);
+      expect(sum).toBeGreaterThan(1180);
+    });
+
+    it('nunca passa do mínimo: com pouco espaço todas ficam no mínimo', () => {
+      clickFit(300);
+
+      expect(fixture.componentInstance.widths()).toEqual({
+        age: 110,
+        caloric: 130,
+        first: 170,
+        location: 130,
+        name: 180,
+        protein: 130,
+        therapy: 130,
+      });
+    });
+
+    it('reparte o que sobra quando alguma coluna bateria no mínimo', () => {
+      clickFit(1200);
+
+      const w = fixture.componentInstance.widths();
+
+      expect(w.therapy).toBe(130);
+      expect(widths().reduce((a, b) => a + b, 0)).toBeLessThanOrEqual(1128);
+    });
+  });
+
+  it('mostra a linha de divisória da coluna sob o mouse no cabeçalho', async () => {
+    source.result = Promise.resolve(census(2));
+    await create();
+    const th = q('.patient-list__table th:nth-child(2)') as HTMLElement;
+
+    th.dispatchEvent(new MouseEvent('mouseenter'));
+    fixture.detectChanges();
+
+    expect(q('.patient-list__table')?.getAttribute('data-line')).toBe('2');
+
+    th.dispatchEvent(new MouseEvent('mouseleave'));
+    fixture.detectChanges();
+
+    expect(q('.patient-list__table')?.getAttribute('data-line')).toBeNull();
   });
 
   it('mostra Indisponível no lugar do gráfico e a Primeira avaliação antes do nome no mobile', async () => {

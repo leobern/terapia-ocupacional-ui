@@ -317,7 +317,7 @@
       text-align: left;
       // Cabeçalho também quebra em até 2 linhas, sem invadir a coluna vizinha.
       overflow: hidden;
-      overflow-wrap: anywhere;
+      overflow-wrap: break-word;
 
       @include typography.label-md;
     }
@@ -417,9 +417,14 @@
     min-width: 0;
   }
 
-  // Divisória de coluna ajustável: invisível até o mouse passar no cabeçalho (surge com fade).
+  // Divisória de coluna ajustável: alça invisível no cabeçalho (cursor de redimensionar). No hover
+  // do cabeçalho a linha de divisória surge com fade e segue a coluna inteira (`data-line`).
   .patient-list__table th {
     position: relative;
+  }
+
+  .patient-list__table th.patient-list__sticky {
+    position: sticky;
   }
 
   .patient-list__resizer {
@@ -427,44 +432,52 @@
     top: 0;
     right: 0;
     bottom: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 16px;
-    color: tokens.c(content-5);
+    width: 12px;
     cursor: col-resize;
-    opacity: 0;
     touch-action: none;
-    transition: opacity 0.2s ease;
     user-select: none;
 
-    &::before {
-      content: '';
-      position: absolute;
-      top: 8px;
-      right: 0;
-      bottom: 8px;
-      width: 1px;
-      background: tokens.c(border-2);
-    }
-
-    ph-icon {
-      position: relative;
-      margin-right: 1px;
-      background: tokens.c(surface-2);
-      border-radius: tokens.$radius-xs;
+    &:focus-visible {
+      outline: none;
+      box-shadow: inset -2px 0 0 tokens.c(secondary);
     }
   }
 
-  .patient-list__table th:hover .patient-list__resizer,
-  .patient-list__resizer:focus-visible,
-  .patient-list__resizer--active {
-    opacity: 1;
+  .patient-list__table th,
+  .patient-list__table td {
+    transition: box-shadow 0.2s ease;
   }
 
-  .patient-list__resizer--active::before {
-    background: tokens.c(secondary);
-    width: 2px;
+  @for $i from 1 through 6 {
+    .patient-list__table[data-line='#{$i}'] tr > :nth-child(#{$i}) {
+      box-shadow: inset -1px 0 0 tokens.c(border-2);
+    }
+
+    .patient-list__table[data-line='#{$i}'][data-resizing]
+      tr
+      > :nth-child(#{$i}) {
+      box-shadow: inset -2px 0 0 tokens.c(secondary);
+    }
+  }
+
+  // Botão de ajustar colunas, no canto fixo do cabeçalho.
+  .patient-list__fit {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    border: 0;
+    border-radius: tokens.$radius-pill;
+    background: transparent;
+    color: tokens.c(content-4);
+    cursor: pointer;
+
+    &:hover {
+      background: tokens.c(surface);
+      color: tokens.c(content-1);
+    }
   }
 
   // Idade em cima e início da terapia embaixo.
@@ -486,9 +499,10 @@
     line-clamp: 2;
   }
 
-  .patient-list__cell-action {
-    padding-right: tokens.$space-16;
-    padding-left: tokens.$space-16;
+  .patient-list__table td.patient-list__cell-action,
+  .patient-list__table th.patient-list__sticky {
+    padding-right: 0;
+    padding-left: 0;
     text-align: center;
   }
 

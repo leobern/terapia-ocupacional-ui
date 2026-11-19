@@ -53,21 +53,22 @@ export type ColumnKey = 'name' | 'age' | 'therapy' | 'caloric' | 'protein' | 'lo
 const DEFAULT_WIDTHS: Readonly<Record<ColumnKey, number>> = {
   age: 150,
   caloric: 170,
-  first: 160,
+  first: 170,
   location: 170,
   name: 280,
   protein: 170,
   therapy: 120,
 };
 const MIN_WIDTH: Readonly<Record<ColumnKey, number>> = {
-  age: 100,
-  caloric: 120,
-  first: 130,
-  location: 110,
-  name: 160,
-  protein: 120,
-  therapy: 90,
+  age: 110,
+  caloric: 130,
+  first: 170,
+  location: 130,
+  name: 180,
+  protein: 130,
+  therapy: 130,
 };
+const COLUMN_ORDER: readonly ColumnKey[] = ['name', 'age', 'therapy', 'caloric', 'protein', 'location', 'first'];
 const MAX_WIDTH = 560;
 const ACTION_COLUMN_WIDTH = 72;
 const KEY_STEP = 16;
@@ -112,6 +113,13 @@ export class PatientListComponent implements OnInit {
   /** Larguras das colunas (V1: só nesta sessão; a persistência por usuário fica para a V2 com o perfil). */
   readonly widths = signal<Readonly<Record<ColumnKey, number>>>(DEFAULT_WIDTHS);
   readonly resizing = signal<ColumnKey | null>(null);
+  /** Coluna sob o mouse no cabeçalho: mostra a linha de divisória contínua. */
+  readonly hoverColumn = signal<ColumnKey | null>(null);
+  readonly lineIndex = computed(() => {
+    const key = this.resizing() ?? this.hoverColumn();
+
+    return key === null || key === 'first' ? null : COLUMN_ORDER.indexOf(key) + 1;
+  });
   readonly tableMinWidth = computed(
     () => Object.values(this.widths()).reduce((sum, w) => sum + w, 0) + ACTION_COLUMN_WIDTH,
   );
@@ -243,6 +251,34 @@ export class PatientListComponent implements OnInit {
     handle.addEventListener('pointermove', move);
     handle.addEventListener('pointerup', stop);
     handle.addEventListener('pointercancel', stop);
+  }
+
+  /**
+   * Ajusta todas as colunas à largura útil do card, sem rolagem horizontal. Reduz/expande em proporção;
+   * nenhuma passa do mínimo (colunas no mínimo ficam fixas e o resto se reparte). Se nem todas no
+   * mínimo cabem, todas ficam no mínimo e a rolagem horizontal continua.
+   */
+  fitColumns(): void {
+    const card = this.tableCard()?.nativeElement;
+    const available = (card?.clientWidth ?? 0) - ACTION_COLUMN_WIDTH;
+    const current = this.widths();
+    const result: Record<ColumnKey, number> = { ...MIN_WIDTH };
+    let free = [...COLUMN_ORDER];
+    let remaining = available;
+
+    while (free.length > 0 && remaining > 0) {
+      const scale = remaining / free.reduce((sum, k) => sum + current[k], 0);
+      const below = free.filter(k => current[k] * scale < MIN_WIDTH[k]);
+
+      if (below.length === 0) {
+        free.forEach(k => (result[k] = Math.floor(Math.min(MAX_WIDTH, current[k] * scale))));
+        break;
+      }
+      below.forEach(k => (remaining -= MIN_WIDTH[k]));
+      free = free.filter(k => !below.includes(k));
+    }
+
+    this.widths.set(result);
   }
 
   /** Teclado: setas esquerda e direita ajustam a coluna em passos de 16px; Home volta ao padrão. */
