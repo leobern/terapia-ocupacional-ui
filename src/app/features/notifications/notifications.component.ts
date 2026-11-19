@@ -10,7 +10,7 @@ import {
   Injector,
   OnDestroy,
   signal,
-  viewChild,
+  viewChildren,
 } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -115,6 +115,8 @@ export class NotificationsComponent implements OnDestroy {
   protected readonly answerErrorMessage = toSignal(this.store.select(selectAnswerErrorMessage), {
     initialValue: null,
   });
+  /** Notificação aguardando a confirmação de "Resolver" (null = diálogo fechado). */
+  protected readonly resolveConfirmId = signal<number | null>(null);
   protected readonly discardConfirmPending = toSignal(this.store.select(selectDiscardConfirmPending), {
     initialValue: false,
   });
@@ -163,7 +165,8 @@ export class NotificationsComponent implements OnDestroy {
   // navegação nem precisa ser compartilhado.
   private readonly expandedIds = signal<ReadonlySet<number>>(new Set());
 
-  private readonly scrollSentinel = viewChild<ElementRef<HTMLElement>>('scrollSentinel');
+  // Um sentinel por coluna: no desktop cada coluna tem o próprio scroll.
+  private readonly scrollSentinels = viewChildren<ElementRef<HTMLElement>>('scrollSentinel');
   private intersectionObserver?: IntersectionObserver;
   private pullStartY: number | null = null;
 
@@ -192,10 +195,10 @@ export class NotificationsComponent implements OnDestroy {
     // Observa o sentinel de fim de lista (FR-004a), mesmo padrão de home.component.ts.
     effect(
       () => {
-        const element = this.scrollSentinel()?.nativeElement;
+        const elements = this.scrollSentinels();
 
         this.intersectionObserver?.disconnect();
-        if (!element) {
+        if (elements.length === 0) {
           return;
         }
         this.intersectionObserver = new IntersectionObserver(entries => {
@@ -206,7 +209,7 @@ export class NotificationsComponent implements OnDestroy {
             this.store.dispatch(NotificationsActions.loadNextBatchRequested());
           }
         });
-        this.intersectionObserver.observe(element);
+        elements.forEach(element => this.intersectionObserver?.observe(element.nativeElement));
       },
       { injector: this.injector },
     );
@@ -263,7 +266,21 @@ export class NotificationsComponent implements OnDestroy {
 
   /** Botão ✓ do card (Figma v2/NotificationThread): marca como resolvida. */
   onResolveClick(id: number): void {
-    this.store.dispatch(NotificationsActions.resolveRequested({ notificationId: id }));
+    this.resolveConfirmId.set(id);
+  }
+
+  /** "Sim" no diálogo: resolve de fato a notificação. */
+  onConfirmResolve(): void {
+    const id = this.resolveConfirmId();
+
+    this.resolveConfirmId.set(null);
+    if (id !== null) {
+      this.store.dispatch(NotificationsActions.resolveRequested({ notificationId: id }));
+    }
+  }
+
+  onCancelResolve(): void {
+    this.resolveConfirmId.set(null);
   }
 
   onCollapseClick(id: number): void {

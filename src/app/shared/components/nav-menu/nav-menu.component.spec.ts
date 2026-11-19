@@ -61,7 +61,7 @@ describe('NavMenuComponent', () => {
     });
   });
 
-  it('renders the logout item with the power icon in "regular" weight and 24px', () => {
+  it('renders the logout item with the power icon always in "bold" weight and 24px', () => {
     const icon = logoutButton().querySelector('ph-icon');
     const iconDebugEl = fixture.debugElement
       .queryAll(By.directive(PhIconComponent))
@@ -69,7 +69,7 @@ describe('NavMenuComponent', () => {
 
     expect(logoutButton().textContent).toContain('Sair');
     expect(iconDebugEl?.componentInstance.name()).toBe('power');
-    expect(iconDebugEl?.componentInstance.weight()).toBe('regular');
+    expect(iconDebugEl?.componentInstance.weight()).toBe('bold');
     expect(iconDebugEl?.componentInstance.size()).toBe(24);
   });
 
@@ -163,6 +163,50 @@ describe('NavMenuComponent', () => {
       fixture.detectChanges();
 
       expect(link.className).not.toContain('keyboard-focus');
+    });
+  });
+
+  describe('peso dos ícones (Phosphor regular/bold)', () => {
+    function weightOf(label: string): string {
+      const el = fixture.debugElement
+        .queryAll(By.directive(PhIconComponent))
+        .find(d => d.nativeElement === linkByLabel(label).querySelector('ph-icon'));
+
+      return el?.componentInstance.weight();
+    }
+
+    it('usa bold só no item ativo', () => {
+      fixture.componentRef.setInput('activeItem', 'hospitais');
+      fixture.detectChanges();
+
+      expect(weightOf('Hospitais')).toBe('bold');
+      expect(weightOf('Home')).toBe('regular');
+    });
+  });
+
+  describe('alternador de tema', () => {
+    afterEach(() => {
+      localStorage.removeItem('conductia-theme');
+      document.documentElement.removeAttribute('data-theme');
+    });
+
+    function themeButtons(): HTMLButtonElement[] {
+      return Array.from(fixture.nativeElement.querySelectorAll('.nav-menu__theme-button'));
+    }
+
+    it('mostra sol e lua, com o claro ativo por padrão', () => {
+      const [light, dark] = themeButtons();
+
+      expect(light.getAttribute('aria-pressed')).toBe('true');
+      expect(dark.getAttribute('aria-pressed')).toBe('false');
+    });
+
+    it('troca para o tema escuro ao clicar na lua', () => {
+      themeButtons()[1].click();
+      fixture.detectChanges();
+
+      expect(document.documentElement.getAttribute('data-theme')).toBe('dark');
+      expect(themeButtons()[1].getAttribute('aria-pressed')).toBe('true');
     });
   });
 

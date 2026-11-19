@@ -17,6 +17,9 @@
   padding-top: tokens.$space-8;
 
   @include breakpoints.md {
+    // Desktop: a página não rola; cada coluna (Pendentes | Resolvidas) tem o próprio scroll.
+    height: 100vh;
+    min-height: 0;
     padding: tokens.$space-24 var(--layout-page-margin, 32px) 0;
   }
 }
@@ -98,9 +101,12 @@
   padding-bottom: calc(var(--bottom-nav-bar-height) + #{tokens.$space-16});
 
   @include breakpoints.md {
+    flex: 1 1 0;
     grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-rows: minmax(0, 1fr);
     gap: tokens.$space-24;
-    padding-bottom: tokens.$space-32;
+    min-height: 0;
+    padding-bottom: 0;
   }
 }
 
@@ -109,16 +115,22 @@
   flex-direction: column;
   gap: tokens.$space-16;
   min-width: 0;
+
+  @include breakpoints.md {
+    height: 100%;
+    overflow-y: auto;
+    padding-bottom: tokens.$space-32;
+  }
 }
 
-.notifications__section-title,
-.notifications__empty,
-.notifications__scroll-sentinel,
-.notifications__loading-more {
-  grid-column: 1 / -1;
+// Título da seção: 16px de respiro lateral e mais perto do primeiro card (8px).
+.notifications__section-title {
+  display: block;
+  margin: 0 tokens.$space-16 (-(tokens.$space-8));
 }
 
 .notifications__empty {
+  grid-column: 1 / -1;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -149,6 +161,7 @@
 }
 
 .notifications__loading-more {
+  grid-column: 1 / -1;
   padding: tokens.$space-16;
   text-align: center;
   font-family: tokens.$font-family-base;

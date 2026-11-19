@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, inject, input, output, si
 
 import { PhIconComponent } from '../../icons/ph-icon/ph-icon.component';
 import { KeyboardFocusService } from '../../services/keyboard-focus.service';
+import { type Theme, ThemeService } from '../../services/theme.service';
 import { ViewportBreakpointService } from '../../services/viewport-breakpoint.service';
 // Avatar do DESIGN SYSTEM (`shared/components/avatar`), não o local de uma feature:
 // `shared/` nunca importa de `features/` (Princípio IX). O import anterior apontava
@@ -83,12 +84,17 @@ export class NavMenuComponent {
   protected readonly professionalRole = 'Nutróloga';
 
   protected readonly viewportBreakpoint = inject(ViewportBreakpointService);
+  protected readonly themeService = inject(ThemeService);
+
+  protected readonly themes: readonly { readonly icon: string; readonly label: string; readonly value: Theme }[] = [
+    { icon: 'sun-dim', label: 'Tema claro', value: 'light' },
+    { icon: 'moon', label: 'Tema escuro', value: 'dark' },
+  ];
 
   /** Só oferece o botão de fechar fora do desktop — no desktop quem fecha é o mouse saindo do trilho. */
   protected readonly showCloseButton = computed(() => !this.viewportBreakpoint.isDesktop());
 
-  // Ícones sempre em peso "regular" (não o "bold" padrão do design system) —
-  // decisão específica deste componente (spec.md § Clarifications).
+  // Ícones em peso "regular"; o item ativo usa "bold" (Figma v2/NavMenu, Phosphor tem os dois).
   protected readonly items: readonly NavMenuItem[] = [
     { icon: 'house', key: 'home', label: 'Home' },
     { icon: 'hospital', key: 'hospitais', label: 'Hospitais' },

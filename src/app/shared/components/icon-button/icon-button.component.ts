@@ -42,6 +42,8 @@ export class IconButtonComponent {
   readonly appearance = input<IconButtonAppearance>('solid');
   readonly size = input<IconButtonSize>('default');
   readonly disabled = input<boolean>(false);
+  /** Estado ativo/selecionado do botão — o ícone fica em "bold" (padrão: regular; bold só ativo ou desabilitado). */
+  readonly active = input<boolean>(false);
   readonly icon = input.required<string>();
   readonly ariaLabel = input.required<string>();
 
@@ -54,6 +56,10 @@ export class IconButtonComponent {
    * superfícies que abre e não tinha como (spec.md FR-016).
    */
   readonly ariaExpanded = input<boolean | null>(null);
+
+  protected readonly iconWeight = computed<'bold' | 'regular'>(() =>
+    this.active() || this.disabled() || this.ariaExpanded() === true ? 'bold' : 'regular',
+  );
 
   protected readonly variantClass = computed(
     () => `icon-button--${this.kind()} icon-button--${this.appearance()} icon-button--${this.size()}`,

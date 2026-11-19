@@ -48,6 +48,35 @@ describe('IconButtonComponent', () => {
     expect(icon.componentInstance.name()).toBe('arrow-left');
   });
 
+  describe('peso do ícone (regular por padrão; bold só ativo ou desabilitado)', () => {
+    function weight(): string {
+      return fixture.debugElement.query(By.directive(PhIconComponent)).componentInstance.weight();
+    }
+
+    it('regular por padrão', () => {
+      expect(weight()).toBe('regular');
+    });
+
+    it('bold quando active, disabled ou com aria-expanded=true', () => {
+      fixture.componentRef.setInput('active', true);
+      fixture.detectChanges();
+
+      expect(weight()).toBe('bold');
+
+      fixture.componentRef.setInput('active', false);
+      fixture.componentRef.setInput('disabled', true);
+      fixture.detectChanges();
+
+      expect(weight()).toBe('bold');
+
+      fixture.componentRef.setInput('disabled', false);
+      fixture.componentRef.setInput('ariaExpanded', true);
+      fixture.detectChanges();
+
+      expect(weight()).toBe('bold');
+    });
+  });
+
   it('exposes the aria-label since there is no visible text', () => {
     expect(buttonEl().getAttribute('aria-label')).toBe('Voltar');
   });

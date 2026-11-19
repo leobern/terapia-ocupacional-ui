@@ -98,14 +98,50 @@
   }
 }
 
+.background-mesh__gradient {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+// Paradas ligadas aos tokens fundo-gradiente/1..3 (Light v2 / Dark v2). No escuro a segunda
+// parada fica em 45% e no claro em 23,8% (offset definido no template, por tema).
+.background-mesh__stop-1 {
+  stop-color: var(--color-bg-gradient-1, #dcfdf3);
+}
+
+.background-mesh__stop-2 {
+  stop-color: var(--color-bg-gradient-2, #dbfcff);
+}
+
+.background-mesh__stop-3 {
+  stop-color: var(--color-bg-gradient-3, #f0f3f5);
+}
+
 .background-mesh__static {
   position: fixed;
-  right: 0;
-  bottom: 0;
   z-index: 0;
-  aspect-ratio: 620 / 620;
-  max-width: 940px;
+  // Figma (componente `background`, instância `static`): mobile 620×620 em (0, 459) da tela;
+  // desktop 766×766 em (892, 567) — 72px do trilho + 820 dentro do conteúdo. Modo multiply;
+  // opacidade 10% (mobile) / 30% (desktop) no claro e 100% no escuro.
+  top: 459px;
+  left: 0;
+  width: 620px;
+  height: 620px;
   pointer-events: none;
+  mix-blend-mode: multiply;
+  opacity: 0.1;
+
+  @include breakpoints.md {
+    top: 567px;
+    left: 892px;
+    width: 766px;
+    height: 766px;
+    opacity: 0.3;
+  }
 }
 
 // Figma (Home Dark v2, nó 4638:22438): no tema escuro o fundo inteiro fica com 20% de
@@ -122,6 +158,6 @@
   }
 
   .background-mesh__static {
-    opacity: 0.2;
+    opacity: 1;
   }
 }

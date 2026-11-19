@@ -107,6 +107,7 @@
               (resolveClick)="onResolveClick(notification.id)"
             />
           }
+          <div #scrollSentinel class="notifications__scroll-sentinel"></div>
           </section>
 
           <section class="notifications__column" aria-label="Resolvidas">
@@ -139,9 +140,8 @@
               />
             }
           }
-          </section>
-
           <div #scrollSentinel class="notifications__scroll-sentinel"></div>
+          </section>
 
           @if (
             status() === 'loading-more-pending' ||
@@ -177,6 +177,16 @@
     (send)="onSendDraft()"
   />
 </app-bottom-sheet>
+
+<app-confirm-dialog
+  title="Resolver notificação?"
+  message="Deseja realmente colocar esta notificação como resolvida?"
+  confirmLabel="Sim"
+  cancelLabel="Não"
+  [open]="resolveConfirmId() !== null"
+  (confirmed)="onConfirmResolve()"
+  (cancelled)="onCancelResolve()"
+/>
 
 <app-confirm-dialog
   [open]="discardConfirmPending()"

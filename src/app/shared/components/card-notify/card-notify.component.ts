@@ -83,6 +83,8 @@ export class CardNotifyComponent {
   // (4496:11888) e resolvido (4506:9755) não têm.
   // Figma v2/NotificationThread: pendente mostra responder + resolver, também com as
   // respostas abertas; resolvida não tem ações.
+  // Figma v2/NotificationThread: o Resolver fica no cabeçalho de todo card pendente (não-Home).
+  protected readonly showResolveButton = computed(() => !this.isResume() && !this.resolved());
   protected readonly showActionButton = computed(() => (this.isDetail() || this.isAnswerOpen()) && !this.resolved());
   protected readonly repliesLabel = computed(() => {
     const total = this.replies().length;

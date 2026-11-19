@@ -293,6 +293,32 @@ describe('NotificationsComponent', () => {
     expect(fixture.componentInstance.isExpanded(1)).toBeTrue();
   });
 
+  it('Resolver pede confirmação: só despacha resolveRequested após "Sim"', async () => {
+    await configureStore({ status: 'success' });
+    createComponent();
+    spyOn(store, 'dispatch');
+
+    fixture.componentInstance.onResolveClick(7);
+
+    expect(store.dispatch).not.toHaveBeenCalled();
+
+    fixture.componentInstance.onConfirmResolve();
+
+    expect(store.dispatch).toHaveBeenCalledWith(NotificationsActions.resolveRequested({ notificationId: 7 }));
+  });
+
+  it('"Não" no diálogo de Resolver não despacha nada', async () => {
+    await configureStore({ status: 'success' });
+    createComponent();
+    spyOn(store, 'dispatch');
+
+    fixture.componentInstance.onResolveClick(7);
+    fixture.componentInstance.onCancelResolve();
+    fixture.componentInstance.onConfirmResolve();
+
+    expect(store.dispatch).not.toHaveBeenCalled();
+  });
+
   // --- Fluxo de resposta (US3) ---
 
   it('onAnswerClick despacha answerStarted com o notificationId', async () => {

@@ -2,7 +2,6 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 
 import { AvatarComponent } from '../avatar/avatar.component';
-import { IconButtonComponent } from '../icon-button/icon-button.component';
 import { CardNotifyComponent } from './card-notify.component';
 
 describe('CardNotifyComponent', () => {
@@ -183,7 +182,7 @@ describe('CardNotifyComponent', () => {
     it('o botão de responder é o balão (chat-circle-dots) com contorno, no rodapé (Figma v2/NotificationThread)', async () => {
       await createDetail();
       const button = fixture.nativeElement.querySelector('.card-notify__actions app-icon-button');
-      const instance = fixture.debugElement.query(By.directive(IconButtonComponent)).componentInstance;
+      const instance = fixture.debugElement.query(By.css('.card-notify__actions app-icon-button')).componentInstance;
 
       expect(button).toBeTruthy();
       expect(instance.icon()).toBe('chat-circle-dots');
@@ -191,16 +190,35 @@ describe('CardNotifyComponent', () => {
       expect(instance.appearance()).toBe('outlined');
     });
 
-    it('card resolvido não tem ações; com as respostas abertas mantém responder e resolver (Figma v2/NotificationThread)', async () => {
+    it('Resolver (check, tonal, primary) fica no cabeçalho de todo card pendente e some no resolvido (Figma v2/NotificationThread)', async () => {
+      await createDetail();
+      const resolve = fixture.debugElement.query(By.css('.card-notify__row app-icon-button')).componentInstance;
+
+      expect(resolve.icon()).toBe('check');
+      expect(resolve.kind()).toBe('primary');
+      expect(resolve.appearance()).toBe('tonal');
+    });
+
+    it('o ponto de não lida flutua no canto do cabeçalho (top/right -4px)', async () => {
+      await createDetail({ unread: true });
+      const dot = fixture.nativeElement.querySelector('.card-notify__unread') as HTMLElement;
+
+      expect(getComputedStyle(dot).position).toBe('absolute');
+      expect(getComputedStyle(dot).top).toBe('-4px');
+      expect(getComputedStyle(dot).right).toBe('-4px');
+    });
+
+    it('card resolvido não tem ações nem botão Resolver; com as respostas abertas o balão continua no rodapé', async () => {
       await createDetail({ resolved: true });
 
       expect(fixture.nativeElement.querySelector('.card-notify__actions')).toBeNull();
+      expect(fixture.nativeElement.querySelector('.card-notify__row app-icon-button')).toBeNull();
 
       fixture.componentRef.setInput('resolved', false);
       fixture.componentRef.setInput('type', 'answer-open');
       fixture.detectChanges();
 
-      expect(fixture.nativeElement.querySelectorAll('.card-notify__actions app-icon-button').length).toBe(2);
+      expect(fixture.nativeElement.querySelectorAll('.card-notify__actions app-icon-button').length).toBe(1);
     });
 
     it('a tag de respostas mostra "N respostas" com alvo de 40px (Figma v2/NotificationThread)', async () => {

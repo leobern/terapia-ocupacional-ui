@@ -90,6 +90,19 @@
   background: tokens.c(comm-alert);
 }
 
+// Figma v2/NotificationThread: o ponto flutua sobre o canto superior direito do cabeçalho
+// (right/top -4px), acima do botão Resolver, sem ocupar espaço na linha.
+.card-notify--expanded .card-notify__row {
+  position: relative;
+}
+
+.card-notify--expanded .card-notify__unread {
+  position: absolute;
+  top: -#{tokens.$space-4};
+  right: -#{tokens.$space-4};
+  margin-top: 0;
+}
+
 .card-notify__resolved-tag {
   display: inline-flex;
   align-items: center;

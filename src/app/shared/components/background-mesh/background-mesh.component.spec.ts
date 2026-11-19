@@ -1,5 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
+import { ThemeService } from '../../services/theme.service';
 import { BackgroundMeshComponent } from './background-mesh.component';
 
 describe('BackgroundMeshComponent', () => {
@@ -13,9 +14,11 @@ describe('BackgroundMeshComponent', () => {
       showColor3Desktop?: boolean;
       meshGradientCoreColor?: string;
       meshGradientEdgeColor?: string;
+      theme?: 'dark' | 'light';
     } = {},
   ): Promise<void> {
     await TestBed.configureTestingModule({ imports: [BackgroundMeshComponent] }).compileComponents();
+    TestBed.inject(ThemeService).set(overrides.theme ?? 'light');
     fixture = TestBed.createComponent(BackgroundMeshComponent);
     if (overrides.color1 !== undefined) {
       fixture.componentRef.setInput('color1', overrides.color1);
@@ -90,13 +93,36 @@ describe('BackgroundMeshComponent', () => {
   });
 
   it('escuro: a camada dos círculos fica com 20% de opacidade e mistura plus-lighter (Figma, Dark v2)', async () => {
-    document.documentElement.setAttribute('data-theme', 'dark');
-    await create();
+    await create({ theme: 'dark' });
     const layer = fixture.nativeElement.querySelector('.background-mesh__blobs') as HTMLElement;
 
     expect(getComputedStyle(layer).mixBlendMode).toBe('plus-lighter');
     expect(getComputedStyle(layer).opacity).toBe('0.2');
-    document.documentElement.removeAttribute('data-theme');
+    TestBed.inject(ThemeService).set('light');
+  });
+
+  it('variant=gradient troca os círculos pelo gradiente linear do Figma (3 paradas, vetor 0,2422 × 1,1566)', async () => {
+    await create();
+    fixture.componentRef.setInput('variant', 'gradient');
+    fixture.detectChanges();
+    const el = fixture.nativeElement as HTMLElement;
+    const gradient = el.querySelector('linearGradient') as SVGLinearGradientElement;
+
+    expect(el.querySelector('.background-mesh__blobs')).toBeNull();
+    expect(gradient.querySelectorAll('stop').length).toBe(3);
+    expect(gradient.getAttribute('x2')).toBe('0.24218');
+    expect(gradient.getAttribute('y2')).toBe('1.15655');
+    expect(gradient.querySelectorAll('stop')[1].getAttribute('offset')).toBe('0.2377');
+  });
+
+  it('variant=gradient no escuro move a 2ª parada para 45% (Figma, Dark v2)', async () => {
+    await create({ theme: 'dark' });
+    fixture.componentRef.setInput('variant', 'gradient');
+    fixture.detectChanges();
+    const stop = (fixture.nativeElement as HTMLElement).querySelectorAll('linearGradient stop')[1];
+
+    expect(stop.getAttribute('offset')).toBe('0.4503');
+    TestBed.inject(ThemeService).set('light');
   });
 
   it('showColor3Desktop=false marca o host para esconder o 3º círculo no desktop (Notificações)', async () => {

@@ -17,7 +17,7 @@ const WEIGHT_CLASS: Record<PhIconWeight, string> = {
 };
 
 /**
- * Wrapper fino sobre `@phosphor-icons/web`. Uso: `<ph-icon name="gear" weight="bold" />`.
+ * Wrapper fino sobre `@phosphor-icons/web`. Uso: `<ph-icon name="gear" weight="bold" /> (o padrão é "regular")`.
  *
  * Não desenha ícones à mão (Constituição, Princípio VIII) — apenas resolve o
  * nome/peso para as classes CSS da lib, já carregadas globalmente em styles.scss.
@@ -30,10 +30,9 @@ const WEIGHT_CLASS: Record<PhIconWeight, string> = {
 })
 export class PhIconComponent {
   readonly name = input.required<string>();
-  // Design system usa exclusivamente o peso "bold" (ajuste visual pedido
-  // pelo usuário) — outros pesos continuam suportados pela lib, mas não são
-  // mais o padrão do app.
-  readonly weight = input<PhIconWeight>('bold');
+  // Padrão do design system (Figma, 2026-11-19): ícone em "regular". "bold" só em estado ativo
+  // ou desabilitado do controle (e no ícone de Sair do menu, que é sempre bold).
+  readonly weight = input<PhIconWeight>('regular');
   readonly size = input<number>(24);
 
   protected readonly iconClass = computed(() => `${WEIGHT_CLASS[this.weight()]} ph-${this.name()}`);

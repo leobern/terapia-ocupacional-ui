@@ -200,6 +200,12 @@ $mesh-fade-mask: radial-gradient(
   filter: blur(calc(var(--icon-logo-resolved-size) / 4));
 }
 
+// Figma (Dark v2): no tema escuro as luzes atrás da logo usam "hard light" — sem isso o modo
+// `color` as deixa muito claras sobre a superfície escura.
+:host-context([data-theme='dark']) .icon-logo__light {
+  mix-blend-mode: hard-light;
+}
+
 // Visíveis em `anim` (animadas) e no hover do botão (estáticas).
 :host([data-state='anim']) .icon-logo__light,
 :host(.icon-logo--lights-visible) .icon-logo__light {

@@ -70,6 +70,8 @@ export class AppComponent {
     return url.startsWith('/notifications') ? 'notificacoes' : null;
   });
 
+  // Home usa o gradiente de fundo do Figma; as demais telas seguem com os círculos por enquanto.
+  protected readonly backgroundVariant = computed(() => (this.currentUrl().startsWith('/home') ? 'gradient' : 'blobs'));
   protected readonly isNotificationsRoute = computed(() => this.currentUrl().startsWith('/notifications'));
   protected readonly aiSheetSnap = signal<BottomSheetSnap>('default');
   protected readonly aiDrawerSnap = signal<DrawerSnap>('default');

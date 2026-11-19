@@ -32,6 +32,18 @@
     @if (unread() && !resolved()) {
       <span class="card-notify__unread" aria-label="Não lida"></span>
     }
+    @if (showResolveButton()) {
+      <!-- Figma v2/NotificationThread: Resolver (check, tonal) no cabeçalho do card. -->
+      <app-icon-button
+        kind="primary"
+        appearance="tonal"
+        size="small"
+        icon="check"
+        ariaLabel="Resolver"
+        [disabled]="actionDisabled()"
+        (click)="onResolveClick($event)"
+      />
+    }
     @if (resolved()) {
       <span class="card-notify__resolved-tag">
         <ph-icon name="check" [size]="16" />
@@ -140,15 +152,6 @@
           [ariaLabel]="actionAriaLabel()"
           [disabled]="actionDisabled()"
           (click)="onActionClick($event)"
-        />
-        <app-icon-button
-          kind="success"
-          appearance="tonal"
-          size="small"
-          icon="check"
-          ariaLabel="Resolver"
-          [disabled]="actionDisabled()"
-          (click)="onResolveClick($event)"
         />
       </span>
     }
