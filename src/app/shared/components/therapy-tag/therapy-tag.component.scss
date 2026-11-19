@@ -1,0 +1,26 @@
+@use '../../styles/tokens';
+@use '../../styles/typography';
+
+:host {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  height: 24px;
+  padding-inline: tokens.$space-8;
+  border: 1px solid tokens.c(border);
+  border-radius: tokens.$radius-pill;
+  white-space: nowrap;
+
+  @include typography.label-sm;
+}
+
+:host(.therapy-tag--neutral) {
+  background: tokens.c(surface-2);
+  color: tokens.c(content-2);
+}
+
+:host(.therapy-tag--success) {
+  border-color: transparent;
+  background: tokens.c(comm-success);
+  color: tokens.c(content-1);
+}

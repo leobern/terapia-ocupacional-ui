@@ -12,6 +12,7 @@
       type="button"
       class="date-strip__day"
       [class.date-strip__day--selected]="day.selected"
+      [class.date-strip__day--near]="day.distance === 1"
       [attr.aria-label]="day.label"
       [attr.aria-pressed]="day.selected"
       (click)="pick(day)"
@@ -24,6 +25,7 @@
     type="button"
     class="date-strip__arrow"
     aria-label="Próximo dia"
+    [disabled]="!canGoForward()"
     (click)="shift(1)"
   >
     <ph-icon name="caret-right" [size]="24" />

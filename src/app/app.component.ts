@@ -67,6 +67,10 @@ export class AppComponent {
       return 'home';
     }
 
+    if (url.startsWith('/patients')) {
+      return 'pacientes';
+    }
+
     return url.startsWith('/notifications') ? 'notificacoes' : null;
   });
 
@@ -156,6 +160,11 @@ export class AppComponent {
   protected onHomeClick(): void {
     this.menuOpen.set(false);
     void this.router.navigate(['/home']);
+  }
+
+  protected onPacientesClick(): void {
+    this.menuOpen.set(false);
+    void this.router.navigate(['/patients']);
   }
 
   protected onNotificacoesClick(): void {

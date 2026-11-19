@@ -1,15 +1,24 @@
 @use '../../styles/tokens';
-@use '../../styles/typography';
+@use '../../styles/breakpoints';
 
+// Figma v2/DateStrip: 72px de altura, borda, raio md, padding 4. No desktop a largura é
+// fixa em 370px; no mobile ocupa a largura disponível.
 :host {
   display: block;
+  width: 100%;
+
+  @include breakpoints.md {
+    width: 370px;
+  }
 }
 
 .date-strip {
   display: flex;
   align-items: center;
-  gap: tokens.$space-4;
+  justify-content: space-between;
+  height: 72px;
   padding: tokens.$space-4;
+  border: 1px solid tokens.c(border);
   border-radius: tokens.$radius-md;
   background: tokens.c(surface);
 }
@@ -19,30 +28,84 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 44px;
-  min-height: 44px;
   border: 0;
   background: transparent;
   color: tokens.c(content-1);
   cursor: pointer;
 }
 
-.date-strip__day {
-  flex: 1 0 0;
-  flex-direction: column;
-  padding: tokens.$space-4 0;
-  border-radius: tokens.$radius-md;
+.date-strip__arrow {
+  flex: none;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border-radius: tokens.$radius-pill;
+
+  &:disabled {
+    color: tokens.c(state-disabled);
+    cursor: default;
+  }
 }
 
+// Itens afunilam a partir do selecionado: 60 → 54 → 48 de altura.
+.date-strip__day {
+  flex-direction: column;
+  width: 38.4px;
+  height: 48px;
+  padding: 0;
+  border-radius: 12.8px;
+
+  .date-strip__weekday {
+    font-size: 9.6px;
+    line-height: 12.8px;
+  }
+
+  .date-strip__number {
+    font-size: 16px;
+    line-height: 22.4px;
+  }
+}
+
+.date-strip__day--near {
+  width: 43.2px;
+  height: 54px;
+  border-radius: 14.4px;
+
+  .date-strip__weekday {
+    font-size: 10.8px;
+    line-height: 14.4px;
+  }
+
+  .date-strip__number {
+    font-size: 18px;
+    line-height: 25.2px;
+  }
+}
+
+// Decisão do design (2026-11-19): o destaque do dia selecionado é cinza (não azul).
 .date-strip__day--selected {
-  background: tokens.c(secondary);
-  color: tokens.c(surface);
+  width: 48px;
+  height: 60px;
+  border-radius: tokens.$radius-sm;
+  background: tokens.c(surface-2);
+
+  .date-strip__weekday {
+    font-size: 12px;
+    line-height: 16px;
+  }
+
+  .date-strip__number {
+    font-size: 20px;
+    line-height: 28px;
+  }
 }
 
 .date-strip__weekday {
-  @include typography.caption;
+  color: tokens.c(content-4);
+  font-weight: 400;
 }
 
 .date-strip__number {
-  @include typography.title-md;
+  color: tokens.c(content-1);
+  font-weight: 600;
 }

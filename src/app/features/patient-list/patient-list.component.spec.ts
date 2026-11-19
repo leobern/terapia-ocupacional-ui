@@ -1,6 +1,8 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter, Router } from '@angular/router';
 
+import { AiAssistantService } from '../../shared/services/ai-assistant.service';
+import { ScreenActionsService } from '../../shared/services/screen-actions.service';
 import { LinkedHospitalsReader } from '../home/linked-hospitals';
 import { PatientListComponent } from './patient-list.component';
 import { CensusPatient } from './patient-list.models';
@@ -95,7 +97,7 @@ describe('PatientListComponent', () => {
     expect(text()).toContain('Calórica 10% · Proteica indisponível');
     expect(text()).toContain('TN há');
     expect(fixture.nativeElement.querySelectorAll('app-graph-meta').length).toBe(3);
-    expect(fixture.nativeElement.querySelectorAll('.patient-list__rows app-tag').length).toBe(1);
+    expect(fixture.nativeElement.querySelectorAll('.patient-list__first app-therapy-tag').length).toBe(1);
     expect(text()).toContain('Primeira avaliação');
   });
 
@@ -110,24 +112,40 @@ describe('PatientListComponent', () => {
     await create();
 
     expect(q('.date-strip__day--selected .date-strip__number')?.textContent).toBe(String(new Date().getDate()));
-    q('[aria-label="Próximo dia"]')?.click();
+    expect(
+      Array.from((fixture.nativeElement as HTMLElement).querySelectorAll('.date-strip__day')).at(-1)?.classList,
+    ).toContain('date-strip__day--selected');
+    q('[aria-label="Dia anterior"]')?.click();
     await fixture.whenStable();
     fixture.detectChanges();
 
     expect(days.length).toBe(2);
     expect(days[1].getDate()).toBe(
-      new Date(days[0].getFullYear(), days[0].getMonth(), days[0].getDate() + 1).getDate(),
+      new Date(days[0].getFullYear(), days[0].getMonth(), days[0].getDate() - 1).getDate(),
     );
   });
 
-  it('cabeçalho mostra adequação do dia em texto e o sino leva às notificações', async () => {
+  it('cabeçalho mostra adequação do dia, sem botão de voltar nem sino, e o atalho abre as ações da tela', async () => {
     source.result = Promise.resolve(census(2));
     await create();
 
     expect(text()).toContain('Adequação do dia: Calórica 80% · Proteica 70%');
-    q('[aria-label="Notificações"]')?.click();
+    expect(q('[aria-label="Voltar"]')).toBeNull();
+    expect(q('[aria-label="Notificações"]')).toBeNull();
+    expect(q('.patient-list__title ph-icon i')?.className).toContain('ph-bold');
+    q('[aria-label="Ações da tela"]')?.click();
 
-    expect(router.navigate).toHaveBeenCalledWith(['/notifications']);
+    expect(TestBed.inject(AiAssistantService).view()).toBe('shortcuts');
+  });
+
+  it('registra as ações principais da tela nos atalhos', async () => {
+    await create();
+
+    expect(
+      TestBed.inject(ScreenActionsService)
+        .actions()
+        .map(a => a.label),
+    ).toEqual(['Cadastrar paciente', 'Editar paciente', 'Encerrar acompanhamento', 'Alterar leito']);
   });
 
   it('tabela desktop: colunas sem data de nascimento, metas com texto e clique na linha abre o Hub', async () => {
@@ -164,11 +182,11 @@ describe('PatientListComponent', () => {
     expect(text()).toContain('2 pacientes');
   });
 
-  it('mostra estado vazio com ação de cadastrar que apenas navega', async () => {
+  it('mostra estado vazio e o botão de cadastrar apenas navega', async () => {
     await create();
 
     expect(text()).toContain('Nenhum paciente para este dia');
-    q('app-button button')?.click();
+    q('.patient-list__register button')?.click();
 
     expect(router.navigate).toHaveBeenCalledWith(['/home']);
   });
@@ -179,23 +197,20 @@ describe('PatientListComponent', () => {
 
     expect(text()).toContain('Erro ao carregar os pacientes');
     source.result = Promise.resolve(census(2));
-    q('app-button button')?.click();
+    q('.patient-list__state app-button button')?.click();
     await fixture.whenStable();
     fixture.detectChanges();
 
     expect(text()).toContain('2 pacientes');
   });
 
-  it('toque no card abre o paciente e voltar vai para a Home', async () => {
+  it('toque no card abre o paciente', async () => {
     source.result = Promise.resolve(census(1));
     await create();
 
     q('.patient-list__row')?.click();
 
     expect(router.navigate).toHaveBeenCalledWith(['/patients', 'p0']);
-    q('.patient-list__back')?.click();
-
-    expect(router.navigate).toHaveBeenCalledWith(['/home']);
   });
 
   it('ignora resposta de carga antiga', async () => {

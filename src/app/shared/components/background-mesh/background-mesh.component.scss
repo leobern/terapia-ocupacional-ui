@@ -135,8 +135,10 @@
   opacity: 0.1;
 
   @include breakpoints.md {
+    // Sempre ancorado à direita da tela (Figma: 262px da borda direita em 1920).
     top: 567px;
-    left: 892px;
+    right: 262px;
+    left: auto;
     width: 766px;
     height: 766px;
     opacity: 0.3;

@@ -1,16 +1,10 @@
 <app-page-container>
   <div class="patient-list">
+    <!-- Figma v2/PageHeader: sem voltar (a tela é aberta pelo menu Pacientes); ícone de título em bold. -->
     <header class="patient-list__header">
-      <button
-        type="button"
-        class="patient-list__back"
-        aria-label="Voltar"
-        (click)="back()"
-      >
-        <ph-icon name="arrow-left" [size]="24" />
-      </button>
       <div class="patient-list__header-text">
         <h1 class="patient-list__title">
+          <ph-icon name="users-three" weight="bold" [size]="24" />
           @if (status() === 'ready') {
             {{ countLabel() }}
           } @else {
@@ -19,14 +13,20 @@
         </h1>
         <p class="patient-list__subtitle">{{ hospitalName() }}</p>
       </div>
-      <button
-        type="button"
-        class="patient-list__back patient-list__bell"
-        aria-label="Notificações"
-        (click)="openNotifications()"
-      >
-        <ph-icon name="bell" [size]="24" />
-      </button>
+      <!--
+        Só no desktop: no mobile a barra inferior já traz o mesmo atalho. Wrapper <span> porque o
+        host do botão é display: contents (mesmo padrão da Home).
+      -->
+      <span class="patient-list__shortcuts">
+        <app-icon-button
+          kind="primary"
+          appearance="icon"
+          icon="squares-four"
+          ariaLabel="Ações da tela"
+          [disabled]="aiAssistant.shortcutsOpen()"
+          (click)="aiAssistant.openShortcuts()"
+        />
+      </span>
     </header>
 
     @if (status() === 'ready') {
@@ -36,10 +36,21 @@
       </p>
     }
 
-    <app-date-strip
-      [selected]="selectedDate()"
-      (dateChange)="selectDate($event)"
-    />
+    <div class="patient-list__toolbar">
+      <app-date-strip
+        [selected]="selectedDate()"
+        (dateChange)="selectDate($event)"
+      />
+      <span class="patient-list__toolbar-spacer"></span>
+      <span class="patient-list__register">
+        <app-button
+          size="md"
+          iconLeft="plus"
+          label="Cadastrar paciente"
+          (click)="registerPatient()"
+        />
+      </span>
+    </div>
 
     @switch (status()) {
       @case ('loading') {
@@ -76,61 +87,120 @@
               Escolha outro dia ou cadastre um paciente para começar o
               acompanhamento.
             </p>
-            <app-button
-              kind="primary"
-              appearance="outlined"
-              label="Cadastrar paciente"
-              (click)="registerPatient()"
-            />
           </div>
         } @else {
-          <table class="patient-list__table">
-            <thead>
-              <tr>
-                <th scope="col">Paciente</th>
-                <th scope="col">Idade · início da terapia</th>
-                <th scope="col">Localização</th>
-                <th scope="col">Terapia</th>
-                <th scope="col">Adequação calórica</th>
-                <th scope="col">Adequação proteica</th>
-                <th scope="col">
-                  <span class="patient-list__sr">Abrir paciente</span>
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              @for (patient of patients(); track patient.id) {
-                <tr class="patient-list__tr" (click)="openPatient(patient.id)">
-                  <td class="patient-list__td-name">
-                    <span class="patient-list__name">{{ patient.name }}</span>
-                    @if (patient.firstEvaluation) {
-                      <app-tag type="status" label="Primeira avaliação" />
-                    }
-                  </td>
-                  <td>
-                    {{ patient.age }} anos ·
-                    {{ therapyStartLabel(patient.therapyDays) }}
-                  </td>
-                  <td>{{ patient.ward }} · Leito {{ patient.bed }}</td>
-                  <td>{{ therapyLabel(patient.therapy) }}</td>
-                  <td>{{ goalLabel(patient.adequacy?.caloric ?? null) }}</td>
-                  <td>{{ goalLabel(patient.adequacy?.protein ?? null) }}</td>
-                  <td>
-                    <button
-                      type="button"
-                      class="patient-list__open"
-                      [attr.aria-label]="'Abrir ' + patient.name"
-                      (click)="
-                        $event.stopPropagation(); openPatient(patient.id)
-                      "
-                    >
-                      <ph-icon name="caret-right" [size]="24" />
-                    </button>
-                  </td>
+          <div class="patient-list__table-card">
+            <table class="patient-list__table">
+              <colgroup>
+                <col class="patient-list__col-name" />
+                <col class="patient-list__col-age" />
+                <col class="patient-list__col-location" />
+                <col class="patient-list__col-therapy" />
+                <col class="patient-list__col-goal" />
+                <col class="patient-list__col-goal" />
+                <col class="patient-list__col-action" />
+              </colgroup>
+              <thead>
+                <tr>
+                  <th scope="col">Paciente</th>
+                  <th scope="col">Idade · início da terapia</th>
+                  <th scope="col">Localização</th>
+                  <th scope="col">Terapia</th>
+                  <th scope="col">Adequação calórica</th>
+                  <th scope="col">Adequação proteica</th>
+                  <th scope="col">
+                    <span class="patient-list__sr">Abrir paciente</span>
+                  </th>
                 </tr>
-              }
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                @for (patient of patients(); track patient.id) {
+                  <tr
+                    class="patient-list__tr"
+                    (click)="openPatient(patient.id)"
+                  >
+                    <td>
+                      <span class="patient-list__name-cell">
+                        <span class="patient-list__name">{{
+                          patient.name
+                        }}</span>
+                        @if (patient.firstEvaluation) {
+                          <app-therapy-tag
+                            tone="success"
+                            label="Primeira avaliação"
+                          />
+                        }
+                      </span>
+                    </td>
+                    <td>
+                      {{ patient.age }} anos ·
+                      {{ therapyStartLabel(patient.therapyDays) }}
+                    </td>
+                    <td class="patient-list__cell-location">
+                      {{ patient.ward }} · Leito {{ patient.bed }}
+                    </td>
+                    <td>
+                      <app-therapy-tag
+                        [label]="therapyLabel(patient.therapy)"
+                      />
+                    </td>
+                    <td>
+                      <span
+                        [class]="
+                          'patient-list__goal patient-list__goal--' +
+                          goalTone(patient.adequacy?.caloric ?? null)
+                        "
+                      >
+                        @if (
+                          patient.adequacy?.caloric !== null && patient.adequacy
+                        ) {
+                          <span class="patient-list__bar" aria-hidden="true">
+                            <span
+                              class="patient-list__bar-fill"
+                              [style.width.%]="patient.adequacy.caloric"
+                            ></span>
+                          </span>
+                        }
+                        {{ goalLabel(patient.adequacy?.caloric ?? null) }}
+                      </span>
+                    </td>
+                    <td>
+                      <span
+                        [class]="
+                          'patient-list__goal patient-list__goal--' +
+                          goalTone(patient.adequacy?.protein ?? null)
+                        "
+                      >
+                        @if (
+                          patient.adequacy?.protein !== null && patient.adequacy
+                        ) {
+                          <span class="patient-list__bar" aria-hidden="true">
+                            <span
+                              class="patient-list__bar-fill"
+                              [style.width.%]="patient.adequacy.protein"
+                            ></span>
+                          </span>
+                        }
+                        {{ goalLabel(patient.adequacy?.protein ?? null) }}
+                      </span>
+                    </td>
+                    <td class="patient-list__cell-action">
+                      <button
+                        type="button"
+                        class="patient-list__open"
+                        [attr.aria-label]="'Abrir ' + patient.name"
+                        (click)="
+                          $event.stopPropagation(); openPatient(patient.id)
+                        "
+                      >
+                        <ph-icon name="caret-right" [size]="24" />
+                      </button>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
           <ul class="patient-list__rows">
             @for (patient of patients(); track patient.id) {
               <li>
@@ -165,12 +235,15 @@
                       <span>{{ adequacyLabel(patient.adequacy) }}</span>
                     </span>
                     @if (patient.firstEvaluation) {
-                      <app-tag type="status" label="Primeira avaliação" />
+                      <span class="patient-list__first">
+                        <app-therapy-tag
+                          tone="success"
+                          label="Primeira avaliação"
+                        />
+                      </span>
                     }
                   </span>
-                  <span class="patient-list__therapy">{{
-                    therapyLabel(patient.therapy)
-                  }}</span>
+                  <app-therapy-tag [label]="therapyLabel(patient.therapy)" />
                   <ph-icon name="caret-right" [size]="24" />
                 </button>
               </li>
