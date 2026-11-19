@@ -30,6 +30,11 @@ export const routes: Routes = [
     loadChildren: () => import('./features/home/home.routes').then(m => m.HOME_ROUTES),
   },
   {
+    path: 'patients',
+    pathMatch: 'full',
+    loadChildren: () => import('./features/patient-list/patient-list.routes').then(m => m.PATIENT_LIST_ROUTES),
+  },
+  {
     path: 'splash',
     data: { hideShell: true },
     loadChildren: () => import('./features/splash/splash.routes').then(m => m.SPLASH_ROUTES),

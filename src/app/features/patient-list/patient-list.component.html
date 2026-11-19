@@ -1,0 +1,101 @@
+<app-page-container>
+  <div class="patient-list">
+    <header class="patient-list__header">
+      <button
+        type="button"
+        class="patient-list__back"
+        aria-label="Voltar"
+        (click)="back()"
+      >
+        <ph-icon name="arrow-left" [size]="24" />
+      </button>
+      <div class="patient-list__header-text">
+        <h1 class="patient-list__title">
+          @if (status() === 'ready') {
+            {{ countLabel() }}
+          } @else {
+            Pacientes
+          }
+        </h1>
+        <p class="patient-list__subtitle">{{ hospitalName() }}</p>
+      </div>
+    </header>
+
+    @switch (status()) {
+      @case ('loading') {
+        <ul
+          class="patient-list__skeleton"
+          aria-busy="true"
+          aria-label="Carregando pacientes"
+        >
+          @for (row of skeletonRows; track row) {
+            <li class="patient-list__skeleton-row" aria-hidden="true"></li>
+          }
+        </ul>
+      }
+      @case ('error') {
+        <div class="patient-list__state" role="alert">
+          <ph-icon name="wifi-x" [size]="48" />
+          <h2 class="patient-list__state-title">
+            Erro ao carregar os pacientes
+          </h2>
+          <p class="patient-list__state-text">
+            Verifique sua conexão e tente novamente.
+          </p>
+          <app-button label="Tentar novamente" (click)="retry()" />
+        </div>
+      }
+      @default {
+        @if (patients().length === 0) {
+          <div class="patient-list__state" role="status">
+            <ph-icon name="users-three" [size]="48" />
+            <h2 class="patient-list__state-title">
+              Nenhum paciente para este dia
+            </h2>
+            <p class="patient-list__state-text">
+              Escolha outro dia ou cadastre um paciente para começar o
+              acompanhamento.
+            </p>
+            <app-button
+              kind="primary"
+              appearance="outlined"
+              label="Cadastrar paciente"
+              (click)="registerPatient()"
+            />
+          </div>
+        } @else {
+          <ul class="patient-list__rows">
+            @for (patient of patients(); track patient.id) {
+              <li>
+                <button
+                  type="button"
+                  class="patient-list__row"
+                  (click)="openPatient(patient.id)"
+                >
+                  <app-avatar
+                    type="patient"
+                    size="medium"
+                    [name]="patient.name"
+                  />
+                  <span class="patient-list__info">
+                    <span class="patient-list__name">{{ patient.name }}</span>
+                    <span class="patient-list__meta"
+                      >{{ patient.age }} anos</span
+                    >
+                    <span class="patient-list__location"
+                      >{{ patient.ward }} · Leito {{ patient.bed }}</span
+                    >
+                  </span>
+                  <span class="patient-list__therapy">{{
+                    therapyLabel(patient.therapy)
+                  }}</span>
+                  <ph-icon name="caret-right" [size]="24" />
+                </button>
+              </li>
+            }
+          </ul>
+        }
+      }
+    }
+  </div>
+</app-page-container>

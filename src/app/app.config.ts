@@ -23,6 +23,8 @@ import {
   ProvisionalHomeApiService,
   ProvisionalNotificationsApiService,
 } from './features/notifications/data-access/provisional-notifications-api.service';
+import { PatientListSource } from './features/patient-list/patient-list-source';
+import { ProvisionalPatientListSource } from './features/patient-list/provisional-patient-list';
 import { LocalStartupStateReader } from './features/splash/local-startup-state-reader';
 import { StartupStateReader } from './features/splash/startup-state';
 import { ASSISTANT_QUERY_RESOLVERS } from './shared/services/assistant-query-resolver';
@@ -36,6 +38,7 @@ export const appConfig: ApplicationConfig = {
     { provide: LinkedHospitalsReader, useClass: MockLinkedHospitalsReader },
     { provide: UnreadNotificationsReader, useClass: LocalUnreadNotificationsReader },
     { provide: DailyPatientsSource, useClass: ProvisionalDailyPatientsSource },
+    { provide: PatientListSource, useClass: ProvisionalPatientListSource },
     { provide: HomeNotificationsSource, useClass: ProvisionalHomeNotificationsSource },
     // Provisórios (sem backend ainda): notificações em memória, hospital único e usuários de exemplo.
     { provide: NotificationsApiService, useClass: ProvisionalNotificationsApiService },

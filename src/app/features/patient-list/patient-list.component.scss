@@ -1,0 +1,141 @@
+@use '../../shared/styles/tokens';
+@use '../../shared/styles/typography';
+
+// Figma "Conductia - V1", seção 08 (Listagem de Pacientes), mobile 402.
+:host {
+  --page-container-margin: var(--layout-page-margin, 16px);
+}
+
+.patient-list {
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$space-16;
+  min-height: calc(100dvh - var(--bottom-nav-bar-height));
+  padding-top: tokens.$space-16;
+  padding-bottom: tokens.$space-24;
+}
+
+.patient-list__header {
+  display: flex;
+  align-items: center;
+  gap: tokens.$space-8;
+}
+
+.patient-list__back {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: tokens.c(content-1);
+  cursor: pointer;
+}
+
+.patient-list__header-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.patient-list__title {
+  margin: 0;
+  color: tokens.c(content-1);
+
+  @include typography.headline;
+}
+
+.patient-list__subtitle {
+  margin: 0;
+  color: tokens.c(content-4);
+
+  @include typography.caption;
+}
+
+.patient-list__rows,
+.patient-list__skeleton {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  border-radius: tokens.$radius-md;
+  background: tokens.c(surface);
+  list-style: none;
+  overflow: hidden;
+}
+
+.patient-list__row {
+  display: flex;
+  align-items: center;
+  gap: tokens.$space-12;
+  width: 100%;
+  min-height: 80px;
+  padding: tokens.$space-12 tokens.$space-8 tokens.$space-12 tokens.$space-16;
+  border: 0;
+  background: transparent;
+  color: tokens.c(content-1);
+  text-align: left;
+  cursor: pointer;
+}
+
+.patient-list__info {
+  display: flex;
+  flex: 1 0 0;
+  flex-direction: column;
+  min-width: 0;
+}
+
+// FR-008: nome truncado com reticências.
+.patient-list__name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+
+  @include typography.label-lg;
+}
+
+.patient-list__meta,
+.patient-list__location {
+  color: tokens.c(content-4);
+
+  @include typography.caption;
+}
+
+.patient-list__therapy {
+  flex: none;
+  color: tokens.c(content-2);
+
+  @include typography.label-sm;
+}
+
+.patient-list__skeleton-row {
+  height: 80px;
+  border-bottom: 1px solid tokens.c(border);
+  background: tokens.c(surface-2);
+}
+
+.patient-list__state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: tokens.$space-16;
+  padding: tokens.$space-80 tokens.$space-16 0;
+  color: tokens.c(primary);
+  text-align: center;
+}
+
+.patient-list__state-title {
+  margin: 0;
+  color: tokens.c(content-1);
+
+  @include typography.title-lg;
+}
+
+.patient-list__state-text {
+  margin: 0;
+  color: tokens.c(content-4);
+
+  @include typography.body-md;
+}
