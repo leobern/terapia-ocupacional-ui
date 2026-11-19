@@ -18,10 +18,10 @@ describe('TherapyTagComponent', () => {
     expect(el.classList).toContain('therapy-tag--neutral');
   });
 
-  it('aplica o tom de sucesso', () => {
-    fixture.componentRef.setInput('tone', 'success');
+  it('aplica o tom ativo', () => {
+    fixture.componentRef.setInput('tone', 'active');
     fixture.detectChanges();
 
-    expect((fixture.nativeElement as HTMLElement).classList).toContain('therapy-tag--success');
+    expect((fixture.nativeElement as HTMLElement).classList).toContain('therapy-tag--active');
   });
 });

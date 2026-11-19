@@ -19,10 +19,10 @@
   color: tokens.c(content-3);
 }
 
-:host(.therapy-tag--success) {
+:host(.therapy-tag--active) {
   border-color: transparent;
-  background: tokens.c(comm-success);
-  color: tokens.c(content-1);
+  background: tokens.c(secondary);
+  color: tokens.c(content-6);
 }
 
 :host(.therapy-tag--box) {

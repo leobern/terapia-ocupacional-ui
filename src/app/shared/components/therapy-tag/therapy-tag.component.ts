@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 
-/** `neutral` = via de terapia (NE · NP · VO); `success` = destaque positivo (ex.: "Primeira avaliação"). */
-export type TherapyTagTone = 'neutral' | 'success';
+/** `neutral` = via de terapia (NE · NP · VO); `active` = cor ativa do calendário (ex.: "Primeira avaliação"). */
+export type TherapyTagTone = 'neutral' | 'active';
 
 /**
  * Pílula compacta do Figma `v2/TherapyTag`: 24px de altura, padding lateral 8, Label/Sm.

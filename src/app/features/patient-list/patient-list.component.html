@@ -4,7 +4,7 @@
     <header class="patient-list__header">
       <div class="patient-list__header-text">
         <h1 class="patient-list__title">
-          <ph-icon name="users-three" weight="bold" [size]="24" />
+          <ph-icon name="users-three" weight="bold" [size]="40" />
           @if (status() === 'ready') {
             {{ countLabel() }}
           } @else {
@@ -139,12 +139,6 @@
                         <span class="patient-list__name">{{
                           patient.name
                         }}</span>
-                        @if (patient.firstEvaluation) {
-                          <app-therapy-tag
-                            tone="success"
-                            label="Primeira avaliação"
-                          />
-                        }
                       </span>
                     </td>
                     <td>
@@ -200,16 +194,24 @@
                       <span>{{ patient.ward }} · Leito {{ patient.bed }}</span>
                     </td>
                     <td class="patient-list__cell-action">
-                      <button
-                        type="button"
-                        class="patient-list__open"
-                        [attr.aria-label]="'Abrir ' + patient.name"
-                        (click)="
-                          $event.stopPropagation(); openPatient(patient.id)
-                        "
-                      >
-                        <ph-icon name="caret-right" [size]="24" />
-                      </button>
+                      <span class="patient-list__action-box">
+                        @if (patient.firstEvaluation) {
+                          <app-therapy-tag
+                            tone="active"
+                            label="Primeira avaliação"
+                          />
+                        }
+                        <button
+                          type="button"
+                          class="patient-list__open"
+                          [attr.aria-label]="'Abrir ' + patient.name"
+                          (click)="
+                            $event.stopPropagation(); openPatient(patient.id)
+                          "
+                        >
+                          <ph-icon name="caret-right" [size]="24" />
+                        </button>
+                      </span>
                     </td>
                   </tr>
                 }
@@ -247,7 +249,7 @@
                           @if (patient.firstEvaluation) {
                             <span class="patient-list__first">
                               <app-therapy-tag
-                                tone="success"
+                                tone="active"
                                 label="Primeira avaliação"
                               />
                             </span>
