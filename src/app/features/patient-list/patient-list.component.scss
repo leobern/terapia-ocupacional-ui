@@ -289,7 +289,7 @@
 
   .patient-list__table {
     width: 100%;
-    min-width: 1000px;
+    min-width: 1180px;
     border-collapse: collapse;
     table-layout: fixed;
     color: tokens.c(content-1);
@@ -303,7 +303,9 @@
       background: tokens.c(surface-2);
       color: tokens.c(content-4);
       text-align: left;
-      white-space: nowrap;
+      // Cabeçalho também quebra em até 2 linhas, sem invadir a coluna vizinha.
+      overflow: hidden;
+      overflow-wrap: anywhere;
 
       @include typography.label-md;
     }
@@ -318,29 +320,47 @@
     }
   }
 
-  // Proporções da grade do Figma (420 · 220 · 220 · 200 · 230 · 230 · resto), em % para acompanhar a largura.
-  .patient-list__col-name {
-    width: 22%;
-  }
-
+  // Larguras mínimas por coluna (texto em até 2 linhas): a coluna do nome absorve o que sobra e,
+  // abaixo da soma das mínimas, o card rola na horizontal.
   .patient-list__col-age {
-    width: 13%;
+    width: 150px;
   }
 
   .patient-list__col-therapy {
-    width: 11%;
-  }
-
-  .patient-list__col-location {
-    width: 12%;
+    width: 120px;
   }
 
   .patient-list__col-goal {
-    width: 15%;
+    width: 160px;
+  }
+
+  .patient-list__col-location {
+    width: 140px;
+  }
+
+  .patient-list__col-first {
+    width: 160px;
   }
 
   .patient-list__col-action {
-    width: 230px;
+    width: 72px;
+  }
+
+  // Última coluna (botão da seta) fixa à direita, com borda à esquerda: deixa claro que a tabela rola.
+  .patient-list__sticky {
+    position: sticky;
+    right: 0;
+    z-index: 1;
+    background: tokens.c(surface);
+    box-shadow: inset 1px 0 0 tokens.c(border);
+  }
+
+  .patient-list__table th.patient-list__sticky {
+    background: tokens.c(surface-2);
+  }
+
+  .patient-list__tr:hover .patient-list__sticky {
+    background: tokens.c(surface-2);
   }
 
   .patient-list__tr {
@@ -390,17 +410,13 @@
     line-clamp: 2;
   }
 
-  // Tag "Primeira avaliação" na coluna da seta, a 8px dela.
-  .patient-list__action-box {
-    display: inline-flex;
-    align-items: center;
-    justify-content: flex-end;
-    gap: tokens.$space-8;
+  .patient-list__cell-action {
+    padding-right: tokens.$space-16;
+    padding-left: tokens.$space-16;
+    text-align: center;
   }
 
-  // Seta afastada da borda, como no Figma (padding do card + 8 de respiro).
-  .patient-list__cell-action {
-    padding-right: tokens.$space-24;
+  .patient-list__cell-first {
     text-align: right;
   }
 

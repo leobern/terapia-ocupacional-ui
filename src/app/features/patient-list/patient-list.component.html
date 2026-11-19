@@ -113,6 +113,7 @@
                 <col class="patient-list__col-goal" />
                 <col class="patient-list__col-goal" />
                 <col class="patient-list__col-location" />
+                <col class="patient-list__col-first" />
                 <col class="patient-list__col-action" />
               </colgroup>
               <thead>
@@ -124,6 +125,9 @@
                   <th scope="col">Adequação proteica</th>
                   <th scope="col">Localização</th>
                   <th scope="col">
+                    <span class="patient-list__sr">Avaliação</span>
+                  </th>
+                  <th scope="col" class="patient-list__sticky">
                     <span class="patient-list__sr">Abrir paciente</span>
                   </th>
                 </tr>
@@ -193,25 +197,25 @@
                     <td class="patient-list__cell-location">
                       <span>{{ patient.ward }} · Leito {{ patient.bed }}</span>
                     </td>
-                    <td class="patient-list__cell-action">
-                      <span class="patient-list__action-box">
-                        @if (patient.firstEvaluation) {
-                          <app-therapy-tag
-                            tone="active"
-                            label="Primeira avaliação"
-                          />
-                        }
-                        <button
-                          type="button"
-                          class="patient-list__open"
-                          [attr.aria-label]="'Abrir ' + patient.name"
-                          (click)="
-                            $event.stopPropagation(); openPatient(patient.id)
-                          "
-                        >
-                          <ph-icon name="caret-right" [size]="24" />
-                        </button>
-                      </span>
+                    <td class="patient-list__cell-first">
+                      @if (patient.firstEvaluation) {
+                        <app-therapy-tag
+                          tone="active"
+                          label="Primeira avaliação"
+                        />
+                      }
+                    </td>
+                    <td class="patient-list__cell-action patient-list__sticky">
+                      <button
+                        type="button"
+                        class="patient-list__open"
+                        [attr.aria-label]="'Abrir ' + patient.name"
+                        (click)="
+                          $event.stopPropagation(); openPatient(patient.id)
+                        "
+                      >
+                        <ph-icon name="caret-right" [size]="24" />
+                      </button>
                     </td>
                   </tr>
                 }
