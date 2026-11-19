@@ -426,6 +426,11 @@
     min-width: 0;
   }
 
+  // Idade em cima e início da terapia embaixo.
+  .patient-list__line {
+    display: block;
+  }
+
   .patient-list__cell-location {
     color: tokens.c(content-3);
 
