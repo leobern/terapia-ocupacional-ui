@@ -354,6 +354,32 @@
     background: tokens.c(surface);
   }
 
+  // Com rolagem horizontal: raio inferior de 8px e barra com 8px de respiro interno (barra de 24px,
+  // polegar de 8px). Sem rolagem, o card volta ao normal. As propriedades padrão do `*` global são
+  // desligadas aqui para o estilo `::-webkit-scrollbar` valer.
+  .patient-list__table-card--scrolls {
+    border-bottom-left-radius: tokens.$radius-xs;
+    border-bottom-right-radius: tokens.$radius-xs;
+    scrollbar-color: auto;
+    scrollbar-width: auto;
+
+    &::-webkit-scrollbar {
+      height: 24px;
+    }
+
+    &::-webkit-scrollbar-thumb {
+      border: 8px solid transparent;
+      border-radius: tokens.$radius-pill;
+      background: tokens.c(border-2);
+      background-clip: content-box;
+    }
+
+    &::-webkit-scrollbar-thumb:hover {
+      background: tokens.c(content-5);
+      background-clip: content-box;
+    }
+  }
+
   // A borda à esquerda só aparece quando a tabela ganha rolagem horizontal.
   .patient-list__table-card--scrolls .patient-list__sticky {
     box-shadow: inset 1px 0 0 tokens.c(border);

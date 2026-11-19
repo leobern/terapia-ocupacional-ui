@@ -6,6 +6,7 @@ import {
   effect,
   type ElementRef,
   inject,
+  NgZone,
   OnInit,
   signal,
   viewChild,
@@ -124,6 +125,7 @@ export class PatientListComponent implements OnInit {
   constructor() {
     // Atalhos da tela (padrão de cadastro): ações principais; os formulários chegam com a US-004-1-07.
     inject(DestroyRef).onDestroy(this.screenActions.register(PATIENT_LIST_ACTIONS));
+    const zone = inject(NgZone);
 
     // Observa o card da tabela: rolagem horizontal só existe quando o conteúdo passa da largura.
     effect(onCleanup => {
@@ -132,7 +134,8 @@ export class PatientListComponent implements OnInit {
       if (card === undefined || typeof ResizeObserver === 'undefined') {
         return;
       }
-      const update = (): void => this.tableScrolls.set(card.scrollWidth > card.clientWidth + 1);
+      // O ResizeObserver roda fora da zona: reentra nela para a tela atualizar na hora.
+      const update = (): void => zone.run(() => this.tableScrolls.set(card.scrollWidth > card.clientWidth + 1));
       const observer = new ResizeObserver(update);
 
       observer.observe(card);
