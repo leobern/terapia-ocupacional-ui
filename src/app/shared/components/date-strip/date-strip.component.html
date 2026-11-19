@@ -1,0 +1,31 @@
+<div class="date-strip" role="group" aria-label="Datas">
+  <button
+    type="button"
+    class="date-strip__arrow"
+    aria-label="Dia anterior"
+    (click)="shift(-1)"
+  >
+    <ph-icon name="caret-left" [size]="24" />
+  </button>
+  @for (day of days(); track day.date.getTime()) {
+    <button
+      type="button"
+      class="date-strip__day"
+      [class.date-strip__day--selected]="day.selected"
+      [attr.aria-label]="day.label"
+      [attr.aria-pressed]="day.selected"
+      (click)="pick(day)"
+    >
+      <span class="date-strip__weekday">{{ day.weekday }}</span>
+      <span class="date-strip__number">{{ day.dayOfMonth }}</span>
+    </button>
+  }
+  <button
+    type="button"
+    class="date-strip__arrow"
+    aria-label="Próximo dia"
+    (click)="shift(1)"
+  >
+    <ph-icon name="caret-right" [size]="24" />
+  </button>
+</div>

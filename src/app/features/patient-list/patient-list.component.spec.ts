@@ -24,7 +24,7 @@ const census = (n: number, name = 'Paciente'): CensusPatient[] =>
 
 class FakeSource extends PatientListSource {
   result: Promise<readonly CensusPatient[]> = Promise.resolve([]);
-  loadCensus(): Promise<readonly CensusPatient[]> {
+  loadCensus(_?: string, __?: Date): Promise<readonly CensusPatient[]> {
     return this.result;
   }
 }
@@ -97,6 +97,27 @@ describe('PatientListComponent', () => {
     expect(fixture.nativeElement.querySelectorAll('app-graph-meta').length).toBe(3);
     expect(fixture.nativeElement.querySelectorAll('app-tag').length).toBe(1);
     expect(text()).toContain('Primeira avaliação');
+  });
+
+  it('carrossel de datas: hoje destacado e trocar a data recarrega a lista para ela', async () => {
+    const days: Date[] = [];
+
+    source.loadCensus = (_?: string, day?: Date): Promise<readonly CensusPatient[]> => {
+      days.push(day as Date);
+
+      return Promise.resolve(census(1));
+    };
+    await create();
+
+    expect(q('.date-strip__day--selected .date-strip__number')?.textContent).toBe(String(new Date().getDate()));
+    q('[aria-label="Próximo dia"]')?.click();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(days.length).toBe(2);
+    expect(days[1].getDate()).toBe(
+      new Date(days[0].getFullYear(), days[0].getMonth(), days[0].getDate() + 1).getDate(),
+    );
   });
 
   it('usa singular com um paciente', async () => {

@@ -3,6 +3,7 @@ import { Router } from '@angular/router';
 
 import { AvatarComponent } from '../../shared/components/avatar/avatar.component';
 import { ButtonComponent } from '../../shared/components/button/button.component';
+import { DateStripComponent } from '../../shared/components/date-strip/date-strip.component';
 import { GraphMetaComponent } from '../../shared/components/graph-meta/graph-meta.component';
 import { PageContainerComponent } from '../../shared/components/page-container/page-container.component';
 import { TagComponent } from '../../shared/components/tag/tag.component';
@@ -26,6 +27,7 @@ const THERAPY_LABEL: Record<TherapyType, string> = { MISTA: 'VO · NE · NP', NE
   imports: [
     AvatarComponent,
     ButtonComponent,
+    DateStripComponent,
     GraphMetaComponent,
     PageContainerComponent,
     PhIconComponent,
@@ -36,6 +38,7 @@ const THERAPY_LABEL: Record<TherapyType, string> = { MISTA: 'VO · NE · NP', NE
   templateUrl: './patient-list.component.html',
 })
 export class PatientListComponent {
+  readonly selectedDate = signal(new Date());
   readonly status = signal<PatientListStatus>('loading');
   readonly patients = signal<readonly PatientCard[]>([]);
   readonly hospitalName = computed(() => this.context.selected()?.name ?? '');
@@ -59,16 +62,16 @@ export class PatientListComponent {
   constructor() {
     effect(() => {
       const hospitalId = this.context.selected()?.id;
+      const day = this.selectedDate();
 
       if (hospitalId !== undefined) {
-        void this.load(hospitalId);
+        void this.load(hospitalId, day);
       }
     });
   }
 
-  async load(hospitalId: string): Promise<void> {
+  async load(hospitalId: string, day: Date = this.selectedDate()): Promise<void> {
     const generation = ++this.generation;
-    const day = new Date();
 
     this.status.set('loading');
     try {
@@ -96,6 +99,11 @@ export class PatientListComponent {
   /** Cadastro pertence à FT-002-1: aqui só navega (FR-027). */
   registerPatient(): void {
     void this.router.navigate(['/home']);
+  }
+
+  /** Troca a data do carrossel; a lista recarrega via effect. Data retroativa (US3) fica fora desta story. */
+  selectDate(day: Date): void {
+    this.selectedDate.set(day);
   }
 
   openPatient(id: string): void {

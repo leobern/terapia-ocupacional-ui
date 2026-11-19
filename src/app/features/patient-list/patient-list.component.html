@@ -21,6 +21,11 @@
       </div>
     </header>
 
+    <app-date-strip
+      [selected]="selectedDate()"
+      (dateChange)="selectDate($event)"
+    />
+
     @switch (status()) {
       @case ('loading') {
         <ul

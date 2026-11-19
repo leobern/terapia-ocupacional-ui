@@ -1,0 +1,48 @@
+@use '../../styles/tokens';
+@use '../../styles/typography';
+
+:host {
+  display: block;
+}
+
+.date-strip {
+  display: flex;
+  align-items: center;
+  gap: tokens.$space-4;
+  padding: tokens.$space-4;
+  border-radius: tokens.$radius-md;
+  background: tokens.c(surface);
+}
+
+.date-strip__arrow,
+.date-strip__day {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  min-height: 44px;
+  border: 0;
+  background: transparent;
+  color: tokens.c(content-1);
+  cursor: pointer;
+}
+
+.date-strip__day {
+  flex: 1 0 0;
+  flex-direction: column;
+  padding: tokens.$space-4 0;
+  border-radius: tokens.$radius-md;
+}
+
+.date-strip__day--selected {
+  background: tokens.c(secondary);
+  color: tokens.c(surface);
+}
+
+.date-strip__weekday {
+  @include typography.caption;
+}
+
+.date-strip__number {
+  @include typography.title-md;
+}
