@@ -42,7 +42,7 @@
 }
 
 // Figma v2/SelectTag (Style=accent — o fundo vem de `backgroundColor`, padrão
-// tertiary): 40px, ícones de 20px, Label/Md.
+// `fixed/data-tag`, igual nos dois temas): 40px, ícones de 20px, Label/Md.
 :host(.tag--default) {
   height: tokens.$control-height-md;
   padding-inline: tokens.$space-12;
@@ -59,6 +59,7 @@
 
 .tag__label--default {
   min-width: 0;
+  color: var(--color-on-data-tag);
 }
 
 :host(.tag--status) {

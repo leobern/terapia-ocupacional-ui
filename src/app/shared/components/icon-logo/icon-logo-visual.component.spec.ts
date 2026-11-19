@@ -157,7 +157,8 @@ describe('IconLogoVisualComponent', () => {
       fixture.nativeElement.remove();
       await create('anim');
 
-      expect(parseFloat(getComputedStyle(queryOrFail('.icon-logo__light--1')).opacity)).toBe(1);
+      // No claro as luzes são só um brilho discreto (0,3); no escuro ficam em 1.
+      expect(parseFloat(getComputedStyle(queryOrFail('.icon-logo__light--1')).opacity)).toBeCloseTo(0.3, 2);
     });
   });
 

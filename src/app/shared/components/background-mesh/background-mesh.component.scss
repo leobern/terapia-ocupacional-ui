@@ -126,8 +126,11 @@
   // Figma (componente `background`, instância `static`): mobile 620×620 em (0, 459) da tela;
   // desktop 766×766 em (892, 567) — 72px do trilho + 820 dentro do conteúdo. Modo multiply;
   // opacidade 10% (mobile) / 30% (desktop) no claro e 100% no escuro.
+  // Ancorado na extremidade DIREITA da tela e pode sair dela: o trecho mais visível dos traços
+  // fica na borda direita (decisão do Thiago, 2026-11-19; Figma mobile: right -218px).
   top: 459px;
-  left: 0;
+  right: -218px;
+  left: auto;
   width: 620px;
   height: 620px;
   pointer-events: none;
@@ -135,10 +138,8 @@
   opacity: 0.1;
 
   @include breakpoints.md {
-    // Sempre ancorado à direita da tela (Figma: 262px da borda direita em 1920).
     top: 567px;
-    right: 262px;
-    left: auto;
+    right: -240px;
     width: 766px;
     height: 766px;
     opacity: 0.3;

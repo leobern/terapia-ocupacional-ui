@@ -191,6 +191,12 @@ $mesh-fade-mask: radial-gradient(
   filter: blur(calc(var(--icon-logo-resolved-size) / 4));
 }
 
+// No claro as luzes são só um brilho discreto (decisão do Thiago, 2026-11-19): o modo `color` em
+// opacidade cheia ficava forte demais sobre a superfície clara. No escuro seguem em 100%.
+:host-context(html:not([data-theme='dark'])) {
+  --icon-logo-light-opacity: 0.3;
+}
+
 // Figma (Dark v2): no tema escuro as luzes atrás da logo usam "hard light" — sem isso o modo
 // `color` as deixa muito claras sobre a superfície escura.
 :host-context([data-theme='dark']) .icon-logo__light {
@@ -200,7 +206,7 @@ $mesh-fade-mask: radial-gradient(
 // Visíveis em `anim` (animadas) e no hover do botão (estáticas).
 :host([data-state='anim']) .icon-logo__light,
 :host(.icon-logo--lights-visible) .icon-logo__light {
-  opacity: 1;
+  opacity: var(--icon-logo-light-opacity, 1);
 }
 
 // -----------------------------------------------------------------------------

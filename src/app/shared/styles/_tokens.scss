@@ -118,6 +118,13 @@ $color-bg-gradient-1: #dcfdf3;
 $color-bg-gradient-2: #dbfcff;
 $color-bg-gradient-3: #f0f3f5;
 
+// fixed/* — iguais no claro e no escuro (docs/artefatos/uso-de-cores.md §2).
+$color-data-tag: #85e0e0; // fixed/data-tag — fundo da tag de hospital
+$color-on-data-tag: #002233; // fixed/on-data-tag — texto/ícone sobre ela
+
+// surface/nav-active — fundo do item ativo do menu lateral (no escuro é mais escuro que o menu).
+$color-nav-active: #f5f7f8;
+
 // decorative/* — usados só no background animado das telas (não são Color
 // Style nomeado no Figma, só um fill solto nos blobs de fundo).
 $color-decorative-forest: #0d7742;
@@ -164,6 +171,9 @@ $color-map: (
   'bg-gradient-2': $color-bg-gradient-2,
   'bg-gradient-3': $color-bg-gradient-3,
   'decorative-forest': $color-decorative-forest,
+  'data-tag': $color-data-tag,
+  'on-data-tag': $color-on-data-tag,
+  'nav-active': $color-nav-active,
 );
 
 @function c($name) {
@@ -410,6 +420,9 @@ $shadow-elevation-bottomsheet: 0 -4px 24px rgba($color-primary, 0.08);
   --color-bg-gradient-3: #{$color-bg-gradient-3};
   --color-logo-4: #{$color-logo-4};
   --color-decorative-forest: #{$color-decorative-forest};
+  --color-data-tag: #{$color-data-tag};
+  --color-on-data-tag: #{$color-on-data-tag};
+  --color-nav-active: #{$color-nav-active};
   --font-family-base: #{$font-family-base};
 
   // Compatibilidade com código existente que ainda referencia os nomes
@@ -501,7 +514,8 @@ $shadow-elevation-bottomsheet: 0 -4px 24px rgba($color-primary, 0.08);
 // `tokens.$color-*` (valor fixo em tempo de compilação) migram para var() na
 // realinhação componente a componente.
 :root[data-theme='dark'] {
-  --color-bg-gradient-1: #304a48;
+  --color-bg-gradient-1: #273237; // Figma Dark v2 (ajustado pelo Thiago em 2026-11-19; antes #304a48)
+  --color-nav-active: #182125;
   --color-bg-gradient-2: #182c35;
   --color-bg-gradient-3: #182125;
   --color-primary: #8cd0ff;

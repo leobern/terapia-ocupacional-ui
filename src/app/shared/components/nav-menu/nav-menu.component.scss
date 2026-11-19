@@ -335,7 +335,7 @@ $duration-collapse: 90ms;
 
   // Figma v2: item ativo = fundo surface-2, ícone secondary, rótulo Label/Lg.
   &--active {
-    background: #{tokens.c(surface-2)};
+    background: var(--color-nav-active);
 
     .nav-menu__icon {
       color: #{tokens.c(secondary)};
@@ -481,9 +481,9 @@ $duration-collapse: 90ms;
   display: flex;
   align-items: center;
   flex-shrink: 0;
+  // Alinhado com a foto do perfil e fixo: o toggle não anda quando o menu abre.
   margin-left: -4px;
   padding: tokens.$space-8;
-  transition: margin-left $duration-collapse $ease-standard;
 }
 
 .nav-menu__theme-button {
@@ -523,7 +523,6 @@ $duration-collapse: 90ms;
 :host(:focus-within),
 :host(.nav-menu--open) {
   .nav-menu__theme {
-    margin-left: 0;
     transition-duration: $duration-expand;
   }
 

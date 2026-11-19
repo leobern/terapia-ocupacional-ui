@@ -54,7 +54,7 @@
 
   // Ícone de título em azul (Figma v2/PageHeader).
   ph-icon {
-    color: tokens.c(secondary);
+    color: tokens.c(content-3);
   }
 }
 
@@ -196,7 +196,7 @@
 }
 
 .patient-list__location {
-  color: tokens.c(content-2);
+  color: tokens.c(content-3);
 
   @include typography.label-sm;
 }
@@ -323,12 +323,12 @@
     width: 14%;
   }
 
-  .patient-list__col-location {
-    width: 13%;
-  }
-
   .patient-list__col-therapy {
     width: 12%;
+  }
+
+  .patient-list__col-location {
+    width: 13%;
   }
 
   .patient-list__col-goal {
@@ -355,7 +355,7 @@
   }
 
   .patient-list__cell-location {
-    color: tokens.c(content-2);
+    color: tokens.c(content-3);
   }
 
   .patient-list__cell-action {

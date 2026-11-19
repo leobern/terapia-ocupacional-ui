@@ -109,20 +109,20 @@
               <colgroup>
                 <col class="patient-list__col-name" />
                 <col class="patient-list__col-age" />
-                <col class="patient-list__col-location" />
                 <col class="patient-list__col-therapy" />
                 <col class="patient-list__col-goal" />
                 <col class="patient-list__col-goal" />
+                <col class="patient-list__col-location" />
                 <col class="patient-list__col-action" />
               </colgroup>
               <thead>
                 <tr>
                   <th scope="col">Paciente</th>
                   <th scope="col">Idade · início da terapia</th>
-                  <th scope="col">Localização</th>
                   <th scope="col">Terapia</th>
                   <th scope="col">Adequação calórica</th>
                   <th scope="col">Adequação proteica</th>
+                  <th scope="col">Localização</th>
                   <th scope="col">
                     <span class="patient-list__sr">Abrir paciente</span>
                   </th>
@@ -150,9 +150,6 @@
                     <td>
                       {{ patient.age }} anos ·
                       {{ therapyStartLabel(patient.therapyDays) }}
-                    </td>
-                    <td class="patient-list__cell-location">
-                      {{ patient.ward }} · Leito {{ patient.bed }}
                     </td>
                     <td>
                       <app-therapy-tag
@@ -198,6 +195,9 @@
                         }
                         {{ goalLabel(patient.adequacy?.protein ?? null) }}
                       </span>
+                    </td>
+                    <td class="patient-list__cell-location">
+                      {{ patient.ward }} · Leito {{ patient.bed }}
                     </td>
                     <td class="patient-list__cell-action">
                       <button

@@ -53,8 +53,8 @@ export class TagComponent {
   readonly iconRightName = input<string>('');
 
   // Figma v2/SelectTag: ícones na mesma cor do texto (content-1).
-  readonly iconLeftColor = input<string>('var(--color-content-1)');
-  readonly iconRightColor = input<string>('var(--color-content-1)');
+  readonly iconLeftColor = input<string>('');
+  readonly iconRightColor = input<string>('');
 
   // Só relevante para type="default"/"status" — sem efeito em type="user" (fundo
   // sempre var(--color-surface), ver hostBackground).
@@ -70,10 +70,18 @@ export class TagComponent {
 
   // type="user" tem fundo fixo via classe SCSS (FR-002/FR-002a) — sem binding aqui,
   // mesmo padrão do fundo fixo de type="numeral" em BadgeComponent.
+  // type="default" (tag de dado fixa) usa a cor de texto fixa; type="user" segue content-1.
+  protected readonly resolvedIconLeftColor = computed(
+    () => this.iconLeftColor() || (this.type() === 'default' ? 'var(--color-on-data-tag)' : 'var(--color-content-1)'),
+  );
+  protected readonly resolvedIconRightColor = computed(
+    () => this.iconRightColor() || (this.type() === 'default' ? 'var(--color-on-data-tag)' : 'var(--color-content-1)'),
+  );
+
   protected readonly hostBackground = computed(() => {
     switch (this.type()) {
       case 'default':
-        return this.backgroundColor() || 'var(--color-tertiary)';
+        return this.backgroundColor() || 'var(--color-data-tag)';
       case 'status':
         return this.backgroundColor() || 'var(--color-comm-success)';
       default:
