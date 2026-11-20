@@ -102,7 +102,7 @@ describe('AssessmentSectionComponent', () => {
     await openIt();
     const counts = Array.from(el().querySelectorAll('.assessment__count')).map(c => c.textContent.trim());
 
-    expect(counts).toEqual(['2', '2']);
+    expect(counts).toEqual(['4', '2']);
   });
 
   it('pré-preenche com a avaliação mais recente e mostra o valor anterior com data', async () => {
@@ -270,6 +270,70 @@ describe('AssessmentSectionComponent', () => {
       await settle();
 
       expect(writer.saved[0].values).toEqual({ dysphagia: 'Sem risco', height: '163' });
+    });
+
+    describe('circunferências com membro aferido', () => {
+      const sideButtons = (): HTMLButtonElement[] =>
+        Array.from(el().querySelectorAll<HTMLButtonElement>('.assessment__side')[0].querySelectorAll('button'));
+      const warning = (): string[] =>
+        Array.from(el().querySelectorAll('.assessment__side ~ .assessment__status')).map(n => n.textContent.trim());
+
+      it('mostra os cards vazios, com as opções Direito e Esquerdo em texto', async () => {
+        await openIt();
+
+        expect(input('calfCircumference').value).toBe('');
+        expect(input('armCircumference').value).toBe('');
+        expect(sideButtons().map(b => b.textContent.trim())).toEqual(['Direito', 'Esquerdo']);
+      });
+
+      it('escolher o membro o deixa marcado e envia valor e membro juntos', async () => {
+        await openIt();
+        type('calfCircumference', '32');
+        sideButtons()[1].click();
+        await settle();
+
+        expect(sideButtons()[1].getAttribute('aria-checked')).toBe('true');
+        expect(sideButtons()[0].getAttribute('aria-checked')).toBe('false');
+        saveButton().click();
+        await settle();
+
+        expect(writer.saved[0].values).toEqual({ calfCircumference: '32', calfSide: 'Esquerdo' });
+      });
+
+      it('valor sem membro avisa em texto, mas salva', async () => {
+        await openIt();
+        type('armCircumference', '27');
+        await settle();
+
+        expect(warning()[0]).toContain('Informe o membro aferido');
+        saveButton().click();
+        await settle();
+
+        expect(writer.saved[0].values).toEqual({ armCircumference: '27' });
+      });
+
+      it('membro sem valor é ignorado ao salvar', async () => {
+        await openIt();
+        sideButtons()[0].click();
+        await settle();
+
+        expect(warning()).toEqual([]);
+        saveButton().click();
+        await settle();
+
+        expect(writer.saved[0].values).toEqual({});
+      });
+
+      it('reabre pré-preenchido com valor e membro', async () => {
+        source.result = Promise.resolve({
+          previous: {},
+          values: { calfCircumference: '31', calfSide: 'Direito' },
+        });
+        await openIt();
+
+        expect(input('calfCircumference').value).toBe('31');
+        expect(sideButtons()[0].getAttribute('aria-checked')).toBe('true');
+      });
     });
 
     it('falha ao salvar mantém o formulário aberto, com os valores e mensagem em texto', async () => {

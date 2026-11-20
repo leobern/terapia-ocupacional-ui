@@ -1,6 +1,10 @@
 export type AssessmentSectionId = 'nutritional' | 'functional';
 
-export type AssessmentFieldId = 'weight' | 'height' | 'handgrip' | 'dysphagia';
+export type AssessmentFieldId =
+  'weight' | 'height' | 'calfCircumference' | 'calfSide' | 'armCircumference' | 'armSide' | 'handgrip' | 'dysphagia';
+
+/** Membro aferido de uma circunferência. */
+export const LIMB_SIDES: readonly string[] = ['Direito', 'Esquerdo'];
 
 export interface AssessmentFieldDefinition {
   readonly id: AssessmentFieldId;
@@ -12,6 +16,8 @@ export interface AssessmentFieldDefinition {
   readonly options?: readonly string[];
   /** Unidade exibida na ajuda "Anterior: ...". */
   readonly unit?: string;
+  /** Campo (não exibido como card) que guarda o membro aferido, junto ao valor. */
+  readonly sideId?: AssessmentFieldId;
 }
 
 export interface AssessmentSectionDefinition {
@@ -32,6 +38,22 @@ export const ASSESSMENT_SECTIONS: readonly AssessmentSectionDefinition[] = [
     fields: [
       { help: 'Peso atual do paciente.', id: 'weight', label: 'Peso (kg)', placeholder: 'Ex.: 51,0', unit: 'kg' },
       { help: 'Usada no cálculo do IMC.', id: 'height', label: 'Altura (cm)', placeholder: 'Ex.: 163', unit: 'cm' },
+      {
+        help: 'Informe também o membro aferido.',
+        id: 'calfCircumference',
+        label: 'Circunferência da panturrilha (cm)',
+        placeholder: 'Ex.: 32',
+        sideId: 'calfSide',
+        unit: 'cm',
+      },
+      {
+        help: 'Informe também o membro aferido.',
+        id: 'armCircumference',
+        label: 'Circunferência braquial (cm)',
+        placeholder: 'Ex.: 27',
+        sideId: 'armSide',
+        unit: 'cm',
+      },
     ],
     id: 'nutritional',
     title: 'Avaliação nutricional',

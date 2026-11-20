@@ -205,3 +205,32 @@
 .assessment__save {
   display: block;
 }
+
+.assessment__side {
+  display: flex;
+  gap: tokens.$space-8;
+}
+
+// Duas opções com texto visível; a ativa também ganha borda e fundo (cor não é a única pista).
+.assessment__side-option {
+  flex: 1 0 0;
+  min-height: 44px;
+  padding: 0 tokens.$space-16;
+  border: 1px solid tokens.c(border-2);
+  border-radius: tokens.$radius-sm;
+  background: tokens.c(surface);
+  color: tokens.c(content-1);
+  cursor: pointer;
+
+  @include typography.label-md;
+
+  &--active {
+    border-width: 2px;
+    background: tokens.c(surface-2);
+  }
+
+  &:focus-visible {
+    outline: 2px solid tokens.c(input-focus-ring);
+    outline-offset: 2px;
+  }
+}

@@ -18,6 +18,7 @@ import {
   AssessmentFieldDefinition,
   AssessmentFieldId,
   AssessmentValues,
+  LIMB_SIDES,
   NutritionFunctionalAssessment,
 } from './assessment.models';
 import { AssessmentSource } from './assessment-source';
@@ -55,6 +56,7 @@ export class AssessmentSectionComponent {
   readonly patientId = input.required<string>();
 
   protected readonly sections = ASSESSMENT_SECTIONS;
+  protected readonly limbSides = LIMB_SIDES;
   protected readonly assessment = signal<NutritionFunctionalAssessment | null>(null);
   protected readonly state = signal<LoadState>('idle');
   protected readonly loadFailedHint = LOAD_FAILED_HINT;
@@ -131,16 +133,31 @@ export class AssessmentSectionComponent {
         values[id as AssessmentFieldId] = value;
       }
     }
+    // Membro sem valor é ignorado ao salvar.
+    const orphanSides = new Set(
+      ASSESSMENT_SECTIONS.flatMap(section => section.fields)
+        .filter(field => field.sideId !== undefined && values[field.id] === undefined)
+        .map(field => field.sideId),
+    );
+    const toSave = Object.fromEntries(
+      Object.entries(values).filter(([id]) => !orphanSides.has(id as AssessmentFieldId)),
+    );
+
     this.saving.set(true);
     this.saveFailed.set(false);
     try {
-      await this.writer.save(this.patientId(), values as AssessmentValues);
+      await this.writer.save(this.patientId(), toSave as AssessmentValues);
       this.close();
     } catch {
       this.saveFailed.set(true);
     } finally {
       this.saving.set(false);
     }
+  }
+
+  /** Valor digitado sem membro: aviso em texto (não bloqueia o salvamento). */
+  protected missingSide(field: AssessmentFieldDefinition): boolean {
+    return field.sideId !== undefined && this.valueOf(field.id).trim() !== '' && this.valueOf(field.sideId) === '';
   }
 
   protected helpOf(field: AssessmentFieldDefinition): string {

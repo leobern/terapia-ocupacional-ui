@@ -94,6 +94,36 @@
                 />
               }
             </div>
+            @if (field.sideId; as sideId) {
+              <div
+                class="assessment__side"
+                role="radiogroup"
+                [attr.aria-label]="'Membro aferido: ' + field.label"
+              >
+                @for (side of limbSides; track side) {
+                  <button
+                    type="button"
+                    role="radio"
+                    class="assessment__side-option"
+                    [attr.aria-checked]="valueOf(sideId) === side"
+                    [class.assessment__side-option--active]="
+                      valueOf(sideId) === side
+                    "
+                    (click)="edit(sideId, side)"
+                  >
+                    {{ side }}
+                  </button>
+                }
+              </div>
+              @if (missingSide(field)) {
+                <p
+                  class="assessment__status assessment__status--warning"
+                  role="status"
+                >
+                  Informe o membro aferido (direito ou esquerdo).
+                </p>
+              }
+            }
             <p class="assessment__help" [id]="'assessment-help-' + field.id">
               {{ helpOf(field) }}
             </p>
