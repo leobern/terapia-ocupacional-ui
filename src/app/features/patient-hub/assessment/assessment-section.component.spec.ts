@@ -539,7 +539,6 @@ describe('AssessmentSectionComponent — preenchimento por IA (US-004-4-03)', ()
   const chat = (): InputChatComponent =>
     fixture.debugElement.query(By.directive(InputChatComponent)).componentInstance as InputChatComponent;
   const settle = async (): Promise<void> => {
-    fixture.detectChanges();
     await fixture.whenStable();
     fixture.detectChanges();
   };
@@ -553,7 +552,7 @@ describe('AssessmentSectionComponent — preenchimento por IA (US-004-4-03)', ()
     ai = new FakeAi();
     loaded = null;
     writer = {
-      save(_p, v) {
+      save(_: string, v: AssessmentValues): Promise<void> {
         this.saved.push(v);
 
         return Promise.resolve();
@@ -562,7 +561,10 @@ describe('AssessmentSectionComponent — preenchimento por IA (US-004-4-03)', ()
     };
     TestBed.configureTestingModule({
       providers: [
-        { provide: AssessmentSource, useValue: { loadLatest: () => Promise.resolve(loaded) } },
+        {
+          provide: AssessmentSource,
+          useValue: { loadLatest: (): Promise<NutritionFunctionalAssessment | null> => Promise.resolve(loaded) },
+        },
         { provide: AssessmentWriter, useValue: writer },
         { provide: AssessmentAiStructurer, useValue: ai },
       ],

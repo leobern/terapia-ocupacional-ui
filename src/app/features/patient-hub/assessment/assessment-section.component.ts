@@ -205,44 +205,6 @@ export class AssessmentSectionComponent {
     this.aiNotice.set(reason === 'permission-denied' ? MIC_DENIED_HINT : MIC_FAILED_HINT);
   }
 
-  /** Campos citados sobrescrevem; os demais não são tocados. Valor fora das opções é descartado. */
-  private applyStructured(result: Readonly<Partial<Record<AssessmentFieldId, string>>>): void {
-    const fields = ASSESSMENT_SECTIONS.flatMap(section => section.fields);
-    const next = { ...this.draft() };
-    const marked = new Set(this.suggested());
-
-    for (const field of fields) {
-      const accepted: [AssessmentFieldId, string][] = [];
-      const value = result[field.id]?.trim();
-
-      if (value && (field.options === undefined || field.options.includes(value))) {
-        accepted.push([field.id, value]);
-      }
-      const side = field.sideId === undefined ? undefined : result[field.sideId]?.trim();
-
-      if (field.sideId !== undefined && side && LIMB_SIDES.includes(side)) {
-        accepted.push([field.sideId, side]);
-      }
-      for (const [id, acceptedValue] of accepted) {
-        next[id] = acceptedValue;
-        marked.add(field.id);
-      }
-    }
-    this.draft.set(next);
-    this.suggested.set(marked);
-  }
-
-  /** Editar um campo (ou o seu membro) o torna dado do profissional: some a marca da IA. */
-  private unmark(id: AssessmentFieldId): void {
-    const owner = ASSESSMENT_SECTIONS.flatMap(section => section.fields).find(
-      field => field.id === id || field.sideId === id,
-    )?.id;
-
-    if (owner !== undefined && this.suggested().has(owner)) {
-      this.suggested.update(current => new Set([...current].filter(item => item !== owner)));
-    }
-  }
-
   /** Nenhum campo é obrigatório: salva o que houver, omitindo os vazios. */
   protected async save(): Promise<void> {
     if (this.saving() || !this.online() || this.state() === 'loading') {
@@ -308,6 +270,44 @@ export class AssessmentSectionComponent {
     const unit = field.unit === undefined ? '' : ` ${field.unit}`;
 
     return `Anterior: ${previous.value}${unit} em ${shortDate(previous.at)}.`;
+  }
+
+  /** Campos citados sobrescrevem; os demais não são tocados. Valor fora das opções é descartado. */
+  private applyStructured(result: Readonly<Partial<Record<AssessmentFieldId, string>>>): void {
+    const fields = ASSESSMENT_SECTIONS.flatMap(section => section.fields);
+    const next = { ...this.draft() };
+    const marked = new Set(this.suggested());
+
+    for (const field of fields) {
+      const accepted: [AssessmentFieldId, string][] = [];
+      const value = result[field.id]?.trim();
+
+      if (value && (field.options === undefined || field.options.includes(value))) {
+        accepted.push([field.id, value]);
+      }
+      const side = field.sideId === undefined ? undefined : result[field.sideId]?.trim();
+
+      if (field.sideId !== undefined && side && LIMB_SIDES.includes(side)) {
+        accepted.push([field.sideId, side]);
+      }
+      for (const [id, acceptedValue] of accepted) {
+        next[id] = acceptedValue;
+        marked.add(field.id);
+      }
+    }
+    this.draft.set(next);
+    this.suggested.set(marked);
+  }
+
+  /** Editar um campo (ou o seu membro) o torna dado do profissional: some a marca da IA. */
+  private unmark(id: AssessmentFieldId): void {
+    const owner = ASSESSMENT_SECTIONS.flatMap(section => section.fields).find(
+      field => field.id === id || field.sideId === id,
+    )?.id;
+
+    if (owner !== undefined && this.suggested().has(owner)) {
+      this.suggested.update(current => new Set([...current].filter(item => item !== owner)));
+    }
   }
 
   private resetAi(): void {
