@@ -118,10 +118,11 @@ $duration-collapse: 90ms;
     bottom: 0;
     width: 100%;
     // Figma v2/NavRail: trilho de 72px com superfície glass e borda à direita.
-    background: color-mix(
-      in srgb,
-      #{tokens.c(surface-glass-1)} 80%,
-      transparent
+    // Figma (2026-11-19): o fundo é um gradiente vertical — transparente no topo, cor cheia embaixo.
+    background: linear-gradient(
+      to bottom,
+      transparent,
+      #{tokens.c(surface-glass-1)}
     );
     // Figma (2026-11-19): raio só no topo à direita, sem borda lateral, logo a 44px do topo.
     border-top-right-radius: tokens.$radius-md;
@@ -290,6 +291,7 @@ $duration-collapse: 90ms;
 }
 
 .nav-menu__link {
+  position: relative;
   display: flex;
   align-items: center;
   // Colapsado: SEM gap e largura `fit-content` — o rótulo tem `max-width: 0`
@@ -335,7 +337,26 @@ $duration-collapse: 90ms;
 
   // Figma v2: item ativo = fundo surface-2, ícone secondary, rótulo Label/Lg.
   &--active {
-    background: var(--color-nav-active);
+    // O fundo do ativo é uma camada atrás do conteúdo com `multiply` (fica mais escuro que o fundo
+    // do menu, claro e escuro) sem afetar a cor do ícone e do rótulo.
+    background: transparent;
+
+    &::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      z-index: 0;
+      border-radius: inherit;
+      background: var(--color-nav-active);
+      mix-blend-mode: multiply;
+      pointer-events: none;
+    }
+
+    .nav-menu__icon,
+    .nav-menu__label {
+      position: relative;
+      z-index: 1;
+    }
 
     .nav-menu__icon {
       color: #{tokens.c(secondary)};

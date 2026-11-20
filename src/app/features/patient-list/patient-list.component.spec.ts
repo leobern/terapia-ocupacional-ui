@@ -278,6 +278,21 @@ describe('PatientListComponent', () => {
       expect(sum).toBeGreaterThan(1180);
     });
 
+    it('volta ao tamanho padrão quando ele cabe na área útil', () => {
+      (q('.patient-list__resizer') as HTMLElement).dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowLeft' }));
+      clickFit(1500);
+
+      expect(fixture.componentInstance.widths()).toEqual({
+        age: 150,
+        caloric: 170,
+        first: 170,
+        location: 170,
+        name: 280,
+        protein: 170,
+        therapy: 120,
+      });
+    });
+
     it('nunca passa do mínimo: com pouco espaço todas ficam no mínimo', () => {
       clickFit(300);
 

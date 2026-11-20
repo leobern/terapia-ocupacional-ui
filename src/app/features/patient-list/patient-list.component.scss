@@ -233,7 +233,9 @@
 }
 
 .patient-list__first {
-  margin-bottom: tokens.$space-4;
+  // Ajuste do Thiago (2026-11-19): recuo de -6px à esquerda e 8px abaixo.
+  margin-bottom: tokens.$space-8;
+  margin-left: -6px;
 }
 
 // Sem gráfico: só a palavra, na mesma fonte da tag de terapia, sem a caixa.

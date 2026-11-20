@@ -314,14 +314,23 @@ export class PatientListComponent implements OnInit {
   }
 
   /**
-   * Ajusta todas as colunas à largura útil do card, sem rolagem horizontal. Reduz/expande em proporção;
+   * Ajusta as colunas à largura útil do card, sem rolagem horizontal. 1º tenta o tamanho padrão; se não
+   * couber, reduz em proporção ao padrão;
    * nenhuma passa do mínimo (colunas no mínimo ficam fixas e o resto se reparte). Se nem todas no
    * mínimo cabem, todas ficam no mínimo e a rolagem horizontal continua.
    */
   fitColumns(): void {
     const card = this.tableCard()?.nativeElement;
     const available = (card?.clientWidth ?? 0) - ACTION_COLUMN_WIDTH;
-    const current = this.widths();
+    const current = DEFAULT_WIDTHS;
+
+    // 1ª regra: se o tamanho padrão cabe na área útil, volta ao padrão (a tabela só estica).
+    if (COLUMN_ORDER.reduce((sum, k) => sum + DEFAULT_WIDTHS[k], 0) <= available) {
+      this.widths.set(DEFAULT_WIDTHS);
+      this.fitState.set('fitted');
+
+      return;
+    }
     const result: Record<ColumnKey, number> = { ...MIN_WIDTH };
     let free = [...COLUMN_ORDER];
     let remaining = available;
