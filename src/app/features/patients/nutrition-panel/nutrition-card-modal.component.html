@@ -97,5 +97,30 @@
         }
       </section>
     }
+
+    <section class="card-modal__hide" aria-labelledby="card-modal-hide">
+      <h3 id="card-modal-hide" class="card-modal__section">Visibilidade</h3>
+      <app-button
+        kind="secondary"
+        appearance="outlined"
+        size="lg"
+        iconLeft="eye-slash"
+        label="Ocultar do painel"
+        [fullWidth]="true"
+        [disabled]="offline()"
+        (click)="hide()"
+      />
+      <p class="card-modal__help">
+        O valor e o histórico continuam guardados; o card só sai da grid.
+      </p>
+      @if (offline()) {
+        <p class="card-modal__error" role="status">
+          Conexão necessária para ocultar o card.
+        </p>
+      }
+      @if (hideError(); as message) {
+        <p class="card-modal__error" role="alert">{{ message }}</p>
+      }
+    </section>
   </div>
 </dialog>

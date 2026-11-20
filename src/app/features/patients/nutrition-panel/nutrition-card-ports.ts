@@ -40,3 +40,13 @@ export abstract class NutritionAddedCards {
   abstract loadAdded(patientId: string): Promise<readonly CatalogNutritionIndicatorId[]>;
   abstract add(patientId: string, type: CatalogNutritionIndicatorId): Promise<void>;
 }
+
+/**
+ * Porta da visibilidade dos cards do painel (US6): guarda por paciente quais cards estão ocultos da
+ * grid. Ocultar nunca apaga valor atual nem histórico (FR-015). Rejeita a promessa se não conseguir gravar.
+ */
+export abstract class NutritionHiddenCards {
+  /** Indicadores ocultos (fixos ou do catálogo). */
+  abstract loadHidden(patientId: string): Promise<readonly NutritionIndicatorId[]>;
+  abstract setHidden(patientId: string, indicator: NutritionIndicatorId, hidden: boolean): Promise<void>;
+}

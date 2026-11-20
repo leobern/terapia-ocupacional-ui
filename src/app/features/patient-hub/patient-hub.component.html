@@ -215,6 +215,7 @@
         <app-nutrition-panel
           [values]="values()"
           [addedCards]="addedCards()"
+          [hiddenCards]="hiddenCards()"
           (cardSelect)="openCardModal($event)"
           (addRequest)="openAddSheet()"
         />
@@ -232,6 +233,7 @@
           [current]="openCardCurrent()"
           (closed)="closeCardModal()"
           (saved)="onCardSaved($event)"
+          (hidden)="onCardHidden($event)"
         />
       }
       @case ('not-found') {

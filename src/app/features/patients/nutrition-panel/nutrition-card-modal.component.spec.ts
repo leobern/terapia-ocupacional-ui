@@ -3,7 +3,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ConnectivityService } from '../../../shared/services/connectivity.service';
 import { NOW, ProfessionalProfileReader } from '../../home/professional-profile';
 import { NutritionCardModalComponent } from './nutrition-card-modal.component';
-import { NutritionHistorySource, NutritionValueWriter } from './nutrition-card-ports';
+import { NutritionHiddenCards, NutritionHistorySource, NutritionValueWriter } from './nutrition-card-ports';
 import { ProvisionalNutritionCardStore } from './provisional-nutrition-card-store';
 
 describe('NutritionCardModalComponent', () => {
@@ -25,6 +25,7 @@ describe('NutritionCardModalComponent', () => {
       providers: [
         { provide: NutritionHistorySource, useValue: store },
         { provide: NutritionValueWriter, useValue: store },
+        { provide: NutritionHiddenCards, useValue: store },
         { provide: ProfessionalProfileReader, useValue: { read: (): { name: string } => ({ name: 'Michelle' }) } },
         { provide: NOW, useValue: (): Date => new Date(2026, 4, 28, 12) },
       ],
@@ -173,6 +174,43 @@ describe('NutritionCardModalComponent', () => {
       await (fixture.componentInstance as unknown as { deleteEntry(e: unknown): Promise<void> }).deleteEntry(entry);
 
       expect(store.deletionAuditTrail.length).toBe(0);
+    });
+  });
+
+  describe('ocultar do painel (US6)', () => {
+    const hide = (): Promise<void> => (fixture.componentInstance as unknown as { hide(): Promise<void> }).hide();
+
+    it('sem paciente ou indicador não grava nada', async () => {
+      await settle();
+      await hide();
+
+      expect(await store.loadHidden('p1')).toEqual([]);
+    });
+
+    it('offline: chamada direta não grava e mostra a conexão necessária', async () => {
+      fixture.componentRef.setInput('indicator', 'weight');
+      fixture.componentRef.setInput('patientId', 'p1');
+      TestBed.inject(ConnectivityService).online.set(false);
+      await settle();
+      await hide();
+      await settle();
+
+      expect(await store.loadHidden('p1')).toEqual([]);
+      expect(fixture.nativeElement.textContent).toContain('Conexão necessária para ocultar o card.');
+      TestBed.inject(ConnectivityService).online.set(true);
+    });
+
+    it('grava a ocultação e emite o indicador', async () => {
+      const emitted: string[] = [];
+
+      fixture.componentInstance.hidden.subscribe(i => emitted.push(i));
+      fixture.componentRef.setInput('indicator', 'weight');
+      fixture.componentRef.setInput('patientId', 'p1');
+      await settle();
+      await hide();
+
+      expect(emitted).toEqual(['weight']);
+      expect(await store.loadHidden('p1')).toEqual(['weight']);
     });
   });
 });

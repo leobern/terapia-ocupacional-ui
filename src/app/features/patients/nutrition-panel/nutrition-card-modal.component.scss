@@ -131,7 +131,8 @@
   @include typography.caption;
 }
 
-.card-modal__history {
+.card-modal__history,
+.card-modal__hide {
   display: flex;
   flex-direction: column;
   gap: tokens.$space-8;

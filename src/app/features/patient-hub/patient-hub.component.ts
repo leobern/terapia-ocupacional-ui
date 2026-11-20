@@ -19,6 +19,7 @@ import {
 import { NutritionCardModalComponent } from '../patients/nutrition-panel/nutrition-card-modal.component';
 import {
   NutritionAddedCards,
+  NutritionHiddenCards,
   NutritionHistorySource,
   NutritionValueWriter,
 } from '../patients/nutrition-panel/nutrition-card-ports';
@@ -103,6 +104,8 @@ export class PatientHubComponent implements OnInit {
   /** Card aberto no modal de histórico/edição; `null` = fechado. */
   /** Cards adicionados pelo "+" (tipos do catálogo), na ordem de adição. */
   protected readonly addedCards = signal<readonly CatalogNutritionIndicatorId[]>([]);
+  /** Cards ocultos da grid (US6): o dado segue existindo e sendo atualizado por baixo. */
+  protected readonly hiddenCards = signal<readonly NutritionIndicatorId[]>([]);
   protected readonly addSheetOpen = signal(false);
   protected readonly addError = signal<string | null>(null);
   protected readonly openCard = signal<NutritionIndicatorId | null>(null);
@@ -162,6 +165,7 @@ export class PatientHubComponent implements OnInit {
   private resultsLoaded = false;
   private readonly cardStore = inject(NutritionHistorySource);
   private readonly addedStore = inject(NutritionAddedCards);
+  private readonly hiddenStore = inject(NutritionHiddenCards);
   private readonly cardWriter = inject(NutritionValueWriter);
   private readonly editing = signal<'paste' | 'edit' | null>(null);
   private readonly source = inject(PatientHubSource);
@@ -196,6 +200,7 @@ export class PatientHubComponent implements OnInit {
 
       this.manual.set(await this.cardStore.loadManual(id));
       this.addedCards.set(await this.addedStore.loadAdded(id));
+      this.hiddenCards.set(await this.hiddenStore.loadHidden(id));
       await this.supersedeManual(id, loaded);
       this.resultValues.set(loaded);
       this.resultsLoaded = true;
@@ -235,6 +240,12 @@ export class PatientHubComponent implements OnInit {
   }
 
   protected closeCardModal(): void {
+    this.openCard.set(null);
+  }
+
+  /** US6: o modal já gravou a ocultação; o card sai da grid e o modal fecha. */
+  protected onCardHidden(id: NutritionIndicatorId): void {
+    this.hiddenCards.update(list => (list.includes(id) ? list : [...list, id]));
     this.openCard.set(null);
   }
 
