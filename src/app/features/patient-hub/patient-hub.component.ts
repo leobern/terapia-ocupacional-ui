@@ -13,6 +13,8 @@ import { ConnectivityService } from '../../shared/services/connectivity.service'
 import { HospitalContextService } from '../home/hospital-context.service';
 import { NOW, ProfessionalProfileReader } from '../home/professional-profile';
 import { NutritionPanelComponent } from '../patients/nutrition-panel/nutrition-panel.component';
+import { NutritionValues } from '../patients/nutrition-panel/nutrition-panel.models';
+import { NutritionResultsSource } from '../patients/nutrition-panel/nutrition-results-source';
 import { HypothesisOrigin, PatientHubProfile } from './patient-hub.models';
 import { HypothesisSynthesizer, HypothesisWriter, PatientHubSource } from './patient-hub-source';
 
@@ -20,6 +22,13 @@ type HubStatus = 'loading' | 'ready' | 'not-found' | 'error';
 
 /** Etapa do preenchimento da Hipótese: colar → carregando → revisão (IA) ou falha (manual). */
 type FillPhase = 'input' | 'loading' | 'review' | 'failed';
+
+const PULL_THRESHOLD = 80;
+
+/** Voltar a ficar visível recarrega os resultados do painel; oculto não (sem polling nem stream). */
+export function reloadsOnVisibility(state: DocumentVisibilityState): boolean {
+  return state === 'visible';
+}
 
 const OFFLINE_HINT = 'Conexão necessária para sintetizar ou confirmar a hipótese.';
 const DAY_MS = 86_400_000;
@@ -35,6 +44,12 @@ const DAY_MS = 86_400_000;
     PhIconComponent,
     TherapyTagComponent,
   ],
+  host: {
+    '(window:focus)': 'reloadResults()',
+    '(document:visibilitychange)': 'onVisibility()',
+    '(touchstart)': 'pullStart($event)',
+    '(touchend)': 'pullEnd($event)',
+  },
   selector: 'app-patient-hub',
   styleUrl: './patient-hub.component.scss',
   templateUrl: './patient-hub.component.html',
@@ -46,6 +61,8 @@ export class PatientHubComponent implements OnInit {
   protected readonly profile = signal<PatientHubProfile | null>(null);
   /** Hipótese confirmada; `null` = ainda não preenchida. */
   protected readonly hypothesis = signal<string | null>(null);
+  /** Resultados de outras features exibidos no Painel Nutricional; indicador ausente = "Sem dados". */
+  protected readonly values = signal<NutritionValues>({});
 
   protected readonly phase = signal<FillPhase>('input');
   /** Texto colado do prontuário (permanece disponível se a síntese falhar). */
@@ -82,6 +99,8 @@ export class PatientHubComponent implements OnInit {
   });
 
   private readonly source = inject(PatientHubSource);
+  private readonly results = inject(NutritionResultsSource);
+  private pullFrom: number | null = null;
   private readonly context = inject(HospitalContextService);
   private readonly location = inject(Location);
   private readonly now = inject(NOW);
@@ -96,6 +115,41 @@ export class PatientHubComponent implements OnInit {
 
   ngOnInit(): void {
     void this.load();
+    void this.reloadResults();
+  }
+
+  /** Recarrega os resultados do painel; se falhar (ou offline), mantém os valores já exibidos. */
+  async reloadResults(): Promise<void> {
+    const id = this.patientId();
+
+    if (id === null) {
+      return;
+    }
+    try {
+      this.values.set(await this.results.load(id));
+    } catch {
+      // mantém os valores atuais
+    }
+  }
+
+  protected onVisibility(): void {
+    if (reloadsOnVisibility(document.visibilityState)) {
+      void this.reloadResults();
+    }
+  }
+
+  /** Puxar-para-atualizar: arrasto vertical de mais de 80px a partir do topo da página. */
+  protected pullStart(event: TouchEvent): void {
+    this.pullFrom = window.scrollY <= 0 ? event.touches[0].clientY : null;
+  }
+
+  protected pullEnd(event: TouchEvent): void {
+    const from = this.pullFrom;
+
+    this.pullFrom = null;
+    if (from !== null && event.changedTouches[0].clientY - from > PULL_THRESHOLD) {
+      void this.reloadResults();
+    }
   }
 
   protected back(): void {

@@ -136,7 +136,7 @@
         </section>
 
         <!-- Painel Nutricional (FT-004-3): paciente novo mostra todos os cards em "Sem dados". -->
-        <app-nutrition-panel />
+        <app-nutrition-panel [values]="values()" />
       }
       @case ('not-found') {
         <p class="hub__message" role="status">Paciente não encontrado.</p>

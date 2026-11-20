@@ -6,7 +6,9 @@ import { of } from 'rxjs';
 import { ConnectivityService } from '../../shared/services/connectivity.service';
 import { LinkedHospitalsReader } from '../home/linked-hospitals';
 import { NOW, ProfessionalProfileReader } from '../home/professional-profile';
-import { PatientHubComponent } from './patient-hub.component';
+import { NutritionValues } from '../patients/nutrition-panel/nutrition-panel.models';
+import { NutritionResultsSource } from '../patients/nutrition-panel/nutrition-results-source';
+import { PatientHubComponent, reloadsOnVisibility } from './patient-hub.component';
 import { HypothesisSaveRequest, PatientHubProfile } from './patient-hub.models';
 import { HypothesisSynthesizer, HypothesisWriter, PatientHubSource } from './patient-hub-source';
 
@@ -61,6 +63,19 @@ class FakeWriter extends HypothesisWriter {
   }
 }
 
+class FakeResults extends NutritionResultsSource {
+  values: NutritionValues = {};
+  fail = false;
+  calls = 0;
+
+  load(): Promise<NutritionValues> {
+    this.calls++;
+
+    return this.fail ? Promise.reject(new Error('x')) : Promise.resolve(this.values);
+  }
+}
+
+const results = new FakeResults();
 const synth = new FakeSynth();
 const writer = new FakeWriter();
 
@@ -75,6 +90,7 @@ async function setup(
       { provide: Location, useValue: locationMock },
       { provide: ActivatedRoute, useValue: { paramMap: of(convertToParamMap(id === null ? {} : { id })) } },
       { provide: PatientHubSource, useValue: source },
+      { provide: NutritionResultsSource, useValue: results },
       { provide: HypothesisSynthesizer, useValue: synth },
       { provide: HypothesisWriter, useValue: writer },
       { provide: ProfessionalProfileReader, useValue: { read: (): { name: string } => ({ name: 'Michelle' }) } },
@@ -97,6 +113,12 @@ async function setup(
 const text = (f: ComponentFixture<unknown>): string => (f.nativeElement as HTMLElement).textContent ?? '';
 
 describe('PatientHubComponent', () => {
+  beforeEach(() => {
+    results.values = {};
+    results.fail = false;
+    results.calls = 0;
+  });
+
   it('mostra identificação e a Hipótese completa quando preenchida', async () => {
     const f = await setup(new FakeSource());
 
@@ -125,6 +147,108 @@ describe('PatientHubComponent', () => {
 
     expect(values.length).toBe(8);
     expect(values.every(v => v.textContent?.trim() === 'Sem dados')).toBeTrue();
+  });
+
+  describe('resultados do painel (FT-004-3, US2)', () => {
+    const cards = (f: ComponentFixture<unknown>): string[] =>
+      Array.from((f.nativeElement as HTMLElement).querySelectorAll('.nutrition-panel__value')).map(
+        v => v.textContent?.trim() ?? '',
+      );
+
+    it('carrega ao abrir e mostra cada resultado; sem resultado o card segue em "Sem dados"', async () => {
+      results.values = { glim: 'Desnutrição' } as NutritionValues;
+      const f = await setup(new FakeSource());
+
+      expect(cards(f)).toContain('Desnutrição');
+      expect(cards(f).filter(v => v === 'Sem dados').length).toBe(7);
+    });
+
+    it('retomar o foco recarrega; falha mantém os valores exibidos', async () => {
+      results.values = { glim: 'Desnutrição' } as NutritionValues;
+      const f = await setup(new FakeSource());
+
+      results.values = { glim: 'Sem desnutrição' } as NutritionValues;
+      window.dispatchEvent(new Event('focus'));
+      await f.whenStable();
+      f.detectChanges();
+
+      expect(cards(f)).toContain('Sem desnutrição');
+
+      results.fail = true;
+      window.dispatchEvent(new Event('focus'));
+      await f.whenStable();
+      f.detectChanges();
+
+      expect(cards(f)).toContain('Sem desnutrição');
+    });
+
+    it('regra de visibilidade: visível recarrega; oculto não', () => {
+      expect(reloadsOnVisibility('visible')).toBeTrue();
+      expect(reloadsOnVisibility('hidden')).toBeFalse();
+    });
+
+    it('sem id na rota não busca resultados', async () => {
+      await setup(new FakeSource(), null);
+
+      expect(results.calls).toBe(0);
+    });
+
+    it('o tratador de visibilidade e o puxar com a página rolada percorrem os dois ramos', async () => {
+      const f = await setup(new FakeSource());
+      const before = results.calls;
+      const visibility = spyOnProperty(Document.prototype, 'visibilityState', 'get').and.returnValue('visible');
+      const hub = f.componentInstance as unknown as { onVisibility(): void };
+
+      hub.onVisibility();
+      visibility.and.returnValue('hidden');
+      hub.onVisibility();
+      spyOnProperty(window, 'scrollY', 'get').and.returnValue(120);
+      const el = f.nativeElement as HTMLElement;
+      const point = new Touch({ clientX: 0, clientY: 10, identifier: 1, target: el });
+
+      el.dispatchEvent(new TouchEvent('touchstart', { changedTouches: [point], touches: [point] }));
+      await f.whenStable();
+
+      // Só a visibilidade "visível" recarrega aqui (eventos reais do runner podem somar chamadas).
+      expect(results.calls).toBeGreaterThan(before);
+    });
+
+    it('arrasto curto ou sem toque inicial não recarrega', async () => {
+      const f = await setup(new FakeSource());
+      const before = results.calls;
+      const el = f.nativeElement as HTMLElement;
+      const touch = (type: string, y: number): TouchEvent => {
+        const point = new Touch({ clientX: 0, clientY: y, identifier: 1, target: el });
+
+        return new TouchEvent(type, { changedTouches: [point], touches: type === 'touchstart' ? [point] : [] });
+      };
+
+      el.dispatchEvent(touch('touchstart', 10));
+      el.dispatchEvent(touch('touchend', 50));
+      el.dispatchEvent(touch('touchend', 300));
+      await f.whenStable();
+
+      expect(results.calls).toBe(before);
+    });
+
+    it('puxar para atualizar (arrasto > 80px a partir do topo) recarrega', async () => {
+      const f = await setup(new FakeSource());
+      const before = results.calls;
+      const touch = (type: string, y: number): TouchEvent =>
+        new TouchEvent(type, {
+          changedTouches: [new Touch({ clientX: 0, clientY: y, identifier: 1, target: f.nativeElement })],
+          touches:
+            type === 'touchstart'
+              ? [new Touch({ clientX: 0, clientY: y, identifier: 1, target: f.nativeElement })]
+              : [],
+        });
+
+      (f.nativeElement as HTMLElement).dispatchEvent(touch('touchstart', 10));
+      (f.nativeElement as HTMLElement).dispatchEvent(touch('touchend', 150));
+      await f.whenStable();
+
+      expect(results.calls).toBeGreaterThan(before);
+    });
   });
 
   it('indica paciente não encontrado', async () => {

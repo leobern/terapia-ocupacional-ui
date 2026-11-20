@@ -33,6 +33,8 @@ import { PatientListAiCommandPort } from './features/patient-list/patient-list-a
 import { PatientListSource } from './features/patient-list/patient-list-source';
 import { ProvisionalPatientListSource } from './features/patient-list/provisional-patient-list';
 import { ProvisionalPatientListAiCommand } from './features/patient-list/provisional-patient-list-ai-command';
+import { NutritionResultsSource } from './features/patients/nutrition-panel/nutrition-results-source';
+import { ProvisionalNutritionResultsSource } from './features/patients/nutrition-panel/provisional-nutrition-results';
 import { LocalStartupStateReader } from './features/splash/local-startup-state-reader';
 import { StartupStateReader } from './features/splash/startup-state';
 import { ASSISTANT_QUERY_RESOLVERS } from './shared/services/assistant-query-resolver';
@@ -51,6 +53,7 @@ export const appConfig: ApplicationConfig = {
     { provide: PatientHubSource, useClass: ProvisionalPatientHubSource },
     { provide: HypothesisSynthesizer, useClass: ProvisionalHypothesisSynthesizer },
     { provide: HypothesisWriter, useClass: ProvisionalHypothesisWriter },
+    { provide: NutritionResultsSource, useClass: ProvisionalNutritionResultsSource },
     { provide: HomeNotificationsSource, useClass: ProvisionalHomeNotificationsSource },
     // Provisórios (sem backend ainda): notificações em memória, hospital único e usuários de exemplo.
     { provide: NotificationsApiService, useClass: ProvisionalNotificationsApiService },
