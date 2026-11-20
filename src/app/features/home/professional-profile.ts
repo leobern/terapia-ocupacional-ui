@@ -3,6 +3,8 @@ import { InjectionToken } from '@angular/core';
 /** Dados do profissional autenticado exibidos no cabeçalho da Home. */
 export interface ProfessionalProfile {
   readonly name: string;
+  /** Só o médico define/altera a via de nutrição do Plano de Intervenção (FT-004-6). */
+  readonly role: 'doctor' | 'other';
   /** Ausente quando o profissional não tem foto: o avatar cai nas iniciais. */
   readonly photoUrl?: string;
 }

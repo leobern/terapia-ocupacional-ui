@@ -1,0 +1,19 @@
+import { ProvisionalPlanSource } from './provisional-plan-source';
+
+describe('ProvisionalPlanSource', () => {
+  it('p1 começa com NE; paciente desconhecido sem via', async () => {
+    const source = new ProvisionalPlanSource();
+
+    expect((await source.loadRoute('p1'))?.routes).toEqual(['NE']);
+    expect(await source.loadRoute('x')).toBeNull();
+  });
+
+  it('grava normalizado e a última gravação prevalece', async () => {
+    const source = new ProvisionalPlanSource();
+
+    await source.saveRoute({ at: '2026-11-20T10:00:00Z', author: 'A', patientId: 'x', routes: ['NE', 'VO'] });
+    await source.saveRoute({ at: '2026-11-20T10:00:05Z', author: 'B', patientId: 'x', routes: ['NP'] });
+
+    expect(await source.loadRoute('x')).toEqual({ routes: ['NP'], since: '2026-11-20T10:00:05Z' });
+  });
+});

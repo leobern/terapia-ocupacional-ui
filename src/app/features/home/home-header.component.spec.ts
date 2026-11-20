@@ -20,27 +20,27 @@ describe('HomeHeaderComponent', () => {
   }
 
   it('shows the name and the full date in pt-BR', () => {
-    const el = setup({ name: 'Michelle Franklin' });
+    const el = setup({ role: 'doctor', name: 'Michelle Franklin' });
 
     expect(el.querySelector('.home-header__name')?.textContent).toBe('Michelle Franklin');
     expect(el.querySelector('.home-header__date')?.textContent).toBe('segunda-feira, 16 de novembro de 2026');
   });
 
   it('shows the photo when available', () => {
-    const el = setup({ name: 'Michelle Franklin', photoUrl: 'foto.png' });
+    const el = setup({ role: 'doctor', name: 'Michelle Franklin', photoUrl: 'foto.png' });
 
     expect(el.querySelector('img')?.getAttribute('src')).toBe('foto.png');
   });
 
   it('falls back to two initials without photo', () => {
-    const el = setup({ name: 'Michelle Franklin' });
+    const el = setup({ role: 'doctor', name: 'Michelle Franklin' });
 
     expect(el.querySelector('img')).toBeNull();
     expect(el.querySelector('.avatar__initials')?.textContent).toBe('MF');
   });
 
   it('falls back to one initial for a single name', () => {
-    const el = setup({ name: 'Michelle' });
+    const el = setup({ role: 'doctor', name: 'Michelle' });
 
     expect(el.querySelector('.avatar__initials')?.textContent).toBe('M');
   });
