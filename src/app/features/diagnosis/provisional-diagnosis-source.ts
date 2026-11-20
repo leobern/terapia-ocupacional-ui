@@ -11,6 +11,8 @@ const NO_DATA: GlimReading = {
     'reduced-intake': 'not-evaluated',
     'weight-loss': 'not-evaluated',
   },
+  fluidRetention: false,
+  protocols: [],
   screeningPositive: false,
   severity: {},
 };
@@ -25,6 +27,11 @@ const SEED: Readonly<Record<string, GlimReading | undefined>> = {
       'reduced-intake': 'positive',
       'weight-loss': 'positive',
     },
+    fluidRetention: true,
+    protocols: [
+      { id: 'nrs-2002', label: 'NRS-2002', points: 4, result: 'Risco' },
+      { id: 'sarc-f', label: 'SARC-F', points: 4, result: 'Risco' },
+    ],
     screeningPositive: true,
     severity: { 'weight-loss': 'moderate' },
   },

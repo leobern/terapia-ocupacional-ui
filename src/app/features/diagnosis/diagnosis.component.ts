@@ -18,6 +18,7 @@ import {
   GlimDiagnosis,
   GlimOutcome,
   GlimSeverity,
+  ProtocolResult,
 } from './diagnosis.models';
 import { DiagnosisSource } from './diagnosis-source';
 import { evaluateGlim } from './glim-engine';
@@ -60,6 +61,8 @@ export class DiagnosisComponent implements OnInit {
   protected readonly status = signal<LoadStatus>('loading');
   protected readonly profile = signal<PatientHubProfile | null>(null);
   protected readonly diagnosis = signal<GlimDiagnosis | null>(null);
+  protected readonly fluidRetention = signal(false);
+  protected readonly protocols = signal<readonly ProtocolResult[]>([]);
   protected readonly rows = signal<readonly CriterionRow[]>([]);
   protected readonly errorHint = computed(() => (this.connectivity.online() ? ERROR_HINT : OFFLINE_HINT));
 
@@ -114,6 +117,8 @@ export class DiagnosisComponent implements OnInit {
 
       this.profile.set(profile);
       this.diagnosis.set(evaluateGlim(reading));
+      this.fluidRetention.set(reading.fluidRetention);
+      this.protocols.set(reading.protocols);
       this.rows.set(
         GLIM_CRITERIA.map(definition => ({
           definition,

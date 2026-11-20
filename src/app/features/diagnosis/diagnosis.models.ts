@@ -27,6 +27,16 @@ export const GLIM_STATE_LABELS: Readonly<Record<GlimCriterionState, string>> = {
   positive: 'Positivo',
 };
 
+/** Resultado categórico de outro protocolo, calculado por motor próprio (fora desta feature, FR-017). */
+export interface ProtocolResult {
+  readonly id: 'nrs-2002' | 'sarc-f' | 'sarcopenia-confirmatory';
+  readonly label: string;
+  /** Categoria em texto (ex.: "Risco", "Pouco provável"). */
+  readonly result: string;
+  /** Pontuação, quando o protocolo tem. */
+  readonly points?: number;
+}
+
 /**
  * Leitura dos dados já coletados na Avaliação Nutricional e Funcional (FT-004-4), com cada critério já
  * classificado. Os cortes-padrão do GLIM (fora de escopo, FR-018) ficam em quem produz a leitura, nunca
@@ -37,6 +47,10 @@ export interface GlimReading {
   readonly screeningPositive: boolean;
   readonly criteria: Readonly<Record<GlimCriterionId, GlimCriterionState>>;
   readonly severity: Readonly<Partial<Record<'weight-loss' | 'low-bmi', GlimSeverity>>>;
+  /** Ascite ou edema registrado: peso, IMC e massa muscular podem estar mascarados. */
+  readonly fluidRetention: boolean;
+  /** Protocolos aplicados ao paciente; protocolo não aplicado simplesmente não aparece. */
+  readonly protocols: readonly ProtocolResult[];
 }
 
 export type GlimOutcome = 'confirmed' | 'excluded' | 'indeterminate' | 'no-screening';

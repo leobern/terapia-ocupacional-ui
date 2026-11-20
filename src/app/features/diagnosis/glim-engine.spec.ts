@@ -9,7 +9,7 @@ function reading(
 ): GlimReading {
   const criteria = Object.fromEntries(IDS.map(id => [id, states[id] ?? 'not-evaluated'])) as GlimReading['criteria'];
 
-  return { criteria, screeningPositive: true, severity: {}, ...extra };
+  return { criteria, fluidRetention: false, protocols: [], screeningPositive: true, severity: {}, ...extra };
 }
 
 describe('evaluateGlim', () => {

@@ -85,6 +85,45 @@
             </div>
           </section>
         }
+
+        @if (fluidRetention()) {
+          <p class="diagnosis__banner" role="note">
+            Edema ou ascite registrado: peso, IMC e massa muscular podem estar
+            mascarados.
+          </p>
+        }
+
+        <section class="diagnosis__cluster" aria-labelledby="protocols-title">
+          <div class="diagnosis__section-header">
+            <h2 id="protocols-title" class="diagnosis__section-title">
+              Outros protocolos
+            </h2>
+            <span class="diagnosis__count">{{ protocols().length }}</span>
+          </div>
+          @if (protocols().length === 0) {
+            <p class="diagnosis__message">
+              Nenhum outro protocolo aplicado a este paciente.
+            </p>
+          } @else {
+            <ul class="diagnosis__tiles">
+              @for (protocol of protocols(); track protocol.id) {
+                <li class="diagnosis__tile">
+                  <span class="diagnosis__tile-label">{{
+                    protocol.label
+                  }}</span>
+                  @if (protocol.points !== undefined) {
+                    <span class="diagnosis__tile-points"
+                      >{{ protocol.points }} pontos</span
+                    >
+                  }
+                  <span class="diagnosis__tile-result">{{
+                    protocol.result
+                  }}</span>
+                </li>
+              }
+            </ul>
+          }
+        </section>
       }
     }
   </div>

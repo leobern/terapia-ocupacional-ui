@@ -178,3 +178,37 @@
 
   @include typography.body-md;
 }
+
+// Síntese somente leitura (v2/StatTile do desenho): lado a lado, com texto da categoria.
+.diagnosis__tiles {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: tokens.$space-8;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.diagnosis__tile {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: tokens.$space-12;
+  border-radius: tokens.$radius-md;
+  background: tokens.c(surface-2);
+  color: tokens.c(content-1);
+}
+
+.diagnosis__tile-label {
+  color: tokens.c(content-4);
+
+  @include typography.label-sm;
+}
+
+.diagnosis__tile-points {
+  @include typography.label-md;
+}
+
+.diagnosis__tile-result {
+  @include typography.title-md;
+}

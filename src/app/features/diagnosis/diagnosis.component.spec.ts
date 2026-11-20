@@ -29,6 +29,11 @@ const CONFIRMED: GlimReading = {
     'reduced-intake': 'positive',
     'weight-loss': 'positive',
   },
+  fluidRetention: true,
+  protocols: [
+    { id: 'nrs-2002', label: 'NRS-2002', points: 4, result: 'Risco' },
+    { id: 'sarc-f', label: 'SARC-F', result: 'Pouco provável' },
+  ],
   screeningPositive: true,
   severity: { 'weight-loss': 'moderate' },
 };
@@ -129,6 +134,8 @@ describe('DiagnosisComponent', () => {
         'reduced-intake': 'negative',
         'weight-loss': 'negative',
       },
+      fluidRetention: false,
+      protocols: [],
       screeningPositive: true,
       severity: {},
     });
@@ -153,7 +160,7 @@ describe('DiagnosisComponent', () => {
   });
 
   it('reports the missing prerequisite without calculating or listing criteria', async () => {
-    source.reading = Promise.resolve({ ...CONFIRMED, screeningPositive: false });
+    source.reading = Promise.resolve({ ...CONFIRMED, fluidRetention: false, screeningPositive: false });
     const el = await render();
 
     expect(el.querySelector('.diagnosis__result')?.textContent).toBe('Pré-requisito não cumprido');
@@ -189,5 +196,48 @@ describe('DiagnosisComponent', () => {
     el.querySelector<HTMLButtonElement>('app-icon-button button')?.click();
 
     expect(location.back).toHaveBeenCalled();
+  });
+
+  it('shows the reliability alert with fluid retention, even with criteria not evaluated', async () => {
+    source.reading = Promise.resolve({
+      ...CONFIRMED,
+      criteria: {
+        ...CONFIRMED.criteria,
+        inflammation: 'not-evaluated',
+        'reduced-intake': 'not-evaluated',
+        'weight-loss': 'not-evaluated',
+      },
+    });
+    const el = await render();
+
+    expect(el.textContent).toContain('Edema ou ascite registrado: peso, IMC e massa muscular podem estar mascarados.');
+  });
+
+  it('hides the reliability alert without fluid retention', async () => {
+    source.reading = Promise.resolve({ ...CONFIRMED, fluidRetention: false });
+    const el = await render();
+
+    expect(el.textContent).not.toContain('Edema ou ascite');
+  });
+
+  it('shows the other protocols side by side with text, read-only', async () => {
+    const el = await render();
+    const tiles = Array.from(el.querySelectorAll('.diagnosis__tile')).map(t =>
+      Array.from(t.children)
+        .map(c => c.textContent?.trim())
+        .join(' '),
+    );
+
+    expect(tiles).toEqual(['NRS-2002 4 pontos Risco', 'SARC-F Pouco provável']);
+    expect(el.querySelector('#protocols-title + .diagnosis__count')?.textContent).toBe('2');
+    expect(el.querySelector('.diagnosis__tile button, .diagnosis__tile input')).toBeNull();
+  });
+
+  it('copes with no other protocol applied', async () => {
+    source.reading = Promise.resolve({ ...CONFIRMED, protocols: [] });
+    const el = await render();
+
+    expect(el.textContent).toContain('Nenhum outro protocolo aplicado');
+    expect(el.querySelector('.diagnosis__tile')).toBeNull();
   });
 });
