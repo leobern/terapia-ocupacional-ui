@@ -1,0 +1,12 @@
+<!-- Figma Hub (4608-4371), seção "Diagnóstico": título + card de superfície com tiles. -->
+<section class="nutrition-panel" aria-labelledby="nutrition-panel-title">
+  <h2 id="nutrition-panel-title" class="nutrition-panel__title">Diagnóstico</h2>
+  <ul class="nutrition-panel__grid">
+    @for (card of cards(); track card.id) {
+      <li class="nutrition-panel__card">
+        <span class="nutrition-panel__label">{{ card.label }}</span>
+        <span class="nutrition-panel__value">{{ card.value }}</span>
+      </li>
+    }
+  </ul>
+</section>

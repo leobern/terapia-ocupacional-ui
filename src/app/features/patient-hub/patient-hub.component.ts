@@ -12,6 +12,7 @@ import { PhIconComponent } from '../../shared/icons/ph-icon/ph-icon.component';
 import { ConnectivityService } from '../../shared/services/connectivity.service';
 import { HospitalContextService } from '../home/hospital-context.service';
 import { NOW, ProfessionalProfileReader } from '../home/professional-profile';
+import { NutritionPanelComponent } from '../patients/nutrition-panel/nutrition-panel.component';
 import { HypothesisOrigin, PatientHubProfile } from './patient-hub.models';
 import { HypothesisSynthesizer, HypothesisWriter, PatientHubSource } from './patient-hub-source';
 
@@ -26,7 +27,14 @@ const DAY_MS = 86_400_000;
 /** Hub do paciente (FT-004-2): cabeçalho e cartão "Hipótese diagnóstica" (Figma 4608:4375 / 4608:4845). */
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ButtonComponent, IconButtonComponent, PageContainerComponent, PhIconComponent, TherapyTagComponent],
+  imports: [
+    ButtonComponent,
+    IconButtonComponent,
+    NutritionPanelComponent,
+    PageContainerComponent,
+    PhIconComponent,
+    TherapyTagComponent,
+  ],
   selector: 'app-patient-hub',
   styleUrl: './patient-hub.component.scss',
   templateUrl: './patient-hub.component.html',

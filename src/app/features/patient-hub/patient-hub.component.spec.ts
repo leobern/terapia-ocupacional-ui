@@ -119,6 +119,14 @@ describe('PatientHubComponent', () => {
     expect((f.nativeElement as HTMLElement).querySelector('textarea')).not.toBeNull();
   });
 
+  it('mostra o Painel Nutricional com os 8 cards em "Sem dados" abaixo da Hipótese (FT-004-3)', async () => {
+    const f = await setup(new FakeSource());
+    const values = Array.from((f.nativeElement as HTMLElement).querySelectorAll('.nutrition-panel__value'));
+
+    expect(values.length).toBe(8);
+    expect(values.every(v => v.textContent?.trim() === 'Sem dados')).toBeTrue();
+  });
+
   it('indica paciente não encontrado', async () => {
     const source = new FakeSource();
 

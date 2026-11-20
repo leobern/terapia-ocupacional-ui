@@ -108,6 +108,11 @@ const SORT_OPTIONS = [
 
 const BED_COLLATOR = new Intl.Collator('pt-BR', { numeric: true, sensitivity: 'base' });
 
+/** Voltar a ficar visível rebusca a lista; oculto não busca (FR-035). */
+export function refreshesOnVisibility(state: DocumentVisibilityState): boolean {
+  return state === 'visible';
+}
+
 export type PatientListStatus = 'loading' | 'ready' | 'error';
 
 const PATIENT_LIST_ACTIONS: readonly ScreenAction[] = [
@@ -612,7 +617,7 @@ export class PatientListComponent implements OnInit {
   }
 
   protected onVisibility(): void {
-    if (document.visibilityState === 'visible') {
+    if (refreshesOnVisibility(document.visibilityState)) {
       void this.refresh();
     }
   }
