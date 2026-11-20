@@ -71,6 +71,24 @@ describe('assemblePatientList', () => {
     expect(done.firstEvaluation).toBe(false);
   });
 
+  describe('encerramento de acompanhamento (FR-031/FR-032)', () => {
+    const closed = { ...base, followUpEndDate: '2026-01-18' };
+    const ids = (d: Date): string[] => assemblePatientList([closed], 'h1', d).map(p => p.id);
+
+    it('some na data de efeito e depois dela', () => {
+      expect(ids(new Date(2026, 0, 18))).toEqual([]);
+      expect(ids(new Date(2026, 0, 19, 15))).toEqual([]);
+    });
+
+    it('continua visível em datas anteriores', () => {
+      expect(ids(new Date(2026, 0, 17, 23))).toEqual(['a']);
+    });
+
+    it('sem data de efeito (saiu do fluxo sem confirmar) a lista não muda', () => {
+      expect(assemblePatientList([base], 'h1', day).map(p => p.id)).toEqual(['a']);
+    });
+  });
+
   it('marca finalizado só quando não há pendências abertas na data', () => {
     const [done, open, unknown] = assemblePatientList(
       [

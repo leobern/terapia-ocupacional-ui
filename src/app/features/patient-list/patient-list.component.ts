@@ -19,9 +19,11 @@ import { DateStripComponent } from '../../shared/components/date-strip/date-stri
 import { GraphMetaComponent } from '../../shared/components/graph-meta/graph-meta.component';
 import { IconButtonComponent } from '../../shared/components/icon-button/icon-button.component';
 import { PageContainerComponent } from '../../shared/components/page-container/page-container.component';
+import { SwipeRowComponent } from '../../shared/components/swipe-row/swipe-row.component';
 import { TherapyTagComponent } from '../../shared/components/therapy-tag/therapy-tag.component';
 import { PhIconComponent } from '../../shared/icons/ph-icon/ph-icon.component';
 import { AiAssistantService } from '../../shared/services/ai-assistant.service';
+import { ConnectivityService } from '../../shared/services/connectivity.service';
 import { type ScreenAction, ScreenActionsService } from '../../shared/services/screen-actions.service';
 import { HospitalContextService } from '../home/hospital-context.service';
 import { UnreadNotificationsReader } from '../home/unread-notifications-reader';
@@ -141,6 +143,7 @@ const SORT_VALUE: Readonly<Record<SortKey, (p: PatientCard) => number | string |
     IconButtonComponent,
     PageContainerComponent,
     PhIconComponent,
+    SwipeRowComponent,
     TherapyTagComponent,
   ],
   selector: 'app-patient-list',
@@ -162,6 +165,8 @@ export class PatientListComponent implements OnInit {
   readonly patients = signal<readonly PatientCard[]>([]);
   readonly hospitalName = computed(() => this.context.selected()?.name ?? '');
   readonly unreadCount = signal(0);
+  /** Aviso (texto, não só cor) quando o encerramento é tentado sem conexão (Offline da US-004-1-08). */
+  readonly offlineNotice = signal('');
   /** Larguras das colunas (V1: só nesta sessão; a persistência por usuário fica para a V2 com o perfil). */
   readonly widths = signal<Readonly<Record<ColumnKey, number>>>(DEFAULT_WIDTHS);
   readonly resizing = signal<ColumnKey | null>(null);
@@ -235,6 +240,7 @@ export class PatientListComponent implements OnInit {
   private readonly context = inject(HospitalContextService);
   private readonly source = inject(PatientListSource);
   private readonly router = inject(Router);
+  private readonly connectivity = inject(ConnectivityService);
   private readonly tableCard = viewChild<ElementRef<HTMLElement>>('tableCard');
   private readonly unread = inject(UnreadNotificationsReader);
   private readonly screenActions = inject(ScreenActionsService);
@@ -484,6 +490,23 @@ export class PatientListComponent implements OnInit {
 
   cancelPendingDate(): void {
     this.pendingDate.set(null);
+  }
+
+  /**
+   * Swipe à esquerda (FR-029): só navega ao fluxo de encerramento da FT-004-9 (rota provisória), com o
+   * paciente em contexto. Não altera estado (FR-037). Sem conexão, não navega (a confirmação exige servidor).
+   */
+  endFollowUp(id: string): void {
+    if (this.readOnly()) {
+      return;
+    }
+    if (!this.connectivity.online()) {
+      this.offlineNotice.set('Conexão necessária para encerrar o acompanhamento.');
+
+      return;
+    }
+    this.offlineNotice.set('');
+    void this.router.navigate(['/patients', id, 'end-follow-up']);
   }
 
   openPatient(id: string): void {

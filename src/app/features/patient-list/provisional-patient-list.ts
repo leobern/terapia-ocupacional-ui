@@ -93,6 +93,21 @@ export class ProvisionalPatientListSource extends PatientListSource {
         { caloric: 70, protein: 66 },
         2,
       ),
+      // Encerramento confirmado (FT-004-9) com data de efeito amanhã: hoje aparece, de amanhã em diante some.
+      {
+        ...p(
+          'p10',
+          'Helena Duarte Barros',
+          '1958-06-14',
+          'Ala 2',
+          '34',
+          'NP',
+          '2026-10-15',
+          { caloric: 90, protein: 88 },
+          2,
+        ),
+        followUpEndDate: '2026-11-21',
+      },
       {
         ...p(
           'p9',

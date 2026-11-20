@@ -28,6 +28,12 @@ export interface CensusPatient {
   /** Ciclos triagem→avaliação→diagnóstico→plano concluídos. */
   readonly completedCycles: number;
   /**
+   * Data (AAAA-MM-DD) de efeito de um encerramento de acompanhamento confirmado na FT-004-9 (FR-031).
+   * Ausente = acompanhamento ativo. Só leitura: esta tela nunca grava.
+   */
+  readonly followUpEndDate?: string;
+
+  /**
    * Pendências da data selecionada ainda abertas (triagem, reavaliação, revisão de prescrição).
    * Ausente = não informado: o paciente segue como ativo. Alta/óbito/transferência não entram aqui (FR-016).
    */
