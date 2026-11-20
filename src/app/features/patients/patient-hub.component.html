@@ -18,9 +18,16 @@
           {{ todayLabel }}
         </p>
       </div>
+      <app-icon-button
+        kind="primary"
+        appearance="icon"
+        icon="arrow-clockwise"
+        ariaLabel="Atualizar"
+        (click)="reload()"
+      />
     </header>
 
-    <!-- Paciente novo: sem nenhuma avaliação registrada, todos os cards ficam em "Sem dados". -->
-    <app-nutrition-panel />
+    <!-- Resultados de outras features; sem resultado, o card fica em "Sem dados". -->
+    <app-nutrition-panel [values]="values()" />
   </div>
 </app-page-container>
