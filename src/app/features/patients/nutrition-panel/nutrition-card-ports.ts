@@ -1,4 +1,5 @@
 import {
+  NutritionHistoryDeletion,
   NutritionHistoryEntry,
   NutritionIndicatorId,
   NutritionManualValues,
@@ -21,4 +22,10 @@ export abstract class NutritionHistorySource {
  */
 export abstract class NutritionValueWriter {
   abstract save(edit: NutritionValueEdit): Promise<void>;
+  /**
+   * Apaga uma entrada só da visualização do histórico e registra a exclusão na trilha de auditoria
+   * (autor, data/hora, indicador, entrada apagada); a trilha nunca perde registros. Não altera o
+   * valor atual. Rejeita a promessa se não conseguir gravar.
+   */
+  abstract deleteEntry(deletion: NutritionHistoryDeletion): Promise<void>;
 }

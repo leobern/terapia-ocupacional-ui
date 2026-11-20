@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 
 import { NutritionHistorySource, NutritionValueWriter } from './nutrition-card-ports';
 import {
+  NutritionHistoryDeletion,
   NutritionHistoryEntry,
   NutritionIndicatorId,
   NutritionManualValues,
@@ -16,6 +17,9 @@ import {
 export class ProvisionalNutritionCardStore extends NutritionValueWriter implements NutritionHistorySource {
   /** Trilha de auditoria (append-only); exposta para testes e para a futura implementação real. */
   readonly auditTrail: NutritionValueEdit[] = [];
+  /** Trilha de auditoria das exclusões de entradas do histórico (append-only). */
+  readonly deletionAuditTrail: NutritionHistoryDeletion[] = [];
+  private nextId = 1;
   private readonly history = new Map<string, NutritionHistoryEntry[]>();
   private readonly manual = new Map<string, NutritionManualValues>();
 
@@ -34,6 +38,7 @@ export class ProvisionalNutritionCardStore extends NutritionValueWriter implemen
     if (edit.previous !== null) {
       entries.unshift({
         at: edit.previous.at ?? edit.at,
+        id: `h${this.nextId++}`,
         origin: edit.previous.origin,
         value: edit.previous.value,
       });
@@ -44,6 +49,19 @@ export class ProvisionalNutritionCardStore extends NutritionValueWriter implemen
       [edit.indicator]: { at: edit.at, origin: edit.newOrigin, value: edit.value },
     });
     this.auditTrail.push(edit);
+
+    return Promise.resolve();
+  }
+
+  deleteEntry(deletion: NutritionHistoryDeletion): Promise<void> {
+    const key = this.key(deletion.patientId, deletion.indicator);
+
+    // Só a visualização perde a entrada; a auditoria acumula (inclusive a própria exclusão).
+    this.history.set(
+      key,
+      (this.history.get(key) ?? []).filter(e => e.id !== deletion.entry.id),
+    );
+    this.deletionAuditTrail.push(deletion);
 
     return Promise.resolve();
   }
