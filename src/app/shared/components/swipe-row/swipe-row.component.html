@@ -1,0 +1,24 @@
+@if (!disabled()) {
+  <button
+    type="button"
+    class="swipe-row__action"
+    [class.swipe-row__action--revealed]="revealed()"
+    [attr.aria-label]="actionAriaLabel()"
+    (focus)="focused.set(true)"
+    (blur)="focused.set(false)"
+    (click)="triggered.emit()"
+  >
+    {{ actionLabel() }}
+  </button>
+}
+<div
+  class="swipe-row__content"
+  [class.swipe-row__content--dragging]="dragging()"
+  [style.transform]="'translateX(' + translate() + 'px)'"
+  (pointerdown)="down($event)"
+  (pointermove)="move($event)"
+  (pointerup)="up()"
+  (pointercancel)="up()"
+>
+  <ng-content />
+</div>
