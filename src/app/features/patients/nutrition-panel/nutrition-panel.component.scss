@@ -1,0 +1,65 @@
+@use '../../../shared/styles/tokens';
+@use '../../../shared/styles/breakpoints';
+@use '../../../shared/styles/typography';
+
+:host {
+  display: block;
+}
+
+.nutrition-panel {
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$space-8;
+}
+
+// Figma v2/SectionHeader: 40px, padding lateral 8.
+.nutrition-panel__title {
+  display: flex;
+  align-items: center;
+  min-height: 40px;
+  margin: 0;
+  padding-inline: tokens.$space-8;
+  color: tokens.c(content-1);
+
+  @include typography.title-lg;
+}
+
+// Card de superfície (raio 24, padding 16, gap 12); tiles em 2 colunas no mobile.
+.nutrition-panel__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: tokens.$space-8;
+  margin: 0;
+  padding: tokens.$space-16;
+  border-radius: tokens.$radius-md;
+  background: tokens.c(surface);
+  list-style: none;
+
+  @include breakpoints.md {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    padding: tokens.$space-20;
+  }
+}
+
+// Figma v2/StatTile: raio 16, padding 12, gap 2, fundo surface-2.
+.nutrition-panel__card {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-height: 74px;
+  padding: tokens.$space-12;
+  border-radius: tokens.$radius-sm;
+  background: tokens.c(surface-2);
+}
+
+.nutrition-panel__label {
+  color: tokens.c(content-4);
+
+  @include typography.label-sm;
+}
+
+.nutrition-panel__value {
+  color: tokens.c(content-1);
+
+  @include typography.title-md;
+}
