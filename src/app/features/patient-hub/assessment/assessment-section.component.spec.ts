@@ -515,6 +515,67 @@ describe('ProvisionalAssessmentSource', () => {
   });
 });
 
+describe('ProvisionalAssessmentSource — reavaliação (US-004-4-04)', () => {
+  it('guarda o valor antigo como anterior, datado de quando foi salvo, nas duas seções', async () => {
+    const source = new ProvisionalAssessmentSource();
+
+    await source.save('p9', { calfCircumference: '32', calfSide: 'Direito', dysphagia: 'Risco baixo', weight: '51,0' });
+    const first = await source.loadLatest('p9');
+
+    expect(first?.previous).toEqual({});
+    await source.save('p9', { calfCircumference: '31', calfSide: 'Esquerdo', dysphagia: 'Risco alto', weight: '52,5' });
+    const second = await source.loadLatest('p9');
+
+    expect(second?.values.weight).toBe('52,5');
+    expect(second?.previous.weight?.value).toBe('51,0');
+    expect(second?.previous.weight?.at).toMatch(/^\d{4}-\d{2}-\d{2}T/);
+    expect(second?.previous.dysphagia?.value).toBe('Risco baixo');
+    expect(second?.previous.calfCircumference?.value).toBe('32');
+    expect(second?.previous.calfSide?.value).toBe('Direito');
+  });
+
+  it('mantém o anterior de item inalterado e aceita reavaliação sem mudanças', async () => {
+    const source = new ProvisionalAssessmentSource();
+
+    await source.save('p9', { weight: '51,0' });
+    await source.save('p9', { weight: '52,5' });
+    await source.save('p9', { weight: '52,5' });
+
+    expect((await source.loadLatest('p9'))?.previous.weight?.value).toBe('51,0');
+  });
+
+  it('duas reavaliações seguidas: o anterior é a rodada imediatamente anterior', async () => {
+    const source = new ProvisionalAssessmentSource();
+
+    await source.save('p9', { weight: '50' });
+    await source.save('p9', { weight: '51' });
+    await source.save('p9', { weight: '52' });
+
+    expect((await source.loadLatest('p9'))?.previous.weight?.value).toBe('51');
+  });
+
+  it('item novo não tem anterior e item esvaziado deixa de ser atual', async () => {
+    const source = new ProvisionalAssessmentSource();
+
+    await source.save('p9', { weight: '50' });
+    await source.save('p9', { height: '163' });
+    const latest = await source.loadLatest('p9');
+
+    expect(latest?.values).toEqual({ height: '163' });
+    expect(latest?.previous).toEqual({});
+  });
+
+  it('parte do exemplo de p1: peso 51,0 vira anterior ao salvar 52,5 e o anterior seed é substituído', async () => {
+    const source = new ProvisionalAssessmentSource();
+
+    await source.save('p1', { handgrip: '14', height: '163', weight: '52,5' });
+    const latest = await source.loadLatest('p1');
+
+    expect(latest?.previous.weight).toEqual({ at: '2026-06-03T12:00:00', value: '51,0' });
+    expect(latest?.previous.handgrip).toBeUndefined();
+  });
+});
+
 describe('AssessmentSectionComponent — preenchimento por IA (US-004-4-03)', () => {
   class FakeAi extends AssessmentAiStructurer {
     result: Promise<StructuredAssessment> = Promise.resolve({});
