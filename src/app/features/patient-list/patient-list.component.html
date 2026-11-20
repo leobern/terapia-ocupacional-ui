@@ -479,56 +479,68 @@
                 <ul class="patient-list__rows">
                   @for (patient of group.patients; track patient.id) {
                     <li>
-                      <button
-                        type="button"
-                        class="patient-list__row"
-                        [attr.aria-label]="'Abrir ' + patient.name"
-                        (click)="openPatient(patient.id)"
+                      <app-swipe-row
+                        actionLabel="Encerrar"
+                        [actionAriaLabel]="
+                          'Encerrar acompanhamento de ' + patient.name
+                        "
+                        [disabled]="readOnly()"
+                        (triggered)="endFollowUp(patient.id)"
                       >
-                        <span class="patient-list__info">
-                          @if (patient.firstEvaluation) {
-                            <span class="patient-list__first">
+                        <button
+                          type="button"
+                          class="patient-list__row"
+                          [attr.aria-label]="'Abrir ' + patient.name"
+                          (click)="openPatient(patient.id)"
+                        >
+                          <span class="patient-list__info">
+                            @if (patient.firstEvaluation) {
+                              <span class="patient-list__first">
+                                <app-therapy-tag
+                                  tone="active"
+                                  label="Primeira avaliação"
+                                />
+                              </span>
+                            }
+                            <span class="patient-list__name">{{
+                              patient.name
+                            }}</span>
+                            <span class="patient-list__meta"
+                              >{{ patient.age }} anos ·
+                              {{ therapyStartLabel(patient.therapyDays) }}</span
+                            >
+                            <span class="patient-list__location"
+                              >{{ patient.ward }} · Leito
+                              {{ patient.bed }}</span
+                            >
+                          </span>
+                          <span class="patient-list__gauge">
+                            @if (hasAdequacy(patient.adequacy)) {
+                              <app-graph-meta
+                                size="small"
+                                [topPercentage]="patient.adequacy.caloric ?? 0"
+                                [bottomPercentage]="
+                                  patient.adequacy.protein ?? 0
+                                "
+                                [ariaLabel]="adequacyLabel(patient.adequacy)"
+                              />
+                            } @else {
+                              <span class="patient-list__gauge-na"
+                                >Indisponível</span
+                              >
+                            }
+                            <span class="patient-list__gauge-tag">
                               <app-therapy-tag
-                                tone="active"
-                                label="Primeira avaliação"
+                                shape="box"
+                                [label]="therapyLabel(patient.therapy)"
                               />
                             </span>
-                          }
-                          <span class="patient-list__name">{{
-                            patient.name
-                          }}</span>
-                          <span class="patient-list__meta"
-                            >{{ patient.age }} anos ·
-                            {{ therapyStartLabel(patient.therapyDays) }}</span
-                          >
-                          <span class="patient-list__location"
-                            >{{ patient.ward }} · Leito {{ patient.bed }}</span
-                          >
-                        </span>
-                        <span class="patient-list__gauge">
-                          @if (hasAdequacy(patient.adequacy)) {
-                            <app-graph-meta
-                              size="small"
-                              [topPercentage]="patient.adequacy.caloric ?? 0"
-                              [bottomPercentage]="patient.adequacy.protein ?? 0"
-                              [ariaLabel]="adequacyLabel(patient.adequacy)"
-                            />
-                          } @else {
-                            <span class="patient-list__gauge-na"
-                              >Indisponível</span
-                            >
-                          }
-                          <span class="patient-list__gauge-tag">
-                            <app-therapy-tag
-                              shape="box"
-                              [label]="therapyLabel(patient.therapy)"
-                            />
                           </span>
-                        </span>
-                        <span class="patient-list__chevron">
-                          <ph-icon name="caret-right" [size]="24" />
-                        </span>
-                      </button>
+                          <span class="patient-list__chevron">
+                            <ph-icon name="caret-right" [size]="24" />
+                          </span>
+                        </button>
+                      </app-swipe-row>
                     </li>
                   }
                 </ul>
@@ -538,5 +550,8 @@
         }
       }
     }
+    <p class="patient-list__sr-only" role="status" aria-live="polite">
+      {{ offlineNotice() }}
+    </p>
   </div>
 </app-page-container>

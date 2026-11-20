@@ -52,6 +52,13 @@ export const routes: Routes = [
   },
   // Caminho antigo em português, mantido como atalho para a tela real.
   { path: 'notificacoes', pathMatch: 'full', redirectTo: 'notifications' },
+  // Fluxo de encerramento de acompanhamento (FT-004-9): placeholder até a feature existir.
+  {
+    path: 'patients/:id/end-follow-up',
+    data: { screen: 'end-follow-up' },
+    loadComponent: () =>
+      import('./features/pending-screen/pending-screen.component').then(m => m.PendingScreenComponent),
+  },
   // TODO (specs/004-notificacoes research.md §8): placeholder até a feature
   // "Detalhe do Paciente" existir — destino real de FR-006 (US2).
   {

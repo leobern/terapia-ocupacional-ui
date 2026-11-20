@@ -27,6 +27,11 @@ export interface CensusPatient {
   readonly adequacy: Adequacy | null;
   /** Ciclos triagem→avaliação→diagnóstico→plano concluídos. */
   readonly completedCycles: number;
+  /**
+   * Data (AAAA-MM-DD) de efeito de um encerramento de acompanhamento confirmado na FT-004-9 (FR-031).
+   * Ausente = acompanhamento ativo. Só leitura: esta tela nunca grava.
+   */
+  readonly followUpEndDate?: string;
 }
 
 /** Projeção somente leitura "paciente em visão de card" (sem data de nascimento — FR-003). */
