@@ -116,6 +116,8 @@ describe('PatientListComponent', () => {
       Array.from((fixture.nativeElement as HTMLElement).querySelectorAll('.date-strip__day')).at(-1)?.classList,
     ).toContain('date-strip__day--selected');
     q('[aria-label="Dia anterior"]')?.click();
+    fixture.detectChanges();
+    (document.querySelectorAll('.confirm-dialog__actions button')[1] as HTMLElement).click();
     await fixture.whenStable();
     fixture.detectChanges();
 
@@ -568,5 +570,131 @@ describe('PatientListComponent', () => {
     await slow;
 
     expect(comp.patients().length).toBe(1);
+  });
+
+  describe('data retroativa (US-004-1-03)', () => {
+    const yesterday = (): Date => {
+      const d = new Date();
+
+      d.setDate(d.getDate() - 1);
+
+      return d;
+    };
+    const labels = (): string[] =>
+      TestBed.inject(ScreenActionsService)
+        .actions()
+        .map(a => a.label);
+    const dialog = (): HTMLElement | null => q('[role="alertdialog"].confirm-dialog__panel, .confirm-dialog__panel');
+    const buttons = (): HTMLButtonElement[] =>
+      Array.from(dialog()?.querySelectorAll('button') ?? []) as HTMLButtonElement[];
+
+    async function settle(): Promise<void> {
+      fixture.detectChanges();
+      await fixture.whenStable();
+      fixture.detectChanges();
+    }
+
+    it('abre em hoje, normal e sem alerta', async () => {
+      source.result = Promise.resolve(census(2));
+      await create();
+
+      expect(fixture.componentInstance.readOnly()).toBeFalse();
+      expect(dialog()).toBeNull();
+    });
+
+    it('pede confirmação antes de aplicar e não muda data nem lista enquanto aberto', async () => {
+      source.result = Promise.resolve(census(2));
+      await create();
+      const before = fixture.componentInstance.selectedDate();
+
+      fixture.componentInstance.selectDate(yesterday());
+      await settle();
+
+      expect(dialog()).not.toBeNull();
+      expect(dialog()?.textContent).toContain(`Ver o dia ${yesterday().getDate()} de`);
+      expect(dialog()?.textContent).toContain('somente para leitura, em preto e branco');
+      expect(fixture.componentInstance.selectedDate()).toBe(before);
+      expect(fixture.componentInstance.readOnly()).toBeFalse();
+    });
+
+    it('confirmar recarrega a lista da data, entra em somente leitura e remove as ações de escrita', async () => {
+      const days: Date[] = [];
+
+      source.loadCensus = (_?: string, day?: Date): Promise<readonly CensusPatient[]> => {
+        days.push(day as Date);
+
+        return Promise.resolve(census(2));
+      };
+      await create();
+      fixture.componentInstance.selectDate(yesterday());
+      await settle();
+      buttons()[1].click();
+      await settle();
+
+      expect(days.at(-1)?.getDate()).toBe(yesterday().getDate());
+      expect(fixture.componentInstance.readOnly()).toBeTrue();
+      expect(dialog()).toBeNull();
+      expect(text()).toContain('Somente leitura');
+      expect(q('.patient-list--read-only')).not.toBeNull();
+      expect(q('.patient-list__register')).toBeNull();
+      expect(labels()).toEqual([]);
+    });
+
+    it('em somente leitura tocar no card ainda abre o Hub', async () => {
+      source.result = Promise.resolve(census(2));
+      await create();
+      fixture.componentInstance.selectDate(yesterday());
+      fixture.componentInstance.confirmPendingDate();
+      await settle();
+      (q('.patient-list__row') as HTMLElement).click();
+
+      expect(router.navigate).toHaveBeenCalledWith(['/patients', jasmine.any(String)]);
+    });
+
+    it('cancelar (botão ou Esc) mantém tudo como estava', async () => {
+      source.result = Promise.resolve(census(2));
+      await create();
+      fixture.componentInstance.selectDate(yesterday());
+      await settle();
+      buttons()[0].click();
+      await settle();
+
+      expect(dialog()).toBeNull();
+      expect(fixture.componentInstance.readOnly()).toBeFalse();
+      expect(labels().length).toBe(4);
+
+      fixture.componentInstance.selectDate(yesterday());
+      await settle();
+      document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+      await settle();
+
+      expect(dialog()).toBeNull();
+      expect(fixture.componentInstance.readOnly()).toBeFalse();
+    });
+
+    it('voltar a hoje restaura o modo normal sem alerta', async () => {
+      source.result = Promise.resolve(census(2));
+      await create();
+      fixture.componentInstance.selectDate(yesterday());
+      fixture.componentInstance.confirmPendingDate();
+      await settle();
+      fixture.componentInstance.selectDate(new Date());
+      await settle();
+
+      expect(dialog()).toBeNull();
+      expect(fixture.componentInstance.readOnly()).toBeFalse();
+      expect(q('.patient-list--read-only')).toBeNull();
+      expect(labels().length).toBe(4);
+      expect(q('.patient-list__register')).not.toBeNull();
+    });
+
+    it('confirmar sem data pendente não faz nada e Esc sem alerta é ignorado', async () => {
+      source.result = Promise.resolve(census(1));
+      await create();
+      fixture.componentInstance.confirmPendingDate();
+      document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+
+      expect(fixture.componentInstance.readOnly()).toBeFalse();
+    });
   });
 });

@@ -1,5 +1,5 @@
 <app-page-container>
-  <div class="patient-list">
+  <div class="patient-list" [class.patient-list--read-only]="readOnly()">
     <!-- Figma v2/PageHeader: sem voltar (a tela é aberta pelo menu Pacientes); ícone de título em bold. -->
     <header class="patient-list__header">
       <div class="patient-list__header-text">
@@ -13,19 +13,24 @@
         </h1>
         <p class="patient-list__subtitle">
           {{ hospitalName() }}
+          @if (readOnly()) {
+            · Somente leitura
+          }
           @if (status() === 'ready') {
             · {{ outOfTargetCount() }} fora da meta
           }
         </p>
       </div>
-      <span class="patient-list__register">
-        <app-button
-          size="md"
-          iconLeft="plus"
-          label="Cadastrar paciente"
-          (click)="registerPatient()"
-        />
-      </span>
+      @if (!readOnly()) {
+        <span class="patient-list__register">
+          <app-button
+            size="md"
+            iconLeft="plus"
+            label="Cadastrar paciente"
+            (click)="registerPatient()"
+          />
+        </span>
+      }
       <!-- Primeira tela da área: notificações + atalhos (telas internas mantêm só os atalhos). -->
       <span class="patient-list__notify">
         <app-icon-button
@@ -65,6 +70,16 @@
         (dateChange)="selectDate($event)"
       />
     </div>
+
+    <app-confirm-dialog
+      message="Datas anteriores abrem somente para leitura, em preto e branco."
+      cancelLabel="Cancelar"
+      [open]="pendingDate() !== null"
+      [title]="pendingTitle()"
+      [confirmLabel]="pendingConfirmLabel()"
+      (confirmed)="confirmPendingDate()"
+      (cancelled)="cancelPendingDate()"
+    />
 
     @switch (status()) {
       @case ('loading') {
