@@ -225,21 +225,25 @@ describe('PatientHubComponent', () => {
     it('o tratador de visibilidade e o puxar com a página rolada percorrem os dois ramos', async () => {
       const f = await setup(new FakeSource());
       const before = results.calls;
-      const visibility = spyOnProperty(Document.prototype, 'visibilityState', 'get').and.returnValue('visible');
+      let state: DocumentVisibilityState = 'visible';
+
+      Object.defineProperty(document, 'visibilityState', { configurable: true, get: () => state });
       const hub = f.componentInstance as unknown as { onVisibility(): void };
 
       hub.onVisibility();
-      visibility.and.returnValue('hidden');
+      const afterVisible = results.calls;
+
+      state = 'hidden';
       hub.onVisibility();
+      delete (document as unknown as Record<string, unknown>)['visibilityState'];
+
+      expect(afterVisible).toBeGreaterThan(before);
       spyOnProperty(window, 'scrollY', 'get').and.returnValue(120);
       const el = f.nativeElement as HTMLElement;
       const point = new Touch({ clientX: 0, clientY: 10, identifier: 1, target: el });
 
       el.dispatchEvent(new TouchEvent('touchstart', { changedTouches: [point], touches: [point] }));
       await f.whenStable();
-
-      // Só a visibilidade "visível" recarrega aqui (eventos reais do runner podem somar chamadas).
-      expect(results.calls).toBeGreaterThan(before);
     });
 
     it('arrasto curto ou sem toque inicial não recarrega', async () => {
