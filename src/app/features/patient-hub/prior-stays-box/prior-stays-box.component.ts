@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, effect, inject, input, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, effect, inject, input, signal, untracked } from '@angular/core';
 
 import { PhIconComponent } from '../../../shared/icons/ph-icon/ph-icon.component';
 import { ConnectivityService } from '../../../shared/services/connectivity.service';
@@ -36,15 +36,16 @@ export class PriorStaysBoxComponent {
     effect(() => {
       void this.check(this.patientId(), this.hospitalId());
     });
+    // Expandida e online sem síntese carregada (inclui voltar a ficar online depois de expandir offline).
+    effect(() => {
+      if (this.expanded() && this.connectivity.online() && untracked(() => this.state()) === 'idle') {
+        void this.load();
+      }
+    });
   }
 
   protected toggle(): void {
-    const open = !this.expanded();
-
-    this.expanded.set(open);
-    if (open && this.state() !== 'ready') {
-      void this.load();
-    }
+    this.expanded.update(open => !open);
   }
 
   protected retry(): void {

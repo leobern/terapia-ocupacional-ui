@@ -128,6 +128,19 @@ describe('PriorStaysBoxComponent', () => {
     expect(synth.calls).toBe(0);
   });
 
+  it('expandida offline: ao voltar a conexão, carrega a síntese sozinha', async () => {
+    const connectivity = TestBed.inject(ConnectivityService);
+
+    connectivity.online.set(false);
+    await setup();
+    await expand();
+    connectivity.online.set(true);
+    await settle();
+
+    expect(synth.calls).toBe(1);
+    expect(el().textContent).toContain('Síntese do histórico');
+  });
+
   it('falha da síntese mostra erro e permite tentar de novo', async () => {
     synth.result = Promise.reject(new Error('x'));
     await setup();
