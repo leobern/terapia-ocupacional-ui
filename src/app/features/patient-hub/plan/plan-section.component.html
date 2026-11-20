@@ -102,6 +102,18 @@
           }
           <p class="plan__help">{{ help() }}</p>
         </fieldset>
+        <div class="plan__card" data-testid="swallowing">
+          <span class="plan__label">Avaliação de deglutição</span>
+          @if (dysphagiaFailed()) {
+            <p class="plan__help" role="status" data-testid="dysphagia-failed">
+              {{ dysphagiaFailedHint }}
+            </p>
+          } @else {
+            <p class="plan__help" data-testid="dysphagia-risk">
+              {{ dysphagiaHelp() }}
+            </p>
+          }
+        </div>
       </section>
     }
     @if (hint(); as message) {

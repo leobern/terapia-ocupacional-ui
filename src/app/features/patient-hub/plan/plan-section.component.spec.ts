@@ -2,8 +2,12 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { ConnectivityService } from '../../../shared/services/connectivity.service';
 import { NOW, ProfessionalProfile, ProfessionalProfileReader } from '../../home/professional-profile';
+import { NutritionFunctionalAssessment } from '../assessment/assessment.models';
+import { AssessmentSource } from '../assessment/assessment-source';
 import { CurrentRoute, RouteSaveRequest } from './plan.models';
 import {
+  DYSPHAGIA_FAILED_HINT,
+  DYSPHAGIA_MISSING_HINT,
   EMPTY_SELECTION_HINT,
   LOAD_FAILED_HINT,
   OFFLINE_HINT,
@@ -35,6 +39,15 @@ class FakeSource extends PlanSource {
   }
 }
 
+class FakeAssessment extends AssessmentSource {
+  fails = false;
+  latest: NutritionFunctionalAssessment | null = null;
+
+  loadLatest(): Promise<NutritionFunctionalAssessment | null> {
+    return this.fails ? Promise.reject(new Error('x')) : Promise.resolve(this.latest);
+  }
+}
+
 class FakeRisk extends RefeedingRiskSource {
   fails = false;
   risk: RefeedingRisk = { atRisk: false, targetReached: false };
@@ -45,6 +58,7 @@ class FakeRisk extends RefeedingRiskSource {
 }
 
 describe('PlanSectionComponent', () => {
+  let assessment: FakeAssessment;
   let riskSource: FakeRisk;
   let fixture: ComponentFixture<PlanSectionComponent>;
   let source: FakeSource;
@@ -77,6 +91,7 @@ describe('PlanSectionComponent', () => {
       providers: [
         { provide: PlanSource, useValue: source },
         { provide: RefeedingRiskSource, useValue: riskSource },
+        { provide: AssessmentSource, useValue: assessment },
         {
           provide: ProfessionalProfileReader,
           useValue: { read: (): ProfessionalProfile => ({ name: 'Dra. Ana', role }) },
@@ -92,6 +107,58 @@ describe('PlanSectionComponent', () => {
   beforeEach(() => {
     source = new FakeSource();
     riskSource = new FakeRisk();
+    assessment = new FakeAssessment();
+  });
+
+  describe('risco de disfagia (apoio da avaliação de deglutição)', () => {
+    const support = (): string =>
+      (el().querySelector('[data-testid="swallowing"]') as HTMLElement).textContent.replace(/\s+/gu, ' ');
+
+    for (const role of ['doctor', 'other'] as const) {
+      it(`${role}: mostra o risco registrado na Avaliação, sem campo para digitá-lo`, async () => {
+        assessment.latest = { previous: {}, values: { dysphagia: 'Risco moderado' } };
+        await setup(role);
+        await openIt();
+
+        expect(support()).toContain('Risco de disfagia: moderado (Avaliação nutricional).');
+        expect(el().querySelector('[data-testid="swallowing"] input, [data-testid="swallowing"] textarea')).toBeNull();
+      });
+    }
+
+    it('sem avaliação: informa que o risco ainda não foi registrado', async () => {
+      await setup('doctor');
+      await openIt();
+
+      expect(support()).toContain(DYSPHAGIA_MISSING_HINT);
+    });
+
+    it('avaliação sem risco de disfagia preenchido: mesmo aviso, sem erro', async () => {
+      assessment.latest = { previous: {}, values: { weight: '51,0' } };
+      await setup('doctor');
+      await openIt();
+
+      expect(support()).toContain(DYSPHAGIA_MISSING_HINT);
+    });
+
+    it('"Sem risco" é um valor registrado', async () => {
+      assessment.latest = { previous: {}, values: { dysphagia: 'Sem risco' } };
+      await setup('doctor');
+      await openIt();
+
+      expect(support()).toContain('Risco de disfagia: sem risco (Avaliação nutricional).');
+    });
+
+    it('falha de leitura: aviso no campo e o resto do plano segue utilizável', async () => {
+      assessment.fails = true;
+      await setup('doctor');
+      await openIt();
+
+      expect(support()).toContain(DYSPHAGIA_FAILED_HINT);
+      await toggle('NE');
+      await save();
+
+      expect(source.saves.length).toBe(1);
+    });
   });
 
   describe('alerta de síndrome de realimentação', () => {

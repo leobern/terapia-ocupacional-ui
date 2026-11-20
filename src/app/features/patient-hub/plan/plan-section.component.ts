@@ -15,6 +15,7 @@ import { IconButtonComponent } from '../../../shared/components/icon-button/icon
 import { PhIconComponent } from '../../../shared/icons/ph-icon/ph-icon.component';
 import { ConnectivityService } from '../../../shared/services/connectivity.service';
 import { NOW, ProfessionalProfileReader } from '../../home/professional-profile';
+import { AssessmentSource } from '../assessment/assessment-source';
 import { CurrentRoute, normalizeRoutes, NUTRITION_ROUTES, NutritionRoute, routeLabel } from './plan.models';
 import { PlanSource } from './plan-source';
 import { RefeedingRisk, RefeedingRiskSource } from './refeeding-risk-source';
@@ -24,6 +25,8 @@ type LoadState = 'idle' | 'loading' | 'ready' | 'error';
 export const LOAD_FAILED_HINT = 'Não foi possível carregar a via vigente. Tente novamente em instantes.';
 export const SAVE_FAILED_HINT = 'Não foi possível salvar o plano. A seleção foi mantida; tente novamente.';
 export const RISK_FAILED_HINT = 'Não foi possível verificar o risco de síndrome de realimentação agora.';
+export const DYSPHAGIA_FAILED_HINT = 'Não foi possível ler o risco de disfagia da Avaliação agora.';
+export const DYSPHAGIA_MISSING_HINT = 'Risco de disfagia ainda não registrado na Avaliação nutricional.';
 export const OFFLINE_HINT = 'Sem conexão: não é possível salvar o plano agora.';
 export const EMPTY_SELECTION_HINT = 'Selecione ao menos uma via de nutrição para salvar.';
 
@@ -57,6 +60,17 @@ export class PlanSectionComponent {
   protected readonly hint = signal<string | null>(null);
   protected readonly risk = signal<RefeedingRisk | null>(null);
   protected readonly riskFailed = signal(false);
+  /** Risco de disfagia da Avaliação (FT-004-4), só leitura; `null` = não registrado. */
+  protected readonly dysphagia = signal<string | null>(null);
+  protected readonly dysphagiaFailed = signal(false);
+  protected readonly dysphagiaFailedHint = DYSPHAGIA_FAILED_HINT;
+  protected readonly dysphagiaHelp = computed(() => {
+    const value = this.dysphagia();
+
+    return value === null
+      ? DYSPHAGIA_MISSING_HINT
+      : `Risco de disfagia: ${value.replace(/^Risco /u, '').toLowerCase()} (Avaliação nutricional).`;
+  });
   protected readonly riskFailedHint = RISK_FAILED_HINT;
   protected readonly connectivity = inject(ConnectivityService);
   protected readonly isDoctor = inject(ProfessionalProfileReader).read().role === 'doctor';
@@ -75,6 +89,7 @@ export class PlanSectionComponent {
   });
 
   private readonly source = inject(PlanSource);
+  private readonly assessmentSource = inject(AssessmentSource);
   private readonly riskSource = inject(RefeedingRiskSource);
   private readonly profile = inject(ProfessionalProfileReader);
   private readonly now = inject(NOW);
@@ -174,8 +189,11 @@ export class PlanSectionComponent {
     this.hint.set(null);
     this.risk.set(null);
     this.riskFailed.set(false);
+    this.dysphagia.set(null);
+    this.dysphagiaFailed.set(false);
     this.state.set('loading');
     void this.loadRisk(token);
+    void this.loadDysphagia(token);
     try {
       const latest = await this.source.loadRoute(this.patientId());
 
@@ -202,6 +220,23 @@ export class PlanSectionComponent {
     } catch {
       if (token === this.token) {
         this.riskFailed.set(true);
+      }
+    }
+  }
+
+  /** Reaproveita a leitura da Avaliação (sem recoleta, FR-019); falha degrada só este campo. */
+  private async loadDysphagia(token: number): Promise<void> {
+    try {
+      const latest = await this.assessmentSource.loadLatest(this.patientId());
+
+      if (token === this.token) {
+        const value = latest?.values.dysphagia?.trim();
+
+        this.dysphagia.set(value ? value : null);
+      }
+    } catch {
+      if (token === this.token) {
+        this.dysphagiaFailed.set(true);
       }
     }
   }
