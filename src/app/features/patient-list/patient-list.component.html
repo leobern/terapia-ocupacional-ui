@@ -1,5 +1,10 @@
 <app-page-container>
-  <div class="patient-list" [class.patient-list--read-only]="readOnly()">
+  <div
+    class="patient-list"
+    [class.patient-list--read-only]="readOnly()"
+    (touchstart)="pullStart($event)"
+    (touchend)="pullEnd($event)"
+  >
     <!-- Figma v2/PageHeader: sem voltar (a tela é aberta pelo menu Pacientes); ícone de título em bold. -->
     <header class="patient-list__header">
       <div class="patient-list__header-text">
@@ -505,11 +510,16 @@
                     <li>
                       <app-swipe-row
                         actionLabel="Encerrar"
+                        startActionLabel="Alterar leito"
                         [actionAriaLabel]="
                           'Encerrar acompanhamento de ' + patient.name
                         "
+                        [startActionAriaLabel]="
+                          'Alterar leito de ' + patient.name
+                        "
                         [disabled]="readOnly()"
                         (triggered)="endFollowUp(patient.id)"
+                        (startTriggered)="changeBed(patient.id)"
                       >
                         <button
                           type="button"

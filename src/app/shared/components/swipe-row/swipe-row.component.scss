@@ -22,6 +22,11 @@
   visibility: hidden;
 }
 
+.swipe-row__action--start {
+  inset-inline: 0 auto;
+  background: tokens.c(primary);
+}
+
 .swipe-row__action--revealed {
   visibility: visible;
 }

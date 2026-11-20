@@ -10,7 +10,7 @@ const DRAG_START = 6;
 /**
  * Linha com ação revelada ao arrastar para a esquerda. Só dispara o evento `triggered`: quem usa
  * decide o que fazer (aqui, navegar). A ação também é um botão alcançável por teclado e leitor de tela.
- * Reutilizável pelo swipe à direita (US-004-1-09) com outra direção.
+ * Com `startActionLabel`, também suporta o swipe à direita (US-004-1-09) via `startTriggered`.
  */
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -21,17 +21,31 @@ const DRAG_START = 6;
 export class SwipeRowComponent {
   readonly actionLabel = input.required<string>();
   readonly actionAriaLabel = input.required<string>();
+  /** Ação do swipe à direita (opcional). Sem rótulo, o gesto à direita não existe. */
+  readonly startActionLabel = input('');
+  readonly startActionAriaLabel = input('');
   /** Modo somente leitura: sem gesto e sem ação. */
   readonly disabled = input(false);
   readonly triggered = output();
+  readonly startTriggered = output();
 
   protected readonly offset = signal(0);
   protected readonly dragging = signal(false);
   protected readonly focused = signal(false);
-  protected readonly translate = computed(() =>
-    this.focused() && this.offset() === 0 ? -SWIPE_ACTION_WIDTH : this.offset(),
-  );
+  protected readonly startFocused = signal(false);
+  protected readonly hasStart = computed(() => this.startActionLabel() !== '');
+  protected readonly translate = computed(() => {
+    if (this.offset() !== 0) {
+      return this.offset();
+    }
+    if (this.focused()) {
+      return -SWIPE_ACTION_WIDTH;
+    }
+
+    return this.startFocused() ? SWIPE_ACTION_WIDTH : 0;
+  });
   protected readonly revealed = computed(() => this.translate() < 0);
+  protected readonly startRevealed = computed(() => this.translate() > 0);
 
   private moved = false;
   private startX = 0;
@@ -58,7 +72,8 @@ export class SwipeRowComponent {
     if (!this.dragging()) {
       return;
     }
-    const dx = Math.min(0, Math.max(-SWIPE_ACTION_WIDTH, event.clientX - this.startX));
+    const max = this.hasStart() ? SWIPE_ACTION_WIDTH : 0;
+    const dx = Math.min(max, Math.max(-SWIPE_ACTION_WIDTH, event.clientX - this.startX));
 
     if (Math.abs(dx) > DRAG_START) {
       this.moved = true;
@@ -70,12 +85,14 @@ export class SwipeRowComponent {
     if (!this.dragging()) {
       return;
     }
-    const complete = -this.offset() >= COMPLETE_THRESHOLD;
+    const offset = this.offset();
 
     this.dragging.set(false);
     this.offset.set(0);
-    if (complete) {
+    if (-offset >= COMPLETE_THRESHOLD) {
       this.triggered.emit();
+    } else if (offset >= COMPLETE_THRESHOLD) {
+      this.startTriggered.emit();
     }
   }
 

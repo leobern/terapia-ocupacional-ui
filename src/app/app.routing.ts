@@ -59,6 +59,13 @@ export const routes: Routes = [
     loadComponent: () =>
       import('./features/pending-screen/pending-screen.component').then(m => m.PendingScreenComponent),
   },
+  // Fluxo de alteração de leito (FT-002-2): placeholder até a feature existir.
+  {
+    path: 'patients/:id/change-bed',
+    data: { screen: 'change-bed' },
+    loadComponent: () =>
+      import('./features/pending-screen/pending-screen.component').then(m => m.PendingScreenComponent),
+  },
   // Atalhos da lista (US-004-1-07): fluxos de cadastro e edição de paciente da FT-002-1, placeholders até existir.
   ...(['register', 'edit'] as const).map(path => ({
     path: `patients/${path}`,

@@ -130,6 +130,9 @@ const SORT_VALUE: Readonly<Record<SortKey, (p: PatientCard) => number | string |
  * Jornada Clínica — lista de pacientes da EMTN do hospital em contexto, na data de hoje
  * (US-004-1-01). Só exibe e navega: não produz dado clínico (FR-038).
  */
+/** Arrasto mínimo (px) do puxar-para-atualizar. */
+const PULL_THRESHOLD = 80;
+
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
@@ -147,6 +150,10 @@ const SORT_VALUE: Readonly<Record<SortKey, (p: PatientCard) => number | string |
   selector: 'app-patient-list',
   styleUrl: './patient-list.component.scss',
   templateUrl: './patient-list.component.html',
+  host: {
+    '(window:focus)': 'refresh()',
+    '(document:visibilitychange)': 'onVisibility()',
+  },
 })
 export class PatientListComponent implements OnInit {
   readonly selectedDate = signal(new Date());
@@ -270,6 +277,7 @@ export class PatientListComponent implements OnInit {
       }));
   });
   private generation = 0;
+  private pullFrom: number | null = null;
   private readonly today = new Date();
   private readonly pendingMonth = computed(() => {
     const d = this.pendingDate();
@@ -360,6 +368,31 @@ export class PatientListComponent implements OnInit {
       if (generation === this.generation) {
         this.status.set('error');
       }
+    }
+  }
+
+  /**
+   * Nova busca silenciosa (FR-035/FR-036/FR-039): ao receber foco ou puxar-para-atualizar. Mantém a lista
+   * atual (sem piscar), a ordenação e a data; sem conexão ou com erro, segue o último cache local.
+   */
+  async refresh(): Promise<void> {
+    const id = this.context.selected()?.id;
+
+    if (id === undefined || !this.connectivity.online() || this.status() === 'loading') {
+      return;
+    }
+    const generation = ++this.generation;
+    const day = this.selectedDate();
+
+    try {
+      const census = await this.source.loadCensus(id, day);
+
+      if (generation === this.generation) {
+        this.patients.set(assemblePatientList(census, id, day));
+        this.status.set('ready');
+      }
+    } catch {
+      // Mantém o último cache exibido.
     }
   }
 
@@ -519,6 +552,23 @@ export class PatientListComponent implements OnInit {
     void this.router.navigate(['/patients', id, 'end-follow-up']);
   }
 
+  /**
+   * Swipe à direita (FR-033): só navega ao fluxo de alteração de leito da FT-002-2 (rota provisória),
+   * com o paciente em contexto. Sem modal, validação ou registro aqui (FR-034/FR-037). Offline, não navega.
+   */
+  changeBed(id: string): void {
+    if (this.readOnly()) {
+      return;
+    }
+    if (!this.connectivity.online()) {
+      this.offlineNotice.set('Conexão necessária para alterar o leito.');
+
+      return;
+    }
+    this.offlineNotice.set('');
+    void this.router.navigate(['/patients', id, 'change-bed']);
+  }
+
   openPatient(id: string): void {
     void this.router.navigate(['/patients', id]);
   }
@@ -552,6 +602,26 @@ export class PatientListComponent implements OnInit {
 
   protected therapyLabel(therapy: TherapyType): string {
     return THERAPY_LABEL[therapy];
+  }
+
+  protected onVisibility(): void {
+    if (document.visibilityState === 'visible') {
+      void this.refresh();
+    }
+  }
+
+  /** Puxar-para-atualizar: arrasto vertical de mais de 80px a partir do topo da página. */
+  protected pullStart(event: TouchEvent): void {
+    this.pullFrom = window.scrollY <= 0 ? event.touches[0].clientY : null;
+  }
+
+  protected pullEnd(event: TouchEvent): void {
+    const from = this.pullFrom;
+
+    this.pullFrom = null;
+    if (from !== null && event.changedTouches[0].clientY - from > PULL_THRESHOLD) {
+      void this.refresh();
+    }
   }
 
   private setWidth(key: ColumnKey, width: number): void {

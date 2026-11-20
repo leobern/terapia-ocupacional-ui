@@ -949,6 +949,181 @@ describe('PatientListComponent', () => {
     });
   });
 
+  describe('atualização da localização (US-004-1-09 / FR-035, FR-036, FR-039)', () => {
+    const moved = (ward: string, bed: string): readonly CensusPatient[] => census(1).map(p => ({ ...p, ward, bed }));
+    const touch = (type: string, y: number): void => {
+      const el = q('.patient-list') as HTMLElement;
+      const t = new Touch({ identifier: 1, target: el, clientY: y });
+
+      el.dispatchEvent(
+        new TouchEvent(type, { bubbles: true, touches: type === 'touchend' ? [] : [t], changedTouches: [t] }),
+      );
+    };
+    const settle = async (): Promise<void> => {
+      await fixture.whenStable();
+      fixture.detectChanges();
+    };
+
+    it('ao receber foco busca de novo e o card mostra a nova ala/leito', async () => {
+      source.result = Promise.resolve(moved('Ala 1', '1'));
+      await create();
+      source.result = Promise.resolve(moved('Ala 3', '12'));
+      window.dispatchEvent(new Event('focus'));
+      await settle();
+
+      expect(text()).toContain('Ala 3 · Leito 12');
+    });
+
+    it('ao voltar a ficar visível busca de novo; oculto não busca', async () => {
+      source.result = Promise.resolve(moved('Ala 1', '1'));
+      await create();
+      source.result = Promise.resolve(moved('Ala 3', '12'));
+      const visibility = spyOnProperty(Document.prototype, 'visibilityState', 'get').and.returnValue('visible');
+
+      document.dispatchEvent(new Event('visibilitychange'));
+      await settle();
+
+      expect(text()).toContain('Ala 3 · Leito 12');
+      // Oculto não busca. Chamada direta ao tratador (eventos reais de foco do runner podem
+      // disparar `refresh` fora de hora e tornar o teste dependente da ordem).
+      visibility.and.returnValue('hidden');
+      const refresh = spyOn(fixture.componentInstance, 'refresh').and.resolveTo();
+
+      (fixture.componentInstance as unknown as { onVisibility(): void }).onVisibility();
+
+      expect(refresh).not.toHaveBeenCalled();
+    });
+
+    it('puxar-para-atualizar traz a nova localização e mantém ordenação e data', async () => {
+      source.result = Promise.resolve(moved('Ala 1', '1'));
+      await create();
+      fixture.componentInstance.sortBy('location');
+      const date = fixture.componentInstance.selectedDate();
+
+      source.result = Promise.resolve(moved('Ala 4', '7'));
+      touch('touchstart', 10);
+      touch('touchend', 200);
+      await settle();
+
+      expect(text()).toContain('Ala 4 · Leito 7');
+      expect(fixture.componentInstance.sortKey()).toBe('location');
+      expect(fixture.componentInstance.selectedDate()).toBe(date);
+    });
+
+    it('enquanto a lista ainda carrega, a atualização é ignorada', async () => {
+      source.result = new Promise<readonly CensusPatient[]>(() => undefined);
+      fixture = TestBed.createComponent(PatientListComponent);
+      fixture.detectChanges();
+      await fixture.componentInstance.refresh();
+
+      expect(fixture.componentInstance.status()).toBe('loading');
+    });
+
+    it('arrasto curto não atualiza', async () => {
+      source.result = Promise.resolve(moved('Ala 1', '1'));
+      await create();
+      source.result = Promise.resolve(moved('Ala 4', '7'));
+      touch('touchstart', 10);
+      touch('touchend', 50);
+      await settle();
+
+      expect(text()).not.toContain('Ala 4');
+    });
+
+    it('offline ou com erro mantém o último cache sem erro', async () => {
+      source.result = Promise.resolve(moved('Ala 1', '1'));
+      await create();
+      const connectivity = TestBed.inject(ConnectivityService);
+
+      connectivity.online.set(false);
+      source.result = Promise.resolve(moved('Ala 4', '7'));
+      await fixture.componentInstance.refresh();
+      fixture.detectChanges();
+
+      expect(text()).toContain('Ala 1 · Leito 1');
+      connectivity.online.set(true);
+      source.result = Promise.reject(new Error('falha'));
+      await fixture.componentInstance.refresh();
+      fixture.detectChanges();
+
+      expect(text()).toContain('Ala 1 · Leito 1');
+      expect(fixture.componentInstance.status()).toBe('ready');
+    });
+  });
+
+  describe('swipe à direita: alteração de leito (US-004-1-09)', () => {
+    const swipeRight = (row: number, to: number): void => {
+      const content = fixture.nativeElement.querySelectorAll('.swipe-row__content')[row] as HTMLElement;
+
+      content.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, clientX: 100 }));
+      content.dispatchEvent(new PointerEvent('pointermove', { bubbles: true, clientX: to }));
+      content.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, clientX: to }));
+      fixture.detectChanges();
+    };
+    const bed = ['/patients', 'p0', 'change-bed'];
+
+    it('completar o gesto navega ao fluxo de leito com o paciente do card', async () => {
+      source.result = Promise.resolve(census(2));
+      await create();
+      (router.navigate as jasmine.Spy).calls.reset();
+      swipeRight(0, 250);
+
+      expect(router.navigate).toHaveBeenCalledTimes(1);
+      expect(router.navigate).toHaveBeenCalledWith(['/patients', jasmine.stringMatching(/^p[01]$/), 'change-bed']);
+    });
+
+    it('"Alterar leito" pelo botão tem o nome do paciente e navega', async () => {
+      source.result = Promise.resolve(census(1));
+      await create();
+      const action = q('.swipe-row__action--start') as HTMLElement;
+
+      expect(action.getAttribute('aria-label')).toBe('Alterar leito de Paciente 0');
+      action.click();
+
+      expect(router.navigate).toHaveBeenCalledWith(bed);
+    });
+
+    it('arrasto curto não navega', async () => {
+      source.result = Promise.resolve(census(1));
+      await create();
+      swipeRight(0, 120);
+
+      expect(router.navigate).not.toHaveBeenCalledWith(bed);
+    });
+
+    it('somente leitura: sem ação e sem navegação', async () => {
+      source.result = Promise.resolve(census(1));
+      await create();
+      fixture.componentInstance.pendingDate.set(null);
+      fixture.componentInstance.selectedDate.set(new Date(2020, 0, 1));
+      fixture.detectChanges();
+      await fixture.whenStable();
+      fixture.detectChanges();
+
+      expect(q('.swipe-row__action--start')).toBeNull();
+      fixture.componentInstance.changeBed('p0');
+
+      expect(router.navigate).not.toHaveBeenCalledWith(bed);
+    });
+
+    it('offline: não navega e avisa "conexão necessária"; online navega', async () => {
+      source.result = Promise.resolve(census(1));
+      await create();
+      const connectivity = TestBed.inject(ConnectivityService);
+
+      connectivity.online.set(false);
+      swipeRight(0, 250);
+
+      expect(router.navigate).not.toHaveBeenCalledWith(bed);
+      expect(q('[role="status"]')?.textContent).toContain('Conexão necessária');
+      connectivity.online.set(true);
+      swipeRight(0, 250);
+
+      expect(router.navigate).toHaveBeenCalledWith(bed);
+      expect(q('[role="status"]')?.textContent?.trim()).toBe('');
+    });
+  });
+
   describe('swipe à esquerda: encerramento (US-004-1-08)', () => {
     const swipe = (row: number, to: number): void => {
       const content = fixture.nativeElement.querySelectorAll('.swipe-row__content')[row] as HTMLElement;
@@ -972,7 +1147,7 @@ describe('PatientListComponent', () => {
     it('acionar "Encerrar" pelo botão (teclado) navega e tem o nome do paciente', async () => {
       source.result = Promise.resolve(census(1));
       await create();
-      const action = q('.swipe-row__action') as HTMLElement;
+      const action = q('.swipe-row__action:not(.swipe-row__action--start)') as HTMLElement;
 
       expect(action.getAttribute('aria-label')).toBe('Encerrar acompanhamento de Paciente 0');
       action.click();
