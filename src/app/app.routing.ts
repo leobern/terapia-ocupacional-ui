@@ -73,6 +73,11 @@ export const routes: Routes = [
     loadComponent: () =>
       import('./features/pending-screen/pending-screen.component').then(m => m.PendingScreenComponent),
   })),
+  // Diagnóstico GLIM do paciente (FT-004-5).
+  {
+    path: 'patients/:id/diagnosis',
+    loadComponent: () => import('./features/diagnosis/diagnosis.component').then(m => m.DiagnosisComponent),
+  },
   // Hub do paciente (FT-004-2): destino da lista de pacientes e das notificações.
   {
     path: 'patients/:id',

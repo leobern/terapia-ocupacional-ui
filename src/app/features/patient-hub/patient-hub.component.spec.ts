@@ -1,9 +1,11 @@
 import { Location } from '@angular/common';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
+import { ActivatedRoute, convertToParamMap, provideRouter, Router } from '@angular/router';
 import { of } from 'rxjs';
 
 import { ConnectivityService } from '../../shared/services/connectivity.service';
+import { GlimReading } from '../diagnosis/diagnosis.models';
+import { DiagnosisSource } from '../diagnosis/diagnosis-source';
 import { LinkedHospitalsReader } from '../home/linked-hospitals';
 import { NOW, ProfessionalProfileReader } from '../home/professional-profile';
 import {
@@ -17,7 +19,12 @@ import { NutritionResultsSource } from '../patients/nutrition-panel/nutrition-re
 import { ProvisionalNutritionCardStore } from '../patients/nutrition-panel/provisional-nutrition-card-store';
 import { AssessmentSource } from './assessment/assessment-source';
 import { AssessmentWriter } from './assessment/assessment-writer';
-import { PatientHubComponent, reloadsOnVisibility } from './patient-hub.component';
+import {
+  DIAGNOSIS_FAILED_HINT,
+  DIAGNOSIS_OFFLINE_HINT,
+  PatientHubComponent,
+  reloadsOnVisibility,
+} from './patient-hub.component';
 import { HypothesisSaveRequest, PatientHubProfile } from './patient-hub.models';
 import {
   HypothesisSynthesizer,
@@ -111,6 +118,30 @@ class FakePriorSynth extends PriorStaysSynthesizer {
   }
 }
 
+class FakeDiagnosis extends DiagnosisSource {
+  screening = true;
+  fail = false;
+
+  load(): Promise<GlimReading> {
+    return this.fail
+      ? Promise.reject(new Error('x'))
+      : Promise.resolve({
+          criteria: {
+            inflammation: 'not-evaluated',
+            'low-bmi': 'not-evaluated',
+            'low-muscle-mass': 'not-evaluated',
+            'reduced-intake': 'not-evaluated',
+            'weight-loss': 'not-evaluated',
+          },
+          fluidRetention: false,
+          protocols: [],
+          screeningPositive: this.screening,
+          severity: {},
+        });
+  }
+}
+
+const diagnosis = new FakeDiagnosis();
 const priorStays = new FakePriorStays();
 const priorSynth = new FakePriorSynth();
 let store = new ProvisionalNutritionCardStore();
@@ -136,6 +167,7 @@ async function setup(
       { provide: NutritionHiddenCards, useFactory: (): ProvisionalNutritionCardStore => store },
       { provide: HypothesisSynthesizer, useValue: synth },
       { provide: HypothesisWriter, useValue: writer },
+      { provide: DiagnosisSource, useValue: diagnosis },
       { provide: PlanSource, useValue: { loadRoute: (): Promise<null> => Promise.resolve(null) } },
       { provide: AssessmentSource, useValue: { loadLatest: (): Promise<null> => Promise.resolve(null) } },
       { provide: AssessmentWriter, useValue: { save: (): Promise<void> => Promise.resolve() } },
@@ -403,6 +435,86 @@ describe('PatientHubComponent', () => {
     (f.nativeElement as HTMLElement).querySelector<HTMLElement>('app-icon-button button')?.click();
 
     expect(locationMock.back).toHaveBeenCalledOnceWith();
+  });
+
+  describe('Diagnóstico (FT-004-5)', () => {
+    let f: ComponentFixture<PatientHubComponent>;
+    let navigate: jasmine.Spy;
+    const concluded = async (): Promise<void> => {
+      await (f.componentInstance as unknown as { onAssessmentConcluded(): Promise<void> }).onAssessmentConcluded();
+      f.detectChanges();
+    };
+
+    beforeEach(async () => {
+      diagnosis.screening = true;
+      diagnosis.fail = false;
+      f = await setup(new FakeSource());
+      navigate = spyOn(TestBed.inject(Router), 'navigate').and.resolveTo(true);
+    });
+
+    it('concluir a avaliação com triagem positiva abre o Diagnóstico', async () => {
+      await concluded();
+
+      expect(navigate).toHaveBeenCalledOnceWith(['/patients', 'p1', 'diagnosis']);
+    });
+
+    it('concluir sem triagem positiva não abre o Diagnóstico', async () => {
+      diagnosis.screening = false;
+      await concluded();
+
+      expect(navigate).not.toHaveBeenCalled();
+    });
+
+    it('offline: não calcula e avisa que precisa de conexão', async () => {
+      TestBed.inject(ConnectivityService).online.set(false);
+      await concluded();
+
+      expect(navigate).not.toHaveBeenCalled();
+      expect((f.nativeElement as HTMLElement).textContent).toContain(DIAGNOSIS_OFFLINE_HINT);
+      TestBed.inject(ConnectivityService).online.set(true);
+    });
+
+    it('falha na leitura: avisa e não navega', async () => {
+      diagnosis.fail = true;
+      await concluded();
+
+      expect(navigate).not.toHaveBeenCalled();
+      expect((f.nativeElement as HTMLElement).textContent).toContain(DIAGNOSIS_FAILED_HINT);
+    });
+
+    it('o botão "Salvar avaliação" do formulário salva e dispara o fluxo do diagnóstico', async () => {
+      const root = f.nativeElement as HTMLElement;
+
+      root.querySelector<HTMLButtonElement>('.assessment__row')?.click();
+      await f.whenStable();
+      f.detectChanges();
+      Array.from(root.querySelectorAll<HTMLButtonElement>('dialog app-button button'))
+        .find(b => b.textContent.includes('Salvar avaliação'))
+        ?.click();
+      await f.whenStable();
+      await f.whenStable();
+
+      expect(navigate).toHaveBeenCalledOnceWith(['/patients', 'p1', 'diagnosis']);
+    });
+
+    it('o Hub dá acesso ao Diagnóstico a qualquer momento', () => {
+      (f.nativeElement as HTMLElement).querySelector<HTMLButtonElement>('.hub__diagnosis')?.click();
+
+      expect(navigate).toHaveBeenCalledOnceWith(['/patients', 'p1', 'diagnosis']);
+    });
+  });
+
+  it('sem id de paciente, nada acontece', async () => {
+    const g = await setup(new FakeSource(), null);
+    const router = TestBed.inject(Router);
+
+    spyOn(router, 'navigate');
+    const c = g.componentInstance as unknown as { onAssessmentConcluded(): Promise<void>; openDiagnosis(): void };
+
+    await c.onAssessmentConcluded();
+    c.openDiagnosis();
+
+    expect(router.navigate).not.toHaveBeenCalled();
   });
 
   describe('preenchimento da Hipótese', () => {

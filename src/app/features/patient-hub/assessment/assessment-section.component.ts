@@ -5,6 +5,7 @@ import {
   type ElementRef,
   inject,
   input,
+  output,
   signal,
   viewChild,
 } from '@angular/core';
@@ -64,6 +65,8 @@ function shortDate(iso: string): string {
 })
 export class AssessmentSectionComponent {
   readonly patientId = input.required<string>();
+  /** Avaliação concluída pelo profissional: o Hub abre o Diagnóstico (FT-004-5) se houver triagem positiva. */
+  readonly concluded = output();
 
   protected readonly sections = ASSESSMENT_SECTIONS;
   protected readonly limbSides = LIMB_SIDES;
@@ -109,6 +112,11 @@ export class AssessmentSectionComponent {
   protected close(): void {
     this.token++;
     this.isOpen.set(false);
+  }
+
+  protected conclude(): void {
+    this.close();
+    this.concluded.emit();
   }
 
   protected onDialogClick(event: MouseEvent): void {
@@ -167,7 +175,7 @@ export class AssessmentSectionComponent {
     this.saveFailed.set(false);
     try {
       await this.writer.save(this.patientId(), toSave as AssessmentValues);
-      this.close();
+      this.conclude();
     } catch {
       this.saveFailed.set(true);
     } finally {

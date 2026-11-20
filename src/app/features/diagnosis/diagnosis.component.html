@@ -1,0 +1,130 @@
+<!-- Figma 4685-9425 (desenhado pelo agente): cabeçalho, "Resultado do GLIM" e "Critérios do GLIM". -->
+<app-page-container>
+  <div class="diagnosis">
+    <header class="diagnosis__header">
+      <app-icon-button
+        kind="primary"
+        appearance="icon"
+        icon="arrow-left"
+        ariaLabel="Voltar"
+        (click)="back()"
+      />
+      <div class="diagnosis__heading">
+        <h1 class="diagnosis__title">Diagnóstico</h1>
+        <p class="diagnosis__subtitle">{{ subtitle() }}</p>
+      </div>
+    </header>
+
+    @switch (status()) {
+      @case ('loading') {
+        <div class="diagnosis__loading" role="status" aria-busy="true">
+          <span class="diagnosis__sr">Calculando o diagnóstico…</span>
+          <app-skeleton variant="block" />
+          <app-skeleton variant="block" />
+        </div>
+      }
+      @case ('error') {
+        <p class="diagnosis__message" role="alert">{{ errorHint() }}</p>
+      }
+      @default {
+        <section class="diagnosis__cluster" aria-labelledby="result-title">
+          <h2 id="result-title" class="diagnosis__section-title">
+            Resultado do GLIM
+          </h2>
+          <div class="diagnosis__card">
+            <p class="diagnosis__result">{{ title() }}</p>
+            <p class="diagnosis__detail">{{ detail() }}</p>
+            @if (calculated()) {
+              <p class="diagnosis__banner">
+                Aguardando confirmação do médico. Só o médico confirma, altera
+                ou exclui.
+              </p>
+            }
+          </div>
+        </section>
+
+        @if (calculated()) {
+          <section class="diagnosis__cluster" aria-labelledby="criteria-title">
+            <div class="diagnosis__section-header">
+              <h2 id="criteria-title" class="diagnosis__section-title">
+                Critérios do GLIM
+              </h2>
+              <span class="diagnosis__count">{{ rows().length }}</span>
+            </div>
+            <div class="diagnosis__card">
+              <h3 class="diagnosis__group">Fenotípicos</h3>
+              @for (row of phenotypic(); track row.definition.id) {
+                <p class="diagnosis__criterion">
+                  <span
+                    class="diagnosis__dot diagnosis__dot--{{ row.state }}"
+                    aria-hidden="true"
+                  ></span>
+                  <span class="diagnosis__criterion-name">{{
+                    row.definition.label
+                  }}</span>
+                  <span class="diagnosis__criterion-state">{{
+                    row.stateLabel
+                  }}</span>
+                </p>
+              }
+              <h3 class="diagnosis__group">Etiológicos</h3>
+              @for (row of etiologic(); track row.definition.id) {
+                <p class="diagnosis__criterion">
+                  <span
+                    class="diagnosis__dot diagnosis__dot--{{ row.state }}"
+                    aria-hidden="true"
+                  ></span>
+                  <span class="diagnosis__criterion-name">{{
+                    row.definition.label
+                  }}</span>
+                  <span class="diagnosis__criterion-state">{{
+                    row.stateLabel
+                  }}</span>
+                </p>
+              }
+            </div>
+          </section>
+        }
+
+        @if (fluidRetention()) {
+          <p class="diagnosis__banner" role="note">
+            Edema ou ascite registrado: peso, IMC e massa muscular podem estar
+            mascarados.
+          </p>
+        }
+
+        <section class="diagnosis__cluster" aria-labelledby="protocols-title">
+          <div class="diagnosis__section-header">
+            <h2 id="protocols-title" class="diagnosis__section-title">
+              Outros protocolos
+            </h2>
+            <span class="diagnosis__count">{{ protocols().length }}</span>
+          </div>
+          @if (protocols().length === 0) {
+            <p class="diagnosis__message">
+              Nenhum outro protocolo aplicado a este paciente.
+            </p>
+          } @else {
+            <ul class="diagnosis__tiles">
+              @for (protocol of protocols(); track protocol.id) {
+                <li class="diagnosis__tile">
+                  <span class="diagnosis__tile-label">{{
+                    protocol.label
+                  }}</span>
+                  @if (protocol.points !== undefined) {
+                    <span class="diagnosis__tile-points"
+                      >{{ protocol.points }} pontos</span
+                    >
+                  }
+                  <span class="diagnosis__tile-result">{{
+                    protocol.result
+                  }}</span>
+                </li>
+              }
+            </ul>
+          }
+        </section>
+      }
+    }
+  </div>
+</app-page-container>

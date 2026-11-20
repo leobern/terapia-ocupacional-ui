@@ -199,3 +199,32 @@
     color: tokens.c(content-1);
   }
 }
+
+// Acesso fixo ao Diagnóstico (mesmo padrão da linha "Avaliação Nutricional e Funcional").
+.hub__diagnosis {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: tokens.$space-8;
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 44px;
+  padding: tokens.$space-8 tokens.$space-16;
+  border: 0;
+  border-radius: tokens.$radius-md;
+  background: tokens.c(surface-2);
+  color: tokens.c(content-1);
+  text-align: start;
+  cursor: pointer;
+
+  @include typography.label-md;
+
+  &:focus-visible {
+    outline: var(--focus-ring-width) solid tokens.c(focus-ring);
+    outline-offset: var(--focus-ring-offset);
+  }
+}
+
+.hub__diagnosis-title {
+  flex: 1 0 0;
+}
