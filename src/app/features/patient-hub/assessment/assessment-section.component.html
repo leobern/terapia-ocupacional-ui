@@ -54,17 +54,39 @@
               field.label
             }}</label>
             <div class="assessment__control">
-              <input
-                class="assessment__input"
-                type="text"
-                readonly
-                autocomplete="off"
-                [id]="'assessment-' + field.id"
-                [placeholder]="field.placeholder"
-                [value]="valueOf(field.id)"
-                [attr.aria-describedby]="'assessment-help-' + field.id"
-              />
-              @if (field.select) {
+              @if (field.options) {
+                <select
+                  class="assessment__input assessment__input--select"
+                  [id]="'assessment-' + field.id"
+                  [attr.aria-describedby]="'assessment-help-' + field.id"
+                  (change)="edit(field.id, $any($event.target).value)"
+                >
+                  <option value="" [selected]="valueOf(field.id) === ''">
+                    {{ field.placeholder }}
+                  </option>
+                  @for (option of field.options; track option) {
+                    <option
+                      [value]="option"
+                      [selected]="valueOf(field.id) === option"
+                    >
+                      {{ option }}
+                    </option>
+                  }
+                </select>
+              } @else {
+                <input
+                  class="assessment__input"
+                  type="text"
+                  inputmode="decimal"
+                  autocomplete="off"
+                  [id]="'assessment-' + field.id"
+                  [placeholder]="field.placeholder"
+                  [value]="valueOf(field.id)"
+                  [attr.aria-describedby]="'assessment-help-' + field.id"
+                  (input)="edit(field.id, $any($event.target).value)"
+                />
+              }
+              @if (field.options) {
                 <ph-icon
                   class="assessment__caret"
                   name="caret-down"
@@ -72,6 +94,39 @@
                 />
               }
             </div>
+            @if (field.sideId; as sideId) {
+              <div
+                class="assessment__side"
+                role="radiogroup"
+                [attr.aria-label]="'Membro aferido: ' + field.label"
+              >
+                @for (side of limbSides; track side) {
+                  <button
+                    type="button"
+                    role="radio"
+                    class="assessment__side-option"
+                    [attr.aria-checked]="valueOf(sideId) === side"
+                    [class.assessment__side-option--active]="
+                      valueOf(sideId) === side
+                    "
+                    (click)="edit(sideId, side)"
+                  >
+                    {{ side }}
+                  </button>
+                }
+              </div>
+              @if (missingSide(field)) {
+                <p
+                  class="assessment__status assessment__status--warning"
+                  role="status"
+                >
+                  Informe o membro aferido (direito ou esquerdo).
+                </p>
+              }
+            }
+            @if (isSuggested(field)) {
+              <app-tag type="default" label="Sugerido pela IA" />
+            }
             <p class="assessment__help" [id]="'assessment-help-' + field.id">
               {{ helpOf(field) }}
             </p>
@@ -80,11 +135,53 @@
       </section>
     }
   </div>
+
+  @if (suggested().size > 0) {
+    <p class="assessment__status" role="status">{{ aiReviewNote }}</p>
+  }
+  @if (aiProcessing()) {
+    <p class="assessment__status" role="status">{{ aiProcessingHint }}</p>
+  }
+  @if (!online()) {
+    <p class="assessment__status assessment__status--warning" role="status">
+      {{ aiUnavailableHint }}
+    </p>
+  } @else if (aiNotice(); as notice) {
+    <p class="assessment__status assessment__status--warning" role="alert">
+      {{ notice }}
+    </p>
+  }
+  <!-- Offline: o campo é recriado desabilitado (libera o microfone de uma gravação em curso). -->
+  @if (online()) {
+    <app-input-chat
+      class="assessment__chat"
+      placeholder="Grave um áudio com os dados coletados"
+      [disabled]="aiProcessing() || state() === 'loading'"
+      (audioSend)="onAudio($event)"
+      (audioModeError)="onAudioError($event)"
+    />
+  } @else {
+    <app-input-chat
+      class="assessment__chat"
+      placeholder="Grave um áudio com os dados coletados"
+      [disabled]="true"
+    />
+  }
+  @if (!online()) {
+    <p class="assessment__status assessment__status--warning" role="status">
+      {{ offlineSaveHint }}
+    </p>
+  }
+  @if (saveFailed()) {
+    <p class="assessment__status assessment__status--warning" role="alert">
+      {{ saveFailedHint }}
+    </p>
+  }
   <app-button
-    size="md"
-    iconLeft="check"
-    label="Concluir avaliação"
+    class="assessment__save"
+    label="Salvar avaliação"
     [fullWidth]="true"
-    (click)="conclude()"
+    [disabled]="saving() || !online() || state() === 'loading'"
+    (click)="save()"
   />
 </dialog>

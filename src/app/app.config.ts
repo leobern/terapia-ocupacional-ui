@@ -6,7 +6,9 @@ import { provideRouterStore } from '@ngrx/router-store';
 import { provideStore } from '@ngrx/store';
 
 import { routes } from './app.routing';
+import { DiagnosisDecisionSource } from './features/diagnosis/diagnosis-decision-source';
 import { DiagnosisSource } from './features/diagnosis/diagnosis-source';
+import { ProvisionalDiagnosisDecisionSource } from './features/diagnosis/provisional-diagnosis-decision-source';
 import { ProvisionalDiagnosisSource } from './features/diagnosis/provisional-diagnosis-source';
 import { DailyPatientsSource } from './features/home/daily-patients';
 import { HomeApiService } from './features/home/data-access/home-api.service';
@@ -25,7 +27,10 @@ import {
   ProvisionalHomeApiService,
   ProvisionalNotificationsApiService,
 } from './features/notifications/data-access/provisional-notifications-api.service';
+import { AssessmentAiStructurer } from './features/patient-hub/assessment/assessment-ai-structurer';
 import { AssessmentSource } from './features/patient-hub/assessment/assessment-source';
+import { AssessmentWriter } from './features/patient-hub/assessment/assessment-writer';
+import { ProvisionalAssessmentAiStructurer } from './features/patient-hub/assessment/provisional-assessment-ai-structurer';
 import { ProvisionalAssessmentSource } from './features/patient-hub/assessment/provisional-assessment-source';
 import {
   HypothesisSynthesizer,
@@ -76,8 +81,12 @@ export const appConfig: ApplicationConfig = {
     { provide: PatientHubSource, useClass: ProvisionalPatientHubSource },
     { provide: HypothesisSynthesizer, useClass: ProvisionalHypothesisSynthesizer },
     { provide: HypothesisWriter, useClass: ProvisionalHypothesisWriter },
-    { provide: AssessmentSource, useClass: ProvisionalAssessmentSource },
+    ProvisionalAssessmentSource,
+    { provide: AssessmentAiStructurer, useClass: ProvisionalAssessmentAiStructurer },
+    { provide: AssessmentSource, useExisting: ProvisionalAssessmentSource },
+    { provide: AssessmentWriter, useExisting: ProvisionalAssessmentSource },
     { provide: DiagnosisSource, useClass: ProvisionalDiagnosisSource },
+    { provide: DiagnosisDecisionSource, useClass: ProvisionalDiagnosisDecisionSource },
     { provide: PlanSource, useClass: ProvisionalPlanSource },
     { provide: RefeedingRiskSource, useClass: ProvisionalRefeedingRiskSource },
     { provide: PriorStaysSource, useClass: ProvisionalPriorStaysSource },

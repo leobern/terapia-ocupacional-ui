@@ -5,11 +5,14 @@ import { ActivatedRoute, convertToParamMap } from '@angular/router';
 import { of } from 'rxjs';
 
 import { ConnectivityService } from '../../shared/services/connectivity.service';
+import { NOW, ProfessionalProfile, ProfessionalProfileReader } from '../home/professional-profile';
 import { PatientHubProfile } from '../patient-hub/patient-hub.models';
 import { PatientHubSource } from '../patient-hub/patient-hub-source';
 import { DiagnosisComponent, ERROR_HINT, OFFLINE_HINT } from './diagnosis.component';
 import { GlimReading } from './diagnosis.models';
+import { DiagnosisDecisionSource } from './diagnosis-decision-source';
 import { DiagnosisSource } from './diagnosis-source';
+import { ProvisionalDiagnosisDecisionSource } from './provisional-diagnosis-decision-source';
 
 const PROFILE: PatientHubProfile = {
   bed: '35',
@@ -61,11 +64,17 @@ describe('DiagnosisComponent', () => {
   let source: FakeDiagnosisSource;
   const online = signal(true);
   let location: { back: jasmine.Spy };
+  let routeOverridden = false;
+  let role: 'doctor' | 'other';
+  let decisions: ProvisionalDiagnosisDecisionSource;
 
   async function render(id: string | null = 'p1'): Promise<HTMLElement> {
-    TestBed.overrideProvider(ActivatedRoute, {
-      useValue: { paramMap: of(convertToParamMap(id === null ? {} : { id })) },
-    });
+    if (!routeOverridden) {
+      TestBed.overrideProvider(ActivatedRoute, {
+        useValue: { paramMap: of(convertToParamMap(id === null ? {} : { id })) },
+      });
+      routeOverridden = true;
+    }
     fixture = TestBed.createComponent(DiagnosisComponent);
     fixture.detectChanges();
     await fixture.whenStable();
@@ -78,6 +87,9 @@ describe('DiagnosisComponent', () => {
     source = new FakeDiagnosisSource();
     location = { back: jasmine.createSpy('back') };
     online.set(true);
+    role = 'doctor';
+    routeOverridden = false;
+    decisions = new ProvisionalDiagnosisDecisionSource();
     TestBed.configureTestingModule({
       imports: [DiagnosisComponent],
       providers: [
@@ -85,6 +97,12 @@ describe('DiagnosisComponent', () => {
         { provide: PatientHubSource, useClass: FakeHub },
         { provide: ConnectivityService, useValue: { online } },
         { provide: Location, useValue: location },
+        { provide: DiagnosisDecisionSource, useValue: decisions },
+        {
+          provide: ProfessionalProfileReader,
+          useValue: { read: (): ProfessionalProfile => ({ name: 'Dra. Ana', role }) },
+        },
+        { provide: NOW, useValue: (): Date => new Date(2026, 10, 20, 10, 30) },
       ],
     });
   });
@@ -240,5 +258,231 @@ describe('DiagnosisComponent', () => {
 
     expect(el.textContent).toContain('Nenhum outro protocolo aplicado');
     expect(el.querySelector('.diagnosis__tile')).toBeNull();
+  });
+
+  describe('decisão do médico', () => {
+    const buttons = (el: HTMLElement): string[] =>
+      Array.from(el.querySelectorAll('.diagnosis__actions app-button')).map(b => b.textContent?.trim() ?? '');
+    const choose = (el: HTMLElement, name: string, value: string): void => {
+      const select = el.querySelector<HTMLSelectElement>(
+        `select[data-field="${name}"], select[data-criterion="${name}"]`,
+      );
+
+      if (select === null) {
+        throw new Error(name);
+      }
+      select.value = value;
+      select.dispatchEvent(new Event('change'));
+      fixture.detectChanges();
+    };
+    const click = async (el: HTMLElement, label: string): Promise<void> => {
+      const btn = Array.from(el.querySelectorAll<HTMLElement>('.diagnosis__actions app-button')).find(b =>
+        b.textContent?.includes(label),
+      );
+
+      btn?.querySelector('button')?.click();
+      await fixture.whenStable();
+      fixture.detectChanges();
+    };
+
+    it('médico vê as três ações; não médico não as tem no DOM e vê o aviso de aguardando', async () => {
+      expect(buttons(await render())).toEqual(['Confirmar', 'Alterar', 'Excluir']);
+      fixture.destroy();
+      role = 'other';
+      const el = await render();
+
+      expect(el.querySelector('.diagnosis__actions')).toBeNull();
+      expect(el.textContent).toContain('Aguardando confirmação do médico');
+    });
+
+    it('sem triagem não há ações', async () => {
+      source.reading = Promise.resolve({ ...CONFIRMED, screeningPositive: false });
+
+      expect((await render()).querySelector('.diagnosis__actions')).toBeNull();
+    });
+
+    it('confirmar grava, audita e mostra quem confirmou, sem ações', async () => {
+      const el = await render();
+
+      await click(el, 'Confirmar');
+
+      expect(el.textContent).toContain('Confirmado por Dra. Ana em 20/11/2026 10:30.');
+      expect(el.querySelector('.diagnosis__actions')).toBeNull();
+      expect((await decisions.load('p1')).audit.map(e => e.action)).toEqual(['confirm']);
+    });
+
+    it('reabrir mostra o diagnóstico já confirmado, também offline', async () => {
+      await render().then(el => click(el, 'Confirmar'));
+      fixture.destroy();
+      online.set(false);
+      const el = await render();
+
+      expect(el.textContent).toContain('Confirmado por Dra. Ana');
+      expect(el.querySelector('.diagnosis__actions')).toBeNull();
+    });
+
+    it('offline as ações ficam desabilitadas com aviso em texto', async () => {
+      online.set(false);
+      const el = await render();
+
+      expect(el.textContent).toContain('Sem conexão: confirmar, alterar e excluir precisam de conexão.');
+      await click(el, 'Confirmar');
+      await click(el, 'Alterar');
+      await click(el, 'Excluir');
+
+      expect((await decisions.load('p1')).audit).toEqual([]);
+      expect(el.querySelector('app-confirm-dialog')?.textContent).not.toContain('Excluir diagnóstico?');
+    });
+
+    it('override sem entrada de auditoria não mostra o aviso de alteração', async () => {
+      spyOn(decisions, 'load').and.resolveTo({
+        audit: [],
+        decision: null,
+        override: { criteria: CONFIRMED.criteria, outcome: 'confirmed', staging: 'severe' },
+      });
+
+      expect((await render()).textContent).not.toContain('Alterado pelo médico:');
+    });
+
+    const callConfirm = (): void => (fixture.componentInstance as unknown as { confirm(): void }).confirm();
+
+    it('confirmar sem paciente é ignorado', async () => {
+      spyOn(decisions, 'apply');
+
+      await render(null);
+      callConfirm();
+
+      expect(decisions.apply).not.toHaveBeenCalled();
+    });
+
+    it('confirmar sem resultado calculado é ignorado', async () => {
+      spyOn(decisions, 'apply');
+
+      source.reading = Promise.resolve({ ...CONFIRMED, screeningPositive: false });
+      await render();
+      callConfirm();
+
+      expect((fixture.componentInstance as unknown as { rows(): [] }).rows()).toEqual([]);
+      expect(decisions.apply).not.toHaveBeenCalled();
+    });
+
+    it('uma segunda ação enquanto grava é ignorada', async () => {
+      const el = await render();
+      const spy = spyOn(decisions, 'apply').and.returnValue(new Promise(() => undefined));
+
+      await click(el, 'Confirmar');
+      await click(el, 'Confirmar');
+
+      expect(spy).toHaveBeenCalledTimes(1);
+    });
+
+    it('falha ao gravar mostra erro e mantém o estado', async () => {
+      spyOn(decisions, 'apply').and.rejectWith(new Error('x'));
+      const el = await render();
+
+      await click(el, 'Confirmar');
+
+      expect(el.querySelector('[role="alert"]')?.textContent).toContain('Não foi possível gravar a decisão');
+      expect(buttons(el).length).toBe(3);
+    });
+
+    it('excluir pede confirmação; cancelar não altera nada', async () => {
+      const el = await render();
+
+      await click(el, 'Excluir');
+
+      expect(el.querySelector('app-confirm-dialog')?.textContent).toContain('Excluir diagnóstico?');
+      el.querySelector<HTMLElement>('app-confirm-dialog app-button button')?.click();
+      fixture.detectChanges();
+
+      expect((await decisions.load('p1')).audit).toEqual([]);
+      expect(buttons(el).length).toBe(3);
+    });
+
+    it('excluir confirmado mostra "Diagnóstico excluído" com autor e persiste', async () => {
+      const el = await render();
+
+      await click(el, 'Excluir');
+      el.querySelectorAll<HTMLElement>('app-confirm-dialog app-button button')[1]?.click();
+      await fixture.whenStable();
+      fixture.detectChanges();
+
+      expect(el.textContent).toContain('Diagnóstico excluído');
+      expect(el.textContent).toContain('Excluído por Dra. Ana em 20/11/2026 10:30.');
+      expect(el.querySelector('.diagnosis__actions')).toBeNull();
+      expect((await decisions.load('p1')).audit.map(e => e.action)).toEqual(['exclude']);
+      fixture.destroy();
+
+      expect((await render()).textContent).toContain('Diagnóstico excluído');
+    });
+
+    it('alterar: salvar mostra o valor alterado, marcado, e ele vale ao confirmar', async () => {
+      const el = await render();
+
+      await click(el, 'Alterar');
+      const select = el.querySelector<HTMLSelectElement>('select[data-field="outcome"]');
+
+      expect(select?.value).toBe('confirmed');
+      choose(el, 'outcome', 'excluded');
+      fixture.detectChanges();
+      const staging = el.querySelector<HTMLSelectElement>('select[data-field="staging"]');
+
+      expect(staging?.disabled).toBeTrue();
+      expect(el.querySelector('.alter__hint')?.textContent).toContain('foi limpo');
+      choose(el, 'low-muscle-mass', 'negative');
+      Array.from(el.querySelectorAll<HTMLElement>('.alter__actions app-button'))
+        .find(b => b.textContent?.includes('Salvar'))
+        ?.querySelector('button')
+        ?.click();
+      await fixture.whenStable();
+      fixture.detectChanges();
+
+      expect(el.textContent).toContain('Desnutrição excluída');
+      expect(el.textContent).toContain('Alterado pelo médico: Dra. Ana em 20/11/2026 10:30.');
+      await click(el, 'Confirmar');
+      const record = await decisions.load('p1');
+
+      expect(record.decision?.result.outcome).toBe('excluded');
+      expect(record.decision?.result.criteria['low-muscle-mass']).toBe('negative');
+      expect(record.audit.map(e => e.action)).toEqual(['alter', 'confirm']);
+      expect(record.audit[0].before?.outcome).toBe('confirmed');
+      expect(record.audit[0].after?.outcome).toBe('excluded');
+    });
+
+    it('alterar o estadiamento e cancelar o sheet', async () => {
+      const el = await render();
+
+      await click(el, 'Alterar');
+
+      choose(el, 'staging', 'severe');
+      choose(el, 'staging', '');
+      Array.from(el.querySelectorAll<HTMLElement>('.alter__actions app-button'))
+        .find(b => b.textContent?.includes('Cancelar'))
+        ?.querySelector('button')
+        ?.click();
+      fixture.detectChanges();
+
+      expect((await decisions.load('p1')).audit).toEqual([]);
+      expect(el.querySelector<HTMLDialogElement>('dialog.alter')?.open).toBeFalse();
+    });
+
+    it('alterado persiste ao reabrir sem recalcular', async () => {
+      await decisions.apply({
+        action: 'alter',
+        altered: {
+          criteria: CONFIRMED.criteria,
+          outcome: 'confirmed',
+          staging: 'severe',
+        },
+        at: '2026-11-20T10:00:00',
+        author: 'Dra. Ana',
+        current: { criteria: CONFIRMED.criteria, outcome: 'confirmed', staging: 'moderate' },
+        patientId: 'p1',
+      });
+      const el = await render();
+
+      expect(el.textContent).toContain('Estadiamento: grave.');
+      expect(el.textContent).toContain('Alterado pelo médico');
+    });
   });
 });
