@@ -54,17 +54,39 @@
               field.label
             }}</label>
             <div class="assessment__control">
-              <input
-                class="assessment__input"
-                type="text"
-                readonly
-                autocomplete="off"
-                [id]="'assessment-' + field.id"
-                [placeholder]="field.placeholder"
-                [value]="valueOf(field.id)"
-                [attr.aria-describedby]="'assessment-help-' + field.id"
-              />
-              @if (field.select) {
+              @if (field.options) {
+                <select
+                  class="assessment__input assessment__input--select"
+                  [id]="'assessment-' + field.id"
+                  [attr.aria-describedby]="'assessment-help-' + field.id"
+                  (change)="edit(field.id, $any($event.target).value)"
+                >
+                  <option value="" [selected]="valueOf(field.id) === ''">
+                    {{ field.placeholder }}
+                  </option>
+                  @for (option of field.options; track option) {
+                    <option
+                      [value]="option"
+                      [selected]="valueOf(field.id) === option"
+                    >
+                      {{ option }}
+                    </option>
+                  }
+                </select>
+              } @else {
+                <input
+                  class="assessment__input"
+                  type="text"
+                  inputmode="decimal"
+                  autocomplete="off"
+                  [id]="'assessment-' + field.id"
+                  [placeholder]="field.placeholder"
+                  [value]="valueOf(field.id)"
+                  [attr.aria-describedby]="'assessment-help-' + field.id"
+                  (input)="edit(field.id, $any($event.target).value)"
+                />
+              }
+              @if (field.options) {
                 <ph-icon
                   class="assessment__caret"
                   name="caret-down"
@@ -80,4 +102,22 @@
       </section>
     }
   </div>
+
+  @if (!online()) {
+    <p class="assessment__status assessment__status--warning" role="status">
+      {{ offlineSaveHint }}
+    </p>
+  }
+  @if (saveFailed()) {
+    <p class="assessment__status assessment__status--warning" role="alert">
+      {{ saveFailedHint }}
+    </p>
+  }
+  <app-button
+    class="assessment__save"
+    label="Salvar avaliação"
+    [fullWidth]="true"
+    [disabled]="saving() || !online() || state() === 'loading'"
+    (click)="save()"
+  />
 </dialog>

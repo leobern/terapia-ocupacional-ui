@@ -196,3 +196,12 @@
     color: tokens.c(content-1);
   }
 }
+
+.assessment__input--select {
+  appearance: none;
+  padding-inline-end: tokens.$space-48;
+}
+
+.assessment__save {
+  display: block;
+}

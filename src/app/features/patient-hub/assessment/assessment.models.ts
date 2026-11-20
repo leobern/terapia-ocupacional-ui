@@ -8,8 +8,8 @@ export interface AssessmentFieldDefinition {
   readonly placeholder: string;
   /** Texto de ajuda do card (Figma 4682-9078). */
   readonly help: string;
-  /** Campo de seleção (com seta), não digitação. */
-  readonly select?: true;
+  /** Campo de seleção (com seta), não digitação; as opções vêm de `options`. */
+  readonly options?: readonly string[];
   /** Unidade exibida na ajuda "Anterior: ...". */
   readonly unit?: string;
 }
@@ -19,6 +19,12 @@ export interface AssessmentSectionDefinition {
   readonly title: string;
   readonly fields: readonly AssessmentFieldDefinition[];
 }
+
+/**
+ * Opções do risco de disfagia. Formato real (sim/não, escala, protocolo) a confirmar com Michelle:
+ * a lista fica só aqui para troca fácil.
+ */
+export const DYSPHAGIA_OPTIONS: readonly string[] = ['Sem risco', 'Risco baixo', 'Risco moderado', 'Risco alto'];
 
 /** Campos do desenho (Figma 4682-9078); os demais campos da FT-004-4 entram em outras stories. */
 export const ASSESSMENT_SECTIONS: readonly AssessmentSectionDefinition[] = [
@@ -38,7 +44,7 @@ export const ASSESSMENT_SECTIONS: readonly AssessmentSectionDefinition[] = [
         id: 'dysphagia',
         label: 'Risco de disfagia',
         placeholder: 'Selecione',
-        select: true,
+        options: DYSPHAGIA_OPTIONS,
       },
     ],
     id: 'functional',
@@ -59,3 +65,6 @@ export interface NutritionFunctionalAssessment {
   /** Valor anterior de cada item dinâmico, para a ajuda "Anterior: ...". */
   readonly previous: Readonly<Partial<Record<AssessmentFieldId, AssessmentPreviousValue>>>;
 }
+
+/** Valores a gravar: só campos preenchidos (campo vazio = ausente), exatamente como digitados. */
+export type AssessmentValues = Readonly<Partial<Record<AssessmentFieldId, string>>>;
