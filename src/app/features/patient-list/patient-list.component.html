@@ -71,6 +71,26 @@
       />
     </div>
 
+    <!-- Figma v2/SelectTag (tonal, 40px) + atalhos: critério de ordenação ativo; visível em qualquer estado. -->
+    <div class="patient-list__sortbar">
+      <button
+        type="button"
+        class="patient-list__sort-tag"
+        (click)="aiAssistant.openShortcuts()"
+      >
+        <span>Ordenar: {{ sortLabel() }}</span>
+        <ph-icon name="caret-down" [size]="20" />
+      </button>
+      <app-icon-button
+        kind="primary"
+        appearance="tonal"
+        icon="squares-four"
+        ariaLabel="Ações da tela"
+        [disabled]="aiAssistant.shortcutsOpen()"
+        (click)="aiAssistant.openShortcuts()"
+      />
+    </div>
+
     <app-confirm-dialog
       message="Datas anteriores abrem somente para leitura, em preto e branco."
       cancelLabel="Cancelar"
