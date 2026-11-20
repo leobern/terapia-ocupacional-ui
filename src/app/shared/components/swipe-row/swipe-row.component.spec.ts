@@ -12,8 +12,8 @@ import { SwipeRowComponent } from './swipe-row.component';
       actionAriaLabel="Encerrar Ana"
       startActionLabel="Alterar leito"
       startActionAriaLabel="Alterar leito de Ana"
-      (startTriggered)="startCount = startCount + 1"
       [disabled]="disabled"
+      (startTriggered)="startCount = startCount + 1"
       (triggered)="count = count + 1"
     >
       <button type="button" class="inner" (click)="clicks = clicks + 1">Ana</button>
