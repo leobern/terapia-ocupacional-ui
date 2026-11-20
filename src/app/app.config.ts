@@ -23,6 +23,8 @@ import {
   ProvisionalHomeApiService,
   ProvisionalNotificationsApiService,
 } from './features/notifications/data-access/provisional-notifications-api.service';
+import { AssessmentSource } from './features/patient-hub/assessment/assessment-source';
+import { ProvisionalAssessmentSource } from './features/patient-hub/assessment/provisional-assessment-source';
 import {
   HypothesisSynthesizer,
   HypothesisWriter,
@@ -68,6 +70,7 @@ export const appConfig: ApplicationConfig = {
     { provide: PatientHubSource, useClass: ProvisionalPatientHubSource },
     { provide: HypothesisSynthesizer, useClass: ProvisionalHypothesisSynthesizer },
     { provide: HypothesisWriter, useClass: ProvisionalHypothesisWriter },
+    { provide: AssessmentSource, useClass: ProvisionalAssessmentSource },
     { provide: PriorStaysSource, useClass: ProvisionalPriorStaysSource },
     { provide: PriorStaysSynthesizer, useClass: ProvisionalPriorStaysSynthesizer },
     { provide: NutritionResultsSource, useClass: ProvisionalNutritionResultsSource },

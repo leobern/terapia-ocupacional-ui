@@ -38,6 +38,7 @@ import {
   NutritionValues,
 } from '../patients/nutrition-panel/nutrition-panel.models';
 import { NutritionResultsSource } from '../patients/nutrition-panel/nutrition-results-source';
+import { AssessmentSectionComponent } from './assessment/assessment-section.component';
 import { HypothesisOrigin, PatientHubProfile } from './patient-hub.models';
 import { HypothesisSynthesizer, HypothesisWriter, PatientHubSource } from './patient-hub-source';
 import { PriorStaysBoxComponent } from './prior-stays-box/prior-stays-box.component';
@@ -64,6 +65,7 @@ const DAY_MS = 86_400_000;
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
+    AssessmentSectionComponent,
     ButtonComponent,
     IconButtonComponent,
     NutritionAddCardSheetComponent,
