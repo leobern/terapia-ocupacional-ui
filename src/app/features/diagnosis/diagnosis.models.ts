@@ -60,3 +60,50 @@ export interface GlimDiagnosis {
   /** Só com resultado "confirmed" e grau conhecido de perda de peso ou IMC. */
   readonly staging: GlimSeverity | null;
 }
+
+/** Resultado do GLIM exibido ou decidido: o calculado pelo motor ou o alterado pelo médico. */
+export interface GlimResult {
+  readonly outcome: Exclude<GlimOutcome, 'no-screening'>;
+  readonly staging: GlimSeverity | null;
+  readonly criteria: Readonly<Record<GlimCriterionId, GlimCriterionState>>;
+}
+
+export type DiagnosisAction = 'confirm' | 'exclude' | 'alter';
+
+/** Registro imutável da trilha de auditoria (Constituição, Princípio V). `before`/`after` só em "alter". */
+export interface DiagnosisAuditEntry {
+  readonly action: DiagnosisAction;
+  readonly author: string;
+  /** ISO 8601. */
+  readonly at: string;
+  readonly before: GlimResult | null;
+  readonly after: GlimResult | null;
+}
+
+/** Decisão final do médico: confirmada (passa a valer) ou excluída. */
+export interface DiagnosisDecision {
+  readonly status: 'confirmed' | 'excluded';
+  readonly author: string;
+  readonly at: string;
+  /** Resultado que passou a valer (na exclusão, o último exibido). */
+  readonly result: GlimResult;
+}
+
+/** Estado persistido por paciente/internação; é o que a FT-004-6 consome, sem nova coleta. */
+export interface DiagnosisRecord {
+  readonly decision: DiagnosisDecision | null;
+  /** Resultado alterado pelo médico, ainda não confirmado; nunca sobrescrito por recálculo. */
+  readonly override: GlimResult | null;
+  readonly audit: readonly DiagnosisAuditEntry[];
+}
+
+export interface DiagnosisActionRequest {
+  readonly patientId: string;
+  readonly action: DiagnosisAction;
+  readonly author: string;
+  readonly at: string;
+  /** Resultado exibido no momento da ação (calculado ou alterado). */
+  readonly current: GlimResult;
+  /** Novo resultado, só em "alter". */
+  readonly altered?: GlimResult;
+}
