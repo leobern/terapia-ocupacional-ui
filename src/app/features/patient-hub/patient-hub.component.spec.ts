@@ -15,6 +15,7 @@ import {
 import { NutritionValues } from '../patients/nutrition-panel/nutrition-panel.models';
 import { NutritionResultsSource } from '../patients/nutrition-panel/nutrition-results-source';
 import { ProvisionalNutritionCardStore } from '../patients/nutrition-panel/provisional-nutrition-card-store';
+import { AssessmentSource } from './assessment/assessment-source';
 import { PatientHubComponent, reloadsOnVisibility } from './patient-hub.component';
 import { HypothesisSaveRequest, PatientHubProfile } from './patient-hub.models';
 import {
@@ -133,6 +134,7 @@ async function setup(
       { provide: NutritionHiddenCards, useFactory: (): ProvisionalNutritionCardStore => store },
       { provide: HypothesisSynthesizer, useValue: synth },
       { provide: HypothesisWriter, useValue: writer },
+      { provide: AssessmentSource, useValue: { loadLatest: (): Promise<null> => Promise.resolve(null) } },
       { provide: PriorStaysSource, useValue: priorStays },
       { provide: PriorStaysSynthesizer, useValue: priorSynth },
       { provide: ProfessionalProfileReader, useValue: { read: (): { name: string } => ({ name: 'Michelle' }) } },

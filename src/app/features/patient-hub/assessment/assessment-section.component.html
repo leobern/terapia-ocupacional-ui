@@ -1,0 +1,83 @@
+<!-- Figma 4608-4371 (Hub) + 4682-9078 (formulário, desenhado pelo agente). -->
+<button
+  type="button"
+  class="assessment__row"
+  aria-haspopup="dialog"
+  aria-expanded="false"
+  (click)="open()"
+>
+  <span class="assessment__row-title">Avaliação Nutricional e Funcional</span>
+  <ph-icon name="caret-down" [size]="16" />
+</button>
+
+<!-- O clique no próprio <dialog> é o clique no scrim; o teclado fecha por Esc (cancel) e pelo "Fechar". -->
+<!-- eslint-disable-next-line @angular-eslint/template/click-events-have-key-events, @angular-eslint/template/interactive-supports-focus -->
+<dialog
+  #dialogEl
+  class="assessment"
+  aria-labelledby="assessment-title"
+  (click)="onDialogClick($event)"
+  (cancel)="onCancel($event)"
+>
+  <span class="assessment__handle" aria-hidden="true"></span>
+  <div class="assessment__header">
+    <h2 id="assessment-title" class="assessment__title">
+      Avaliação nutricional e funcional
+    </h2>
+    <app-icon-button
+      kind="secondary"
+      appearance="icon"
+      icon="x"
+      ariaLabel="Fechar"
+      (click)="close()"
+    />
+  </div>
+
+  <div class="assessment__body" [attr.aria-busy]="state() === 'loading'">
+    @if (state() === 'loading') {
+      <p class="assessment__status" role="status">Carregando a avaliação…</p>
+    }
+    @if (state() === 'error') {
+      <p class="assessment__status assessment__status--warning" role="alert">
+        {{ loadFailedHint }}
+      </p>
+    }
+    @for (section of sections; track section.id) {
+      <section class="assessment__section" [attr.aria-label]="section.title">
+        <div class="assessment__section-header">
+          <h3 class="assessment__section-title">{{ section.title }}</h3>
+          <span class="assessment__count">{{ section.fields.length }}</span>
+        </div>
+        @for (field of section.fields; track field.id) {
+          <div class="assessment__card">
+            <label class="assessment__label" [for]="'assessment-' + field.id">{{
+              field.label
+            }}</label>
+            <div class="assessment__control">
+              <input
+                class="assessment__input"
+                type="text"
+                readonly
+                autocomplete="off"
+                [id]="'assessment-' + field.id"
+                [placeholder]="field.placeholder"
+                [value]="valueOf(field.id)"
+                [attr.aria-describedby]="'assessment-help-' + field.id"
+              />
+              @if (field.select) {
+                <ph-icon
+                  class="assessment__caret"
+                  name="caret-down"
+                  [size]="20"
+                />
+              }
+            </div>
+            <p class="assessment__help" [id]="'assessment-help-' + field.id">
+              {{ helpOf(field) }}
+            </p>
+          </div>
+        }
+      </section>
+    }
+  </div>
+</dialog>

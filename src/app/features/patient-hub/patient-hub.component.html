@@ -244,6 +244,10 @@
           (saved)="onCardSaved($event)"
           (hidden)="onCardHidden($event)"
         />
+
+        @if (profile(); as p) {
+          <app-assessment-section [patientId]="p.id" />
+        }
       }
       @case ('not-found') {
         <p class="hub__message" role="status">Paciente não encontrado.</p>
