@@ -33,17 +33,78 @@
           </h2>
           @if (hypothesis(); as text) {
             <p class="hub__hypothesis-text">{{ text }}</p>
-          } @else {
+          }
+          @if (hypothesis() !== null && mode() === 'view') {
+            <div class="hub__actions">
+              <app-button
+                size="md"
+                iconLeft="sparkle"
+                label="Atualizar com novo texto"
+                (click)="startPaste()"
+              />
+              <app-button
+                size="md"
+                kind="primary"
+                appearance="outlined"
+                iconLeft="pencil-simple"
+                label="Editar texto"
+                (click)="startEdit()"
+              />
+            </div>
+          }
+          @if (mode() === 'edit') {
+            <div class="hub__empty">
+              <label class="hub__label" for="edit-text"
+                >Editar hipótese diagnóstica</label
+              >
+              <textarea
+                id="edit-text"
+                class="hub__textarea"
+                rows="5"
+                [value]="draft()"
+                (input)="onDraft($event)"
+              ></textarea>
+              <div class="hub__actions">
+                <app-button
+                  size="md"
+                  iconLeft="check"
+                  label="Salvar"
+                  [disabled]="saving() || offline()"
+                  (click)="confirm()"
+                />
+                <app-button
+                  size="md"
+                  kind="primary"
+                  appearance="outlined"
+                  label="Cancelar"
+                  (click)="cancel()"
+                />
+              </div>
+              @if (offline()) {
+                <p class="hub__status hub__status--warning" role="status">
+                  Conexão necessária para sintetizar ou confirmar a hipótese.
+                </p>
+              }
+              @if (hint(); as message) {
+                <p class="hub__status hub__status--warning" role="alert">
+                  {{ message }}
+                </p>
+              }
+            </div>
+          }
+          @if (mode() === 'paste') {
             <div class="hub__empty">
               @if (
                 phase() === 'input' ||
                 phase() === 'loading' ||
                 phase() === 'failed'
               ) {
-                <p class="hub__empty-text">
-                  Ainda não há hipótese diagnóstica preenchida para este
-                  paciente.
-                </p>
+                @if (hypothesis() === null) {
+                  <p class="hub__empty-text">
+                    Ainda não há hipótese diagnóstica preenchida para este
+                    paciente.
+                  </p>
+                }
                 <label class="hub__label" for="paste-text"
                   >Texto do prontuário</label
                 >
@@ -68,6 +129,15 @@
                     [disabled]="phase() === 'loading' || offline()"
                     (click)="synthesize()"
                   />
+                  @if (hypothesis() !== null) {
+                    <app-button
+                      size="md"
+                      kind="primary"
+                      appearance="outlined"
+                      label="Cancelar"
+                      (click)="cancel()"
+                    />
+                  }
                 </div>
               }
               @if (phase() === 'loading') {
