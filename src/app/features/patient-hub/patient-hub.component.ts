@@ -98,11 +98,11 @@ export class PatientHubComponent implements OnInit {
 
     return merged;
   });
-  /** Card aberto no modal de histórico/edição; `null` = fechado. */
   /** Cards adicionados pelo "+" (tipos do catálogo), na ordem de adição. */
   protected readonly addedCards = signal<readonly CatalogNutritionIndicatorId[]>([]);
   protected readonly addSheetOpen = signal(false);
   protected readonly addError = signal<string | null>(null);
+  /** Card aberto no modal de histórico/edição; `null` = fechado. */
   protected readonly openCard = signal<NutritionIndicatorId | null>(null);
   protected readonly openCardCurrent = computed<NutritionCurrent | null>(() => {
     const id = this.openCard();
