@@ -3,6 +3,8 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Router, RouterModule, Routes } from '@angular/router';
 
 import { AppComponent } from './app.component';
+import { ProvisionalSessionRoleReader } from './shared/auth/provisional-session-role-reader';
+import { SessionRoleReader } from './shared/auth/session-role';
 
 @Component({ changeDetection: ChangeDetectionStrategy.OnPush, template: '' })
 class DummyComponent {}
@@ -45,6 +47,7 @@ describe('AppComponent', () => {
 
     await TestBed.configureTestingModule({
       imports: [AppComponent, RouterModule.forRoot(ROUTES)],
+      providers: [{ provide: SessionRoleReader, useClass: ProvisionalSessionRoleReader }],
     }).compileComponents();
 
     fixture = TestBed.createComponent(AppComponent);
@@ -119,6 +122,7 @@ describe('AppComponent', () => {
 
     await TestBed.configureTestingModule({
       imports: [AppComponent, RouterModule.forRoot(ROUTES)],
+      providers: [{ provide: SessionRoleReader, useClass: ProvisionalSessionRoleReader }],
     }).compileComponents();
 
     fixture = TestBed.createComponent(AppComponent);

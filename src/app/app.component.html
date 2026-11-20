@@ -8,11 +8,13 @@
     <app-nav-menu
       [activeItem]="activeNavItem()"
       [open]="menuOpen()"
+      [disabledItems]="disabledNavItems"
       [actionsOpen]="aiAssistant.shortcutsOpen()"
       (closed)="menuOpen.set(false)"
       (logoClick)="aiAssistant.openPanel()"
       (homeClick)="onHomeClick()"
       (acoesTelaClick)="menuOpen.set(false); aiAssistant.openShortcuts()"
+      (farmaciaClick)="onFarmaciaClick()"
       (notificacoesClick)="onNotificacoesClick()"
     />
   }
