@@ -17,6 +17,7 @@ import {
 import { NutritionValues } from '../patients/nutrition-panel/nutrition-panel.models';
 import { NutritionResultsSource } from '../patients/nutrition-panel/nutrition-results-source';
 import { ProvisionalNutritionCardStore } from '../patients/nutrition-panel/provisional-nutrition-card-store';
+import { AssessmentAiStructurer } from './assessment/assessment-ai-structurer';
 import { AssessmentSource } from './assessment/assessment-source';
 import { AssessmentWriter } from './assessment/assessment-writer';
 import {
@@ -170,6 +171,7 @@ async function setup(
       { provide: DiagnosisSource, useValue: diagnosis },
       { provide: PlanSource, useValue: { loadRoute: (): Promise<null> => Promise.resolve(null) } },
       { provide: AssessmentSource, useValue: { loadLatest: (): Promise<null> => Promise.resolve(null) } },
+      { provide: AssessmentAiStructurer, useValue: { structure: (): Promise<object> => Promise.resolve({}) } },
       { provide: AssessmentWriter, useValue: { save: (): Promise<void> => Promise.resolve() } },
       { provide: PriorStaysSource, useValue: priorStays },
       { provide: PriorStaysSynthesizer, useValue: priorSynth },
@@ -255,7 +257,7 @@ describe('PatientHubComponent', () => {
     expect(text(f)).toContain('67 anos · 13/04/1959');
     expect(text(f)).toContain('Terapia há 2 dias');
     expect(text(f)).toContain('Insuficiência respiratória aguda.');
-    expect((f.nativeElement as HTMLElement).querySelector('textarea')).toBeNull();
+    expect((f.nativeElement as HTMLElement).querySelector('textarea:not(.input-chat__field)')).toBeNull();
   });
 
   it('mostra o estado vazio com o campo de colagem quando não há Hipótese', async () => {
@@ -265,7 +267,7 @@ describe('PatientHubComponent', () => {
     const f = await setup(source);
 
     expect(text(f)).toContain('Ainda não há hipótese diagnóstica');
-    expect((f.nativeElement as HTMLElement).querySelector('textarea')).not.toBeNull();
+    expect((f.nativeElement as HTMLElement).querySelector('textarea:not(.input-chat__field)')).not.toBeNull();
   });
 
   it('mostra o Painel Nutricional com os 8 cards em "Sem dados" abaixo da Hipótese (FT-004-3)', async () => {
@@ -587,7 +589,7 @@ describe('PatientHubComponent', () => {
 
       expect(text(f)).toContain('Texto editado');
       expect(text(f)).not.toContain('Gerado por IA');
-      expect(el().querySelector('textarea')).toBeNull();
+      expect(el().querySelector('textarea:not(.input-chat__field)')).toBeNull();
     });
 
     it('confirmar sem editar grava a origem ai', async () => {
@@ -905,7 +907,7 @@ describe('PatientHubComponent', () => {
       expect(writer.saved[0].at).toMatch(/^\d{4}-/);
       expect(text(f)).toContain('Texto da IA');
       expect(text(f)).toContain('Editar texto');
-      expect(el().querySelector('textarea')).toBeNull();
+      expect(el().querySelector('textarea:not(.input-chat__field)')).toBeNull();
     });
 
     it('cancelar mantém a hipótese anterior sem gravar', async () => {
@@ -914,7 +916,7 @@ describe('PatientHubComponent', () => {
 
       expect(writer.saved).toEqual([]);
       expect(text(f)).toContain('Insuficiência respiratória aguda.');
-      expect(el().querySelector('textarea')).toBeNull();
+      expect(el().querySelector('textarea:not(.input-chat__field)')).toBeNull();
     });
 
     it('texto vazio não aciona a IA; falha da IA libera digitação manual', async () => {
@@ -958,7 +960,7 @@ describe('PatientHubComponent', () => {
       ]);
 
       expect(text(f)).toContain('Pneumonia');
-      expect(el().querySelector('textarea')).toBeNull();
+      expect(el().querySelector('textarea:not(.input-chat__field)')).toBeNull();
     });
 
     it('edição direta: cancelar descarta; vazio não salva', async () => {
@@ -971,7 +973,7 @@ describe('PatientHubComponent', () => {
       await click('Cancelar');
 
       expect(text(f)).toContain('Insuficiência respiratória aguda.');
-      expect(el().querySelector('textarea')).toBeNull();
+      expect(el().querySelector('textarea:not(.input-chat__field)')).toBeNull();
     });
 
     it('edição direta offline: salvar indisponível com mensagem; leitura continua', async () => {

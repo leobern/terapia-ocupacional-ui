@@ -1,15 +1,25 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
 
+import { InputChatComponent } from '../../../shared/components/input-chat/input-chat.component';
 import { ConnectivityService } from '../../../shared/services/connectivity.service';
 import { AssessmentValues, NutritionFunctionalAssessment } from './assessment.models';
+import { AssessmentAiStructurer, StructuredAssessment } from './assessment-ai-structurer';
 import {
+  AI_FAILED_HINT,
+  AI_PROCESSING_HINT,
+  AI_REVIEW_NOTE,
+  AI_UNAVAILABLE_HINT,
   AssessmentSectionComponent,
   LOAD_FAILED_HINT,
+  MIC_DENIED_HINT,
+  MIC_FAILED_HINT,
   OFFLINE_SAVE_HINT,
   SAVE_FAILED_HINT,
 } from './assessment-section.component';
 import { AssessmentSource } from './assessment-source';
 import { AssessmentWriter } from './assessment-writer';
+import { ProvisionalAssessmentAiStructurer } from './provisional-assessment-ai-structurer';
 import { ProvisionalAssessmentSource } from './provisional-assessment-source';
 
 class FakeSource extends AssessmentSource {
@@ -69,6 +79,7 @@ describe('AssessmentSectionComponent', () => {
       providers: [
         { provide: AssessmentSource, useValue: source },
         { provide: AssessmentWriter, useValue: writer },
+        { provide: AssessmentAiStructurer, useClass: ProvisionalAssessmentAiStructurer },
       ],
     });
     fixture = TestBed.createComponent(AssessmentSectionComponent);
@@ -501,5 +512,293 @@ describe('ProvisionalAssessmentSource', () => {
     await source.save('p9', { weight: '70' });
 
     expect((await source.loadLatest('p9'))?.values).toEqual({ weight: '70' });
+  });
+});
+
+describe('AssessmentSectionComponent — preenchimento por IA (US-004-4-03)', () => {
+  class FakeAi extends AssessmentAiStructurer {
+    result: Promise<StructuredAssessment> = Promise.resolve({});
+    readonly calls: Blob[] = [];
+
+    structure(audio: Blob): Promise<StructuredAssessment> {
+      this.calls.push(audio);
+
+      return this.result;
+    }
+  }
+
+  let ai: FakeAi;
+  let fixture: ComponentFixture<AssessmentSectionComponent>;
+  let writer: { saved: AssessmentValues[]; save: (p: string, v: AssessmentValues) => Promise<void> };
+  let connectivity: ConnectivityService;
+  let loaded: NutritionFunctionalAssessment | null;
+
+  const el = (): HTMLElement => fixture.nativeElement as HTMLElement;
+  const text = (): string => el().textContent;
+  const field = (id: string): HTMLInputElement => el().querySelector(`#assessment-${id}`) as HTMLInputElement;
+  const chat = (): InputChatComponent =>
+    fixture.debugElement.query(By.directive(InputChatComponent)).componentInstance as InputChatComponent;
+  const settle = async (): Promise<void> => {
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+  };
+  const send = async (): Promise<void> => {
+    chat().audioSend.emit(new Blob(['x']));
+    await settle();
+  };
+  const saveButton = (): HTMLButtonElement => el().querySelector('.assessment__save button') as HTMLButtonElement;
+
+  beforeEach(async () => {
+    ai = new FakeAi();
+    loaded = null;
+    writer = {
+      save(_p, v) {
+        this.saved.push(v);
+
+        return Promise.resolve();
+      },
+      saved: [],
+    };
+    TestBed.configureTestingModule({
+      providers: [
+        { provide: AssessmentSource, useValue: { loadLatest: () => Promise.resolve(loaded) } },
+        { provide: AssessmentWriter, useValue: writer },
+        { provide: AssessmentAiStructurer, useValue: ai },
+      ],
+    });
+    connectivity = TestBed.inject(ConnectivityService);
+    connectivity.online.set(true);
+    fixture = TestBed.createComponent(AssessmentSectionComponent);
+    fixture.componentRef.setInput('patientId', 'p1');
+    await settle();
+  });
+
+  const openIt = async (): Promise<void> => {
+    (el().querySelector('.assessment__row') as HTMLButtonElement).click();
+    await settle();
+  };
+
+  it('mostra o campo de mensagem do Figma acima do botão de salvar', async () => {
+    await openIt();
+
+    expect(chat().placeholder()).toBe('Grave um áudio com os dados coletados');
+    const chatEl = el().querySelector('.assessment__chat') as HTMLElement;
+
+    expect(chatEl.compareDocumentPosition(el().querySelector('.assessment__save') as HTMLElement)).toBe(
+      Node.DOCUMENT_POSITION_FOLLOWING,
+    );
+  });
+
+  it('preenche os campos citados nas duas seções, sem salvar, e mantém os não citados', async () => {
+    loaded = { previous: {}, values: { height: '170' } };
+    await openIt();
+    ai.result = Promise.resolve({
+      calfCircumference: '32',
+      calfSide: 'Direito',
+      handgrip: '14',
+      weight: '51,0',
+    });
+    await send();
+
+    expect(field('weight').value).toBe('51,0');
+    expect(field('calfCircumference').value).toBe('32');
+    expect(field('handgrip').value).toBe('14');
+    expect(field('height').value).toBe('170');
+    expect(field('armCircumference').value).toBe('');
+    expect(el().querySelector('.assessment__side-option--active')?.textContent.trim()).toBe('Direito');
+    expect(writer.saved).toEqual([]);
+    expect(text()).toContain(AI_REVIEW_NOTE);
+    expect(text().match(/Sugerido pela IA/g)?.length).toBe(3);
+  });
+
+  it('descarta risco de disfagia e membro fora das opções, aplicando o resto', async () => {
+    await openIt();
+    ai.result = Promise.resolve({ calfCircumference: '30', calfSide: 'Meio', dysphagia: 'Talvez', weight: '60' });
+    await send();
+
+    expect((el().querySelector('#assessment-dysphagia') as HTMLSelectElement).value).toBe('');
+    expect(field('weight').value).toBe('60');
+    expect(field('calfCircumference').value).toBe('30');
+    expect(el().querySelector('.assessment__side-option--active')).toBeNull();
+  });
+
+  it('aplica o risco de disfagia válido', async () => {
+    await openIt();
+    ai.result = Promise.resolve({ dysphagia: 'Risco alto' });
+    await send();
+
+    expect((el().querySelector('#assessment-dysphagia') as HTMLSelectElement).value).toBe('Risco alto');
+  });
+
+  it('editar tira a marca só daquele campo; novo áudio volta a marcar; a nota some sem sugeridos', async () => {
+    await openIt();
+    ai.result = Promise.resolve({ height: '160', weight: '50' });
+    await send();
+    field('weight').value = '52';
+    field('weight').dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+
+    expect(text().match(/Sugerido pela IA/g)?.length).toBe(1);
+    ai.result = Promise.resolve({ weight: '55' });
+    await send();
+
+    expect(field('weight').value).toBe('55');
+    expect(text().match(/Sugerido pela IA/g)?.length).toBe(2);
+    field('weight').dispatchEvent(new Event('input'));
+    field('height').dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+
+    expect(text()).not.toContain(AI_REVIEW_NOTE);
+  });
+
+  it('editar o membro aferido também tira a marca do campo', async () => {
+    await openIt();
+    ai.result = Promise.resolve({ calfCircumference: '30', calfSide: 'Direito' });
+    await send();
+    (el().querySelectorAll('.assessment__side-option')[1] as HTMLButtonElement).click();
+    fixture.detectChanges();
+
+    expect(text()).not.toContain('Sugerido pela IA');
+  });
+
+  it('salvar só ocorre no toque e não leva marca nem metadado da IA', async () => {
+    await openIt();
+    ai.result = Promise.resolve({ weight: '50' });
+    await send();
+
+    expect(writer.saved).toEqual([]);
+    saveButton().click();
+    await settle();
+
+    expect(writer.saved).toEqual([{ energyExpenditure: '1250', energySource: 'kcal/kg', weight: '50' }]);
+  });
+
+  it('fechar e reabrir descarta marcas e nota', async () => {
+    await openIt();
+    ai.result = Promise.resolve({ weight: '50' });
+    await send();
+    (el().querySelector('app-icon-button button') as HTMLButtonElement).click();
+    await settle();
+    await openIt();
+
+    expect(text()).not.toContain('Sugerido pela IA');
+    expect(text()).not.toContain(AI_REVIEW_NOTE);
+  });
+
+  it('indica processamento e desabilita o campo enquanto a IA trabalha', async () => {
+    await openIt();
+    let finish!: (v: StructuredAssessment) => void;
+
+    ai.result = new Promise(resolve => (finish = resolve));
+    await send();
+
+    expect(text()).toContain(AI_PROCESSING_HINT);
+    expect(chat().disabled()).toBe(true);
+    finish({ weight: '50' });
+    await settle();
+
+    expect(text()).not.toContain(AI_PROCESSING_HINT);
+    expect(chat().disabled()).toBe(false);
+  });
+
+  it('falha da IA mostra aviso, preserva valores e permite nova tentativa', async () => {
+    loaded = { previous: {}, values: { height: '170' } };
+    await openIt();
+    ai.result = Promise.reject(new Error('fora'));
+    await send();
+
+    expect(text()).toContain(AI_FAILED_HINT);
+    expect(field('height').value).toBe('170');
+    ai.result = Promise.resolve({ weight: '50' });
+    await send();
+
+    expect(text()).not.toContain(AI_FAILED_HINT);
+    expect(field('weight').value).toBe('50');
+  });
+
+  it('erro de microfone mostra aviso em texto sem bloquear o manual', async () => {
+    await openIt();
+    chat().audioModeError.emit('permission-denied');
+    fixture.detectChanges();
+
+    expect(text()).toContain(MIC_DENIED_HINT);
+    chat().audioModeError.emit('unavailable');
+    fixture.detectChanges();
+
+    expect(text()).toContain(MIC_FAILED_HINT);
+    field('weight').value = '50';
+    field('weight').dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+
+    expect(field('weight').value).toBe('50');
+  });
+
+  it('offline: campo de IA desabilitado com aviso; manual e calculado seguem; volta ao reconectar', async () => {
+    await openIt();
+    connectivity.online.set(false);
+    await settle();
+
+    expect(chat().disabled()).toBe(true);
+    expect(text()).toContain(AI_UNAVAILABLE_HINT);
+    field('weight').value = '40';
+    field('weight').dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+
+    expect(text()).toContain('1000 kcal/dia');
+    connectivity.online.set(true);
+    await settle();
+
+    expect(chat().disabled()).toBe(false);
+    expect(text()).not.toContain(AI_UNAVAILABLE_HINT);
+  });
+
+  it('queda de conexão durante o processamento descarta o áudio e preserva o preenchido', async () => {
+    await openIt();
+    ai.result = Promise.resolve({ weight: '50' });
+    await send();
+    let finish!: (v: StructuredAssessment) => void;
+
+    ai.result = new Promise(resolve => (finish = resolve));
+    await send();
+    connectivity.online.set(false);
+    finish({ height: '160' });
+    await settle();
+
+    expect(field('height').value).toBe('');
+    expect(field('weight').value).toBe('50');
+    connectivity.online.set(true);
+    await settle();
+
+    expect(text()).toContain(AI_FAILED_HINT);
+  });
+
+  it('resposta de uma abertura anterior é descartada', async () => {
+    await openIt();
+    let finish!: (v: StructuredAssessment) => void;
+
+    ai.result = new Promise(resolve => (finish = resolve));
+    await send();
+    (el().querySelector('app-icon-button button') as HTMLButtonElement).click();
+    await settle();
+    await openIt();
+    finish({ weight: '50' });
+    await settle();
+
+    expect(field('weight').value).toBe('');
+  });
+
+  it('ignora áudio enviado offline', async () => {
+    await openIt();
+    connectivity.online.set(false);
+    await settle();
+    await chat().audioSend.emit(new Blob(['x']));
+    await settle();
+
+    expect(ai.calls).toEqual([]);
+  });
+
+  it('o provisório não reconhece nenhum campo', async () => {
+    expect(await new ProvisionalAssessmentAiStructurer().structure()).toEqual({});
   });
 });
