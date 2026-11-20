@@ -12,7 +12,14 @@
   gap: tokens.$space-8;
 }
 
-// Figma v2/SectionHeader: 40px, padding lateral 8.
+// Figma v2/SectionHeader: 40px, padding lateral 8; "+" (variação desenhada pelo agente) à direita.
+.nutrition-panel__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 44px;
+}
+
 .nutrition-panel__title {
   display: flex;
   align-items: center;

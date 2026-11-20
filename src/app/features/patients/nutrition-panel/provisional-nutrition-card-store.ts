@@ -1,7 +1,8 @@
 import { Injectable } from '@angular/core';
 
-import { NutritionHistorySource, NutritionValueWriter } from './nutrition-card-ports';
+import { NutritionAddedCards, NutritionHistorySource, NutritionValueWriter } from './nutrition-card-ports';
 import {
+  CatalogNutritionIndicatorId,
   NutritionHistoryDeletion,
   NutritionHistoryEntry,
   NutritionIndicatorId,
@@ -14,14 +15,22 @@ import {
  * memória. A última confirmação prevalece (sem lock).
  */
 @Injectable()
-export class ProvisionalNutritionCardStore extends NutritionValueWriter implements NutritionHistorySource {
+export class ProvisionalNutritionCardStore
+  extends NutritionValueWriter
+  implements NutritionHistorySource, NutritionAddedCards
+{
   /** Trilha de auditoria (append-only); exposta para testes e para a futura implementação real. */
   readonly auditTrail: NutritionValueEdit[] = [];
   /** Trilha de auditoria das exclusões de entradas do histórico (append-only). */
   readonly deletionAuditTrail: NutritionHistoryDeletion[] = [];
+  private readonly added = new Map<string, CatalogNutritionIndicatorId[]>();
   private nextId = 1;
   private readonly history = new Map<string, NutritionHistoryEntry[]>();
   private readonly manual = new Map<string, NutritionManualValues>();
+
+  loadAdded(patientId: string): Promise<readonly CatalogNutritionIndicatorId[]> {
+    return Promise.resolve([...(this.added.get(patientId) ?? [])]);
+  }
 
   load(patientId: string, indicator: NutritionIndicatorId): Promise<readonly NutritionHistoryEntry[]> {
     return Promise.resolve([...(this.history.get(this.key(patientId, indicator)) ?? [])]);
@@ -49,6 +58,16 @@ export class ProvisionalNutritionCardStore extends NutritionValueWriter implemen
       [edit.indicator]: { at: edit.at, origin: edit.newOrigin, value: edit.value },
     });
     this.auditTrail.push(edit);
+
+    return Promise.resolve();
+  }
+
+  add(patientId: string, type: CatalogNutritionIndicatorId): Promise<void> {
+    const list = this.added.get(patientId) ?? [];
+
+    if (!list.includes(type)) {
+      this.added.set(patientId, [...list, type]);
+    }
 
     return Promise.resolve();
   }
