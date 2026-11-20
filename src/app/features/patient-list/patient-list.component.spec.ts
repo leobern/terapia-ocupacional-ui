@@ -553,6 +553,38 @@ describe('PatientListComponent', () => {
     expect(router.navigate).toHaveBeenCalledWith(['/patients', 'p0']);
   });
 
+  it('toque em cada card abre o paciente tocado, uma única vez, com nome acessível', async () => {
+    source.result = Promise.resolve([...census(3), { ...census(1)[0], adequacy: null, id: 'sem-presc' }]);
+    await create();
+    const rows = Array.from(fixture.nativeElement.querySelectorAll('.patient-list__row')) as HTMLElement[];
+
+    expect(rows.length).toBe(4);
+    expect(rows.every(r => r.getAttribute('aria-label')?.startsWith('Abrir '))).toBe(true);
+    const ids: string[] = [];
+
+    for (const row of rows) {
+      (router.navigate as jasmine.Spy).calls.reset();
+      row.click();
+
+      expect(router.navigate).toHaveBeenCalledTimes(1);
+      ids.push(((router.navigate as jasmine.Spy).calls.mostRecent().args[0] as string[])[1]);
+    }
+
+    expect(ids.toSorted((a, b) => a.localeCompare(b))).toEqual(['p0', 'p1', 'p2', 'sem-presc']);
+  });
+
+  it('botão de seta navega uma única vez, sem propagar para a linha', async () => {
+    source.result = Promise.resolve(census(2));
+    await create();
+    (router.navigate as jasmine.Spy).calls.reset();
+    const arrows = fixture.nativeElement.querySelectorAll('.patient-list__open') as NodeListOf<HTMLElement>;
+
+    arrows[1].click();
+
+    expect(router.navigate).toHaveBeenCalledTimes(1);
+    expect(router.navigate).toHaveBeenCalledWith(['/patients', 'p1']);
+  });
+
   it('ignora resposta de carga antiga', async () => {
     source.result = Promise.resolve(census(2));
     await create();
