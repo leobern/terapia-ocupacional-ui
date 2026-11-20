@@ -33,6 +33,7 @@ export function assemblePatientList(
       adequacy: p.adequacy,
       age: ageOn(p.birthDate, day),
       bed: p.bed,
+      finished: p.pendingTasks === 0,
       firstEvaluation: p.completedCycles === 0,
       id: p.id,
       name: p.name,

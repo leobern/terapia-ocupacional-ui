@@ -598,3 +598,10 @@
 .patient-list--read-only .patient-list__table-card {
   filter: grayscale(1);
 }
+
+// Finalizado no dia (FR-016): linha em preto e branco e levemente esmaecida; o rótulo "Finalizado" garante a distinção sem cor.
+.patient-list__row--finished,
+.patient-list__tr--finished {
+  filter: grayscale(1);
+  opacity: 0.75;
+}

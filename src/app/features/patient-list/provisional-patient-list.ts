@@ -93,6 +93,20 @@ export class ProvisionalPatientListSource extends PatientListSource {
         { caloric: 70, protein: 66 },
         2,
       ),
+      {
+        ...p(
+          'p9',
+          'José Raimundo Soares Neto',
+          '1958-04-13',
+          'Ala 2',
+          '36',
+          'MISTA',
+          '2026-10-10',
+          { caloric: 90, protein: 88 },
+          2,
+        ),
+        pendingTasks: 0,
+      },
       p('x1', 'Paciente do censo geral', '1980-01-01', 'Ala 3', '1', 'VO', '2026-11-01', null, 0, false),
       {
         ...p('x2', 'Paciente sem cadastro', '1980-01-01', 'Ala 3', '2', 'VO', '2026-11-01', null, 0),
