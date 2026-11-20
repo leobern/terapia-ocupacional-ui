@@ -23,8 +23,10 @@ import {
   ProvisionalHomeApiService,
   ProvisionalNotificationsApiService,
 } from './features/notifications/data-access/provisional-notifications-api.service';
+import { PatientListAiCommandPort } from './features/patient-list/patient-list-ai-command';
 import { PatientListSource } from './features/patient-list/patient-list-source';
 import { ProvisionalPatientListSource } from './features/patient-list/provisional-patient-list';
+import { ProvisionalPatientListAiCommand } from './features/patient-list/provisional-patient-list-ai-command';
 import { LocalStartupStateReader } from './features/splash/local-startup-state-reader';
 import { StartupStateReader } from './features/splash/startup-state';
 import { ASSISTANT_QUERY_RESOLVERS } from './shared/services/assistant-query-resolver';
@@ -38,6 +40,7 @@ export const appConfig: ApplicationConfig = {
     { provide: LinkedHospitalsReader, useClass: MockLinkedHospitalsReader },
     { provide: UnreadNotificationsReader, useClass: LocalUnreadNotificationsReader },
     { provide: DailyPatientsSource, useClass: ProvisionalDailyPatientsSource },
+    { provide: PatientListAiCommandPort, useClass: ProvisionalPatientListAiCommand },
     { provide: PatientListSource, useClass: ProvisionalPatientListSource },
     { provide: HomeNotificationsSource, useClass: ProvisionalHomeNotificationsSource },
     // Provisórios (sem backend ainda): notificações em memória, hospital único e usuários de exemplo.

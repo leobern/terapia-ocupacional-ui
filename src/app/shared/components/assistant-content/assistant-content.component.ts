@@ -1,3 +1,4 @@
+import { NgTemplateOutlet } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { Router } from '@angular/router';
 
@@ -21,7 +22,14 @@ import { IconLogoComponent } from '../icon-logo/icon-logo.component';
  */
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [AssistantFormComponent, ButtonComponent, IconButtonComponent, IconLogoComponent, PhIconComponent],
+  imports: [
+    AssistantFormComponent,
+    NgTemplateOutlet,
+    ButtonComponent,
+    IconButtonComponent,
+    IconLogoComponent,
+    PhIconComponent,
+  ],
   selector: 'app-assistant-content',
   styleUrl: './assistant-content.component.scss',
   templateUrl: './assistant-content.component.html',
@@ -52,7 +60,7 @@ export class AssistantContentComponent {
 
   /** Erro na resposta: repete a mesma pergunta (Figma v2/ChatMessage Type=error). */
   protected retry(question: string): void {
-    this.assistant.ask(question);
+    this.assistant.retry(question);
   }
 
   /** Cadastro concluído: volta para as ações da tela. */

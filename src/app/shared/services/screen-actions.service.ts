@@ -60,6 +60,13 @@ export interface ScreenSortDefinition {
   readonly select: (id: string) => void;
 }
 
+/** Comando livre do profissional (texto ou áudio gravado) a encaminhar à camada de IA da tela. */
+export type ScreenCommand =
+  { readonly kind: 'text'; readonly text: string } | { readonly kind: 'audio'; readonly audio: Blob };
+
+/** Encaminha o comando à camada de IA; rejeitar significa "IA indisponível". A tela não interpreta o comando. */
+export type ScreenCommandHandler = (command: ScreenCommand) => Promise<void>;
+
 /**
  * Registro das ações da tela atual. A tela chama `register()` ao iniciar e o cleanup
  * devolvido ao destruir — o assistente só lê `actions()`.
@@ -70,12 +77,28 @@ export class ScreenActionsService {
 
   readonly sort: Signal<ScreenSortDefinition | null>;
 
+  /** Quando a tela registra um handler, mensagens do assistente são encaminhadas a ele, sem interpretação local. */
+  readonly commandHandler: Signal<ScreenCommandHandler | null>;
+
+  private readonly commandSignal = signal<ScreenCommandHandler | null>(null);
   private readonly actionsSignal = signal<readonly ScreenAction[]>([]);
   private readonly sortSignal = signal<ScreenSortDefinition | null>(null);
 
   constructor() {
     this.actions = this.actionsSignal.asReadonly();
     this.sort = this.sortSignal.asReadonly();
+    this.commandHandler = this.commandSignal.asReadonly();
+  }
+
+  /** Registra o encaminhamento de comandos de IA da tela; o cleanup só remove se ainda for o atual. */
+  registerCommandHandler(handler: ScreenCommandHandler): () => void {
+    this.commandSignal.set(handler);
+
+    return (): void => {
+      if (this.commandSignal() === handler) {
+        this.commandSignal.set(null);
+      }
+    };
   }
 
   /** Registra a ordenação da tela (chips do painel de Atalhos); o cleanup só remove se ainda for a atual. */

@@ -158,6 +158,31 @@ describe('AssistantContentComponent', () => {
     ).toEqual(['Criar notificação', 'Editar notificação']);
   });
 
+  it('shortcuts: mostra o envio do comando de IA em texto e, na falha, o aviso com "Tentar novamente"', async () => {
+    const handler = jasmine.createSpy('handler').and.resolveTo();
+    const flush = async (): Promise<void> => {
+      await new Promise(resolve => setTimeout(resolve));
+      fixture.detectChanges();
+    };
+
+    TestBed.inject(ScreenActionsService).registerCommandHandler(handler);
+    assistant.openShortcuts();
+    assistant.ask('apenas NP');
+    await flush();
+
+    expect(text('.assistant-content__conversation')).toContain('Comando enviado à IA.');
+    handler.and.rejectWith(new Error('x'));
+    assistant.ask('apenas NP');
+    await flush();
+
+    expect(text('.assistant-content__error')).toContain('IA indisponível no momento.');
+    handler.and.resolveTo();
+    (el().querySelector('.assistant-content__answer app-button button') as HTMLButtonElement).click();
+    await flush();
+
+    expect(text('.assistant-content__conversation')).toContain('Comando enviado à IA.');
+  });
+
   it('shortcuts: says so when the screen has no actions', () => {
     TestBed.inject(ScreenActionsService).register([]);
     assistant.openShortcuts();

@@ -59,4 +59,16 @@ describe('ScreenActionsService', () => {
 
     expect(service.sort()).toBeNull();
   });
+
+  it('registerCommandHandler: o cleanup só remove o handler se ainda for o atual', () => {
+    const registry = TestBed.inject(ScreenActionsService);
+    const a = (): Promise<void> => Promise.resolve();
+    const b = (): Promise<void> => Promise.resolve();
+    const cleanA = registry.registerCommandHandler(a);
+
+    registry.registerCommandHandler(b);
+    cleanA();
+
+    expect(registry.commandHandler()).toBe(b);
+  });
 });

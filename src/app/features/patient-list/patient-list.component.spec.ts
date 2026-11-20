@@ -3,11 +3,16 @@ import { provideRouter, Router } from '@angular/router';
 
 import { AiAssistantService } from '../../shared/services/ai-assistant.service';
 import { ConnectivityService } from '../../shared/services/connectivity.service';
-import { type ScreenAction, ScreenActionsService } from '../../shared/services/screen-actions.service';
+import {
+  type ScreenAction,
+  ScreenActionsService,
+  type ScreenCommand,
+} from '../../shared/services/screen-actions.service';
 import { LinkedHospitalsReader } from '../home/linked-hospitals';
 import { UnreadNotificationsReader } from '../home/unread-notifications-reader';
 import { PatientListComponent } from './patient-list.component';
 import { CensusPatient } from './patient-list.models';
+import { PatientListAiCommandPort } from './patient-list-ai-command';
 import { PatientListSource } from './patient-list-source';
 
 const census = (n: number, name = 'Paciente'): CensusPatient[] =>
@@ -26,6 +31,16 @@ const census = (n: number, name = 'Paciente'): CensusPatient[] =>
     ward: 'Ala 1',
   }));
 
+class FakeAi extends PatientListAiCommandPort {
+  readonly sent: ScreenCommand[] = [];
+  fail = false;
+  send(command: ScreenCommand): Promise<void> {
+    this.sent.push(command);
+
+    return this.fail ? Promise.reject(new Error('ia fora')) : Promise.resolve();
+  }
+}
+
 class FakeSource extends PatientListSource {
   result: Promise<readonly CensusPatient[]> = Promise.resolve([]);
   loadCensus(_?: string, __?: Date): Promise<readonly CensusPatient[]> {
@@ -35,6 +50,7 @@ class FakeSource extends PatientListSource {
 
 describe('PatientListComponent', () => {
   let source: FakeSource;
+  let ai: FakeAi;
   let fixture: ComponentFixture<PatientListComponent>;
   let router: Router;
 
@@ -52,10 +68,12 @@ describe('PatientListComponent', () => {
 
   beforeEach(() => {
     source = new FakeSource();
+    ai = new FakeAi();
     TestBed.configureTestingModule({
       providers: [
         provideRouter([]),
         { provide: PatientListSource, useValue: source },
+        { provide: PatientListAiCommandPort, useValue: ai },
         { provide: UnreadNotificationsReader, useValue: { countUnread: (): Promise<number> => Promise.resolve(2) } },
         {
           provide: LinkedHospitalsReader,
@@ -1036,6 +1054,76 @@ describe('PatientListComponent', () => {
       await create();
 
       expect(text()).toContain('2 pacientes');
+    });
+  });
+
+  describe('comando de IA no painel de Atalhos (US-004-1-06)', () => {
+    const settle = async (): Promise<void> => {
+      await new Promise(resolve => setTimeout(resolve));
+      await fixture.whenStable();
+      fixture.detectChanges();
+    };
+
+    it('encaminha texto e áudio à porta da IA sem alterar lista nem ordenação', async () => {
+      source.result = Promise.resolve(census(3));
+      await create();
+      const assistant = TestBed.inject(AiAssistantService);
+      const sort = TestBed.inject(ScreenActionsService).sort();
+      const activeBefore = sort?.active();
+      const names = (): string[] => qa('.patient-list__row').map(r => r.textContent ?? '');
+      const before = names();
+      const audio = new Blob(['x']);
+
+      assistant.ask('apenas NP');
+      assistant.ask('por prioridade');
+      assistant.askAudio(audio);
+      await settle();
+
+      expect(ai.sent).toEqual([
+        { kind: 'text', text: 'apenas NP' },
+        { kind: 'text', text: 'por prioridade' },
+        { audio, kind: 'audio' },
+      ]);
+
+      expect(names()).toEqual(before);
+      expect(sort?.active()).toBe(activeBefore ?? null);
+    });
+
+    it('com a IA fora, a lista, o toque no card e a ordenação continuam funcionando', async () => {
+      source.result = Promise.resolve(census(3));
+      await create();
+      ai.fail = true;
+      const assistant = TestBed.inject(AiAssistantService);
+
+      assistant.ask('apenas NP');
+      await settle();
+
+      expect(assistant.conversation()?.status).toBe('failed');
+      expect(assistant.conversation()?.answer?.summary).toBe('IA indisponível no momento.');
+      expect(qa('.patient-list__row').length).toBe(3);
+      TestBed.inject(ScreenActionsService).sort()?.select('bed');
+      await settle();
+
+      expect(TestBed.inject(ScreenActionsService).sort()?.active()).toBe('bed');
+      ai.fail = false;
+      assistant.retry('apenas NP');
+      await settle();
+
+      expect(assistant.conversation()?.status).toBe('answered');
+      expect(ai.sent.length).toBe(2);
+    });
+
+    it('em modo somente leitura o encaminhamento continua permitido', async () => {
+      source.result = Promise.resolve(census(1));
+      await create();
+      fixture.componentInstance.selectDate(new Date(Date.now() - 86_400_000));
+      fixture.componentInstance.confirmPendingDate();
+      fixture.detectChanges();
+
+      TestBed.inject(AiAssistantService).ask('só do convênio');
+      await settle();
+
+      expect(ai.sent.length).toBe(1);
     });
   });
 });

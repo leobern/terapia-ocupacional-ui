@@ -29,6 +29,7 @@ import { HospitalContextService } from '../home/hospital-context.service';
 import { UnreadNotificationsReader } from '../home/unread-notifications-reader';
 import { adequacyLabel, goalLabel, hasAdequacy, therapyStartLabel } from './patient-card-labels';
 import { PatientCard, TherapyType } from './patient-list.models';
+import { PatientListAiCommandPort } from './patient-list-ai-command';
 import { assemblePatientList } from './patient-list-assembly';
 import { PatientListSource } from './patient-list-source';
 
@@ -243,6 +244,7 @@ export class PatientListComponent implements OnInit {
   private readonly tableCard = viewChild<ElementRef<HTMLElement>>('tableCard');
   private readonly unread = inject(UnreadNotificationsReader);
   private readonly screenActions = inject(ScreenActionsService);
+  private readonly aiCommand = inject(PatientListAiCommandPort);
   private readonly priorityGroups = computed<readonly PatientGroup[]>(() => {
     const out = this.patients()
       .filter(p => isOutOfTarget(p.adequacy))
@@ -300,6 +302,11 @@ export class PatientListComponent implements OnInit {
           select: id => this.selectSort(id as PresetSort),
         }),
       );
+    });
+    // Comando de IA (texto/áudio) do painel de Atalhos: só encaminhado à FT-003-4, nunca interpretado aqui.
+    // Não altera dado do paciente, então vale também em modo somente leitura.
+    effect(onCleanup => {
+      onCleanup(this.screenActions.registerCommandHandler(command => this.aiCommand.send(command)));
     });
     const zone = inject(NgZone);
 
