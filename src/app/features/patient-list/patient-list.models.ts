@@ -27,6 +27,11 @@ export interface CensusPatient {
   readonly adequacy: Adequacy | null;
   /** Ciclos triagem→avaliação→diagnóstico→plano concluídos. */
   readonly completedCycles: number;
+  /**
+   * Pendências da data selecionada ainda abertas (triagem, reavaliação, revisão de prescrição).
+   * Ausente = não informado: o paciente segue como ativo. Alta/óbito/transferência não entram aqui (FR-016).
+   */
+  readonly pendingTasks?: number;
 }
 
 /** Projeção somente leitura "paciente em visão de card" (sem data de nascimento — FR-003). */
@@ -43,4 +48,6 @@ export interface PatientCard {
   readonly adequacy: Adequacy | null;
   /** FR-005: nenhum ciclo concluído ainda. */
   readonly firstEvaluation: boolean;
+  /** FR-016: todas as pendências da data concluídas; segue na lista, em cinza. */
+  readonly finished: boolean;
 }
