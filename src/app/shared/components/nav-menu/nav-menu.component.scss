@@ -41,6 +41,12 @@ $duration-collapse: 90ms;
   display: contents;
 }
 
+// Depois de clicar num item o menu recolhe mesmo com o mouse em cima: sem eventos de ponteiro o
+// :hover/:focus-within saem; ele volta a abrir quando o mouse sair do trilho e entrar de novo.
+:host(.nav-menu--suppressed) {
+  pointer-events: none;
+}
+
 .nav-menu__panel {
   box-sizing: border-box;
   display: flex;
@@ -124,10 +130,10 @@ $duration-collapse: 90ms;
       transparent,
       #{tokens.c(surface-glass-1)}
     );
-    // Figma (2026-11-19): raio só no topo à direita, sem borda lateral, logo a 44px do topo.
+    // Figma (2026-11-19): raio só no topo à direita, sem borda lateral, logo a 40px do topo.
     border-top-right-radius: tokens.$radius-md;
     border-bottom-right-radius: 0;
-    padding-top: 44px;
+    padding-top: 40px;
     box-shadow: none;
     z-index: auto;
     translate: 0 0;
