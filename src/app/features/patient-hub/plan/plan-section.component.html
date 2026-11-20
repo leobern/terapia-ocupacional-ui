@@ -45,6 +45,32 @@
         <div class="plan__section-header">
           <h3 class="plan__section-title">Via de nutrição</h3>
         </div>
+        @if (risk(); as r) {
+          @if (r.atRisk) {
+            <div
+              class="plan__alert"
+              role="status"
+              data-testid="refeeding-alert"
+              [class.plan__alert--reduced]="r.targetReached"
+            >
+              <ph-icon name="warning" [size]="20" />
+              <p class="plan__alert-text">
+                @if (r.targetReached) {
+                  <strong>Meta atingida.</strong> Risco de síndrome de
+                  realimentação: relevância reduzida.
+                } @else {
+                  <strong>Atenção.</strong> Risco de síndrome de realimentação:
+                  avance a dieta com cautela até a meta.
+                }
+              </p>
+            </div>
+          }
+        }
+        @if (riskFailed()) {
+          <p class="plan__help" data-testid="risk-failed">
+            {{ riskFailedHint }}
+          </p>
+        }
         <fieldset class="plan__card">
           <legend class="plan__label">Via vigente</legend>
           @if (!isDoctor) {
