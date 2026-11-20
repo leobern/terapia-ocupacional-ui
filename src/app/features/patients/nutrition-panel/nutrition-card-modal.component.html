@@ -1,0 +1,83 @@
+<!-- Figma 4679-8695 (desenhado pelo agente): bottom-sheet "card do painel". O clique no próprio <dialog>
+     é o clique no scrim; o teclado fecha por Esc (evento cancel) e pelo botão "Fechar". -->
+<!-- eslint-disable-next-line @angular-eslint/template/click-events-have-key-events, @angular-eslint/template/interactive-supports-focus -->
+<dialog
+  #dialogEl
+  class="card-modal"
+  aria-labelledby="card-modal-title"
+  (click)="onDialogClick($event)"
+  (cancel)="onCancel($event)"
+>
+  <span class="card-modal__handle" aria-hidden="true"></span>
+  <div class="card-modal__header">
+    <h2 id="card-modal-title" class="card-modal__title">{{ title() }}</h2>
+    <app-icon-button
+      kind="secondary"
+      appearance="icon"
+      icon="x"
+      ariaLabel="Fechar"
+      (click)="closed.emit()"
+    />
+  </div>
+
+  <div class="card-modal__body">
+    <p class="card-modal__context">{{ contextLine() }}</p>
+
+    <div class="card-modal__field">
+      <label class="card-modal__label" for="card-modal-value">{{
+        fieldLabel()
+      }}</label>
+      <input
+        id="card-modal-value"
+        class="card-modal__input"
+        type="text"
+        autocomplete="off"
+        [class.card-modal__input--error]="error() !== null"
+        [attr.aria-invalid]="error() !== null"
+        [attr.aria-describedby]="
+          error() !== null ? 'card-modal-error' : 'card-modal-help'
+        "
+        [value]="draft()"
+        (input)="onInput($event)"
+      />
+      @if (error(); as message) {
+        <p id="card-modal-error" class="card-modal__error" role="alert">
+          {{ message }}
+        </p>
+      } @else {
+        <p id="card-modal-help" class="card-modal__help">
+          O valor anterior vai para o histórico.
+        </p>
+      }
+    </div>
+
+    <app-button
+      size="lg"
+      label="Salvar valor"
+      [fullWidth]="true"
+      [disabled]="saving() || offline()"
+      (click)="save()"
+    />
+    @if (offline()) {
+      <p class="card-modal__error" role="status">
+        Conexão necessária para salvar o valor.
+      </p>
+    }
+
+    @if (entries().length > 0) {
+      <section class="card-modal__history" aria-labelledby="card-modal-history">
+        <h3 id="card-modal-history" class="card-modal__section">
+          Histórico desta internação
+        </h3>
+        <ul class="card-modal__entries">
+          @for (entry of entries(); track $index) {
+            <li class="card-modal__entry">
+              <span class="card-modal__entry-value">{{ entry.value }}</span>
+              <span class="card-modal__entry-meta">{{ entry.meta }}</span>
+            </li>
+          }
+        </ul>
+      </section>
+    }
+  </div>
+</dialog>
