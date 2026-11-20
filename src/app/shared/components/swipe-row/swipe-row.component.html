@@ -1,3 +1,16 @@
+@if (!disabled() && hasStart()) {
+  <button
+    type="button"
+    class="swipe-row__action swipe-row__action--start"
+    [class.swipe-row__action--revealed]="startRevealed()"
+    [attr.aria-label]="startActionAriaLabel()"
+    (focus)="startFocused.set(true)"
+    (blur)="startFocused.set(false)"
+    (click)="startTriggered.emit()"
+  >
+    {{ startActionLabel() }}
+  </button>
+}
 @if (!disabled()) {
   <button
     type="button"

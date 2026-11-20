@@ -59,6 +59,13 @@ export const routes: Routes = [
     loadComponent: () =>
       import('./features/pending-screen/pending-screen.component').then(m => m.PendingScreenComponent),
   },
+  // Fluxo de alteração de leito (FT-002-2): placeholder até a feature existir.
+  {
+    path: 'patients/:id/change-bed',
+    data: { screen: 'change-bed' },
+    loadComponent: () =>
+      import('./features/pending-screen/pending-screen.component').then(m => m.PendingScreenComponent),
+  },
   // TODO (specs/004-notificacoes research.md §8): placeholder até a feature
   // "Detalhe do Paciente" existir — destino real de FR-006 (US2).
   {

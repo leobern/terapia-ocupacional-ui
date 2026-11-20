@@ -10,6 +10,9 @@ import { SwipeRowComponent } from './swipe-row.component';
     <app-swipe-row
       actionLabel="Encerrar"
       actionAriaLabel="Encerrar Ana"
+      startActionLabel="Alterar leito"
+      startActionAriaLabel="Alterar leito de Ana"
+      (startTriggered)="startCount = startCount + 1"
       [disabled]="disabled"
       (triggered)="count = count + 1"
     >
@@ -20,6 +23,7 @@ import { SwipeRowComponent } from './swipe-row.component';
 class HostComponent {
   disabled = false;
   count = 0;
+  startCount = 0;
   clicks = 0;
 }
 
@@ -89,7 +93,7 @@ describe('SwipeRowComponent', () => {
   });
 
   it('a ação é um botão com nome acessível; clicar dispara', () => {
-    const action = el('.swipe-row__action');
+    const action = el('.swipe-row__action:not(.swipe-row__action--start)');
 
     expect(action.getAttribute('aria-label')).toBe('Encerrar Ana');
     action.click();
@@ -98,7 +102,7 @@ describe('SwipeRowComponent', () => {
   });
 
   it('foco por teclado revela a ação e o blur recolhe', () => {
-    const action = el('.swipe-row__action');
+    const action = el('.swipe-row__action:not(.swipe-row__action--start)');
 
     action.dispatchEvent(new FocusEvent('focus'));
     fixture.detectChanges();
@@ -120,7 +124,52 @@ describe('SwipeRowComponent', () => {
     ptr('pointermove', 100);
     ptr('pointerup', 100);
 
-    expect(el('.swipe-row__action')).toBeNull();
+    expect(el('.swipe-row__action:not(.swipe-row__action--start)')).toBeNull();
     expect(fixture.componentInstance.count).toBe(0);
+  });
+
+  it('arrastar para a direita além do limite dispara a ação inicial; curto não dispara', () => {
+    ptr('pointerdown', 100);
+    ptr('pointermove', 200);
+
+    expect(el('.swipe-row__content').style.transform).toBe('translateX(100px)');
+    expect(el('.swipe-row__action--start.swipe-row__action--revealed')).not.toBeNull();
+    ptr('pointerup', 200);
+
+    expect(fixture.componentInstance.startCount).toBe(1);
+    expect(fixture.componentInstance.count).toBe(0);
+    ptr('pointerdown', 100);
+    ptr('pointermove', 130);
+    ptr('pointerup', 130);
+
+    expect(fixture.componentInstance.startCount).toBe(1);
+  });
+
+  it('limita o arrasto à direita e o clique após arrastar não chega ao conteúdo', () => {
+    ptr('pointerdown', 0);
+    ptr('pointermove', 300);
+
+    expect(el('.swipe-row__content').style.transform).toBe('translateX(110px)');
+    ptr('pointerup', 300);
+    el('.inner').click();
+
+    expect(fixture.componentInstance.clicks).toBe(0);
+  });
+
+  it('a ação inicial é um botão com nome acessível; clicar e foco funcionam', () => {
+    const action = el('.swipe-row__action--start');
+
+    expect(action.getAttribute('aria-label')).toBe('Alterar leito de Ana');
+    action.dispatchEvent(new FocusEvent('focus'));
+    fixture.detectChanges();
+
+    expect(el('.swipe-row__content').style.transform).toBe('translateX(110px)');
+    action.dispatchEvent(new FocusEvent('blur'));
+    fixture.detectChanges();
+
+    expect(el('.swipe-row__content').style.transform).toBe('translateX(0px)');
+    action.click();
+
+    expect(fixture.componentInstance.startCount).toBe(1);
   });
 });

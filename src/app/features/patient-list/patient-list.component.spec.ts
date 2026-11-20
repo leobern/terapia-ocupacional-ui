@@ -775,6 +775,79 @@ describe('PatientListComponent', () => {
     });
   });
 
+  describe('swipe à direita: alteração de leito (US-004-1-09)', () => {
+    const swipeRight = (row: number, to: number): void => {
+      const content = fixture.nativeElement.querySelectorAll('.swipe-row__content')[row] as HTMLElement;
+
+      content.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, clientX: 100 }));
+      content.dispatchEvent(new PointerEvent('pointermove', { bubbles: true, clientX: to }));
+      content.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, clientX: to }));
+      fixture.detectChanges();
+    };
+    const bed = ['/patients', 'p0', 'change-bed'];
+
+    it('completar o gesto navega ao fluxo de leito com o paciente do card', async () => {
+      source.result = Promise.resolve(census(2));
+      await create();
+      (router.navigate as jasmine.Spy).calls.reset();
+      swipeRight(0, 250);
+
+      expect(router.navigate).toHaveBeenCalledTimes(1);
+      expect(router.navigate).toHaveBeenCalledWith(['/patients', jasmine.stringMatching(/^p[01]$/), 'change-bed']);
+    });
+
+    it('"Alterar leito" pelo botão tem o nome do paciente e navega', async () => {
+      source.result = Promise.resolve(census(1));
+      await create();
+      const action = q('.swipe-row__action--start') as HTMLElement;
+
+      expect(action.getAttribute('aria-label')).toBe('Alterar leito de Paciente 0');
+      action.click();
+
+      expect(router.navigate).toHaveBeenCalledWith(bed);
+    });
+
+    it('arrasto curto não navega', async () => {
+      source.result = Promise.resolve(census(1));
+      await create();
+      swipeRight(0, 120);
+
+      expect(router.navigate).not.toHaveBeenCalledWith(bed);
+    });
+
+    it('somente leitura: sem ação e sem navegação', async () => {
+      source.result = Promise.resolve(census(1));
+      await create();
+      fixture.componentInstance.pendingDate.set(null);
+      fixture.componentInstance.selectedDate.set(new Date(2020, 0, 1));
+      fixture.detectChanges();
+      await fixture.whenStable();
+      fixture.detectChanges();
+
+      expect(q('.swipe-row__action--start')).toBeNull();
+      fixture.componentInstance.changeBed('p0');
+
+      expect(router.navigate).not.toHaveBeenCalledWith(bed);
+    });
+
+    it('offline: não navega e avisa "conexão necessária"; online navega', async () => {
+      source.result = Promise.resolve(census(1));
+      await create();
+      const connectivity = TestBed.inject(ConnectivityService);
+
+      connectivity.online.set(false);
+      swipeRight(0, 250);
+
+      expect(router.navigate).not.toHaveBeenCalledWith(bed);
+      expect(q('[role="status"]')?.textContent).toContain('Conexão necessária');
+      connectivity.online.set(true);
+      swipeRight(0, 250);
+
+      expect(router.navigate).toHaveBeenCalledWith(bed);
+      expect(q('[role="status"]')?.textContent?.trim()).toBe('');
+    });
+  });
+
   describe('swipe à esquerda: encerramento (US-004-1-08)', () => {
     const swipe = (row: number, to: number): void => {
       const content = fixture.nativeElement.querySelectorAll('.swipe-row__content')[row] as HTMLElement;
@@ -798,7 +871,7 @@ describe('PatientListComponent', () => {
     it('acionar "Encerrar" pelo botão (teclado) navega e tem o nome do paciente', async () => {
       source.result = Promise.resolve(census(1));
       await create();
-      const action = q('.swipe-row__action') as HTMLElement;
+      const action = q('.swipe-row__action:not(.swipe-row__action--start)') as HTMLElement;
 
       expect(action.getAttribute('aria-label')).toBe('Encerrar acompanhamento de Paciente 0');
       action.click();

@@ -457,6 +457,23 @@ export class PatientListComponent implements OnInit {
     void this.router.navigate(['/patients', id, 'end-follow-up']);
   }
 
+  /**
+   * Swipe à direita (FR-033): só navega ao fluxo de alteração de leito da FT-002-2 (rota provisória),
+   * com o paciente em contexto. Sem modal, validação ou registro aqui (FR-034/FR-037). Offline, não navega.
+   */
+  changeBed(id: string): void {
+    if (this.readOnly()) {
+      return;
+    }
+    if (!this.connectivity.online()) {
+      this.offlineNotice.set('Conexão necessária para alterar o leito.');
+
+      return;
+    }
+    this.offlineNotice.set('');
+    void this.router.navigate(['/patients', id, 'change-bed']);
+  }
+
   openPatient(id: string): void {
     void this.router.navigate(['/patients', id]);
   }

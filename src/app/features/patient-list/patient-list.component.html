@@ -488,8 +488,13 @@
                         [actionAriaLabel]="
                           'Encerrar acompanhamento de ' + patient.name
                         "
+                        startActionLabel="Alterar leito"
+                        [startActionAriaLabel]="
+                          'Alterar leito de ' + patient.name
+                        "
                         [disabled]="readOnly()"
                         (triggered)="endFollowUp(patient.id)"
+                        (startTriggered)="changeBed(patient.id)"
                       >
                         <button
                           type="button"
