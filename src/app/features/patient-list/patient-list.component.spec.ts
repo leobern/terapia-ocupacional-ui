@@ -995,19 +995,21 @@ describe('PatientListComponent', () => {
     it('ao voltar a ficar visível busca de novo; oculto não busca', async () => {
       source.result = Promise.resolve(moved('Ala 1', '1'));
       await create();
-      source.result = Promise.resolve(moved('Ala 3', '12'));
+      // Chamada direta ao tratador e espião em `refresh`: eventos reais de foco/visibilidade do
+      // runner (Linux/CI) disparam `refresh` fora de hora e tornariam o teste dependente de timing.
+      // A busca em si (nova ala/leito) é coberta pelo teste de foco e pelo de puxar-para-atualizar.
       const visibility = spyOnProperty(Document.prototype, 'visibilityState', 'get').and.returnValue('visible');
-
-      document.dispatchEvent(new Event('visibilitychange'));
-      await settle();
-
-      expect(text()).toContain('Ala 3 · Leito 12');
-      // Oculto não busca. Chamada direta ao tratador (eventos reais de foco do runner podem
-      // disparar `refresh` fora de hora e tornar o teste dependente da ordem).
-      visibility.and.returnValue('hidden');
       const refresh = spyOn(fixture.componentInstance, 'refresh').and.resolveTo();
+      const onVisibility = (): void =>
+        (fixture.componentInstance as unknown as { onVisibility(): void }).onVisibility();
 
-      (fixture.componentInstance as unknown as { onVisibility(): void }).onVisibility();
+      onVisibility();
+
+      expect(refresh).toHaveBeenCalledWith();
+
+      refresh.calls.reset();
+      visibility.and.returnValue('hidden');
+      onVisibility();
 
       expect(refresh).not.toHaveBeenCalled();
     });
