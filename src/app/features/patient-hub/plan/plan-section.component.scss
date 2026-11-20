@@ -198,3 +198,31 @@
     color: tokens.c(content-1);
   }
 }
+
+// Figma 4716-9503 (v2/Banner, Type=info): fundo surface-2, raio 12, padding 10/16, gap 8.
+// Variante "meta atingida" (relevância reduzida) desenhada pelo agente: sem borda e texto atenuado.
+.plan__alert {
+  display: flex;
+  align-items: flex-start;
+  gap: tokens.$space-8;
+  padding: 10px tokens.$space-16;
+  border: 1px solid tokens.c(border-2);
+  border-radius: tokens.$radius-12;
+  background: tokens.c(surface-2);
+  color: tokens.c(content-1);
+
+  ph-icon {
+    flex: none;
+  }
+
+  &--reduced {
+    border-color: transparent;
+    color: tokens.c(content-4);
+  }
+}
+
+.plan__alert-text {
+  margin: 0;
+
+  @include typography.body-md;
+}

@@ -6,11 +6,13 @@ import { CurrentRoute, RouteSaveRequest } from './plan.models';
 import {
   EMPTY_SELECTION_HINT,
   LOAD_FAILED_HINT,
+  RISK_FAILED_HINT,
   OFFLINE_HINT,
   PlanSectionComponent,
   SAVE_FAILED_HINT,
 } from './plan-section.component';
 import { PlanSource } from './plan-source';
+import { RefeedingRisk, RefeedingRiskSource } from './refeeding-risk-source';
 
 class FakeSource extends PlanSource {
   current: CurrentRoute | null = null;
@@ -33,7 +35,17 @@ class FakeSource extends PlanSource {
   }
 }
 
+class FakeRisk extends RefeedingRiskSource {
+  fails = false;
+  risk: RefeedingRisk = { atRisk: false, targetReached: false };
+
+  load(): Promise<RefeedingRisk> {
+    return this.fails ? Promise.reject(new Error('x')) : Promise.resolve(this.risk);
+  }
+}
+
 describe('PlanSectionComponent', () => {
+  let riskSource: FakeRisk;
   let fixture: ComponentFixture<PlanSectionComponent>;
   let source: FakeSource;
 
@@ -64,6 +76,7 @@ describe('PlanSectionComponent', () => {
     TestBed.configureTestingModule({
       providers: [
         { provide: PlanSource, useValue: source },
+        { provide: RefeedingRiskSource, useValue: riskSource },
         {
           provide: ProfessionalProfileReader,
           useValue: { read: (): ProfessionalProfile => ({ name: 'Dra. Ana', role }) },
@@ -78,6 +91,54 @@ describe('PlanSectionComponent', () => {
 
   beforeEach(() => {
     source = new FakeSource();
+    riskSource = new FakeRisk();
+  });
+
+  describe('alerta de síndrome de realimentação', () => {
+    const alert = (): HTMLElement | null => el().querySelector('[data-testid="refeeding-alert"]');
+
+    for (const role of ['doctor', 'nutritionist'] as const) {
+      it(`${role}: risco em progressão mostra o alerta em destaque, antes da via vigente`, async () => {
+        riskSource.risk = { atRisk: true, targetReached: false };
+        await setup(role);
+        await openIt();
+
+        expect(alert()?.textContent).toContain('avance a dieta com cautela até a meta');
+        expect(alert()?.classList.contains('plan__alert--reduced')).toBe(false);
+        expect(alert()?.compareDocumentPosition(el().querySelector('fieldset') as Node)).toBe(
+          Node.DOCUMENT_POSITION_FOLLOWING,
+        );
+      });
+    }
+
+    it('sem risco: nenhum alerta', async () => {
+      await setup('doctor');
+      await openIt();
+
+      expect(alert()).toBeNull();
+    });
+
+    it('meta atingida: alerta visível com relevância reduzida e dito em texto', async () => {
+      riskSource.risk = { atRisk: true, targetReached: true };
+      await setup('doctor');
+      await openIt();
+
+      expect(alert()?.classList.contains('plan__alert--reduced')).toBe(true);
+      expect(alert()?.textContent).toContain('Meta atingida');
+    });
+
+    it('falha do motor: sem alerta, aviso discreto e o resto do plano funciona', async () => {
+      riskSource.fails = true;
+      await setup('doctor');
+      await openIt();
+
+      expect(alert()).toBeNull();
+      expect(text()).toContain(RISK_FAILED_HINT);
+      await toggle('NE');
+      await save();
+
+      expect(source.saves.length).toBe(1);
+    });
   });
 
   describe('médico', () => {
