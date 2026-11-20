@@ -160,6 +160,10 @@ export class AppComponent {
     this.aiAssistant.ask(shortcut.label);
   }
 
+  onAiAudio(audio: Blob): void {
+    this.aiAssistant.askAudio(audio);
+  }
+
   onAiSend(question: string): void {
     this.aiAssistant.ask(question);
   }

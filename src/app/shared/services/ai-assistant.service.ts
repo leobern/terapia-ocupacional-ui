@@ -8,7 +8,8 @@ import {
   GENERIC_ERROR_MESSAGE,
   UNRECOGNIZED_ANSWER,
 } from './assistant-query-resolver';
-import { type ScreenAction, ScreenActionsService } from './screen-actions.service';
+import { ConnectivityService } from './connectivity.service';
+import { type ScreenAction, ScreenActionsService, type ScreenCommand } from './screen-actions.service';
 
 /**
  * O que o painel do assistente está mostrando:
@@ -25,6 +26,13 @@ export interface AssistantConversation {
   readonly status: 'loading' | 'answered' | 'failed';
   readonly answer: AssistantAnswer | null;
 }
+
+export const OFFLINE_COMMAND_MESSAGE = 'Conexão necessária para enviar comandos à IA.';
+export const COMMAND_SENT_MESSAGE = 'Comando enviado à IA.';
+export const AI_UNAVAILABLE_MESSAGE = 'IA indisponível no momento.';
+export const AUDIO_COMMAND_LABEL = 'Comando de áudio';
+/** Tempo máximo à espera da camada de IA antes de tratar como indisponível. */
+export const COMMAND_TIMEOUT_MS = 15000;
 
 /**
  * Estado do assistente de IA — compartilhado entre o shell da aplicação (que monta
@@ -56,6 +64,8 @@ export class AiAssistantService {
   readonly conversation: Signal<AssistantConversation | null>;
 
   private readonly screenActions = inject(ScreenActionsService);
+  private readonly connectivity = inject(ConnectivityService);
+  private lastCommand: ScreenCommand | null = null;
   private readonly resolvers = inject(ASSISTANT_QUERY_RESOLVERS);
   private readonly conversationSignal = signal<AssistantConversation | null>(null);
   private requestId = 0;
@@ -79,6 +89,14 @@ export class AiAssistantService {
    * não sabe. O motor de IA é outro escopo.
    */
   ask(question: string): void {
+    // Tela com camada de IA própria (ex.: lista, FT-003-4): só encaminha, não interpreta.
+    // Pedidos de ação já especificados (cadastro/leito) seguem o fluxo de formulário, que não é filtro/ordenação.
+    if (this.screenActions.commandHandler() && !recognizeAction(question)) {
+      this.lastQuestionSignal.set(question);
+      void this.forward({ kind: 'text', text: question }, question);
+
+      return;
+    }
     const id = ++this.requestId;
     const resolver = this.resolvers.find(r => r.matches(question));
 
@@ -101,6 +119,22 @@ export class AiAssistantService {
     }
     this.conversationSignal.set({ answer: null, question, status: 'loading' });
     void this.settle(id, question, this.run(resolver, question));
+  }
+
+  /** Comando por áudio (gravação enviada como está). Sem handler na tela, não há o que fazer com ele. */
+  askAudio(audio: Blob): void {
+    if (this.screenActions.commandHandler()) {
+      void this.forward({ audio, kind: 'audio' }, AUDIO_COMMAND_LABEL);
+    }
+  }
+
+  /** "Tentar novamente": reenvia o mesmo comando (ou repete a pergunta comum). */
+  retry(question: string): void {
+    if (this.lastCommand && this.conversationSignal()?.question === question) {
+      void this.forward(this.lastCommand, question);
+    } else {
+      this.ask(question);
+    }
   }
 
   /** Abre o painel no chat (saudação). */
@@ -136,6 +170,41 @@ export class AiAssistantService {
     this.isOpenSignal.set(false);
     this.viewSignal.set('chat');
     this.activeActionSignal.set(null);
+  }
+
+  private async forward(command: ScreenCommand, label: string): Promise<void> {
+    const id = ++this.requestId;
+    const handler = this.screenActions.commandHandler();
+
+    this.lastCommand = command;
+    if (!this.connectivity.online() || !handler) {
+      this.conversationSignal.set({
+        answer: { summary: handler ? OFFLINE_COMMAND_MESSAGE : AI_UNAVAILABLE_MESSAGE },
+        question: label,
+        status: 'failed',
+      });
+
+      return;
+    }
+    this.conversationSignal.set({ answer: null, question: label, status: 'loading' });
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    let next: AssistantConversation;
+
+    try {
+      const timeout = new Promise<never>((_, reject) => {
+        timer = setTimeout(() => reject(new Error('timeout')), COMMAND_TIMEOUT_MS);
+      });
+
+      await Promise.race([Promise.resolve().then(() => handler(command)), timeout]);
+      next = { answer: { summary: COMMAND_SENT_MESSAGE }, question: label, status: 'answered' };
+    } catch {
+      next = { answer: { summary: AI_UNAVAILABLE_MESSAGE }, question: label, status: 'failed' };
+    } finally {
+      clearTimeout(timer);
+    }
+    if (id === this.requestId) {
+      this.conversationSignal.set(next);
+    }
   }
 
   private async run(resolver: AssistantQueryResolver, question: string): Promise<AssistantAnswer> {
