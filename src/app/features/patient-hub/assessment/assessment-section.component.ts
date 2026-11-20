@@ -15,6 +15,9 @@ import { PhIconComponent } from '../../../shared/icons/ph-icon/ph-icon.component
 import { ConnectivityService } from '../../../shared/services/connectivity.service';
 import {
   ASSESSMENT_SECTIONS,
+  ENERGY_SOURCE_CALORIMETRY,
+  ENERGY_SOURCE_KCAL_PER_KG,
+  KCAL_PER_KG,
   AssessmentFieldDefinition,
   AssessmentFieldId,
   AssessmentValues,
@@ -32,6 +35,13 @@ export const OFFLINE_SAVE_HINT =
   'Sem conexão: salvar fica indisponível. Você pode continuar preenchendo; os valores serão mantidos.';
 
 export const LOAD_FAILED_HINT = 'Não foi possível carregar a avaliação anterior. Os campos abrem vazios.';
+
+/** Gasto energético simplificado (kcal/kg × peso); vazio se o peso não for um número positivo. */
+function kcalPerKg(weight: string | undefined): number | null {
+  const kg = Number((weight ?? '').trim().replace(',', '.'));
+
+  return Number.isFinite(kg) && kg > 0 ? Math.round(kg * KCAL_PER_KG) : null;
+}
 
 /** Formata ISO como dd/MM (ano omitido, como no Figma 4682-9078). */
 function shortDate(iso: string): string {
@@ -129,9 +139,19 @@ export class AssessmentSectionComponent {
     const values: Partial<Record<AssessmentFieldId, string>> = {};
 
     for (const [id, value] of Object.entries(this.draft())) {
-      if (value.trim() !== '') {
+      if (value.trim() !== '' && id !== 'energyExpenditure' && id !== 'energySource') {
         values[id as AssessmentFieldId] = value;
       }
+    }
+    // A calorimetria informada prevalece; senão vale o kcal/kg (só com peso). A origem vai junto.
+    const calculated = kcalPerKg(values.weight);
+
+    if (values.indirectCalorimetry !== undefined) {
+      values.energyExpenditure = values.indirectCalorimetry;
+      values.energySource = ENERGY_SOURCE_CALORIMETRY;
+    } else if (calculated !== null) {
+      values.energyExpenditure = String(calculated);
+      values.energySource = ENERGY_SOURCE_KCAL_PER_KG;
     }
     // Membro sem valor é ignorado ao salvar.
     const orphanSides = new Set(
@@ -161,6 +181,13 @@ export class AssessmentSectionComponent {
   }
 
   protected helpOf(field: AssessmentFieldDefinition): string {
+    if (field.id === 'indirectCalorimetry' && this.valueOf(field.id).trim() === '') {
+      const calculated = kcalPerKg(this.valueOf('weight'));
+
+      if (calculated !== null) {
+        return `Calculado (kcal/kg): ${calculated} kcal/dia (${KCAL_PER_KG} kcal/kg × peso).`;
+      }
+    }
     const previous = this.assessment()?.previous[field.id];
 
     if (previous === undefined) {

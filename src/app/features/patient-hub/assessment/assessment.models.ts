@@ -1,7 +1,13 @@
 export type AssessmentSectionId = 'nutritional' | 'functional';
 
 export type AssessmentFieldId =
-  'weight' | 'height' | 'calfCircumference' | 'calfSide' | 'armCircumference' | 'armSide' | 'handgrip' | 'dysphagia';
+  'weight' | 'height' | 'calfCircumference' | 'calfSide' | 'armCircumference' | 'armSide' | 'handgrip' | 'dysphagia'
+  | 'indirectCalorimetry' | 'energyExpenditure' | 'energySource';
+
+/** Fator padrão do método simplificado kcal/kg (o mesmo "25 kcal/kg" do Figma de Metas); substituível aqui. */
+export const KCAL_PER_KG = 25;
+export const ENERGY_SOURCE_CALORIMETRY = 'Calorimetria indireta';
+export const ENERGY_SOURCE_KCAL_PER_KG = 'kcal/kg';
 
 /** Membro aferido de uma circunferência. */
 export const LIMB_SIDES: readonly string[] = ['Direito', 'Esquerdo'];
@@ -53,6 +59,13 @@ export const ASSESSMENT_SECTIONS: readonly AssessmentSectionDefinition[] = [
         placeholder: 'Ex.: 27',
         sideId: 'armSide',
         unit: 'cm',
+      },
+      {
+        help: 'Se vazio, o gasto energético é calculado por kcal/kg.',
+        id: 'indirectCalorimetry',
+        label: 'Calorimetria indireta (kcal/dia)',
+        placeholder: 'Ex.: 1450',
+        unit: 'kcal/dia',
       },
     ],
     id: 'nutritional',

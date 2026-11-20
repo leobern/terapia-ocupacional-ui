@@ -102,7 +102,7 @@ describe('AssessmentSectionComponent', () => {
     await openIt();
     const counts = Array.from(el().querySelectorAll('.assessment__count')).map(c => c.textContent.trim());
 
-    expect(counts).toEqual(['4', '2']);
+    expect(counts).toEqual(['5', '2']);
   });
 
   it('pré-preenche com a avaliação mais recente e mostra o valor anterior com data', async () => {
@@ -247,7 +247,13 @@ describe('AssessmentSectionComponent', () => {
       saveButton().click();
       await settle();
 
-      expect(writer.saved).toEqual([{ patientId: 'p1', values: { handgrip: '14', weight: '49,5' } }]);
+      expect(writer.saved).toEqual([{ patientId: 'p1', values: {
+          energyExpenditure: '1238',
+          energySource: 'kcal/kg',
+          handgrip: '14',
+          weight: '49,5',
+        },
+      }]);
     });
 
     it('salvar com tudo vazio é aceito e fecha o formulário', async () => {
@@ -270,6 +276,75 @@ describe('AssessmentSectionComponent', () => {
       await settle();
 
       expect(writer.saved[0].values).toEqual({ dysphagia: 'Sem risco', height: '163' });
+    });
+
+    describe('gasto energético', () => {
+      it('mostra o card de calorimetria vazio e, com peso, o cálculo kcal/kg que acompanha o peso', async () => {
+        await openIt();
+
+        expect(input('indirectCalorimetry').value).toBe('');
+        expect(help('indirectCalorimetry')).toContain('calculado por kcal/kg');
+        type('weight', '51,0');
+        await settle();
+
+        expect(help('indirectCalorimetry')).toContain('Calculado (kcal/kg): 1275 kcal/dia');
+        type('weight', '40');
+        await settle();
+
+        expect(help('indirectCalorimetry')).toContain('1000 kcal/dia');
+      });
+
+      it('sem calorimetria, salva o calculado com a origem kcal/kg', async () => {
+        await openIt();
+        type('weight', '51');
+        await settle();
+        saveButton().click();
+        await settle();
+
+        expect(writer.saved[0].values).toEqual({ energyExpenditure: '1275', energySource: 'kcal/kg', weight: '51' });
+      });
+
+      it('com calorimetria, ela prevalece e o calculado deixa de ser usado', async () => {
+        await openIt();
+        type('weight', '51');
+        type('indirectCalorimetry', '1450');
+        await settle();
+
+        expect(help('indirectCalorimetry')).not.toContain('Calculado');
+        saveButton().click();
+        await settle();
+
+        expect(writer.saved[0].values).toEqual({
+          energyExpenditure: '1450',
+          energySource: 'Calorimetria indireta',
+          indirectCalorimetry: '1450',
+          weight: '51',
+        });
+      });
+
+      it('sem peso e sem calorimetria, nada é calculado; peso inválido também não', async () => {
+        await openIt();
+        type('weight', 'abc');
+        await settle();
+        saveButton().click();
+        await settle();
+
+        expect(writer.saved[0].values).toEqual({ weight: 'abc' });
+      });
+
+      it('reavaliação descarta o gasto salvo antes e recalcula', async () => {
+        source.result = Promise.resolve({
+          previous: {},
+          values: { energyExpenditure: '1000', energySource: 'kcal/kg', weight: '40' },
+        });
+        await openIt();
+        type('weight', '60');
+        await settle();
+        saveButton().click();
+        await settle();
+
+        expect(writer.saved[0].values).toEqual({ energyExpenditure: '1500', energySource: 'kcal/kg', weight: '60' });
+      });
     });
 
     describe('circunferências com membro aferido', () => {
