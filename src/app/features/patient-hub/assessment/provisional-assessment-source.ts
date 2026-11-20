@@ -1,7 +1,8 @@
 import { Injectable } from '@angular/core';
 
-import { NutritionFunctionalAssessment } from './assessment.models';
+import { AssessmentValues, NutritionFunctionalAssessment } from './assessment.models';
 import { AssessmentSource } from './assessment-source';
+import { AssessmentWriter } from './assessment-writer';
 
 /** Provisório: só o paciente `p1` tem avaliação anterior (permite exercitar os dois casos). */
 const SEED: Readonly<Record<string, NutritionFunctionalAssessment | undefined>> = {
@@ -11,9 +12,18 @@ const SEED: Readonly<Record<string, NutritionFunctionalAssessment | undefined>> 
   },
 };
 
+/** Provisório: guarda em memória a avaliação salva, para o Hub refletir na próxima abertura. */
 @Injectable()
-export class ProvisionalAssessmentSource extends AssessmentSource {
+export class ProvisionalAssessmentSource extends AssessmentSource implements AssessmentWriter {
+  private readonly saved = new Map<string, NutritionFunctionalAssessment>();
+
   loadLatest(patientId: string): Promise<NutritionFunctionalAssessment | null> {
-    return Promise.resolve(SEED[patientId] ?? null);
+    return Promise.resolve(this.saved.get(patientId) ?? SEED[patientId] ?? null);
+  }
+
+  save(patientId: string, values: AssessmentValues): Promise<void> {
+    this.saved.set(patientId, { previous: {}, values });
+
+    return Promise.resolve();
   }
 }

@@ -18,6 +18,7 @@ import { NutritionValues } from '../patients/nutrition-panel/nutrition-panel.mod
 import { NutritionResultsSource } from '../patients/nutrition-panel/nutrition-results-source';
 import { ProvisionalNutritionCardStore } from '../patients/nutrition-panel/provisional-nutrition-card-store';
 import { AssessmentSource } from './assessment/assessment-source';
+import { AssessmentWriter } from './assessment/assessment-writer';
 import {
   DIAGNOSIS_FAILED_HINT,
   DIAGNOSIS_OFFLINE_HINT,
@@ -169,6 +170,7 @@ async function setup(
       { provide: DiagnosisSource, useValue: diagnosis },
       { provide: PlanSource, useValue: { loadRoute: (): Promise<null> => Promise.resolve(null) } },
       { provide: AssessmentSource, useValue: { loadLatest: (): Promise<null> => Promise.resolve(null) } },
+      { provide: AssessmentWriter, useValue: { save: (): Promise<void> => Promise.resolve() } },
       { provide: PriorStaysSource, useValue: priorStays },
       { provide: PriorStaysSynthesizer, useValue: priorSynth },
       {
@@ -480,14 +482,16 @@ describe('PatientHubComponent', () => {
       expect((f.nativeElement as HTMLElement).textContent).toContain(DIAGNOSIS_FAILED_HINT);
     });
 
-    it('o botão "Concluir avaliação" do formulário dispara o fluxo', async () => {
+    it('o botão "Salvar avaliação" do formulário salva e dispara o fluxo do diagnóstico', async () => {
       const root = f.nativeElement as HTMLElement;
 
       root.querySelector<HTMLButtonElement>('.assessment__row')?.click();
+      await f.whenStable();
       f.detectChanges();
       Array.from(root.querySelectorAll<HTMLButtonElement>('dialog app-button button'))
-        .find(b => b.textContent.includes('Concluir avaliação'))
+        .find(b => b.textContent.includes('Salvar avaliação'))
         ?.click();
+      await f.whenStable();
       await f.whenStable();
 
       expect(navigate).toHaveBeenCalledOnceWith(['/patients', 'p1', 'diagnosis']);
