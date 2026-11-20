@@ -1,0 +1,154 @@
+<app-page-container>
+  <div class="hub">
+    <!-- Figma v2/PageHeader (Subtitle=true): voltar + título + hospital · data. -->
+    <header class="hub__header">
+      <app-icon-button
+        kind="primary"
+        appearance="icon"
+        icon="arrow-left"
+        ariaLabel="Voltar"
+        (click)="back()"
+      />
+      <div class="hub__heading">
+        <h1 class="hub__title">Paciente</h1>
+        <p class="hub__subtitle">{{ hospitalName() }} · {{ todayLabel() }}</p>
+      </div>
+    </header>
+
+    @switch (status()) {
+      @case ('ready') {
+        <section class="hub__identity" aria-label="Identificação do paciente">
+          <p class="hub__bed">{{ header()?.bed }}</p>
+          <h2 class="hub__name">{{ profile()?.name }}</h2>
+          <p class="hub__details">{{ header()?.details }}</p>
+          <div class="hub__tags">
+            <span class="hub__pill">{{ header()?.therapyDays }}</span>
+            <app-therapy-tag [label]="profile()?.therapy ?? ''" />
+          </div>
+        </section>
+
+        <section class="hub__hypothesis" aria-labelledby="hypothesis-title">
+          <h2 id="hypothesis-title" class="hub__card-title">
+            Hipótese diagnóstica
+          </h2>
+          @if (hypothesis(); as text) {
+            <p class="hub__hypothesis-text">{{ text }}</p>
+          } @else {
+            <div class="hub__empty">
+              @if (
+                phase() === 'input' ||
+                phase() === 'loading' ||
+                phase() === 'failed'
+              ) {
+                <p class="hub__empty-text">
+                  Ainda não há hipótese diagnóstica preenchida para este
+                  paciente.
+                </p>
+                <label class="hub__label" for="paste-text"
+                  >Texto do prontuário</label
+                >
+                <textarea
+                  id="paste-text"
+                  class="hub__textarea"
+                  rows="4"
+                  placeholder="Cole aqui o motivo de internação, intercorrências e demais dados relevantes"
+                  [value]="pasted()"
+                  [disabled]="phase() === 'loading'"
+                  (input)="onPasted($event)"
+                ></textarea>
+                <div class="hub__actions">
+                  <app-button
+                    size="md"
+                    iconLeft="sparkle"
+                    [label]="
+                      phase() === 'failed'
+                        ? 'Tentar sintetizar de novo'
+                        : 'Sintetizar com IA'
+                    "
+                    [disabled]="phase() === 'loading' || offline()"
+                    (click)="synthesize()"
+                  />
+                </div>
+              }
+              @if (phase() === 'loading') {
+                <p class="hub__status" role="status">
+                  Sintetizando o texto com IA…
+                </p>
+              }
+              @if (phase() === 'failed') {
+                <p class="hub__status hub__status--warning" role="alert">
+                  A síntese por IA falhou ou está indisponível. Digite a
+                  hipótese manualmente e confirme.
+                </p>
+              }
+              @if (phase() === 'review' || phase() === 'failed') {
+                @if (phase() === 'review') {
+                  <span class="hub__ai-tag">
+                    <ph-icon name="sparkle" [size]="16" />
+                    Gerado por IA
+                  </span>
+                }
+                <label class="hub__label" for="draft-text">
+                  {{
+                    phase() === 'review'
+                      ? 'Revise e edite antes de confirmar'
+                      : 'Hipótese diagnóstica (manual)'
+                  }}
+                </label>
+                <textarea
+                  id="draft-text"
+                  class="hub__textarea"
+                  rows="5"
+                  [value]="draft()"
+                  (input)="onDraft($event)"
+                ></textarea>
+                <div class="hub__actions">
+                  <app-button
+                    size="md"
+                    iconLeft="check"
+                    label="Confirmar hipótese"
+                    [disabled]="saving() || offline()"
+                    (click)="confirm()"
+                  />
+                  @if (phase() === 'review') {
+                    <app-button
+                      size="md"
+                      kind="primary"
+                      appearance="outlined"
+                      label="Descartar"
+                      (click)="discard()"
+                    />
+                  }
+                </div>
+              }
+              @if (offline()) {
+                <p class="hub__status hub__status--warning" role="status">
+                  Conexão necessária para sintetizar ou confirmar a hipótese.
+                </p>
+              }
+              @if (hint(); as message) {
+                <p class="hub__status hub__status--warning" role="alert">
+                  {{ message }}
+                </p>
+              }
+            </div>
+          }
+        </section>
+
+        <!-- Painel Nutricional (FT-004-3): paciente novo mostra todos os cards em "Sem dados". -->
+        <app-nutrition-panel />
+      }
+      @case ('not-found') {
+        <p class="hub__message" role="status">Paciente não encontrado.</p>
+      }
+      @case ('error') {
+        <p class="hub__message" role="alert">
+          Não foi possível carregar o paciente. Tente novamente em instantes.
+        </p>
+      }
+      @default {
+        <p class="hub__message" role="status">Carregando paciente…</p>
+      }
+    }
+  </div>
+</app-page-container>

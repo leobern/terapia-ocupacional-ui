@@ -73,10 +73,10 @@ export const routes: Routes = [
     loadComponent: () =>
       import('./features/pending-screen/pending-screen.component').then(m => m.PendingScreenComponent),
   })),
-  // Hub do paciente (FT-004-3: por ora só o Painel Nutricional) — destino de FR-006 (US2).
+  // Hub do paciente (FT-004-2): destino da lista de pacientes e das notificações.
   {
     path: 'patients/:id',
-    loadComponent: () => import('./features/patients/patient-hub.component').then(m => m.PatientHubComponent),
+    loadComponent: () => import('./features/patient-hub/patient-hub.component').then(m => m.PatientHubComponent),
   },
   // Placeholders das telas de outras stories (ver PendingScreenComponent).
   ...(['login', 'lock', 'hospital-links'] as const).map(path => ({

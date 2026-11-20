@@ -1,0 +1,201 @@
+@use '../../shared/styles/breakpoints';
+@use '../../shared/styles/tokens';
+@use '../../shared/styles/typography';
+
+// Figma "Conductia - V1", seção 08 (Paciente): mobile 402 (4608:4375) e desktop 1920 (4608:4845).
+:host {
+  --page-container-margin: var(--layout-page-margin, 16px);
+}
+
+.hub {
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$space-16;
+  min-height: calc(100dvh - var(--bottom-nav-bar-height));
+  padding-top: tokens.$space-8;
+  padding-bottom: tokens.$space-24;
+
+  @include breakpoints.md {
+    // Coluna de 578px do Figma (identificação + hipótese).
+    max-width: 578px;
+    min-height: 100dvh;
+    padding: tokens.$space-24 tokens.$space-32 tokens.$space-32;
+  }
+}
+
+.hub__header {
+  display: flex;
+  align-items: center;
+  gap: tokens.$space-8;
+}
+
+.hub__heading {
+  display: flex;
+  flex: 1 0 0;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.hub__title {
+  margin: 0;
+  color: tokens.c(content-1);
+
+  @include typography.headline;
+}
+
+.hub__subtitle {
+  margin: 0;
+  color: tokens.c(content-4);
+
+  @include typography.caption;
+}
+
+.hub__identity {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: tokens.$space-16;
+  border-radius: tokens.$radius-md;
+  background: tokens.c(surface);
+}
+
+.hub__bed {
+  margin: 0;
+  color: tokens.c(secondary);
+
+  @include typography.label-md;
+}
+
+.hub__name {
+  margin: 0;
+  color: tokens.c(content-1);
+
+  @include typography.title-lg;
+}
+
+.hub__details {
+  margin: 0;
+  color: tokens.c(content-4);
+
+  @include typography.caption;
+}
+
+.hub__tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.hub__pill {
+  display: inline-flex;
+  align-items: center;
+  height: 24px;
+  padding-inline: 10px;
+  border-radius: tokens.$radius-pill;
+  background: tokens.c(surface-2);
+  color: tokens.c(content-1);
+
+  @include typography.label-sm;
+}
+
+.hub__hypothesis {
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$space-12;
+  padding: tokens.$space-16;
+  border-radius: tokens.$radius-md;
+  background: tokens.c(surface-2);
+}
+
+.hub__card-title {
+  margin: 0;
+  color: tokens.c(content-4);
+
+  @include typography.label-md;
+}
+
+.hub__hypothesis-text {
+  margin: 0;
+  color: tokens.c(content-1);
+  white-space: pre-line;
+
+  @include typography.body-lg;
+}
+
+.hub__empty {
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$space-8;
+}
+
+.hub__empty-text {
+  margin: 0;
+  color: tokens.c(content-4);
+
+  @include typography.body-md;
+}
+
+.hub__label {
+  color: tokens.c(content-4);
+
+  @include typography.label-md;
+}
+
+.hub__textarea {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 96px;
+  padding: tokens.$space-12;
+  border: 1px solid tokens.c(border);
+  border-radius: tokens.$radius-sm;
+  background: tokens.c(surface);
+  color: tokens.c(content-1);
+  resize: vertical;
+
+  @include typography.body-lg;
+
+  &:focus-visible {
+    outline: var(--focus-ring-width) solid tokens.c(focus-ring);
+    outline-offset: var(--focus-ring-offset);
+  }
+}
+
+.hub__message {
+  margin: 0;
+  padding: tokens.$space-16;
+  color: tokens.c(content-4);
+
+  @include typography.body-md;
+}
+
+.hub__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: tokens.$space-8;
+}
+
+// Marca "Gerado por IA": sempre com texto (cor nunca é o único sinal).
+.hub__ai-tag {
+  display: inline-flex;
+  align-items: center;
+  align-self: flex-start;
+  gap: tokens.$space-4;
+  height: 24px;
+  padding-inline: tokens.$space-8;
+  border-radius: tokens.$radius-pill;
+  background: tokens.c(surface);
+  color: tokens.c(secondary);
+
+  @include typography.label-sm;
+}
+
+.hub__status {
+  margin: 0;
+  color: tokens.c(content-4);
+
+  @include typography.body-md;
+
+  &--warning {
+    color: tokens.c(content-1);
+  }
+}
