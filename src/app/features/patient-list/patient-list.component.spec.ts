@@ -182,6 +182,29 @@ describe('PatientListComponent', () => {
       await create();
     });
 
+    it('a tag mostra o critério ativo, abre o painel e aparece também carregando', async () => {
+      const tag = (): string => q('.patient-list__sort-tag')?.textContent?.replace(/\s+/g, ' ').trim() ?? '';
+
+      expect(tag()).toBe('Ordenar: leito');
+
+      sort()?.select('priority');
+      fixture.detectChanges();
+
+      expect(tag()).toBe('Ordenar: prioridade');
+
+      q('.patient-list__sort-tag')?.click();
+
+      expect(TestBed.inject(AiAssistantService).view()).toBe('shortcuts');
+
+      source.result = new Promise<readonly CensusPatient[]>(() => undefined);
+      fixture.componentInstance.selectDate(new Date(Date.now() - 86_400_000));
+      fixture.componentInstance.confirmPendingDate();
+      fixture.detectChanges();
+
+      expect(q('.patient-list__skeleton')).not.toBeNull();
+      expect(tag()).toBe('Ordenar: prioridade');
+    });
+
     it('padrão: ordem estável por leito, agrupada por ala, sem chip selecionado', () => {
       expect(titles()).toEqual(['Ala 12', 'Ala 22']);
       expect(names()).toEqual(['B', 'C', 'D', 'A']);
