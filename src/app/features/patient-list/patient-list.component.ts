@@ -31,7 +31,7 @@ import { assemblePatientList } from './patient-list-assembly';
 import { PatientListSource } from './patient-list-source';
 
 export interface PatientGroup {
-  readonly key: 'out' | 'in';
+  readonly key: string;
   readonly title: string;
   readonly patients: readonly PatientCard[];
 }
@@ -94,6 +94,16 @@ const KEY_STEP = 16;
 
 export type SortKey = 'name' | 'age' | 'therapy' | 'caloric' | 'protein' | 'location';
 export type SortDirection = 'asc' | 'desc';
+
+/** Critérios pré-definidos dos chips do painel de Atalhos (FR-019). */
+export type PresetSort = 'priority' | 'bed';
+
+const SORT_OPTIONS = [
+  { id: 'priority', label: 'Por prioridade' },
+  { id: 'bed', label: 'Por leito' },
+] as const;
+
+const BED_COLLATOR = new Intl.Collator('pt-BR', { numeric: true, sensitivity: 'base' });
 
 export type PatientListStatus = 'loading' | 'ready' | 'error';
 
@@ -174,18 +184,17 @@ export class PatientListComponent implements OnInit {
   );
   /** A tabela do desktop ganhou rolagem horizontal (mostra a borda da coluna fixa). */
   readonly tableScrolls = signal(false);
-  /** Prioridade: quem está fora da meta primeiro, do mais crítico ao menos (Figma: "Ordenar: prioridade"). */
-  readonly groups = computed<readonly PatientGroup[]>(() => {
-    const out = this.patients()
-      .filter(p => isOutOfTarget(p.adequacy))
-      .sort((a, b) => lowestGoal(a.adequacy) - lowestGoal(b.adequacy));
-    const within = this.patients().filter(p => !isOutOfTarget(p.adequacy));
-
-    return [
-      { key: 'out' as const, patients: out, title: 'Fora da meta' },
-      { key: 'in' as const, patients: within, title: 'Dentro da meta' },
-    ].filter(g => g.patients.length > 0);
-  });
+  /**
+   * Ordenação pré-definida ativa (FR-019..022). `null` = nenhum chip acionado ainda: a lista segue a ordem
+   * estável por leito (suposição da story, a confirmar com UX). Fica na tela enquanto ela estiver aberta,
+   * independente da data selecionada.
+   */
+  readonly presetSort = signal<PresetSort | null>(null);
+  readonly activeSort = computed<string | null>(() => this.presetSort());
+  /** Prioridade: quem está fora da meta primeiro, do mais crítico ao menos. Leito: grupos por ala, leitos em ordem numérica. */
+  readonly groups = computed<readonly PatientGroup[]>(() =>
+    this.presetSort() === 'priority' ? this.priorityGroups() : this.bedGroups(),
+  );
   /** Ordenação da tabela: uma coluna ordena todas as outras. Padrão: localização, crescente. */
   readonly sortKey = signal<SortKey>('location');
   readonly sortDir = signal<SortDirection>('asc');
@@ -206,7 +215,7 @@ export class PatientListComponent implements OnInit {
 
     return [...present, ...missing];
   });
-  readonly outOfTargetCount = computed(() => this.groups().find(g => g.key === 'out')?.patients.length ?? 0);
+  readonly outOfTargetCount = computed(() => this.patients().filter(p => isOutOfTarget(p.adequacy)).length);
   readonly countLabel = computed(() => {
     const n = this.patients().length;
 
@@ -227,6 +236,32 @@ export class PatientListComponent implements OnInit {
   private readonly tableCard = viewChild<ElementRef<HTMLElement>>('tableCard');
   private readonly unread = inject(UnreadNotificationsReader);
   private readonly screenActions = inject(ScreenActionsService);
+  private readonly priorityGroups = computed<readonly PatientGroup[]>(() => {
+    const out = this.patients()
+      .filter(p => isOutOfTarget(p.adequacy))
+      .sort((a, b) => lowestGoal(a.adequacy) - lowestGoal(b.adequacy));
+    const within = this.patients().filter(p => !isOutOfTarget(p.adequacy));
+
+    return [
+      { key: 'out', patients: out, title: 'Fora da meta' },
+      { key: 'in', patients: within, title: 'Dentro da meta' },
+    ].filter(g => g.patients.length > 0);
+  });
+  private readonly bedGroups = computed<readonly PatientGroup[]>(() => {
+    const byWard = new Map<string, PatientCard[]>();
+
+    for (const patient of this.patients()) {
+      byWard.set(patient.ward, [...(byWard.get(patient.ward) ?? []), patient]);
+    }
+
+    return [...byWard.entries()]
+      .sort(([a], [b]) => BED_COLLATOR.compare(a, b))
+      .map(([ward, patients]) => ({
+        key: `ward:${ward}`,
+        patients: [...patients].sort((a, b) => BED_COLLATOR.compare(a.bed, b.bed)),
+        title: ward,
+      }));
+  });
   private generation = 0;
   private readonly today = new Date();
   private readonly pendingMonth = computed(() => {
@@ -242,6 +277,16 @@ export class PatientListComponent implements OnInit {
       const actions = this.readOnly() ? [] : PATIENT_LIST_ACTIONS;
 
       onCleanup(this.screenActions.register(actions));
+    });
+    // Chips de ordenação no painel de Atalhos: ordenar não altera dado do paciente, vale também em modo leitura.
+    effect(onCleanup => {
+      onCleanup(
+        this.screenActions.registerSort({
+          active: this.activeSort,
+          options: SORT_OPTIONS,
+          select: id => this.selectSort(id as PresetSort),
+        }),
+      );
     });
     const zone = inject(NgZone);
 
@@ -303,6 +348,11 @@ export class PatientListComponent implements OnInit {
         this.status.set('error');
       }
     }
+  }
+
+  /** Chip acionado: o novo critério substitui o anterior; acionar o ativo o mantém (FR-021). */
+  selectSort(sort: PresetSort): void {
+    this.presetSort.set(sort);
   }
 
   retry(): void {

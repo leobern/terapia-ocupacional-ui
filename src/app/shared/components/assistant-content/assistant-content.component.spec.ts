@@ -1,3 +1,4 @@
+import { signal } from '@angular/core';
 import { type ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { Router } from '@angular/router';
@@ -227,6 +228,44 @@ describe('AssistantContentComponent', () => {
       internals().retry('Quais notificações?');
 
       expect(assistant.ask).toHaveBeenCalledWith('Quais notificações?');
+    });
+  });
+
+  describe('chips de ordenação', () => {
+    const active = signal<string | null>(null);
+    const chips = (): HTMLElement[] => Array.from(el().querySelectorAll<HTMLElement>('.assistant-content__chip'));
+
+    beforeEach(() => {
+      active.set(null);
+      TestBed.inject(ScreenActionsService).registerSort({
+        active,
+        options: [
+          { id: 'priority', label: 'Por prioridade' },
+          { id: 'bed', label: 'Por leito' },
+        ],
+        select: id => active.set(id),
+      });
+      assistant.openShortcuts();
+      fixture.detectChanges();
+    });
+
+    it('mostra os chips sem seleção e o chip acionado fica pressionado com ✓', () => {
+      expect(chips().map(c => c.textContent?.trim())).toEqual(['Por prioridade', 'Por leito']);
+      expect(chips().every(c => c.getAttribute('aria-pressed') === 'false')).toBeTrue();
+
+      chips()[1].click();
+      fixture.detectChanges();
+
+      expect(chips()[1].getAttribute('aria-pressed')).toBe('true');
+      expect(chips()[1].querySelector('ph-icon')).not.toBeNull();
+      expect(chips()[0].getAttribute('aria-pressed')).toBe('false');
+    });
+
+    it('sem ordenação registrada não há seção de ordenação', () => {
+      TestBed.inject(ScreenActionsService).registerSort({ active, options: [], select: () => undefined })();
+      fixture.detectChanges();
+
+      expect(el().querySelector('.assistant-content__chips')).toBeNull();
     });
   });
 });

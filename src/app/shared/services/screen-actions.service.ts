@@ -45,6 +45,19 @@ export interface ScreenAction {
   readonly form?: FormActionDefinition;
 }
 
+/** Opção de ordenação pré-definida oferecida como chip no painel de Atalhos. */
+export interface ScreenSortOption {
+  readonly id: string;
+  readonly label: string;
+}
+
+/** Ordenação declarada pela tela: só um critério ativo por vez (`active`); `select` aplica localmente. */
+export interface ScreenSortDefinition {
+  readonly options: readonly ScreenSortOption[];
+  readonly active: Signal<string | null>;
+  readonly select: (id: string) => void;
+}
+
 /**
  * Registro das ações da tela atual. A tela chama `register()` ao iniciar e o cleanup
  * devolvido ao destruir — o assistente só lê `actions()`.
@@ -53,10 +66,25 @@ export interface ScreenAction {
 export class ScreenActionsService {
   readonly actions: Signal<readonly ScreenAction[]>;
 
+  readonly sort: Signal<ScreenSortDefinition | null>;
+
   private readonly actionsSignal = signal<readonly ScreenAction[]>([]);
+  private readonly sortSignal = signal<ScreenSortDefinition | null>(null);
 
   constructor() {
     this.actions = this.actionsSignal.asReadonly();
+    this.sort = this.sortSignal.asReadonly();
+  }
+
+  /** Registra a ordenação da tela (chips do painel de Atalhos); o cleanup só remove se ainda for a atual. */
+  registerSort(definition: ScreenSortDefinition): () => void {
+    this.sortSignal.set(definition);
+
+    return (): void => {
+      if (this.sortSignal() === definition) {
+        this.sortSignal.set(null);
+      }
+    };
   }
 
   /** Registra as ações da tela e devolve a função que as remove (só se ainda forem as atuais). */
