@@ -42,6 +42,7 @@ import { NutritionResultsSource } from '../patients/nutrition-panel/nutrition-re
 import { AssessmentSectionComponent } from './assessment/assessment-section.component';
 import { HypothesisOrigin, PatientHubProfile } from './patient-hub.models';
 import { HypothesisSynthesizer, HypothesisWriter, PatientHubSource } from './patient-hub-source';
+import { PlanSectionComponent } from './plan/plan-section.component';
 import { PriorStaysBoxComponent } from './prior-stays-box/prior-stays-box.component';
 
 type HubStatus = 'loading' | 'ready' | 'not-found' | 'error';
@@ -79,6 +80,7 @@ export const DIAGNOSIS_FAILED_HINT =
     NutritionPanelComponent,
     PageContainerComponent,
     PhIconComponent,
+    PlanSectionComponent,
     PriorStaysBoxComponent,
     TherapyTagComponent,
   ],

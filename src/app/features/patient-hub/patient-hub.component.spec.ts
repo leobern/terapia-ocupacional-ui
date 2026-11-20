@@ -32,6 +32,7 @@ import {
   PriorStaysSource,
   PriorStaysSynthesizer,
 } from './patient-hub-source';
+import { PlanSource } from './plan/plan-source';
 
 const PROFILE: PatientHubProfile = {
   bed: '35',
@@ -166,10 +167,14 @@ async function setup(
       { provide: HypothesisSynthesizer, useValue: synth },
       { provide: HypothesisWriter, useValue: writer },
       { provide: DiagnosisSource, useValue: diagnosis },
+      { provide: PlanSource, useValue: { loadRoute: (): Promise<null> => Promise.resolve(null) } },
       { provide: AssessmentSource, useValue: { loadLatest: (): Promise<null> => Promise.resolve(null) } },
       { provide: PriorStaysSource, useValue: priorStays },
       { provide: PriorStaysSynthesizer, useValue: priorSynth },
-      { provide: ProfessionalProfileReader, useValue: { read: (): { name: string } => ({ name: 'Michelle' }) } },
+      {
+        provide: ProfessionalProfileReader,
+        useValue: { read: (): { name: string; role: string } => ({ name: 'Michelle', role: 'doctor' }) },
+      },
       { provide: NOW, useValue: (): Date => new Date(2026, 4, 28, 12) },
       {
         provide: LinkedHospitalsReader,

@@ -264,6 +264,7 @@
             <span class="hub__diagnosis-title">Diagnóstico</span>
             <ph-icon name="caret-right" [size]="16" />
           </button>
+          <app-plan-section [patientId]="p.id" />
         }
       }
       @case ('not-found') {
