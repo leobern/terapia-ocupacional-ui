@@ -1,0 +1,594 @@
+@use '../../shared/styles/tokens';
+@use '../../shared/styles/breakpoints';
+@use '../../shared/styles/typography';
+
+// Figma "Conductia - V1", seção 08 (Listagem de Pacientes): mobile 402 e desktop 1920.
+:host {
+  --page-container-margin: var(--layout-page-margin, 16px);
+}
+
+.patient-list {
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$space-16;
+  min-height: calc(100dvh - var(--bottom-nav-bar-height));
+  padding-top: tokens.$space-16;
+  padding-bottom: tokens.$space-24;
+
+  // Desktop: o PageContainer ocupa 100% entre menu e assistente; o respiro é da tela
+  // (page-margin 32 nas laterais, 24 em cima, 32 embaixo — Figma v2/PageHeader/frame).
+  @include breakpoints.md {
+    gap: tokens.$space-24;
+    min-height: 100dvh;
+    padding: tokens.$space-24 tokens.$space-32 tokens.$space-32;
+  }
+}
+
+.patient-list__header {
+  display: flex;
+  align-items: center;
+  gap: tokens.$space-8;
+  min-height: 56px;
+  padding-inline: tokens.$space-16;
+
+  // Desktop (Figma v2/PageHeader): 88px, padding 16 em cima, embaixo e à esquerda, 0 à direita.
+  @include breakpoints.md {
+    min-height: 88px;
+    padding: tokens.$space-16 0 tokens.$space-16 tokens.$space-16;
+  }
+}
+
+.patient-list__header-text {
+  display: flex;
+  flex: 1 0 0;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.patient-list__title {
+  display: flex;
+  align-items: center;
+  gap: tokens.$space-8;
+  margin: 0;
+  color: tokens.c(content-1);
+
+  @include typography.headline;
+
+  // Ícone de título em azul (Figma v2/PageHeader).
+  // Mesma cor do item de menu Pacientes (referência direta): azul, 40px.
+  ph-icon {
+    color: tokens.c(secondary);
+  }
+}
+
+.patient-list__subtitle {
+  margin: 0;
+  color: tokens.c(content-4);
+
+  @include typography.caption;
+}
+
+.patient-list__notify {
+  position: relative;
+  display: inline-flex;
+}
+
+// Mesma posição do badge da Home: 26px da esquerda e 4px do topo do botão de 48px.
+.patient-list__notify-badge {
+  position: absolute;
+  top: tokens.$space-4;
+  left: 26px;
+}
+
+.patient-list__shortcuts {
+  display: none;
+
+  @include breakpoints.md {
+    display: inline-flex;
+  }
+}
+
+.patient-list__toolbar {
+  display: flex;
+  align-items: center;
+  gap: tokens.$space-16;
+}
+
+// Desktop: a data funciona como paginação, último elemento embaixo à direita da tabela.
+@include breakpoints.md {
+  .patient-list__toolbar {
+    justify-content: flex-end;
+    order: 10;
+  }
+}
+
+// Mobile: o cadastro vem pelo menu de atalhos da barra inferior (como a Home).
+.patient-list__register {
+  display: none;
+
+  @include breakpoints.md {
+    display: inline-flex;
+  }
+}
+
+.patient-list__clusters {
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$space-16;
+}
+
+.patient-list__cluster {
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$space-8;
+}
+
+// Figma v2/SectionTitle: Title/Md + contador, 40px de altura, recuado em space-16.
+.patient-list__section-title {
+  display: flex;
+  align-items: center;
+  gap: tokens.$space-8;
+  height: 40px;
+  margin: 0;
+  padding: tokens.$space-8 tokens.$space-16;
+  color: tokens.c(content-1);
+
+  @include typography.title-md;
+}
+
+.patient-list__section-title > span:first-child {
+  flex: 1 0 0;
+}
+
+.patient-list__section-count {
+  color: tokens.c(content-4);
+
+  @include typography.label-md;
+}
+
+.patient-list__rows,
+.patient-list__skeleton {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  border: 1px solid tokens.c(border);
+  border-radius: tokens.$radius-md;
+  background: tokens.c(surface);
+  list-style: none;
+  overflow: hidden;
+}
+
+.patient-list__rows li + li {
+  border-top: 1px solid tokens.c(border);
+}
+
+.patient-list__row {
+  display: flex;
+  align-items: center;
+  gap: tokens.$space-12;
+  width: 100%;
+  min-height: 80px;
+  padding: tokens.$space-12 tokens.$space-8 tokens.$space-12 tokens.$space-16;
+  border: 0;
+  background: transparent;
+  color: tokens.c(content-1);
+  text-align: left;
+  cursor: pointer;
+}
+
+.patient-list__info {
+  display: flex;
+  flex: 1 0 0;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  min-width: 0;
+}
+
+// FR-008: nome truncado com reticências.
+.patient-list__name {
+  overflow: hidden;
+  max-width: 100%;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+
+  @include typography.label-lg;
+}
+
+.patient-list__meta {
+  color: tokens.c(content-4);
+
+  @include typography.caption;
+}
+
+.patient-list__location {
+  color: tokens.c(content-3);
+
+  @include typography.label-sm;
+}
+
+// Gauge de 40px com a via de terapia sobreposta na base (Figma v2/PatientRow).
+.patient-list__gauge {
+  position: relative;
+  flex: none;
+  width: 40px;
+  height: 48px;
+}
+
+.patient-list__gauge-tag {
+  position: absolute;
+  top: 26px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.patient-list__chevron {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+}
+
+.patient-list__first {
+  // Ajuste do Thiago (2026-11-19): recuo de -6px à esquerda e 8px abaixo.
+  margin-bottom: tokens.$space-8;
+  margin-left: -6px;
+}
+
+// Sem gráfico: só a palavra, na mesma fonte da tag de terapia, sem a caixa.
+.patient-list__gauge-na {
+  position: absolute;
+  top: 4px;
+  left: 50%;
+  color: tokens.c(content-3);
+  transform: translateX(-50%);
+  white-space: nowrap;
+
+  @include typography.label-sm;
+}
+
+.patient-list__skeleton-row {
+  height: 80px;
+  border-bottom: 1px solid tokens.c(border);
+  background: tokens.c(surface-2);
+}
+
+.patient-list__state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: tokens.$space-16;
+  padding: tokens.$space-80 tokens.$space-16 0;
+  color: tokens.c(primary);
+  text-align: center;
+}
+
+.patient-list__state-title {
+  margin: 0;
+  color: tokens.c(content-1);
+
+  @include typography.title-lg;
+}
+
+.patient-list__state-text {
+  margin: 0;
+  color: tokens.c(content-4);
+
+  @include typography.body-md;
+}
+
+.patient-list__sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+
+// Desktop (Figma 1920): a lista vira tabela dentro de um card com borda; no mobile só as linhas.
+.patient-list__table-card {
+  display: none;
+}
+
+@include breakpoints.md {
+  .patient-list__clusters {
+    display: none;
+  }
+
+  .patient-list__table-card {
+    display: block;
+    overflow: auto hidden;
+    border: 1px solid tokens.c(border);
+    border-radius: tokens.$radius-md;
+    background: tokens.c(surface);
+  }
+
+  .patient-list__table {
+    width: 100%;
+    min-width: 1180px;
+    border-collapse: collapse;
+    table-layout: fixed;
+    color: tokens.c(content-1);
+
+    @include typography.body-md;
+
+    th {
+      position: relative;
+      height: 48px;
+      padding: tokens.$space-12 tokens.$space-16 tokens.$space-12
+        tokens.$space-24;
+      background: tokens.c(surface-2);
+      color: tokens.c(content-4);
+      text-align: left;
+      // Cabeçalho também quebra em até 2 linhas, sem invadir a coluna vizinha.
+      overflow: hidden;
+      overflow-wrap: break-word;
+
+      @include typography.label-md;
+    }
+
+    td {
+      min-height: 64px;
+      height: 64px;
+      padding: tokens.$space-12 tokens.$space-16 tokens.$space-12
+        tokens.$space-24;
+      border-top: 1px solid tokens.c(border);
+      vertical-align: middle;
+    }
+  }
+
+  // Larguras vêm do componente (ajustáveis pelo usuário); só a coluna da seta é fixa.
+  .patient-list__col-action {
+    width: 72px;
+  }
+
+  // Última coluna (botão da seta) fixa à direita, com borda à esquerda: deixa claro que a tabela rola.
+  .patient-list__sticky {
+    position: sticky;
+    right: 0;
+    z-index: 1;
+    background: tokens.c(surface);
+  }
+
+  // Com rolagem horizontal: raio inferior de 8px e barra com 8px de respiro interno (barra de 24px,
+  // polegar de 8px). Sem rolagem, o card volta ao normal. As propriedades padrão do `*` global são
+  // desligadas aqui para o estilo `::-webkit-scrollbar` valer.
+  .patient-list__table-card--scrolls {
+    border-bottom-left-radius: tokens.$radius-xs;
+    border-bottom-right-radius: tokens.$radius-xs;
+    scrollbar-color: auto;
+    scrollbar-width: auto;
+
+    &::-webkit-scrollbar {
+      height: 24px;
+    }
+
+    &::-webkit-scrollbar-thumb {
+      border: 8px solid transparent;
+      border-radius: tokens.$radius-pill;
+      background: tokens.c(border-2);
+      background-clip: content-box;
+    }
+
+    &::-webkit-scrollbar-thumb:hover {
+      background: tokens.c(content-5);
+      background-clip: content-box;
+    }
+  }
+
+  // A borda à esquerda só aparece quando a tabela ganha rolagem horizontal.
+  .patient-list__table-card--scrolls .patient-list__sticky {
+    box-shadow: inset 1px 0 0 tokens.c(border);
+  }
+
+  .patient-list__table th.patient-list__sticky {
+    position: sticky;
+    background: tokens.c(surface-2);
+  }
+
+  .patient-list__tr:hover .patient-list__sticky {
+    background: tokens.c(surface-2);
+  }
+
+  .patient-list__tr {
+    cursor: pointer;
+
+    &:hover {
+      background: tokens.c(surface-2);
+    }
+  }
+
+  // Texto da tabela: quebra em até 2 linhas e, a partir da terceira, reticências.
+  .patient-list__table td,
+  .patient-list__name {
+    overflow-wrap: anywhere;
+  }
+
+  .patient-list__clamp,
+  .patient-list__table td > .patient-list__name,
+  .patient-list__name-cell .patient-list__name {
+    display: -webkit-box;
+    overflow: hidden;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    white-space: normal;
+  }
+
+  .patient-list__name-cell {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: tokens.$space-4 tokens.$space-12;
+    min-width: 0;
+  }
+
+  // Divisória de coluna ajustável: alça invisível no cabeçalho (cursor de redimensionar). No hover
+  // do cabeçalho a linha de divisória surge com fade e segue a coluna inteira (`data-line`).
+  // Título clicável: cursor de mão só sobre o nome; a seta aparece na coluna ordenada.
+  .patient-list__sort {
+    display: inline-flex;
+    align-items: center;
+    gap: tokens.$space-4;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: inherit;
+    cursor: pointer;
+    font: inherit;
+    text-align: left;
+
+    ph-icon {
+      flex: none;
+      color: tokens.c(content-1);
+    }
+  }
+
+  .patient-list__resizer {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    width: 12px;
+    cursor: col-resize;
+    touch-action: none;
+    user-select: none;
+
+    &:focus-visible {
+      outline: none;
+      box-shadow: inset 2px 0 0 tokens.c(secondary);
+    }
+  }
+
+  .patient-list__table th,
+  .patient-list__table td {
+    transition: box-shadow 0.2s ease;
+  }
+
+  @for $i from 2 through 7 {
+    .patient-list__table[data-line='#{$i}'] tr > :nth-child(#{$i}) {
+      box-shadow: inset 1px 0 0 tokens.c(border-2);
+    }
+
+    .patient-list__table[data-line='#{$i}'][data-resizing]
+      tr
+      > :nth-child(#{$i}) {
+      box-shadow: inset 2px 0 0 tokens.c(secondary);
+    }
+  }
+
+  // Botão de ajustar colunas, no canto fixo do cabeçalho.
+  .patient-list__fit {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    border: 0;
+    border-radius: tokens.$radius-pill;
+    background: transparent;
+    color: tokens.c(content-4);
+    cursor: pointer;
+
+    &:hover {
+      background: tokens.c(surface);
+      color: tokens.c(content-1);
+    }
+  }
+
+  // Idade em cima e início da terapia embaixo.
+  .patient-list__line {
+    display: block;
+  }
+
+  .patient-list__cell-location {
+    color: tokens.c(content-3);
+
+    @include typography.body-md;
+  }
+
+  .patient-list__cell-location > span {
+    display: -webkit-box;
+    overflow: hidden;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+  }
+
+  .patient-list__table td.patient-list__cell-action,
+  .patient-list__table th.patient-list__sticky {
+    padding-right: 0;
+    padding-left: 0;
+    text-align: center;
+  }
+
+  .patient-list__cell-first {
+    text-align: right;
+  }
+
+  .patient-list__open {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    padding: 0;
+    border: 0;
+    border-radius: tokens.$radius-pill;
+    background: transparent;
+    color: tokens.c(content-1);
+    cursor: pointer;
+  }
+
+  // Barra de meta (Figma: trilho 80×8 com raio 4 + texto Label/Md).
+  // Barra em cima e texto (percentual e situação) embaixo, sempre: sem quebras estranhas ao encolher.
+  .patient-list__goal {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: tokens.$space-4;
+    min-width: 80px;
+    overflow-wrap: anywhere;
+
+    @include typography.label-md;
+  }
+
+  .patient-list__goal--alert,
+  .patient-list__goal--warning,
+  .patient-list__goal--none {
+    color: tokens.c(content-1);
+  }
+
+  .patient-list__goal--success {
+    color: tokens.c(content-4);
+  }
+
+  .patient-list__bar {
+    position: relative;
+    flex: none;
+    width: 80px;
+    height: 8px;
+    border-radius: tokens.$space-4;
+    background: tokens.c(border);
+    overflow: hidden;
+  }
+
+  .patient-list__bar-fill {
+    position: absolute;
+    inset: 0 auto 0 0;
+    border-radius: tokens.$space-4;
+    background: tokens.c(comm-success);
+  }
+
+  .patient-list__goal--alert .patient-list__bar-fill {
+    background: tokens.c(comm-alert);
+  }
+
+  .patient-list__goal--warning .patient-list__bar-fill {
+    background: tokens.c(comm-warning-strong);
+  }
+}

@@ -35,9 +35,9 @@
   align-items: center;
   gap: tokens.$space-12;
 
+  // Desktop (Figma Home): mesmo padding do header de Pacientes (16 em cima, embaixo e à esquerda).
   @include breakpoints.md {
-    padding-bottom: tokens.$space-16;
-    border-bottom: 1px solid tokens.c(border);
+    padding: tokens.$space-16 0 tokens.$space-16 tokens.$space-16;
   }
 }
 
@@ -122,6 +122,11 @@
   align-items: flex-start;
   gap: tokens.$space-12;
   min-width: 0;
+
+  // Figma Home desktop: 24px entre o seletor de hospital e o título.
+  @include breakpoints.md {
+    gap: tokens.$space-24;
+  }
 }
 
 .home__headline {

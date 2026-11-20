@@ -120,14 +120,25 @@
   stop-color: var(--color-bg-gradient-3, #f0f3f5);
 }
 
+.background-mesh__pstop-1 {
+  stop-color: var(--color-bg-gradient-patients-1, #dbfcff);
+}
+
+.background-mesh__pstop-2 {
+  stop-color: var(--color-bg-gradient-patients-2, #f0f3f5);
+}
+
 .background-mesh__static {
   position: fixed;
   z-index: 0;
   // Figma (componente `background`, instância `static`): mobile 620×620 em (0, 459) da tela;
   // desktop 766×766 em (892, 567) — 72px do trilho + 820 dentro do conteúdo. Modo multiply;
   // opacidade 10% (mobile) / 30% (desktop) no claro e 100% no escuro.
+  // Ancorado na extremidade DIREITA da tela e pode sair dela: o trecho mais visível dos traços
+  // fica na borda direita (decisão do Thiago, 2026-11-19; Figma mobile: right -218px).
   top: 459px;
-  left: 0;
+  right: -218px;
+  left: auto;
   width: 620px;
   height: 620px;
   pointer-events: none;
@@ -136,7 +147,7 @@
 
   @include breakpoints.md {
     top: 567px;
-    left: 892px;
+    right: -240px;
     width: 766px;
     height: 766px;
     opacity: 0.3;

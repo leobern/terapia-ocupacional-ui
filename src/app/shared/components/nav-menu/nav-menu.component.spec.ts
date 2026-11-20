@@ -2,6 +2,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 
 import { PhIconComponent } from '../../icons/ph-icon/ph-icon.component';
+import { ViewportBreakpointService } from '../../services/viewport-breakpoint.service';
 import { IconButtonComponent } from '../icon-button/icon-button.component';
 import { NavMenuComponent, NavMenuItemKey } from './nav-menu.component';
 
@@ -107,6 +108,44 @@ describe('NavMenuComponent', () => {
     logoutButton().click();
 
     expect(logoutClick).toHaveBeenCalledWith(undefined);
+  });
+
+  describe('recolher depois do clique (desktop)', () => {
+    const setDesktop = (value: boolean): void => {
+      (TestBed.inject(ViewportBreakpointService) as { isDesktop: unknown }).isDesktop = (): boolean => value;
+    };
+
+    beforeEach(() => {
+      setDesktop(true);
+    });
+
+    it('suprime o hover após clicar num item e volta quando o mouse sai do trilho', () => {
+      const host = fixture.nativeElement as HTMLElement;
+
+      linkByLabel('Home').click();
+      fixture.detectChanges();
+
+      expect(host.classList).toContain('nav-menu--suppressed');
+
+      // mouse ainda dentro do trilho (aqui o host é `display: contents`, sem largura: borda direita = 0)
+      document.dispatchEvent(new MouseEvent('mousemove', { clientX: 0 }));
+      fixture.detectChanges();
+
+      expect(host.classList).toContain('nav-menu--suppressed');
+
+      document.dispatchEvent(new MouseEvent('mousemove', { clientX: 5000 }));
+      fixture.detectChanges();
+
+      expect(host.classList).not.toContain('nav-menu--suppressed');
+    });
+
+    it('não recolhe no mobile/tablet (menu controlado pelo consumidor)', () => {
+      setDesktop(false);
+      linkByLabel('Home').click();
+      fixture.detectChanges();
+
+      expect((fixture.nativeElement as HTMLElement).classList).not.toContain('nav-menu--suppressed');
+    });
   });
 
   it('does not mark any item as active when activeItem is null (default)', () => {

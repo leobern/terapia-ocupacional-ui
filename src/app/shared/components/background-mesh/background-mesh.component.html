@@ -25,6 +25,31 @@
     </defs>
     <rect width="1" height="1" fill="url(#bg-gradient)" />
   </svg>
+} @else if (variant() === 'patients') {
+  <!-- Gradiente da tela de Pacientes: mesmo vetor do Figma, 2 paradas (0 e 18,5% no claro / 51,4% no escuro). -->
+  <svg
+    class="background-mesh__gradient"
+    preserveAspectRatio="none"
+    viewBox="0 0 1 1"
+  >
+    <defs>
+      <linearGradient
+        id="bg-gradient-patients"
+        gradientUnits="objectBoundingBox"
+        x1="0"
+        y1="0"
+        x2="0.24218"
+        y2="1.15655"
+      >
+        <stop class="background-mesh__pstop-1" offset="0" />
+        <stop
+          class="background-mesh__pstop-2"
+          [attr.offset]="patientsStop2Offset()"
+        />
+      </linearGradient>
+    </defs>
+    <rect width="1" height="1" fill="url(#bg-gradient-patients)" />
+  </svg>
 } @else {
   <div class="background-mesh__blobs">
     @if (showColor3()) {

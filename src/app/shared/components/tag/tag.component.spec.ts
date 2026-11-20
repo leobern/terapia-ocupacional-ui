@@ -171,10 +171,10 @@ describe('TagComponent', () => {
       expect(getComputedStyle(tagEl()).backgroundColor).toBe('rgb(171, 205, 239)');
     });
 
-    it('uses var(--color-tertiary) as the default background', () => {
+    it('uses var(--color-data-tag) as the default background', () => {
       // Valor literal do binding — resolver a custom property em si depende do
       // stylesheet global (_tokens.scss), não carregado neste teste isolado.
-      expect(tagEl().style.background).toBe('var(--color-tertiary)');
+      expect(tagEl().style.background).toBe('var(--color-data-tag)');
     });
 
     it('has max-width: var(--space-280) (280px) and truncates the label with ellipsis', () => {

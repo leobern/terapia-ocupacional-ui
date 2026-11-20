@@ -1,0 +1,526 @@
+<app-page-container>
+  <div class="patient-list">
+    <!-- Figma v2/PageHeader: sem voltar (a tela é aberta pelo menu Pacientes); ícone de título em bold. -->
+    <header class="patient-list__header">
+      <div class="patient-list__header-text">
+        <h1 class="patient-list__title">
+          <ph-icon name="users-three" weight="bold" [size]="40" />
+          @if (status() === 'ready') {
+            {{ countLabel() }}
+          } @else {
+            Pacientes
+          }
+        </h1>
+        <p class="patient-list__subtitle">
+          {{ hospitalName() }}
+          @if (status() === 'ready') {
+            · {{ outOfTargetCount() }} fora da meta
+          }
+        </p>
+      </div>
+      <span class="patient-list__register">
+        <app-button
+          size="md"
+          iconLeft="plus"
+          label="Cadastrar paciente"
+          (click)="registerPatient()"
+        />
+      </span>
+      <!-- Primeira tela da área: notificações + atalhos (telas internas mantêm só os atalhos). -->
+      <span class="patient-list__notify">
+        <app-icon-button
+          kind="primary"
+          appearance="icon"
+          icon="bell"
+          [ariaLabel]="bellLabel()"
+          (click)="openNotifications()"
+        />
+        @if (unreadCount() > 0) {
+          <app-badge
+            class="patient-list__notify-badge"
+            type="numeral"
+            [value]="unreadCount()"
+          />
+        }
+      </span>
+      <!--
+        Só no desktop: no mobile a barra inferior já traz o mesmo atalho. Wrapper <span> porque o
+        host do botão é display: contents (mesmo padrão da Home).
+      -->
+      <span class="patient-list__shortcuts">
+        <app-icon-button
+          kind="primary"
+          appearance="icon"
+          icon="squares-four"
+          ariaLabel="Ações da tela"
+          [disabled]="aiAssistant.shortcutsOpen()"
+          (click)="aiAssistant.openShortcuts()"
+        />
+      </span>
+    </header>
+
+    <div class="patient-list__toolbar">
+      <app-date-strip
+        [selected]="selectedDate()"
+        (dateChange)="selectDate($event)"
+      />
+    </div>
+
+    @switch (status()) {
+      @case ('loading') {
+        <ul
+          class="patient-list__skeleton"
+          aria-busy="true"
+          aria-label="Carregando pacientes"
+        >
+          @for (row of skeletonRows; track row) {
+            <li class="patient-list__skeleton-row" aria-hidden="true"></li>
+          }
+        </ul>
+      }
+      @case ('error') {
+        <div class="patient-list__state" role="alert">
+          <ph-icon name="wifi-x" [size]="48" />
+          <h2 class="patient-list__state-title">
+            Erro ao carregar os pacientes
+          </h2>
+          <p class="patient-list__state-text">
+            Verifique sua conexão e tente novamente.
+          </p>
+          <app-button label="Tentar novamente" (click)="retry()" />
+        </div>
+      }
+      @default {
+        @if (patients().length === 0) {
+          <div class="patient-list__state" role="status">
+            <ph-icon name="users-three" [size]="48" />
+            <h2 class="patient-list__state-title">
+              Nenhum paciente para este dia
+            </h2>
+            <p class="patient-list__state-text">
+              Escolha outro dia ou cadastre um paciente para começar o
+              acompanhamento.
+            </p>
+          </div>
+        } @else {
+          <div
+            #tableCard
+            class="patient-list__table-card"
+            [class.patient-list__table-card--scrolls]="tableScrolls()"
+          >
+            <table
+              class="patient-list__table"
+              [attr.data-line]="lineIndex()"
+              [attr.data-resizing]="resizing() ? '' : null"
+              [style.min-width.px]="tableMinWidth()"
+            >
+              <colgroup>
+                <col [style.width.px]="widths().name" />
+                <col [style.width.px]="widths().age" />
+                <col [style.width.px]="widths().therapy" />
+                <col [style.width.px]="widths().caloric" />
+                <col [style.width.px]="widths().protein" />
+                <col [style.width.px]="widths().location" />
+                <col [style.width.px]="widths().first" />
+                <col class="patient-list__col-action" />
+              </colgroup>
+              <thead>
+                <tr>
+                  <th
+                    scope="col"
+                    [attr.aria-sort]="ariaSort('name')"
+                    (mouseenter)="hoverColumn.set('name')"
+                    (mouseleave)="hoverColumn.set(null)"
+                  >
+                    <button
+                      type="button"
+                      class="patient-list__sort"
+                      (click)="sortBy('name')"
+                    >
+                      <span>Paciente</span>
+                      @if (sortKey() === 'name') {
+                        <ph-icon
+                          [name]="
+                            sortDir() === 'asc' ? 'arrow-up' : 'arrow-down'
+                          "
+                          [size]="14"
+                        />
+                      }
+                    </button>
+                  </th>
+                  <th
+                    scope="col"
+                    [attr.aria-sort]="ariaSort('age')"
+                    (mouseenter)="hoverColumn.set('age')"
+                    (mouseleave)="hoverColumn.set(null)"
+                  >
+                    <span
+                      class="patient-list__resizer"
+                      role="separator"
+                      aria-orientation="vertical"
+                      aria-label="Ajustar a largura da coluna Paciente"
+                      tabindex="0"
+                      [class.patient-list__resizer--active]="
+                        resizing() === 'name'
+                      "
+                      (pointerdown)="startResize($event, 'name')"
+                      (keydown)="resizeByKey($event, 'name')"
+                      (click)="$event.stopPropagation()"
+                    ></span>
+                    <button
+                      type="button"
+                      class="patient-list__sort"
+                      (click)="sortBy('age')"
+                    >
+                      <span>Idade<br />Início da terapia</span>
+                      @if (sortKey() === 'age') {
+                        <ph-icon
+                          [name]="
+                            sortDir() === 'asc' ? 'arrow-up' : 'arrow-down'
+                          "
+                          [size]="14"
+                        />
+                      }
+                    </button>
+                  </th>
+                  <th
+                    scope="col"
+                    [attr.aria-sort]="ariaSort('therapy')"
+                    (mouseenter)="hoverColumn.set('therapy')"
+                    (mouseleave)="hoverColumn.set(null)"
+                  >
+                    <span
+                      class="patient-list__resizer"
+                      role="separator"
+                      aria-orientation="vertical"
+                      aria-label="Ajustar a largura da coluna Idade e início da terapia"
+                      tabindex="0"
+                      [class.patient-list__resizer--active]="
+                        resizing() === 'age'
+                      "
+                      (pointerdown)="startResize($event, 'age')"
+                      (keydown)="resizeByKey($event, 'age')"
+                      (click)="$event.stopPropagation()"
+                    ></span>
+                    <button
+                      type="button"
+                      class="patient-list__sort"
+                      (click)="sortBy('therapy')"
+                    >
+                      <span>Terapia</span>
+                      @if (sortKey() === 'therapy') {
+                        <ph-icon
+                          [name]="
+                            sortDir() === 'asc' ? 'arrow-up' : 'arrow-down'
+                          "
+                          [size]="14"
+                        />
+                      }
+                    </button>
+                  </th>
+                  <th
+                    scope="col"
+                    [attr.aria-sort]="ariaSort('caloric')"
+                    (mouseenter)="hoverColumn.set('caloric')"
+                    (mouseleave)="hoverColumn.set(null)"
+                  >
+                    <span
+                      class="patient-list__resizer"
+                      role="separator"
+                      aria-orientation="vertical"
+                      aria-label="Ajustar a largura da coluna Terapia"
+                      tabindex="0"
+                      [class.patient-list__resizer--active]="
+                        resizing() === 'therapy'
+                      "
+                      (pointerdown)="startResize($event, 'therapy')"
+                      (keydown)="resizeByKey($event, 'therapy')"
+                      (click)="$event.stopPropagation()"
+                    ></span>
+                    <button
+                      type="button"
+                      class="patient-list__sort"
+                      (click)="sortBy('caloric')"
+                    >
+                      <span>Adequação calórica</span>
+                      @if (sortKey() === 'caloric') {
+                        <ph-icon
+                          [name]="
+                            sortDir() === 'asc' ? 'arrow-up' : 'arrow-down'
+                          "
+                          [size]="14"
+                        />
+                      }
+                    </button>
+                  </th>
+                  <th
+                    scope="col"
+                    [attr.aria-sort]="ariaSort('protein')"
+                    (mouseenter)="hoverColumn.set('protein')"
+                    (mouseleave)="hoverColumn.set(null)"
+                  >
+                    <span
+                      class="patient-list__resizer"
+                      role="separator"
+                      aria-orientation="vertical"
+                      aria-label="Ajustar a largura da coluna Adequação calórica"
+                      tabindex="0"
+                      [class.patient-list__resizer--active]="
+                        resizing() === 'caloric'
+                      "
+                      (pointerdown)="startResize($event, 'caloric')"
+                      (keydown)="resizeByKey($event, 'caloric')"
+                      (click)="$event.stopPropagation()"
+                    ></span>
+                    <button
+                      type="button"
+                      class="patient-list__sort"
+                      (click)="sortBy('protein')"
+                    >
+                      <span>Adequação proteica</span>
+                      @if (sortKey() === 'protein') {
+                        <ph-icon
+                          [name]="
+                            sortDir() === 'asc' ? 'arrow-up' : 'arrow-down'
+                          "
+                          [size]="14"
+                        />
+                      }
+                    </button>
+                  </th>
+                  <th
+                    scope="col"
+                    [attr.aria-sort]="ariaSort('location')"
+                    (mouseenter)="hoverColumn.set('location')"
+                    (mouseleave)="hoverColumn.set(null)"
+                  >
+                    <span
+                      class="patient-list__resizer"
+                      role="separator"
+                      aria-orientation="vertical"
+                      aria-label="Ajustar a largura da coluna Adequação proteica"
+                      tabindex="0"
+                      [class.patient-list__resizer--active]="
+                        resizing() === 'protein'
+                      "
+                      (pointerdown)="startResize($event, 'protein')"
+                      (keydown)="resizeByKey($event, 'protein')"
+                      (click)="$event.stopPropagation()"
+                    ></span>
+                    <button
+                      type="button"
+                      class="patient-list__sort"
+                      (click)="sortBy('location')"
+                    >
+                      <span>Localização</span>
+                      @if (sortKey() === 'location') {
+                        <ph-icon
+                          [name]="
+                            sortDir() === 'asc' ? 'arrow-up' : 'arrow-down'
+                          "
+                          [size]="14"
+                        />
+                      }
+                    </button>
+                  </th>
+                  <th
+                    scope="col"
+                    (mouseenter)="hoverColumn.set('first')"
+                    (mouseleave)="hoverColumn.set(null)"
+                  >
+                    <span
+                      class="patient-list__resizer"
+                      role="separator"
+                      aria-orientation="vertical"
+                      aria-label="Ajustar a largura da coluna Localização"
+                      tabindex="0"
+                      [class.patient-list__resizer--active]="
+                        resizing() === 'location'
+                      "
+                      (pointerdown)="startResize($event, 'location')"
+                      (keydown)="resizeByKey($event, 'location')"
+                      (click)="$event.stopPropagation()"
+                    ></span>
+                    <span class="patient-list__sr">Avaliação</span>
+                  </th>
+                  <th scope="col" class="patient-list__sticky">
+                    @if (fitState() === 'needs') {
+                      <button
+                        type="button"
+                        class="patient-list__fit"
+                        aria-label="Ajustar as colunas à largura disponível"
+                        title="Ajustar as colunas à largura disponível"
+                        (click)="fitColumns()"
+                      >
+                        <ph-icon name="arrows-in-line-horizontal" [size]="20" />
+                      </button>
+                    }
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (patient of sorted(); track patient.id) {
+                  <tr
+                    class="patient-list__tr"
+                    (click)="openPatient(patient.id)"
+                  >
+                    <td>
+                      <span class="patient-list__name-cell">
+                        <span class="patient-list__name">{{
+                          patient.name
+                        }}</span>
+                      </span>
+                    </td>
+                    <td>
+                      <span class="patient-list__line"
+                        >{{ patient.age }} anos</span
+                      >
+                      <span class="patient-list__line">{{
+                        therapyStartLabel(patient.therapyDays)
+                      }}</span>
+                    </td>
+                    <td>
+                      <app-therapy-tag
+                        [label]="therapyLabel(patient.therapy)"
+                      />
+                    </td>
+                    <td>
+                      <span
+                        [class]="
+                          'patient-list__goal patient-list__goal--' +
+                          goalTone(patient.adequacy?.caloric ?? null)
+                        "
+                      >
+                        @if (
+                          patient.adequacy?.caloric !== null && patient.adequacy
+                        ) {
+                          <span class="patient-list__bar" aria-hidden="true">
+                            <span
+                              class="patient-list__bar-fill"
+                              [style.width.%]="patient.adequacy.caloric"
+                            ></span>
+                          </span>
+                        }
+                        {{ goalLabel(patient.adequacy?.caloric ?? null) }}
+                      </span>
+                    </td>
+                    <td>
+                      <span
+                        [class]="
+                          'patient-list__goal patient-list__goal--' +
+                          goalTone(patient.adequacy?.protein ?? null)
+                        "
+                      >
+                        @if (
+                          patient.adequacy?.protein !== null && patient.adequacy
+                        ) {
+                          <span class="patient-list__bar" aria-hidden="true">
+                            <span
+                              class="patient-list__bar-fill"
+                              [style.width.%]="patient.adequacy.protein"
+                            ></span>
+                          </span>
+                        }
+                        {{ goalLabel(patient.adequacy?.protein ?? null) }}
+                      </span>
+                    </td>
+                    <td class="patient-list__cell-location">
+                      <span>{{ patient.ward }} · Leito {{ patient.bed }}</span>
+                    </td>
+                    <td class="patient-list__cell-first">
+                      @if (patient.firstEvaluation) {
+                        <app-therapy-tag
+                          tone="active"
+                          label="Primeira avaliação"
+                        />
+                      }
+                    </td>
+                    <td class="patient-list__cell-action patient-list__sticky">
+                      <button
+                        type="button"
+                        class="patient-list__open"
+                        [attr.aria-label]="'Abrir ' + patient.name"
+                        (click)="
+                          $event.stopPropagation(); openPatient(patient.id)
+                        "
+                      >
+                        <ph-icon name="caret-right" [size]="24" />
+                      </button>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+          <div class="patient-list__clusters">
+            @for (group of groups(); track group.key) {
+              <section class="patient-list__cluster">
+                <h2 class="patient-list__section-title">
+                  <span>{{ group.title }}</span>
+                  <span class="patient-list__section-count">{{
+                    group.patients.length
+                  }}</span>
+                </h2>
+                <ul class="patient-list__rows">
+                  @for (patient of group.patients; track patient.id) {
+                    <li>
+                      <button
+                        type="button"
+                        class="patient-list__row"
+                        (click)="openPatient(patient.id)"
+                      >
+                        <span class="patient-list__info">
+                          @if (patient.firstEvaluation) {
+                            <span class="patient-list__first">
+                              <app-therapy-tag
+                                tone="active"
+                                label="Primeira avaliação"
+                              />
+                            </span>
+                          }
+                          <span class="patient-list__name">{{
+                            patient.name
+                          }}</span>
+                          <span class="patient-list__meta"
+                            >{{ patient.age }} anos ·
+                            {{ therapyStartLabel(patient.therapyDays) }}</span
+                          >
+                          <span class="patient-list__location"
+                            >{{ patient.ward }} · Leito {{ patient.bed }}</span
+                          >
+                        </span>
+                        <span class="patient-list__gauge">
+                          @if (hasAdequacy(patient.adequacy)) {
+                            <app-graph-meta
+                              size="small"
+                              [topPercentage]="patient.adequacy.caloric ?? 0"
+                              [bottomPercentage]="patient.adequacy.protein ?? 0"
+                              [ariaLabel]="adequacyLabel(patient.adequacy)"
+                            />
+                          } @else {
+                            <span class="patient-list__gauge-na"
+                              >Indisponível</span
+                            >
+                          }
+                          <span class="patient-list__gauge-tag">
+                            <app-therapy-tag
+                              shape="box"
+                              [label]="therapyLabel(patient.therapy)"
+                            />
+                          </span>
+                        </span>
+                        <span class="patient-list__chevron">
+                          <ph-icon name="caret-right" [size]="24" />
+                        </span>
+                      </button>
+                    </li>
+                  }
+                </ul>
+              </section>
+            }
+          </div>
+        }
+      }
+    }
+  </div>
+</app-page-container>

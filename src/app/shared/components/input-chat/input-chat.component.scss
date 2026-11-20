@@ -25,7 +25,8 @@
 .input-chat__shell {
   @include input-shell.chrome;
 
-  border-radius: tokens.$radius-pill; // Figma v2/InputChat
+  // 24px: com uma linha (48px) parece pílula; com várias linhas não vira uma elipse.
+  border-radius: tokens.$radius-md; // Figma v2/InputChat
   flex: 1 0 0;
   min-width: 0;
 
