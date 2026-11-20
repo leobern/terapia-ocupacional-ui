@@ -12,6 +12,11 @@ import {
 
 import { ButtonComponent } from '../../../shared/components/button/button.component';
 import { IconButtonComponent } from '../../../shared/components/icon-button/icon-button.component';
+import {
+  type InputChatAudioError,
+  InputChatComponent,
+} from '../../../shared/components/input-chat/input-chat.component';
+import { TagComponent } from '../../../shared/components/tag/tag.component';
 import { PhIconComponent } from '../../../shared/icons/ph-icon/ph-icon.component';
 import { ConnectivityService } from '../../../shared/services/connectivity.service';
 import {
@@ -25,6 +30,7 @@ import {
   LIMB_SIDES,
   NutritionFunctionalAssessment,
 } from './assessment.models';
+import { AssessmentAiStructurer } from './assessment-ai-structurer';
 import { AssessmentSource } from './assessment-source';
 import { AssessmentWriter } from './assessment-writer';
 
@@ -34,6 +40,14 @@ export const SAVE_FAILED_HINT =
   'Não foi possível salvar a avaliação. Os valores digitados foram mantidos; tente novamente.';
 export const OFFLINE_SAVE_HINT =
   'Sem conexão: salvar fica indisponível. Você pode continuar preenchendo; os valores serão mantidos.';
+
+export const AI_UNAVAILABLE_HINT = 'Preenchimento por IA indisponível. Preencha manualmente.';
+export const AI_FAILED_HINT =
+  'Não foi possível preencher por IA. Os valores do formulário foram mantidos; tente de novo ou preencha manualmente.';
+export const MIC_DENIED_HINT = 'Sem acesso ao microfone. Preencha manualmente ou permita o microfone e tente de novo.';
+export const MIC_FAILED_HINT = 'Não foi possível gravar o áudio. Preencha manualmente ou tente de novo.';
+export const AI_REVIEW_NOTE = 'Alguns campos foram preenchidos pela IA. Revise antes de salvar.';
+export const AI_PROCESSING_HINT = 'Processando o áudio…';
 
 export const LOAD_FAILED_HINT = 'Não foi possível carregar a avaliação anterior. Os campos abrem vazios.';
 
@@ -58,7 +72,7 @@ function shortDate(iso: string): string {
  */
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ButtonComponent, IconButtonComponent, PhIconComponent],
+  imports: [ButtonComponent, IconButtonComponent, InputChatComponent, PhIconComponent, TagComponent],
   selector: 'app-assessment-section',
   styleUrl: './assessment-section.component.scss',
   templateUrl: './assessment-section.component.html',
@@ -78,11 +92,20 @@ export class AssessmentSectionComponent {
   protected readonly saving = signal(false);
   protected readonly saveFailed = signal(false);
   protected readonly online = inject(ConnectivityService).online;
+  /** Campos (card) preenchidos pela IA e ainda não revisados; só no rascunho, nunca gravado. */
+  protected readonly suggested = signal<ReadonlySet<AssessmentFieldId>>(new Set());
+  protected readonly aiProcessing = signal(false);
+  /** Aviso de falha da IA/microfone (a indisponibilidade por falta de conexão vem de `online`). */
+  protected readonly aiNotice = signal<string | null>(null);
+  protected readonly aiUnavailableHint = AI_UNAVAILABLE_HINT;
+  protected readonly aiReviewNote = AI_REVIEW_NOTE;
+  protected readonly aiProcessingHint = AI_PROCESSING_HINT;
   /** Valores em edição (começam da avaliação carregada); campo ausente = vazio. */
   private readonly draft = signal<Partial<Record<AssessmentFieldId, string>>>({});
 
   private readonly source = inject(AssessmentSource);
   private readonly writer = inject(AssessmentWriter);
+  private readonly structurer = inject(AssessmentAiStructurer);
   private readonly isOpen = signal(false);
   /** Descarta respostas de uma abertura anterior (fechar e reabrir rápido, ou troca de paciente). */
   private token = 0;
@@ -105,12 +128,14 @@ export class AssessmentSectionComponent {
 
   protected open(): void {
     this.saveFailed.set(false);
+    this.resetAi();
     this.isOpen.set(true);
     void this.load();
   }
 
   protected close(): void {
     this.token++;
+    this.resetAi();
     this.isOpen.set(false);
   }
 
@@ -137,6 +162,47 @@ export class AssessmentSectionComponent {
 
   protected edit(id: AssessmentFieldId, value: string): void {
     this.draft.update(current => ({ ...current, [id]: value }));
+    this.unmark(id);
+  }
+
+  protected isSuggested(field: AssessmentFieldDefinition): boolean {
+    return this.suggested().has(field.id);
+  }
+
+  /** Áudio gravado: a IA estrutura os campos no rascunho; nunca salva. */
+  protected async onAudio(audio: Blob): Promise<void> {
+    if (!this.online()) {
+      return;
+    }
+    const token = this.token;
+
+    this.aiNotice.set(null);
+    this.aiProcessing.set(true);
+    try {
+      const result = await this.structurer.structure(audio);
+
+      // Fechou/reabriu, ou a conexão caiu: descarta só o áudio, sem tocar no formulário.
+      if (token !== this.token || !this.online()) {
+        if (token === this.token) {
+          this.aiNotice.set(AI_FAILED_HINT);
+        }
+
+        return;
+      }
+      this.applyStructured(result);
+    } catch {
+      if (token === this.token) {
+        this.aiNotice.set(AI_FAILED_HINT);
+      }
+    } finally {
+      if (token === this.token) {
+        this.aiProcessing.set(false);
+      }
+    }
+  }
+
+  protected onAudioError(reason: InputChatAudioError): void {
+    this.aiNotice.set(reason === 'permission-denied' ? MIC_DENIED_HINT : MIC_FAILED_HINT);
   }
 
   /** Nenhum campo é obrigatório: salva o que houver, omitindo os vazios. */
@@ -204,6 +270,50 @@ export class AssessmentSectionComponent {
     const unit = field.unit === undefined ? '' : ` ${field.unit}`;
 
     return `Anterior: ${previous.value}${unit} em ${shortDate(previous.at)}.`;
+  }
+
+  /** Campos citados sobrescrevem; os demais não são tocados. Valor fora das opções é descartado. */
+  private applyStructured(result: Readonly<Partial<Record<AssessmentFieldId, string>>>): void {
+    const fields = ASSESSMENT_SECTIONS.flatMap(section => section.fields);
+    const next = { ...this.draft() };
+    const marked = new Set(this.suggested());
+
+    for (const field of fields) {
+      const accepted: [AssessmentFieldId, string][] = [];
+      const value = result[field.id]?.trim();
+
+      if (value && (field.options === undefined || field.options.includes(value))) {
+        accepted.push([field.id, value]);
+      }
+      const side = field.sideId === undefined ? undefined : result[field.sideId]?.trim();
+
+      if (field.sideId !== undefined && side && LIMB_SIDES.includes(side)) {
+        accepted.push([field.sideId, side]);
+      }
+      for (const [id, acceptedValue] of accepted) {
+        next[id] = acceptedValue;
+        marked.add(field.id);
+      }
+    }
+    this.draft.set(next);
+    this.suggested.set(marked);
+  }
+
+  /** Editar um campo (ou o seu membro) o torna dado do profissional: some a marca da IA. */
+  private unmark(id: AssessmentFieldId): void {
+    const owner = ASSESSMENT_SECTIONS.flatMap(section => section.fields).find(
+      field => field.id === id || field.sideId === id,
+    )?.id;
+
+    if (owner !== undefined && this.suggested().has(owner)) {
+      this.suggested.update(current => new Set([...current].filter(item => item !== owner)));
+    }
+  }
+
+  private resetAi(): void {
+    this.suggested.set(new Set());
+    this.aiProcessing.set(false);
+    this.aiNotice.set(null);
   }
 
   private async load(): Promise<void> {

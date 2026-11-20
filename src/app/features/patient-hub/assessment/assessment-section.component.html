@@ -124,6 +124,9 @@
                 </p>
               }
             }
+            @if (isSuggested(field)) {
+              <app-tag type="default" label="Sugerido pela IA" />
+            }
             <p class="assessment__help" [id]="'assessment-help-' + field.id">
               {{ helpOf(field) }}
             </p>
@@ -133,6 +136,37 @@
     }
   </div>
 
+  @if (suggested().size > 0) {
+    <p class="assessment__status" role="status">{{ aiReviewNote }}</p>
+  }
+  @if (aiProcessing()) {
+    <p class="assessment__status" role="status">{{ aiProcessingHint }}</p>
+  }
+  @if (!online()) {
+    <p class="assessment__status assessment__status--warning" role="status">
+      {{ aiUnavailableHint }}
+    </p>
+  } @else if (aiNotice(); as notice) {
+    <p class="assessment__status assessment__status--warning" role="alert">
+      {{ notice }}
+    </p>
+  }
+  <!-- Offline: o campo é recriado desabilitado (libera o microfone de uma gravação em curso). -->
+  @if (online()) {
+    <app-input-chat
+      class="assessment__chat"
+      placeholder="Grave um áudio com os dados coletados"
+      [disabled]="aiProcessing() || state() === 'loading'"
+      (audioSend)="onAudio($event)"
+      (audioModeError)="onAudioError($event)"
+    />
+  } @else {
+    <app-input-chat
+      class="assessment__chat"
+      placeholder="Grave um áudio com os dados coletados"
+      [disabled]="true"
+    />
+  }
   @if (!online()) {
     <p class="assessment__status assessment__status--warning" role="status">
       {{ offlineSaveHint }}
