@@ -6,6 +6,8 @@ import { provideRouterStore } from '@ngrx/router-store';
 import { provideStore } from '@ngrx/store';
 
 import { routes } from './app.routing';
+import { DiagnosisSource } from './features/diagnosis/diagnosis-source';
+import { ProvisionalDiagnosisSource } from './features/diagnosis/provisional-diagnosis-source';
 import { DailyPatientsSource } from './features/home/daily-patients';
 import { HomeApiService } from './features/home/data-access/home-api.service';
 import { HomeNotificationsSource } from './features/home/home-notifications-source';
@@ -71,6 +73,7 @@ export const appConfig: ApplicationConfig = {
     { provide: HypothesisSynthesizer, useClass: ProvisionalHypothesisSynthesizer },
     { provide: HypothesisWriter, useClass: ProvisionalHypothesisWriter },
     { provide: AssessmentSource, useClass: ProvisionalAssessmentSource },
+    { provide: DiagnosisSource, useClass: ProvisionalDiagnosisSource },
     { provide: PriorStaysSource, useClass: ProvisionalPriorStaysSource },
     { provide: PriorStaysSynthesizer, useClass: ProvisionalPriorStaysSynthesizer },
     { provide: NutritionResultsSource, useClass: ProvisionalNutritionResultsSource },

@@ -1,0 +1,180 @@
+@use '../../shared/styles/breakpoints';
+@use '../../shared/styles/tokens';
+@use '../../shared/styles/typography';
+
+// Figma "Conductia - V1", seção 08: Diagnóstico GLIM mobile 402 (4685:9425), desenhado pelo agente.
+:host {
+  --page-container-margin: var(--layout-page-margin, 16px);
+}
+
+.diagnosis {
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$space-16;
+  min-height: calc(100dvh - var(--bottom-nav-bar-height));
+  padding-top: tokens.$space-8;
+  padding-bottom: tokens.$space-24;
+
+  @include breakpoints.md {
+    max-width: 578px;
+    min-height: 100dvh;
+    padding: tokens.$space-24 tokens.$space-32 tokens.$space-32;
+  }
+}
+
+.diagnosis__header {
+  display: flex;
+  align-items: center;
+  gap: tokens.$space-8;
+}
+
+.diagnosis__heading {
+  display: flex;
+  flex: 1 0 0;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.diagnosis__title {
+  margin: 0;
+  color: tokens.c(content-1);
+
+  @include typography.headline;
+}
+
+.diagnosis__subtitle {
+  margin: 0;
+  color: tokens.c(content-4);
+
+  @include typography.caption;
+}
+
+.diagnosis__cluster {
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$space-8;
+}
+
+.diagnosis__section-header {
+  display: flex;
+  align-items: center;
+  gap: tokens.$space-8;
+}
+
+.diagnosis__section-title {
+  margin: 0;
+  padding: tokens.$space-8 tokens.$space-16;
+  color: tokens.c(content-1);
+
+  @include typography.title-md;
+}
+
+.diagnosis__count {
+  display: inline-flex;
+  align-items: center;
+  height: 24px;
+  padding-inline: tokens.$space-8;
+  border-radius: tokens.$radius-pill;
+  background: tokens.c(surface-2);
+  color: tokens.c(content-1);
+
+  @include typography.label-sm;
+}
+
+.diagnosis__card {
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$space-12;
+  padding: tokens.$space-16;
+  border-radius: tokens.$radius-lg;
+  background: tokens.c(surface);
+}
+
+.diagnosis__result {
+  margin: 0;
+  color: tokens.c(content-1);
+
+  @include typography.title-lg;
+}
+
+.diagnosis__detail {
+  margin: 0;
+  color: tokens.c(content-4);
+
+  @include typography.label-md;
+}
+
+// Texto informativo (sem ação neste ticket); o botão de confirmar é de outra story.
+.diagnosis__banner {
+  margin: 0;
+  padding: 10px tokens.$space-16;
+  border-radius: tokens.$radius-12;
+  background: tokens.c(surface-2);
+  color: tokens.c(content-1);
+
+  @include typography.body-md;
+}
+
+.diagnosis__group {
+  margin: 0;
+  color: tokens.c(content-1);
+
+  @include typography.label-md;
+}
+
+.diagnosis__criterion {
+  display: flex;
+  align-items: center;
+  gap: tokens.$space-8;
+  margin: 0;
+  color: tokens.c(content-4);
+
+  @include typography.label-md;
+}
+
+.diagnosis__criterion-name {
+  flex: 1 0 0;
+  min-width: 0;
+}
+
+// Ponto colorido sempre acompanhado do texto do estado (cor nunca é o único sinal).
+.diagnosis__dot {
+  flex: 0 0 auto;
+  width: 8px;
+  height: 8px;
+  border-radius: tokens.$radius-pill;
+
+  &--positive {
+    background: tokens.c(comm-alert);
+  }
+
+  &--negative {
+    background: tokens.c(comm-success);
+  }
+
+  &--not-evaluated {
+    background: tokens.c(comm-warning-strong);
+  }
+}
+
+.diagnosis__loading {
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$space-16;
+}
+
+.diagnosis__sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+
+.diagnosis__message {
+  margin: 0;
+  padding: tokens.$space-16;
+  color: tokens.c(content-4);
+
+  @include typography.body-md;
+}
