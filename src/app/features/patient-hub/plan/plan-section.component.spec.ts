@@ -6,9 +6,9 @@ import { CurrentRoute, RouteSaveRequest } from './plan.models';
 import {
   EMPTY_SELECTION_HINT,
   LOAD_FAILED_HINT,
-  RISK_FAILED_HINT,
   OFFLINE_HINT,
   PlanSectionComponent,
+  RISK_FAILED_HINT,
   SAVE_FAILED_HINT,
 } from './plan-section.component';
 import { PlanSource } from './plan-source';
@@ -97,7 +97,7 @@ describe('PlanSectionComponent', () => {
   describe('alerta de síndrome de realimentação', () => {
     const alert = (): HTMLElement | null => el().querySelector('[data-testid="refeeding-alert"]');
 
-    for (const role of ['doctor', 'nutritionist'] as const) {
+    for (const role of ['doctor', 'other'] as const) {
       it(`${role}: risco em progressão mostra o alerta em destaque, antes da via vigente`, async () => {
         riskSource.risk = { atRisk: true, targetReached: false };
         await setup(role);

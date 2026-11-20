@@ -49,9 +49,9 @@
           @if (r.atRisk) {
             <div
               class="plan__alert"
-              [class.plan__alert--reduced]="r.targetReached"
               role="status"
               data-testid="refeeding-alert"
+              [class.plan__alert--reduced]="r.targetReached"
             >
               <ph-icon name="warning" [size]="20" />
               <p class="plan__alert-text">
