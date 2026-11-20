@@ -467,6 +467,7 @@
                       <button
                         type="button"
                         class="patient-list__row"
+                        [attr.aria-label]="'Abrir ' + patient.name"
                         (click)="openPatient(patient.id)"
                       >
                         <span class="patient-list__info">
