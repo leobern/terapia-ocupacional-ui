@@ -23,6 +23,10 @@ import {
   NutritionHistorySource,
   NutritionValueWriter,
 } from '../patients/nutrition-panel/nutrition-card-ports';
+import {
+  NutritionHiddenCardsSheetComponent,
+  SHOW_FAILED_HINT,
+} from '../patients/nutrition-panel/nutrition-hidden-cards-sheet.component';
 import { NutritionPanelComponent } from '../patients/nutrition-panel/nutrition-panel.component';
 import {
   CatalogNutritionIndicatorId,
@@ -64,6 +68,7 @@ const DAY_MS = 86_400_000;
     IconButtonComponent,
     NutritionAddCardSheetComponent,
     NutritionCardModalComponent,
+    NutritionHiddenCardsSheetComponent,
     NutritionPanelComponent,
     PageContainerComponent,
     PhIconComponent,
@@ -107,6 +112,8 @@ export class PatientHubComponent implements OnInit {
   /** Cards ocultos da grid (US6): o dado segue existindo e sendo atualizado por baixo. */
   protected readonly hiddenCards = signal<readonly NutritionIndicatorId[]>([]);
   protected readonly addSheetOpen = signal(false);
+  protected readonly hiddenSheetOpen = signal(false);
+  protected readonly showError = signal<string | null>(null);
   protected readonly addError = signal<string | null>(null);
   protected readonly openCard = signal<NutritionIndicatorId | null>(null);
   protected readonly openCardCurrent = computed<NutritionCurrent | null>(() => {
@@ -232,6 +239,34 @@ export class PatientHubComponent implements OnInit {
       this.addSheetOpen.set(false);
     } catch {
       this.addError.set(ADD_FAILED_HINT);
+    }
+  }
+
+  protected openHiddenSheet(): void {
+    this.showError.set(null);
+    this.hiddenSheetOpen.set(true);
+  }
+
+  protected closeHiddenSheet(): void {
+    this.hiddenSheetOpen.set(false);
+  }
+
+  /** US6/FR-021: reexibe o card (só visibilidade; valor e histórico já estavam preservados). */
+  protected async showCard(id: NutritionIndicatorId): Promise<void> {
+    const patient = this.patientId();
+
+    if (patient === null || !this.connectivity.online()) {
+      return;
+    }
+    this.showError.set(null);
+    try {
+      await this.hiddenStore.setHidden(patient, id, false);
+      this.hiddenCards.update(list => list.filter(i => i !== id));
+      if (this.hiddenCards().length === 0) {
+        this.hiddenSheetOpen.set(false);
+      }
+    } catch {
+      this.showError.set(SHOW_FAILED_HINT);
     }
   }
 

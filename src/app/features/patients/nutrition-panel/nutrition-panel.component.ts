@@ -32,6 +32,8 @@ export class NutritionPanelComponent {
   /** Toque no "+" do título: o Hub abre a listagem de cards disponíveis. */
   readonly addRequest = output();
   /** Toque (ou Enter/Espaço) em um card: o Hub abre o modal de histórico e edição. */
+  /** Toque em "Cards ocultos": o Hub abre a lista para reexibir. */
+  readonly hiddenRequest = output();
   readonly cardSelect = output<NutritionIndicatorId>();
 
   protected readonly cards = computed(() =>
