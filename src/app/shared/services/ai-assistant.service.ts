@@ -113,8 +113,14 @@ export class AiAssistantService {
     this.show('shortcuts', null);
   }
 
-  /** Abre a ação escolhida: formulário se for um cadastro, aviso se ainda não existir. */
+  /** Abre a ação escolhida: navega (fechando o painel) se for de outro fluxo, formulário se for um cadastro, aviso se ainda não existir. */
   openAction(action: ScreenAction): void {
+    if (action.navigate) {
+      this.closePanel();
+      action.navigate();
+
+      return;
+    }
     this.show(action.form ? 'form' : 'unavailable', action);
   }
 

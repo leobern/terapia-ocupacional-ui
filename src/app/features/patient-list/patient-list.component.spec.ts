@@ -3,7 +3,7 @@ import { provideRouter, Router } from '@angular/router';
 
 import { AiAssistantService } from '../../shared/services/ai-assistant.service';
 import { ConnectivityService } from '../../shared/services/connectivity.service';
-import { ScreenActionsService } from '../../shared/services/screen-actions.service';
+import { type ScreenAction, ScreenActionsService } from '../../shared/services/screen-actions.service';
 import { LinkedHospitalsReader } from '../home/linked-hospitals';
 import { UnreadNotificationsReader } from '../home/unread-notifications-reader';
 import { PatientListComponent } from './patient-list.component';
@@ -145,7 +145,7 @@ describe('PatientListComponent', () => {
     expect(TestBed.inject(AiAssistantService).view()).toBe('shortcuts');
   });
 
-  it('agrupa em Fora da meta e Dentro da meta com contagem e mostra no subtítulo', async () => {
+  it('agrupa em Fora da meta e Dentro da meta com contagem e mostra no subtítulo (por prioridade)', async () => {
     source.result = Promise.resolve([
       ...census(2),
       { ...census(1)[0], adequacy: { caloric: 10, protein: 60 }, id: 'out1', name: 'Crítico Um' },
@@ -153,6 +153,8 @@ describe('PatientListComponent', () => {
       { ...census(1)[0], adequacy: null, id: 'none' },
     ]);
     await create();
+    fixture.componentInstance.selectSort('priority');
+    fixture.detectChanges();
     const titles = Array.from(
       (fixture.nativeElement as HTMLElement).querySelectorAll('.patient-list__section-title'),
     ).map(t => t.textContent?.replace(/\s+/g, ' ').trim());
@@ -161,6 +163,129 @@ describe('PatientListComponent', () => {
     expect(text()).toContain('2 fora da meta');
     // o mais crítico (10%) vem primeiro
     expect((q('.patient-list__cluster .patient-list__row') as HTMLElement).textContent).toContain('Crítico Um');
+  });
+
+  describe('ordenação pré-definida (US-004-1-05)', () => {
+    const mixed = (): CensusPatient[] => [
+      { ...census(1)[0], adequacy: { caloric: 90, protein: 90 }, bed: '10', id: 'a', name: 'A', ward: 'Ala 2' },
+      { ...census(1)[0], adequacy: { caloric: 10, protein: 90 }, bed: '2', id: 'b', name: 'B', ward: 'Ala 1' },
+      { ...census(1)[0], adequacy: null, bed: '10', id: 'c', name: 'C', ward: 'Ala 1' },
+      { ...census(1)[0], adequacy: { caloric: 80, protein: 80 }, bed: '9', id: 'd', name: 'D', ward: 'Ala 2' },
+    ];
+    const titles = (): string[] =>
+      qa('.patient-list__section-title').map(t => t.textContent?.replace(/\s+/g, ' ').trim() ?? '');
+    const names = (): string[] =>
+      qa('.patient-list__cluster .patient-list__name').map(n => n.textContent?.trim() ?? '');
+    const sort = (): ReturnType<ScreenActionsService['sort']> => TestBed.inject(ScreenActionsService).sort();
+
+    beforeEach(async () => {
+      source.result = Promise.resolve(mixed());
+      await create();
+    });
+
+    it('a tag mostra o critério ativo, abre o painel e aparece também carregando', async () => {
+      const tag = (): string => q('.patient-list__sort-tag')?.textContent?.replace(/\s+/g, ' ').trim() ?? '';
+
+      expect(tag()).toBe('Ordenar: prioridade');
+
+      sort()?.select('bed');
+      fixture.detectChanges();
+
+      expect(tag()).toBe('Ordenar: leito');
+
+      q('.patient-list__sort-tag')?.click();
+
+      expect(TestBed.inject(AiAssistantService).view()).toBe('shortcuts');
+
+      source.result = new Promise<readonly CensusPatient[]>(() => undefined);
+      fixture.componentInstance.selectDate(new Date(Date.now() - 86_400_000));
+      fixture.componentInstance.confirmPendingDate();
+      fixture.detectChanges();
+
+      expect(q('.patient-list__skeleton')).not.toBeNull();
+      expect(tag()).toBe('Ordenar: leito');
+    });
+
+    it('padrão: por prioridade (Fora/Dentro da meta), como no Figma, com o chip selecionado', () => {
+      expect(titles()).toEqual(['Fora da meta1', 'Dentro da meta3']);
+      expect(sort()?.active()).toBe('priority');
+    });
+
+    it('por leito: ordem estável agrupada por ala', () => {
+      sort()?.select('bed');
+      fixture.detectChanges();
+
+      expect(titles()).toEqual(['Ala 12', 'Ala 22']);
+      expect(names()).toEqual(['B', 'C', 'D', 'A']);
+    });
+
+    it('por prioridade: fora da meta primeiro, preservando todos os pacientes', () => {
+      sort()?.select('priority');
+      fixture.detectChanges();
+
+      expect(titles()).toEqual(['Fora da meta1', 'Dentro da meta3']);
+      expect(names()).toEqual(['B', 'A', 'C', 'D'].sort((x, y) => names().indexOf(x) - names().indexOf(y)));
+      expect(names().length).toBe(4);
+      expect(sort()?.active()).toBe('priority');
+    });
+
+    it('por leito substitui a prioridade e ordena os leitos numericamente', () => {
+      sort()?.select('priority');
+      sort()?.select('bed');
+      fixture.detectChanges();
+
+      expect(sort()?.active()).toBe('bed');
+      expect(names()).toEqual(['B', 'C', 'D', 'A']);
+    });
+
+    it('acionar o critério ativo o mantém', () => {
+      sort()?.select('bed');
+      sort()?.select('bed');
+
+      expect(sort()?.active()).toBe('bed');
+    });
+
+    it('a ordenação não busca dados de novo', () => {
+      const spy = spyOn(source, 'loadCensus').and.callThrough();
+
+      sort()?.select('priority');
+      fixture.detectChanges();
+
+      expect(spy).not.toHaveBeenCalled();
+    });
+
+    it('persiste ao trocar a data e cancelar o alerta não altera o critério', async () => {
+      const yesterday = new Date(Date.now() - 86_400_000);
+
+      sort()?.select('priority');
+      fixture.componentInstance.selectDate(yesterday);
+      fixture.componentInstance.cancelPendingDate();
+
+      expect(sort()?.active()).toBe('priority');
+
+      fixture.componentInstance.selectDate(yesterday);
+      fixture.componentInstance.confirmPendingDate();
+      fixture.detectChanges();
+      await fixture.whenStable();
+      fixture.detectChanges();
+
+      expect(fixture.componentInstance.readOnly()).toBeTrue();
+      expect(sort()?.active()).toBe('priority');
+      expect(titles()[0]).toContain('Fora da meta');
+
+      fixture.componentInstance.selectDate(new Date());
+
+      expect(sort()?.active()).toBe('priority');
+    });
+
+    it('em data retroativa as ações somem, mas os chips de ordenação continuam', async () => {
+      fixture.componentInstance.selectDate(new Date(Date.now() - 86_400_000));
+      fixture.componentInstance.confirmPendingDate();
+      fixture.detectChanges();
+
+      expect(TestBed.inject(ScreenActionsService).actions()).toEqual([]);
+      expect(sort()?.options.map(o => o.label)).toEqual(['Por prioridade', 'Por leito']);
+    });
   });
 
   describe('colunas ajustáveis (desktop)', () => {
@@ -490,7 +615,7 @@ describe('PatientListComponent', () => {
       TestBed.inject(ScreenActionsService)
         .actions()
         .map(a => a.label),
-    ).toEqual(['Cadastrar paciente', 'Editar paciente', 'Encerrar acompanhamento', 'Alterar leito']);
+    ).toEqual(['Cadastrar paciente', 'Alterar dados de paciente', 'Encerrar acompanhamento', 'Alterar leito']);
   });
 
   it('tabela desktop: colunas sem data de nascimento, metas com texto e clique na linha abre o Hub', async () => {
@@ -575,7 +700,56 @@ describe('PatientListComponent', () => {
     expect(text()).toContain('Nenhum paciente para este dia');
     q('.patient-list__register button')?.click();
 
-    expect(router.navigate).toHaveBeenCalledWith(['/home']);
+    expect(router.navigate).toHaveBeenCalledWith(['/patients', 'register']);
+  });
+
+  describe('atalhos de cadastro e edição (US-004-1-07)', () => {
+    const actionByLabel = (label: string): ScreenAction | undefined =>
+      TestBed.inject(ScreenActionsService)
+        .actions()
+        .find(a => a.label === label);
+
+    it('"Cadastrar paciente" fecha o painel e navega ao cadastro da FT-002-1', async () => {
+      await create();
+      const assistant = TestBed.inject(AiAssistantService);
+
+      assistant.openShortcuts();
+      assistant.openAction(actionByLabel('Cadastrar paciente') as ScreenAction);
+
+      expect(assistant.isOpen()).toBeFalse();
+      expect(router.navigate).toHaveBeenCalledWith(['/patients', 'register']);
+    });
+
+    it('"Alterar dados de paciente" fecha o painel e navega à entrada da edição', async () => {
+      await create();
+      const assistant = TestBed.inject(AiAssistantService);
+
+      assistant.openShortcuts();
+      assistant.openAction(actionByLabel('Alterar dados de paciente') as ScreenAction);
+
+      expect(assistant.isOpen()).toBeFalse();
+      expect(router.navigate).toHaveBeenCalledWith(['/patients', 'edit']);
+    });
+
+    it('pedir "cadastrar paciente" ao assistente leva à mesma navegação', async () => {
+      await create();
+      TestBed.inject(AiAssistantService).ask('quero cadastrar um paciente');
+
+      expect(router.navigate).toHaveBeenCalledWith(['/patients', 'register']);
+    });
+
+    it('em data retroativa as duas ações ficam indisponíveis', async () => {
+      await create();
+      const day = new Date();
+
+      day.setDate(day.getDate() - 1);
+      fixture.componentInstance.selectDate(day);
+      fixture.componentInstance.confirmPendingDate();
+      fixture.detectChanges();
+
+      expect(actionByLabel('Cadastrar paciente')).toBeUndefined();
+      expect(actionByLabel('Alterar dados de paciente')).toBeUndefined();
+    });
   });
 
   it('mostra erro e tenta de novo', async () => {
@@ -810,12 +984,14 @@ describe('PatientListComponent', () => {
       await settle();
 
       expect(text()).toContain('Ala 3 · Leito 12');
+      // Oculto não busca. Chamada direta ao tratador (eventos reais de foco do runner podem
+      // disparar `refresh` fora de hora e tornar o teste dependente da ordem).
       visibility.and.returnValue('hidden');
-      source.result = Promise.resolve(moved('Ala 9', '99'));
-      document.dispatchEvent(new Event('visibilitychange'));
-      await settle();
+      const refresh = spyOn(fixture.componentInstance, 'refresh').and.resolveTo();
 
-      expect(text()).not.toContain('Ala 9');
+      (fixture.componentInstance as unknown as { onVisibility(): void }).onVisibility();
+
+      expect(refresh).not.toHaveBeenCalled();
     });
 
     it('puxar-para-atualizar traz a nova localização e mantém ordenação e data', async () => {

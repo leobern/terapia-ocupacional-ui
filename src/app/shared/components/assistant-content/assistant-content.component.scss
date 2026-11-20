@@ -54,6 +54,42 @@
   margin-top: tokens.$space-16;
 }
 
+.assistant-content__section {
+  margin: tokens.$space-16 0 0;
+  color: tokens.c(content-2);
+
+  @include typography.label-md;
+}
+
+.assistant-content__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: tokens.$space-8;
+}
+
+// v2/Chip: 40px de altura (toque ≥ 44px com o espaçamento); selecionado = primary + ✓ no rótulo.
+.assistant-content__chip {
+  display: inline-flex;
+  align-items: center;
+  gap: tokens.$space-4;
+  min-height: 44px;
+  padding: 0 tokens.$space-16;
+  border: 1px solid tokens.c(border);
+  border-radius: tokens.$radius-pill;
+  background: tokens.c(surface-2);
+  color: tokens.c(content-1);
+  cursor: pointer;
+
+  @include typography.label-md;
+  @include mixins.focus-ring;
+}
+
+.assistant-content__chip--selected {
+  border-color: tokens.c(primary);
+  background: tokens.c(primary);
+  color: tokens.c(content-6);
+}
+
 .assistant-content__conversation {
   display: flex;
   flex-direction: column;

@@ -5,6 +5,29 @@
       <p class="assistant-content__body">
         Qual ação você deseja executar nessa tela:
       </p>
+      @if (screenActions.sort(); as sort) {
+        <!-- Figma "3 · Atalhos da tela": chips de ordenação (v2/Chip, 40px); ✓ no rótulo = selecionado. -->
+        <h3 class="assistant-content__section">Ordenação</h3>
+        <div class="assistant-content__chips">
+          @for (option of sort.options; track option.id) {
+            <button
+              type="button"
+              class="assistant-content__chip"
+              [class.assistant-content__chip--selected]="
+                sort.active() === option.id
+              "
+              [attr.aria-pressed]="sort.active() === option.id"
+              (click)="sort.select(option.id)"
+            >
+              @if (sort.active() === option.id) {
+                <ph-icon name="check" weight="bold" [size]="16" />
+              }
+              {{ option.label }}
+            </button>
+          }
+        </div>
+        <h3 class="assistant-content__section">Ações</h3>
+      }
       <!-- Figma 4506:10097: os botões das ações ficam logo abaixo do texto. -->
       <div class="assistant-content__actions">
         @for (action of screenActions.actions(); track action.id) {

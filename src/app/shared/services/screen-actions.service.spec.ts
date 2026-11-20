@@ -1,3 +1,4 @@
+import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 
 import { type ScreenAction, ScreenActionsService } from './screen-actions.service';
@@ -32,5 +33,30 @@ describe('ScreenActionsService', () => {
     cleanupFirst();
 
     expect(service.actions()).toBe(next);
+  });
+
+  it('registerSort expõe a ordenação e o cleanup velho não remove a seguinte', () => {
+    const def = {
+      active: signal<string | null>(null),
+      options: [{ id: 'x', label: 'X' }],
+      select: (): void => undefined,
+    };
+    const next = { ...def };
+    const cleanup = service.registerSort(def);
+
+    expect(service.sort()).toBe(def);
+
+    service.registerSort(next);
+    cleanup();
+
+    expect(service.sort()).toBe(next);
+  });
+
+  it('o cleanup da ordenação atual a remove', () => {
+    const def = { active: signal<string | null>(null), options: [], select: (): void => undefined };
+
+    service.registerSort(def)();
+
+    expect(service.sort()).toBeNull();
   });
 });

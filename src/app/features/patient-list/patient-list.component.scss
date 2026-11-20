@@ -1,5 +1,6 @@
 @use '../../shared/styles/tokens';
 @use '../../shared/styles/breakpoints';
+@use '../../shared/styles/mixins';
 @use '../../shared/styles/typography';
 
 // Figma "Conductia - V1", seção 08 (Listagem de Pacientes): mobile 402 e desktop 1920.
@@ -92,6 +93,34 @@
   display: flex;
   align-items: center;
   gap: tokens.$space-16;
+}
+
+// Mobile (Figma v2/SelectTag + IconButton tonal): tag de ordenação à esquerda, atalhos à direita.
+.patient-list__sortbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: tokens.$space-8;
+
+  @include breakpoints.md {
+    display: none;
+  }
+}
+
+.patient-list__sort-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: tokens.$space-8;
+  min-height: 44px;
+  padding: 0 tokens.$space-12;
+  border: 0;
+  border-radius: tokens.$radius-pill;
+  background: tokens.c(surface-2);
+  color: tokens.c(content-1);
+  cursor: pointer;
+
+  @include typography.label-md;
+  @include mixins.focus-ring;
 }
 
 // Desktop: a data funciona como paginação, último elemento embaixo à direita da tabela.
