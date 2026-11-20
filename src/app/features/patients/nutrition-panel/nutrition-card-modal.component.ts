@@ -33,6 +33,8 @@ const ORIGIN_LABEL: Record<NutritionValueOrigin, string> = {
 
 export const EMPTY_VALUE_HINT = 'Preencha um valor antes de salvar.';
 export const OFFLINE_SAVE_HINT = 'Conexão necessária para salvar o valor.';
+export const OFFLINE_DELETE_HINT = 'Conexão necessária para apagar a entrada.';
+export const DELETE_FAILED_HINT = 'Não foi possível apagar a entrada. Tente novamente.';
 export const SAVE_FAILED_HINT = 'Não foi possível salvar o valor. Tente novamente.';
 
 /** Formata ISO como dd/MM (internação atual; o ano é omitido como no Figma 4679-8695). */
@@ -67,6 +69,7 @@ export class NutritionCardModalComponent {
   protected readonly history = signal<readonly NutritionHistoryEntry[]>([]);
   protected readonly draft = signal('');
   protected readonly error = signal<string | null>(null);
+  protected readonly deleteError = signal<string | null>(null);
   protected readonly saving = signal(false);
   protected readonly offline = computed(() => !this.connectivity.online());
 
@@ -90,7 +93,12 @@ export class NutritionCardModalComponent {
     return `Valor atual · ${ORIGIN_LABEL[c.origin]}${date}`;
   });
   protected readonly entries = computed(() =>
-    this.history().map(e => ({ meta: `${shortDate(e.at)} · ${ORIGIN_LABEL[e.origin]}`, value: e.value })),
+    this.history().map(e => ({
+      entry: e,
+      label: `Apagar entrada ${e.value}, ${shortDate(e.at)}`,
+      meta: `${shortDate(e.at)} · ${ORIGIN_LABEL[e.origin]}`,
+      value: e.value,
+    })),
   );
 
   private readonly dialogRef = viewChild<ElementRef<HTMLDialogElement>>('dialogEl');
@@ -109,6 +117,7 @@ export class NutritionCardModalComponent {
         untracked(() => {
           this.draft.set('');
           this.error.set(null);
+          this.deleteError.set(null);
           void this.loadHistory(indicator);
         });
       } else if (indicator === null && element?.open) {
@@ -170,6 +179,33 @@ export class NutritionCardModalComponent {
       this.error.set(SAVE_FAILED_HINT);
     } finally {
       this.saving.set(false);
+    }
+  }
+
+  protected async deleteEntry(entry: NutritionHistoryEntry): Promise<void> {
+    const indicator = this.indicator();
+    const patientId = this.patientId();
+
+    if (indicator === null || patientId === null) {
+      return;
+    }
+    if (this.offline()) {
+      this.deleteError.set(OFFLINE_DELETE_HINT);
+
+      return;
+    }
+    this.deleteError.set(null);
+    try {
+      await this.writer.deleteEntry({
+        at: this.now().toISOString(),
+        author: this.professional.read().name,
+        entry,
+        indicator,
+        patientId,
+      });
+      this.history.update(list => list.filter(e => e.id !== entry.id));
+    } catch {
+      this.deleteError.set(DELETE_FAILED_HINT);
     }
   }
 

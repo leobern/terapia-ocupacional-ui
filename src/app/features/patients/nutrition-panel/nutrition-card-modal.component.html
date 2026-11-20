@@ -70,13 +70,31 @@
           Histórico desta internação
         </h3>
         <ul class="card-modal__entries">
-          @for (entry of entries(); track $index) {
+          @for (item of entries(); track item.entry.id) {
             <li class="card-modal__entry">
-              <span class="card-modal__entry-value">{{ entry.value }}</span>
-              <span class="card-modal__entry-meta">{{ entry.meta }}</span>
+              <div class="card-modal__entry-text">
+                <span class="card-modal__entry-value">{{ item.value }}</span>
+                <span class="card-modal__entry-meta">{{ item.meta }}</span>
+              </div>
+              <app-icon-button
+                kind="secondary"
+                appearance="icon"
+                icon="trash"
+                [ariaLabel]="item.label"
+                [disabled]="offline()"
+                (click)="deleteEntry(item.entry)"
+              />
             </li>
           }
         </ul>
+        @if (offline()) {
+          <p class="card-modal__error" role="status">
+            Conexão necessária para apagar a entrada.
+          </p>
+        }
+        @if (deleteError(); as message) {
+          <p class="card-modal__error" role="alert">{{ message }}</p>
+        }
       </section>
     }
   </div>

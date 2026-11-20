@@ -36,6 +36,8 @@ export interface NutritionCurrent {
 /** Entrada do histórico de um card na internação atual (mais recente primeiro). */
 export interface NutritionHistoryEntry {
   readonly at: string;
+  /** Identidade estável da entrada (necessária para apagá-la da visualização). */
+  readonly id: string;
   readonly origin: NutritionValueOrigin;
   readonly value: string;
 }
@@ -52,3 +54,12 @@ export interface NutritionValueEdit {
 }
 
 export type NutritionManualValues = Partial<Record<NutritionIndicatorId, NutritionCurrent>>;
+
+/** Exclusão de uma entrada da visualização do histórico; vira registro de auditoria (FR-011). */
+export interface NutritionHistoryDeletion {
+  readonly at: string;
+  readonly author: string;
+  readonly entry: NutritionHistoryEntry;
+  readonly indicator: NutritionIndicatorId;
+  readonly patientId: string;
+}

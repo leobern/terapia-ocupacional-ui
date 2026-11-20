@@ -148,8 +148,17 @@
 
 .card-modal__entry {
   display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: tokens.$space-12;
+  min-height: 44px;
+}
+
+.card-modal__entry-text {
+  display: flex;
   flex-direction: column;
   gap: 2px;
+  min-width: 0;
 }
 
 .card-modal__entry-value {
