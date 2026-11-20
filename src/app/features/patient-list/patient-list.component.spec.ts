@@ -775,6 +775,106 @@ describe('PatientListComponent', () => {
     });
   });
 
+  describe('atualização da localização (US-004-1-09 / FR-035, FR-036, FR-039)', () => {
+    const moved = (ward: string, bed: string): readonly CensusPatient[] => census(1).map(p => ({ ...p, ward, bed }));
+    const touch = (type: string, y: number): void => {
+      const el = q('.patient-list') as HTMLElement;
+      const t = new Touch({ identifier: 1, target: el, clientY: y });
+
+      el.dispatchEvent(
+        new TouchEvent(type, { bubbles: true, touches: type === 'touchend' ? [] : [t], changedTouches: [t] }),
+      );
+    };
+    const settle = async (): Promise<void> => {
+      await fixture.whenStable();
+      fixture.detectChanges();
+    };
+
+    it('ao receber foco busca de novo e o card mostra a nova ala/leito', async () => {
+      source.result = Promise.resolve(moved('Ala 1', '1'));
+      await create();
+      source.result = Promise.resolve(moved('Ala 3', '12'));
+      window.dispatchEvent(new Event('focus'));
+      await settle();
+
+      expect(text()).toContain('Ala 3 · Leito 12');
+    });
+
+    it('ao voltar a ficar visível busca de novo; oculto não busca', async () => {
+      source.result = Promise.resolve(moved('Ala 1', '1'));
+      await create();
+      source.result = Promise.resolve(moved('Ala 3', '12'));
+      const visibility = spyOnProperty(Document.prototype, 'visibilityState', 'get').and.returnValue('visible');
+
+      document.dispatchEvent(new Event('visibilitychange'));
+      await settle();
+
+      expect(text()).toContain('Ala 3 · Leito 12');
+      visibility.and.returnValue('hidden');
+      source.result = Promise.resolve(moved('Ala 9', '99'));
+      document.dispatchEvent(new Event('visibilitychange'));
+      await settle();
+
+      expect(text()).not.toContain('Ala 9');
+    });
+
+    it('puxar-para-atualizar traz a nova localização e mantém ordenação e data', async () => {
+      source.result = Promise.resolve(moved('Ala 1', '1'));
+      await create();
+      fixture.componentInstance.sortBy('location');
+      const date = fixture.componentInstance.selectedDate();
+
+      source.result = Promise.resolve(moved('Ala 4', '7'));
+      touch('touchstart', 10);
+      touch('touchend', 200);
+      await settle();
+
+      expect(text()).toContain('Ala 4 · Leito 7');
+      expect(fixture.componentInstance.sortKey()).toBe('location');
+      expect(fixture.componentInstance.selectedDate()).toBe(date);
+    });
+
+    it('enquanto a lista ainda carrega, a atualização é ignorada', async () => {
+      source.result = new Promise<readonly CensusPatient[]>(() => undefined);
+      fixture = TestBed.createComponent(PatientListComponent);
+      fixture.detectChanges();
+      await fixture.componentInstance.refresh();
+
+      expect(fixture.componentInstance.status()).toBe('loading');
+    });
+
+    it('arrasto curto não atualiza', async () => {
+      source.result = Promise.resolve(moved('Ala 1', '1'));
+      await create();
+      source.result = Promise.resolve(moved('Ala 4', '7'));
+      touch('touchstart', 10);
+      touch('touchend', 50);
+      await settle();
+
+      expect(text()).not.toContain('Ala 4');
+    });
+
+    it('offline ou com erro mantém o último cache sem erro', async () => {
+      source.result = Promise.resolve(moved('Ala 1', '1'));
+      await create();
+      const connectivity = TestBed.inject(ConnectivityService);
+
+      connectivity.online.set(false);
+      source.result = Promise.resolve(moved('Ala 4', '7'));
+      await fixture.componentInstance.refresh();
+      fixture.detectChanges();
+
+      expect(text()).toContain('Ala 1 · Leito 1');
+      connectivity.online.set(true);
+      source.result = Promise.reject(new Error('falha'));
+      await fixture.componentInstance.refresh();
+      fixture.detectChanges();
+
+      expect(text()).toContain('Ala 1 · Leito 1');
+      expect(fixture.componentInstance.status()).toBe('ready');
+    });
+  });
+
   describe('swipe à direita: alteração de leito (US-004-1-09)', () => {
     const swipeRight = (row: number, to: number): void => {
       const content = fixture.nativeElement.querySelectorAll('.swipe-row__content')[row] as HTMLElement;
