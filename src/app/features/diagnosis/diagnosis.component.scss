@@ -104,7 +104,7 @@
   @include typography.label-md;
 }
 
-// Texto informativo (sem ação neste ticket); o botão de confirmar é de outra story.
+// Texto informativo (estado da decisão do médico).
 .diagnosis__banner {
   margin: 0;
   padding: 10px tokens.$space-16;
@@ -211,4 +211,11 @@
 
 .diagnosis__tile-result {
   @include typography.title-md;
+}
+
+// Ações do médico (Figma 4685-9425: Confirmar primário, Alterar secundário, Excluir ghost; botões md).
+.diagnosis__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: tokens.$space-8;
 }

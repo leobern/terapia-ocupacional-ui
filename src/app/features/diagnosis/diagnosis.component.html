@@ -34,16 +34,58 @@
           <div class="diagnosis__card">
             <p class="diagnosis__result">{{ title() }}</p>
             <p class="diagnosis__detail">{{ detail() }}</p>
-            @if (calculated()) {
-              <p class="diagnosis__banner">
-                Aguardando confirmação do médico. Só o médico confirma, altera
-                ou exclui.
-              </p>
+            @if (hasResult()) {
+              @if (record().decision; as decision) {
+                <p class="diagnosis__banner" role="status">
+                  {{ decisionNote(decision) }}
+                </p>
+              } @else {
+                <p class="diagnosis__banner">
+                  Aguardando confirmação do médico. Só o médico confirma, altera
+                  ou exclui.
+                </p>
+              }
+              @if (alteredNote(); as note) {
+                <p class="diagnosis__banner">{{ note }}</p>
+              }
+              @if (showActions()) {
+                <div class="diagnosis__actions">
+                  <app-button
+                    label="Confirmar"
+                    size="md"
+                    [disabled]="!canAct()"
+                    (click)="confirm()"
+                  />
+                  <app-button
+                    label="Alterar"
+                    kind="secondary"
+                    size="md"
+                    [disabled]="!canAct()"
+                    (click)="openAlter()"
+                  />
+                  <app-button
+                    label="Excluir"
+                    kind="secondary"
+                    appearance="ghost"
+                    size="md"
+                    [disabled]="!canAct()"
+                    (click)="askExclude()"
+                  />
+                </div>
+                @if (!connectivityOnline()) {
+                  <p class="diagnosis__message" role="status">
+                    {{ actionsOfflineHint }}
+                  </p>
+                }
+              }
+              @if (actionHint(); as hint) {
+                <p class="diagnosis__message" role="alert">{{ hint }}</p>
+              }
             }
           </div>
         </section>
 
-        @if (calculated()) {
+        @if (hasResult() && !excluded()) {
           <section class="diagnosis__cluster" aria-labelledby="criteria-title">
             <div class="diagnosis__section-header">
               <h2 id="criteria-title" class="diagnosis__section-title">
@@ -128,3 +170,21 @@
     }
   </div>
 </app-page-container>
+
+@if (shown(); as result) {
+  <app-diagnosis-alter-sheet
+    [open]="altering()"
+    [result]="result"
+    (saved)="alter($event)"
+    (cancelled)="closeAlter()"
+  />
+}
+<app-confirm-dialog
+  title="Excluir diagnóstico?"
+  message="O resultado calculado deixa de valer e a exclusão fica registrada."
+  confirmLabel="Excluir"
+  cancelLabel="Cancelar"
+  [open]="confirmingExclusion()"
+  (confirmed)="exclude()"
+  (cancelled)="cancelExclude()"
+/>
