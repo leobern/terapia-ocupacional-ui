@@ -194,8 +194,9 @@ export class PatientListComponent implements OnInit {
    * estável por leito (suposição da story, a confirmar com UX). Fica na tela enquanto ela estiver aberta,
    * independente da data selecionada.
    */
-  readonly presetSort = signal<PresetSort | null>(null);
-  /** Texto da tag "Ordenar: …" (padrão por leito, ver `presetSort`). */
+  // Padrão: prioridade (Fora/Dentro da meta), como no Figma "Ordenar: prioridade".
+  readonly presetSort = signal<PresetSort | null>('priority');
+  /** Texto da tag "Ordenar: …" (padrão: prioridade, ver `presetSort`). */
   readonly sortLabel = computed(() => (this.presetSort() === 'priority' ? 'prioridade' : 'leito'));
   readonly activeSort = computed<string | null>(() => this.presetSort());
   /** Prioridade: quem está fora da meta primeiro, do mais crítico ao menos. Leito: grupos por ala, leitos em ordem numérica. */

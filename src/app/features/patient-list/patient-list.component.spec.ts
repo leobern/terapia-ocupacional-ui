@@ -186,12 +186,12 @@ describe('PatientListComponent', () => {
     it('a tag mostra o critério ativo, abre o painel e aparece também carregando', async () => {
       const tag = (): string => q('.patient-list__sort-tag')?.textContent?.replace(/\s+/g, ' ').trim() ?? '';
 
-      expect(tag()).toBe('Ordenar: leito');
+      expect(tag()).toBe('Ordenar: prioridade');
 
-      sort()?.select('priority');
+      sort()?.select('bed');
       fixture.detectChanges();
 
-      expect(tag()).toBe('Ordenar: prioridade');
+      expect(tag()).toBe('Ordenar: leito');
 
       q('.patient-list__sort-tag')?.click();
 
@@ -203,13 +203,20 @@ describe('PatientListComponent', () => {
       fixture.detectChanges();
 
       expect(q('.patient-list__skeleton')).not.toBeNull();
-      expect(tag()).toBe('Ordenar: prioridade');
+      expect(tag()).toBe('Ordenar: leito');
     });
 
-    it('padrão: ordem estável por leito, agrupada por ala, sem chip selecionado', () => {
+    it('padrão: por prioridade (Fora/Dentro da meta), como no Figma, com o chip selecionado', () => {
+      expect(titles()).toEqual(['Fora da meta1', 'Dentro da meta3']);
+      expect(sort()?.active()).toBe('priority');
+    });
+
+    it('por leito: ordem estável agrupada por ala', () => {
+      sort()?.select('bed');
+      fixture.detectChanges();
+
       expect(titles()).toEqual(['Ala 12', 'Ala 22']);
       expect(names()).toEqual(['B', 'C', 'D', 'A']);
-      expect(sort()?.active()).toBeNull();
     });
 
     it('por prioridade: fora da meta primeiro, preservando todos os pacientes', () => {
