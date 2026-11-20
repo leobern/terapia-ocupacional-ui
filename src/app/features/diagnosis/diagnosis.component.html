@@ -48,6 +48,14 @@
               @if (alteredNote(); as note) {
                 <p class="diagnosis__banner">{{ note }}</p>
               }
+              @if (canCompleteData()) {
+                <app-button
+                  label="Completar dados"
+                  kind="primary"
+                  size="md"
+                  (click)="completeData()"
+                />
+              }
               @if (showActions()) {
                 <div class="diagnosis__actions">
                   <app-button

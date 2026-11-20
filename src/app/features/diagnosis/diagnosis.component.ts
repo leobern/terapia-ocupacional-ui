@@ -1,7 +1,7 @@
 import { Location } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, OnInit, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { map } from 'rxjs';
 
 import { ButtonComponent } from '../../shared/components/button/button.component';
@@ -157,6 +157,8 @@ export class DiagnosisComponent implements OnInit {
 
     return OUTCOME_DETAILS[d.outcome];
   });
+  /** FR-015: só o resultado Indeterminado (e ainda não excluído) oferece completar os dados faltantes. */
+  protected readonly canCompleteData = computed(() => !this.excluded() && this.diagnosis().outcome === 'indeterminate');
   protected readonly hasResult = computed(() => this.diagnosis().outcome !== 'no-screening');
   protected readonly phenotypic = computed(() => this.rows().filter(r => r.definition.group === 'phenotypic'));
   protected readonly etiologic = computed(() => this.rows().filter(r => r.definition.group === 'etiologic'));
@@ -168,12 +170,25 @@ export class DiagnosisComponent implements OnInit {
   private readonly now = inject(NOW);
   private readonly hub = inject(PatientHubSource);
   private readonly location = inject(Location);
+  private readonly router = inject(Router);
   private readonly patientId = toSignal(inject(ActivatedRoute).paramMap.pipe(map(params => params.get('id'))), {
     initialValue: null,
   });
 
   ngOnInit(): void {
     void this.load();
+  }
+
+  /**
+   * Leva à Avaliação Nutricional e Funcional (que vive no hub do paciente). Ao voltar para esta tela
+   * ela é recriada e recalcula a partir dos dados atuais (FR-016).
+   */
+  protected completeData(): void {
+    const id = this.patientId();
+
+    if (id !== null) {
+      void this.router.navigate(['/patients', id]);
+    }
   }
 
   protected back(): void {
