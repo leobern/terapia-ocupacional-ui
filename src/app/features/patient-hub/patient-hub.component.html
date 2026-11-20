@@ -247,6 +247,7 @@
 
         @if (profile(); as p) {
           <app-assessment-section [patientId]="p.id" />
+          <app-plan-section [patientId]="p.id" />
         }
       }
       @case ('not-found') {

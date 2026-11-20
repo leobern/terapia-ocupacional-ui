@@ -32,6 +32,8 @@ import {
   PriorStaysSource,
   PriorStaysSynthesizer,
 } from './features/patient-hub/patient-hub-source';
+import { PlanSource } from './features/patient-hub/plan/plan-source';
+import { ProvisionalPlanSource } from './features/patient-hub/plan/provisional-plan-source';
 import {
   ProvisionalHypothesisSynthesizer,
   ProvisionalHypothesisWriter,
@@ -71,6 +73,7 @@ export const appConfig: ApplicationConfig = {
     { provide: HypothesisSynthesizer, useClass: ProvisionalHypothesisSynthesizer },
     { provide: HypothesisWriter, useClass: ProvisionalHypothesisWriter },
     { provide: AssessmentSource, useClass: ProvisionalAssessmentSource },
+    { provide: PlanSource, useClass: ProvisionalPlanSource },
     { provide: PriorStaysSource, useClass: ProvisionalPriorStaysSource },
     { provide: PriorStaysSynthesizer, useClass: ProvisionalPriorStaysSynthesizer },
     { provide: NutritionResultsSource, useClass: ProvisionalNutritionResultsSource },
