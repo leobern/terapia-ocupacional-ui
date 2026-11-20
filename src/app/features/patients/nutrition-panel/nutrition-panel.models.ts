@@ -10,7 +10,22 @@ export const FIXED_NUTRITION_INDICATORS = [
   { id: 'protein-adequacy', label: '% adequação proteica' },
 ] as const;
 
-export type NutritionIndicatorId = (typeof FIXED_NUTRITION_INDICATORS)[number]['id'];
+/**
+ * Catálogo fechado (MVP) de cards adicionáveis pelo "+" (FT-004-3, US5). A lista completa e as
+ * unidades serão levantadas com o negócio: para ampliar, acrescente itens aqui.
+ */
+export const NUTRITION_CARD_CATALOG = [
+  { id: 'indirect-calorimetry', label: 'Calorimetria indireta', unit: 'kcal/dia' },
+] as const;
+
+export type FixedNutritionIndicatorId = (typeof FIXED_NUTRITION_INDICATORS)[number]['id'];
+export type CatalogNutritionIndicatorId = (typeof NUTRITION_CARD_CATALOG)[number]['id'];
+export type NutritionIndicatorId = FixedNutritionIndicatorId | CatalogNutritionIndicatorId;
+
+/** Rótulo de qualquer indicador (fixo ou do catálogo); vazio se desconhecido. */
+export function nutritionIndicatorLabel(id: NutritionIndicatorId | null): string {
+  return [...FIXED_NUTRITION_INDICATORS, ...NUTRITION_CARD_CATALOG].find(i => i.id === id)?.label ?? '';
+}
 
 /** Valor atual por indicador; ausente (ou vazio) significa "Sem dados". */
 export type NutritionValues = Partial<Record<NutritionIndicatorId, string | null>>;
@@ -19,6 +34,7 @@ export type NutritionValues = Partial<Record<NutritionIndicatorId, string | null
 export const NUTRITION_UNITS: Partial<Record<NutritionIndicatorId, string>> = {
   bmi: 'kg/m²',
   'calorie-adequacy': '%',
+  'indirect-calorimetry': 'kcal/dia',
   'protein-adequacy': '%',
   weight: 'kg',
 };

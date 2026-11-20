@@ -12,11 +12,21 @@ import { PhIconComponent } from '../../shared/icons/ph-icon/ph-icon.component';
 import { ConnectivityService } from '../../shared/services/connectivity.service';
 import { HospitalContextService } from '../home/hospital-context.service';
 import { NOW, ProfessionalProfileReader } from '../home/professional-profile';
+import {
+  ADD_FAILED_HINT,
+  NutritionAddCardSheetComponent,
+} from '../patients/nutrition-panel/nutrition-add-card-sheet.component';
 import { NutritionCardModalComponent } from '../patients/nutrition-panel/nutrition-card-modal.component';
-import { NutritionHistorySource, NutritionValueWriter } from '../patients/nutrition-panel/nutrition-card-ports';
+import {
+  NutritionAddedCards,
+  NutritionHistorySource,
+  NutritionValueWriter,
+} from '../patients/nutrition-panel/nutrition-card-ports';
 import { NutritionPanelComponent } from '../patients/nutrition-panel/nutrition-panel.component';
 import {
+  CatalogNutritionIndicatorId,
   FIXED_NUTRITION_INDICATORS,
+  NUTRITION_CARD_CATALOG,
   NutritionCurrent,
   NutritionIndicatorId,
   NutritionManualValues,
@@ -50,6 +60,7 @@ const DAY_MS = 86_400_000;
   imports: [
     ButtonComponent,
     IconButtonComponent,
+    NutritionAddCardSheetComponent,
     NutritionCardModalComponent,
     NutritionPanelComponent,
     PageContainerComponent,
@@ -77,7 +88,7 @@ export class PatientHubComponent implements OnInit {
   protected readonly values = computed<NutritionValues>(() => {
     const merged: NutritionValues = { ...this.resultValues() };
 
-    for (const { id } of FIXED_NUTRITION_INDICATORS) {
+    for (const { id } of [...FIXED_NUTRITION_INDICATORS, ...NUTRITION_CARD_CATALOG]) {
       const manual = this.manual()[id];
 
       if (manual) {
@@ -88,6 +99,10 @@ export class PatientHubComponent implements OnInit {
     return merged;
   });
   /** Card aberto no modal de histórico/edição; `null` = fechado. */
+  /** Cards adicionados pelo "+" (tipos do catálogo), na ordem de adição. */
+  protected readonly addedCards = signal<readonly CatalogNutritionIndicatorId[]>([]);
+  protected readonly addSheetOpen = signal(false);
+  protected readonly addError = signal<string | null>(null);
   protected readonly openCard = signal<NutritionIndicatorId | null>(null);
   protected readonly openCardCurrent = computed<NutritionCurrent | null>(() => {
     const id = this.openCard();
@@ -143,6 +158,7 @@ export class PatientHubComponent implements OnInit {
   private readonly manual = signal<NutritionManualValues>({});
   private resultsLoaded = false;
   private readonly cardStore = inject(NutritionHistorySource);
+  private readonly addedStore = inject(NutritionAddedCards);
   private readonly cardWriter = inject(NutritionValueWriter);
   private readonly editing = signal<'paste' | 'edit' | null>(null);
   private readonly source = inject(PatientHubSource);
@@ -176,11 +192,38 @@ export class PatientHubComponent implements OnInit {
       const loaded = await this.results.load(id);
 
       this.manual.set(await this.cardStore.loadManual(id));
+      this.addedCards.set(await this.addedStore.loadAdded(id));
       await this.supersedeManual(id, loaded);
       this.resultValues.set(loaded);
       this.resultsLoaded = true;
     } catch {
       // mantém os valores atuais
+    }
+  }
+
+  protected openAddSheet(): void {
+    this.addError.set(null);
+    this.addSheetOpen.set(true);
+  }
+
+  protected closeAddSheet(): void {
+    this.addSheetOpen.set(false);
+  }
+
+  /** US5: grava a adição; só mostra o card se a gravação der certo (offline ou erro não adiciona). */
+  protected async addCard(type: CatalogNutritionIndicatorId): Promise<void> {
+    const id = this.patientId();
+
+    if (id === null || !this.connectivity.online() || this.addedCards().includes(type)) {
+      return;
+    }
+    this.addError.set(null);
+    try {
+      await this.addedStore.add(id, type);
+      this.addedCards.update(list => (list.includes(type) ? list : [...list, type]));
+      this.addSheetOpen.set(false);
+    } catch {
+      this.addError.set(ADD_FAILED_HINT);
     }
   }
 

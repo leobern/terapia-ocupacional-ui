@@ -1,4 +1,5 @@
 import {
+  CatalogNutritionIndicatorId,
   NutritionHistoryDeletion,
   NutritionHistoryEntry,
   NutritionIndicatorId,
@@ -28,4 +29,14 @@ export abstract class NutritionValueWriter {
    * valor atual. Rejeita a promessa se não conseguir gravar.
    */
   abstract deleteEntry(deletion: NutritionHistoryDeletion): Promise<void>;
+}
+
+/**
+ * Porta dos cards adicionados ao painel pelo "+" (US5): leitura e gravação por paciente. Um tipo do
+ * catálogo entra no máximo uma vez. Rejeita a promessa se não conseguir gravar.
+ */
+export abstract class NutritionAddedCards {
+  /** Tipos adicionados, na ordem em que foram adicionados. */
+  abstract loadAdded(patientId: string): Promise<readonly CatalogNutritionIndicatorId[]>;
+  abstract add(patientId: string, type: CatalogNutritionIndicatorId): Promise<void>;
 }

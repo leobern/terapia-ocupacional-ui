@@ -208,7 +208,17 @@
         <!-- Painel Nutricional (FT-004-3): paciente novo mostra todos os cards em "Sem dados". -->
         <app-nutrition-panel
           [values]="values()"
+          [addedCards]="addedCards()"
           (cardSelect)="openCardModal($event)"
+          (addRequest)="openAddSheet()"
+        />
+        <app-nutrition-add-card-sheet
+          [open]="addSheetOpen()"
+          [present]="addedCards()"
+          [offline]="!connectivity.online()"
+          [error]="addError()"
+          (closed)="closeAddSheet()"
+          (picked)="addCard($event)"
         />
         <app-nutrition-card-modal
           [indicator]="openCard()"

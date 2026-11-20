@@ -18,11 +18,11 @@ import { ConnectivityService } from '../../../shared/services/connectivity.servi
 import { NOW, ProfessionalProfileReader } from '../../home/professional-profile';
 import { NutritionHistorySource, NutritionValueWriter } from './nutrition-card-ports';
 import {
-  FIXED_NUTRITION_INDICATORS,
   NUTRITION_UNITS,
   NutritionCurrent,
   NutritionHistoryEntry,
   NutritionIndicatorId,
+  nutritionIndicatorLabel,
   NutritionValueOrigin,
 } from './nutrition-panel.models';
 
@@ -73,9 +73,7 @@ export class NutritionCardModalComponent {
   protected readonly saving = signal(false);
   protected readonly offline = computed(() => !this.connectivity.online());
 
-  protected readonly title = computed(
-    () => FIXED_NUTRITION_INDICATORS.find(i => i.id === this.indicator())?.label ?? '',
-  );
+  protected readonly title = computed(() => nutritionIndicatorLabel(this.indicator()));
   protected readonly fieldLabel = computed(() => {
     const id = this.indicator();
     const unit = id === null ? undefined : NUTRITION_UNITS[id];

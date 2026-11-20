@@ -6,7 +6,11 @@ import { of } from 'rxjs';
 import { ConnectivityService } from '../../shared/services/connectivity.service';
 import { LinkedHospitalsReader } from '../home/linked-hospitals';
 import { NOW, ProfessionalProfileReader } from '../home/professional-profile';
-import { NutritionHistorySource, NutritionValueWriter } from '../patients/nutrition-panel/nutrition-card-ports';
+import {
+  NutritionAddedCards,
+  NutritionHistorySource,
+  NutritionValueWriter,
+} from '../patients/nutrition-panel/nutrition-card-ports';
 import { NutritionValues } from '../patients/nutrition-panel/nutrition-panel.models';
 import { NutritionResultsSource } from '../patients/nutrition-panel/nutrition-results-source';
 import { ProvisionalNutritionCardStore } from '../patients/nutrition-panel/provisional-nutrition-card-store';
@@ -96,6 +100,7 @@ async function setup(
       { provide: NutritionResultsSource, useValue: results },
       { provide: NutritionHistorySource, useFactory: (): ProvisionalNutritionCardStore => store },
       { provide: NutritionValueWriter, useFactory: (): ProvisionalNutritionCardStore => store },
+      { provide: NutritionAddedCards, useFactory: (): ProvisionalNutritionCardStore => store },
       { provide: HypothesisSynthesizer, useValue: synth },
       { provide: HypothesisWriter, useValue: writer },
       { provide: ProfessionalProfileReader, useValue: { read: (): { name: string } => ({ name: 'Michelle' }) } },
@@ -810,6 +815,143 @@ describe('PatientHubComponent', () => {
       await click('Cancelar');
 
       expect(text(f)).toContain('Insuficiência respiratória aguda.');
+    });
+  });
+
+  describe('adicionar card pelo "+" (US5)', () => {
+    let f: ComponentFixture<PatientHubComponent>;
+    const el = (): HTMLElement => f.nativeElement;
+    const plus = (): HTMLButtonElement =>
+      el().querySelector<HTMLButtonElement>('button[aria-label="Adicionar card ao painel"]') as HTMLButtonElement;
+    const option = (): HTMLButtonElement | null => el().querySelector<HTMLButtonElement>('.add-sheet__option');
+    const cardLabels = (): string[] =>
+      Array.from(el().querySelectorAll('.nutrition-panel__label')).map(n => n.textContent?.trim() ?? '');
+    const flush = async (): Promise<void> => {
+      f.detectChanges();
+      await f.whenStable();
+      await Promise.resolve();
+      f.detectChanges();
+    };
+
+    beforeEach(async () => {
+      f = await setup(new FakeSource());
+    });
+
+    afterEach(() => {
+      TestBed.inject(ConnectivityService).online.set(true);
+    });
+
+    it('o "+" abre a listagem com o tipo do catálogo e escolher adiciona o card em "Sem dados"', async () => {
+      plus().click();
+      await flush();
+
+      expect(el().querySelector('dialog')?.open).toBe(true);
+      expect(option()?.textContent).toContain('Calorimetria indireta');
+      option()?.click();
+      await flush();
+
+      expect(el().querySelector('dialog')?.open).toBe(false);
+      expect(cardLabels().at(-1)).toBe('Calorimetria indireta');
+      expect(cardLabels().length).toBe(9);
+      expect(Array.from(el().querySelectorAll('.nutrition-panel__card')).at(-1)?.textContent).toContain('Sem dados');
+    });
+
+    it('tipo já adicionado não aparece de novo; sem opções mostra mensagem de lista vazia', async () => {
+      plus().click();
+      await flush();
+      option()?.click();
+      await flush();
+      plus().click();
+      await flush();
+
+      expect(option()).toBeNull();
+      expect(text(f)).toContain('Todos os cards disponíveis já foram adicionados.');
+    });
+
+    it('o card adicionado persiste ao reabrir o Hub', async () => {
+      plus().click();
+      await flush();
+      option()?.click();
+      await flush();
+      TestBed.resetTestingModule();
+      f = await setup(new FakeSource());
+
+      expect(cardLabels()).toContain('Calorimetria indireta');
+    });
+
+    it('offline: mostra "conexão necessária" e não adiciona', async () => {
+      TestBed.inject(ConnectivityService).online.set(false);
+      plus().click();
+      await flush();
+
+      expect(text(f)).toContain('Conexão necessária para adicionar um card.');
+      expect(option()?.disabled).toBe(true);
+      await (f.componentInstance as unknown as { addCard(t: string): Promise<void> }).addCard('indirect-calorimetry');
+
+      expect(cardLabels().length).toBe(8);
+    });
+
+    it('erro de gravação informa o profissional e não adiciona o card', async () => {
+      spyOn(store, 'add').and.rejectWith(new Error('x'));
+      plus().click();
+      await flush();
+      option()?.click();
+      await flush();
+
+      expect(text(f)).toContain('Não foi possível adicionar o card.');
+      expect(cardLabels().length).toBe(8);
+    });
+
+    it('fecha pelo botão Fechar e por Esc sem adicionar', async () => {
+      plus().click();
+      await flush();
+      el().querySelector<HTMLButtonElement>('.add-sheet__header button')?.click();
+      await flush();
+
+      expect((el().querySelector('dialog.add-sheet') as HTMLDialogElement).open).toBe(false);
+      plus().click();
+      await flush();
+      el()
+        .querySelector('dialog.add-sheet')
+        ?.dispatchEvent(new Event('cancel', { cancelable: true }));
+      await flush();
+
+      expect(cardLabels().length).toBe(8);
+      expect((el().querySelector('dialog.add-sheet') as HTMLDialogElement).open).toBe(false);
+    });
+
+    it('clique no scrim fecha; clique dentro não', async () => {
+      plus().click();
+      await flush();
+      el().querySelector<HTMLElement>('.add-sheet__title')?.click();
+      await flush();
+
+      expect((el().querySelector('dialog.add-sheet') as HTMLDialogElement).open).toBe(true);
+      el().querySelector<HTMLElement>('dialog.add-sheet')?.click();
+      await flush();
+
+      expect((el().querySelector('dialog.add-sheet') as HTMLDialogElement).open).toBe(false);
+    });
+
+    it('o card adicionado abre o mesmo modal, editável com histórico (ticket 02)', async () => {
+      plus().click();
+      await flush();
+      option()?.click();
+      await flush();
+      Array.from(el().querySelectorAll<HTMLButtonElement>('.nutrition-panel__card')).at(-1)?.click();
+      await flush();
+
+      expect(el().querySelector('#card-modal-title')?.textContent).toContain('Calorimetria indireta');
+      expect(text(f)).toContain('Novo valor (kcal/dia)');
+      const input = el().querySelector<HTMLInputElement>('#card-modal-value') as HTMLInputElement;
+
+      input.value = '1800';
+      input.dispatchEvent(new Event('input'));
+      await clickButton(f, 'Salvar valor');
+      await flush();
+
+      expect(Array.from(el().querySelectorAll('.nutrition-panel__card')).at(-1)?.textContent).toContain('1800');
+      expect(store.auditTrail[0].indicator).toBe('indirect-calorimetry');
     });
   });
 });
