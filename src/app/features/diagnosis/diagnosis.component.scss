@@ -13,7 +13,7 @@
   gap: tokens.$space-16;
   min-height: calc(100dvh - var(--bottom-nav-bar-height));
   padding-top: tokens.$space-8;
-  padding-bottom: tokens.$space-24;
+  padding-bottom: tokens.$space-120;
 
   @include breakpoints.md {
     max-width: 578px;
