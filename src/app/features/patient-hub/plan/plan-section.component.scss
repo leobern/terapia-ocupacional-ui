@@ -126,12 +126,6 @@
   @include typography.title-md;
 }
 
-.plan__count {
-  color: tokens.c(content-4);
-
-  @include typography.label-md;
-}
-
 .plan__card {
   min-inline-size: 0;
   margin: 0;
