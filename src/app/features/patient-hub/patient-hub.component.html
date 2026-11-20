@@ -1,0 +1,67 @@
+<app-page-container>
+  <div class="hub">
+    <!-- Figma v2/PageHeader (Subtitle=true): voltar + título + hospital · data. -->
+    <header class="hub__header">
+      <app-icon-button
+        kind="primary"
+        appearance="icon"
+        icon="arrow-left"
+        ariaLabel="Voltar"
+        (click)="back()"
+      />
+      <div class="hub__heading">
+        <h1 class="hub__title">Paciente</h1>
+        <p class="hub__subtitle">{{ hospitalName() }} · {{ todayLabel() }}</p>
+      </div>
+    </header>
+
+    @switch (status()) {
+      @case ('ready') {
+        <section class="hub__identity" aria-label="Identificação do paciente">
+          <p class="hub__bed">{{ bedLabel() }}</p>
+          <h2 class="hub__name">{{ profile()?.name }}</h2>
+          <p class="hub__details">{{ detailsLabel() }}</p>
+          <div class="hub__tags">
+            <span class="hub__pill">{{ therapyDaysLabel() }}</span>
+            <app-therapy-tag [label]="profile()?.therapy ?? ''" />
+          </div>
+        </section>
+
+        <section class="hub__hypothesis" aria-labelledby="hypothesis-title">
+          <h2 id="hypothesis-title" class="hub__card-title">
+            Hipótese diagnóstica
+          </h2>
+          @if (hypothesis(); as text) {
+            <p class="hub__hypothesis-text">{{ text }}</p>
+          } @else {
+            <div class="hub__empty">
+              <p class="hub__empty-text">
+                Ainda não há hipótese diagnóstica preenchida para este paciente.
+              </p>
+              <label class="hub__label" for="paste-text"
+                >Texto do prontuário</label
+              >
+              <textarea
+                id="paste-text"
+                class="hub__textarea"
+                rows="4"
+                placeholder="Cole aqui o motivo de internação, intercorrências e demais dados relevantes"
+              ></textarea>
+            </div>
+          }
+        </section>
+      }
+      @case ('not-found') {
+        <p class="hub__message" role="status">Paciente não encontrado.</p>
+      }
+      @case ('error') {
+        <p class="hub__message" role="alert">
+          Não foi possível carregar o paciente. Tente novamente em instantes.
+        </p>
+      }
+      @default {
+        <p class="hub__message" role="status">Carregando paciente…</p>
+      }
+    }
+  </div>
+</app-page-container>

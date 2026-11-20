@@ -73,12 +73,10 @@ export const routes: Routes = [
     loadComponent: () =>
       import('./features/pending-screen/pending-screen.component').then(m => m.PendingScreenComponent),
   })),
-  // TODO (specs/004-notificacoes research.md §8): placeholder até a feature
-  // "Detalhe do Paciente" existir — destino real de FR-006 (US2).
+  // Hub do paciente (FT-004-2): destino da lista de pacientes e das notificações.
   {
     path: 'patients/:id',
-    loadComponent: () =>
-      import('./features/patients/patient-detail-placeholder.component').then(m => m.PatientDetailPlaceholderComponent),
+    loadComponent: () => import('./features/patient-hub/patient-hub.component').then(m => m.PatientHubComponent),
   },
   // Placeholders das telas de outras stories (ver PendingScreenComponent).
   ...(['login', 'lock', 'hospital-links'] as const).map(path => ({
