@@ -6,6 +6,8 @@ import {
   ProvisionalHypothesisSynthesizer,
   ProvisionalHypothesisWriter,
   ProvisionalPatientHubSource,
+  ProvisionalPriorStaysSource,
+  ProvisionalPriorStaysSynthesizer,
 } from './provisional-patient-hub';
 
 describe('Provisional do Hub do paciente', () => {
@@ -47,5 +49,18 @@ describe('Provisional do Hub do paciente', () => {
 
     expect(await synth.synthesize('  a   b ')).toBe('a b');
     expect((await synth.synthesize('x'.repeat(500))).length).toBe(240);
+  });
+});
+
+describe('Provisório de internações anteriores', () => {
+  it('só o paciente de exemplo tem histórico no hospital de exemplo', async () => {
+    const source = new ProvisionalPriorStaysSource();
+    const synth = new ProvisionalPriorStaysSynthesizer();
+
+    expect(await source.hasPriorStays('p1', 'hospital-vila-nova-star')).toBeTrue();
+    expect(await source.hasPriorStays('p1', 'outro-hospital')).toBeFalse();
+    expect(await source.hasPriorStays('p2', 'hospital-vila-nova-star')).toBeFalse();
+    expect(await synth.synthesize('p1', 'hospital-vila-nova-star')).toContain('Internação anterior');
+    await expectAsync(synth.synthesize('p2', 'hospital-vila-nova-star')).toBeRejected();
   });
 });

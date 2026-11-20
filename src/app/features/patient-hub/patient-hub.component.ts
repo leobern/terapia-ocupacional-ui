@@ -35,6 +35,7 @@ import {
 import { NutritionResultsSource } from '../patients/nutrition-panel/nutrition-results-source';
 import { HypothesisOrigin, PatientHubProfile } from './patient-hub.models';
 import { HypothesisSynthesizer, HypothesisWriter, PatientHubSource } from './patient-hub-source';
+import { PriorStaysBoxComponent } from './prior-stays-box/prior-stays-box.component';
 
 type HubStatus = 'loading' | 'ready' | 'not-found' | 'error';
 
@@ -65,6 +66,7 @@ const DAY_MS = 86_400_000;
     NutritionPanelComponent,
     PageContainerComponent,
     PhIconComponent,
+    PriorStaysBoxComponent,
     TherapyTagComponent,
   ],
   host: {
@@ -128,6 +130,7 @@ export class PatientHubComponent implements OnInit {
   protected readonly saving = signal(false);
   protected readonly offline = computed(() => !this.connectivity.online());
 
+  protected readonly hospitalId = computed(() => this.context.selected()?.id ?? null);
   protected readonly hospitalName = computed(() => this.context.selected()?.name ?? '');
   protected readonly todayLabel = computed(() => {
     const label = this.now().toLocaleDateString('pt-BR', { day: 'numeric', month: 'long', weekday: 'long' });

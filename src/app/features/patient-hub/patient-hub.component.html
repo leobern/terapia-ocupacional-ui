@@ -205,6 +205,12 @@
           }
         </section>
 
+        @if (profile(); as p) {
+          @if (hospitalId(); as hospital) {
+            <app-prior-stays-box [patientId]="p.id" [hospitalId]="hospital" />
+          }
+        }
+
         <!-- Painel Nutricional (FT-004-3): paciente novo mostra todos os cards em "Sem dados". -->
         <app-nutrition-panel
           [values]="values()"

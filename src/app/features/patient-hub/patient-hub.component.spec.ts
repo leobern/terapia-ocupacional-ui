@@ -16,7 +16,13 @@ import { NutritionResultsSource } from '../patients/nutrition-panel/nutrition-re
 import { ProvisionalNutritionCardStore } from '../patients/nutrition-panel/provisional-nutrition-card-store';
 import { PatientHubComponent, reloadsOnVisibility } from './patient-hub.component';
 import { HypothesisSaveRequest, PatientHubProfile } from './patient-hub.models';
-import { HypothesisSynthesizer, HypothesisWriter, PatientHubSource } from './patient-hub-source';
+import {
+  HypothesisSynthesizer,
+  HypothesisWriter,
+  PatientHubSource,
+  PriorStaysSource,
+  PriorStaysSynthesizer,
+} from './patient-hub-source';
 
 const PROFILE: PatientHubProfile = {
   bed: '35',
@@ -81,6 +87,28 @@ class FakeResults extends NutritionResultsSource {
   }
 }
 
+class FakePriorStays extends PriorStaysSource {
+  has = false;
+  fail = false;
+  readonly calls: string[] = [];
+
+  hasPriorStays(patientId: string, hospitalId: string): Promise<boolean> {
+    this.calls.push(`${hospitalId}:${patientId}`);
+
+    return this.fail ? Promise.reject(new Error('x')) : Promise.resolve(this.has);
+  }
+}
+
+class FakePriorSynth extends PriorStaysSynthesizer {
+  result: Promise<string> = Promise.resolve('Síntese de internações anteriores');
+
+  synthesize(): Promise<string> {
+    return this.result;
+  }
+}
+
+const priorStays = new FakePriorStays();
+const priorSynth = new FakePriorSynth();
 let store = new ProvisionalNutritionCardStore();
 const results = new FakeResults();
 const synth = new FakeSynth();
@@ -103,6 +131,8 @@ async function setup(
       { provide: NutritionAddedCards, useFactory: (): ProvisionalNutritionCardStore => store },
       { provide: HypothesisSynthesizer, useValue: synth },
       { provide: HypothesisWriter, useValue: writer },
+      { provide: PriorStaysSource, useValue: priorStays },
+      { provide: PriorStaysSynthesizer, useValue: priorSynth },
       { provide: ProfessionalProfileReader, useValue: { read: (): { name: string } => ({ name: 'Michelle' }) } },
       { provide: NOW, useValue: (): Date => new Date(2026, 4, 28, 12) },
       {
@@ -146,6 +176,31 @@ describe('PatientHubComponent', () => {
     results.values = {};
     results.fail = false;
     results.calls = 0;
+    priorStays.has = false;
+    priorStays.fail = false;
+    priorStays.calls.length = 0;
+  });
+
+  it('mostra a caixa de internações anteriores recolhida só quando há histórico no hospital em contexto', async () => {
+    priorStays.has = true;
+    const f = await setup(new FakeSource());
+
+    await f.whenStable();
+    f.detectChanges();
+
+    expect(priorStays.calls).toEqual(['h:p1']);
+    expect(text(f)).toContain('Internações anteriores');
+    expect(f.nativeElement.querySelector('.stays__header').getAttribute('aria-expanded')).toBe('false');
+  });
+
+  it('sem histórico (ou sem hospital em contexto), a caixa não aparece', async () => {
+    const f = await setup(new FakeSource());
+
+    expect(text(f)).not.toContain('Internações anteriores');
+    TestBed.resetTestingModule();
+    const g = await setup(new FakeSource(), 'p1', []);
+
+    expect(text(g)).not.toContain('Internações anteriores');
   });
 
   it('mostra identificação e a Hipótese completa quando preenchida', async () => {
