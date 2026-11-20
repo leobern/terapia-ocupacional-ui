@@ -31,3 +31,23 @@ export function normalizeRoutes(routes: readonly NutritionRoute[]): NutritionRou
 export function routeLabel(routes: readonly NutritionRoute[]): string {
   return normalizeRoutes(routes).join('/');
 }
+
+/** Decisão do médico sobre a necessidade de avaliação de deglutição (sem encaminhamento automático). */
+export type SwallowingDecision = 'needed' | 'not-needed';
+
+export const SWALLOWING_OPTIONS: readonly { readonly id: SwallowingDecision; readonly label: string }[] = [
+  { id: 'needed', label: 'Necessária' },
+  { id: 'not-needed', label: 'Não necessária' },
+];
+
+export interface SwallowingSaveRequest {
+  readonly at: string;
+  readonly author: string;
+  readonly decision: SwallowingDecision;
+  readonly patientId: string;
+}
+
+/** Texto da decisão; vazio quando ainda não há decisão. */
+export function swallowingLabel(decision: SwallowingDecision | null): string {
+  return SWALLOWING_OPTIONS.find(o => o.id === decision)?.label ?? '';
+}

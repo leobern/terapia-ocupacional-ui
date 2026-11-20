@@ -16,4 +16,17 @@ describe('ProvisionalPlanSource', () => {
 
     expect(await source.loadRoute('x')).toEqual({ routes: ['NP'], since: '2026-11-20T10:00:05Z' });
   });
+
+  it('decisão de deglutição: começa vazia, grava e não mexe na via', async () => {
+    const source = new ProvisionalPlanSource();
+
+    expect(await source.loadSwallowing('p1')).toBeNull();
+    await source.saveSwallowing({ at: 'x', author: 'A', decision: 'needed', patientId: 'p1' });
+
+    expect(await source.loadSwallowing('p1')).toBe('needed');
+    expect((await source.loadRoute('p1'))?.routes).toEqual(['NE']);
+    await source.saveRoute({ at: '2026-11-21T10:00:00Z', author: 'A', patientId: 'p1', routes: ['VO'] });
+
+    expect(await source.loadSwallowing('p1')).toBe('needed');
+  });
 });

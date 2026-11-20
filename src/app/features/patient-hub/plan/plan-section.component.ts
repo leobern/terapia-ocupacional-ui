@@ -16,7 +16,16 @@ import { PhIconComponent } from '../../../shared/icons/ph-icon/ph-icon.component
 import { ConnectivityService } from '../../../shared/services/connectivity.service';
 import { NOW, ProfessionalProfileReader } from '../../home/professional-profile';
 import { AssessmentSource } from '../assessment/assessment-source';
-import { CurrentRoute, normalizeRoutes, NUTRITION_ROUTES, NutritionRoute, routeLabel } from './plan.models';
+import {
+  CurrentRoute,
+  normalizeRoutes,
+  NUTRITION_ROUTES,
+  NutritionRoute,
+  routeLabel,
+  SWALLOWING_OPTIONS,
+  SwallowingDecision,
+  swallowingLabel,
+} from './plan.models';
 import { PlanSource } from './plan-source';
 import { RefeedingRisk, RefeedingRiskSource } from './refeeding-risk-source';
 
@@ -54,6 +63,13 @@ export class PlanSectionComponent {
 
   protected readonly options = NUTRITION_ROUTES;
   protected readonly current = signal<CurrentRoute | null>(null);
+  protected readonly swallowingOptions = SWALLOWING_OPTIONS;
+  /** Decisão salva e a escolha em edição (a escolha só vira salva em "Salvar plano"). */
+  protected readonly savedSwallowing = signal<SwallowingDecision | null>(null);
+  protected readonly swallowing = signal<SwallowingDecision | null>(null);
+  protected readonly swallowingText = computed(
+    () => swallowingLabel(this.savedSwallowing()) || 'Sem decisão registrada',
+  );
   protected readonly selection = signal<readonly NutritionRoute[]>([]);
   protected readonly state = signal<LoadState>('idle');
   protected readonly saving = signal(false);
@@ -135,6 +151,14 @@ export class PlanSectionComponent {
     this.close();
   }
 
+  protected chooseSwallowing(id: SwallowingDecision): void {
+    if (!this.isDoctor || !this.connectivity.online()) {
+      return;
+    }
+    this.hint.set(null);
+    this.swallowing.set(id);
+  }
+
   protected isSelected(id: NutritionRoute): boolean {
     return this.selection().includes(id);
   }
@@ -157,7 +181,10 @@ export class PlanSectionComponent {
 
       return;
     }
-    if (this.selection().length === 0) {
+    const routeChanged = this.selection().length > 0 && this.routeDiffers();
+    const swallowingChanged = this.swallowing() !== null && this.swallowing() !== this.savedSwallowing();
+
+    if (this.selection().length === 0 && !swallowingChanged) {
       this.hint.set(EMPTY_SELECTION_HINT);
 
       return;
@@ -165,15 +192,20 @@ export class PlanSectionComponent {
     this.saving.set(true);
     this.hint.set(null);
     try {
-      const saved = await this.source.saveRoute({
-        at: this.now().toISOString(),
-        author: this.profile.read().name,
-        patientId: this.patientId(),
-        routes: this.selection(),
-      });
+      const at = this.now().toISOString();
+      const author = this.profile.read().name;
+      const patientId = this.patientId();
+      const decision = this.swallowing();
 
-      this.current.set(saved);
-      this.selection.set(saved.routes);
+      if (routeChanged) {
+        const saved = await this.source.saveRoute({ at, author, patientId, routes: this.selection() });
+
+        this.current.set(saved);
+        this.selection.set(saved.routes);
+      }
+      if (swallowingChanged && decision !== null) {
+        this.savedSwallowing.set(await this.source.saveSwallowing({ at, author, decision, patientId }));
+      }
     } catch {
       this.hint.set(SAVE_FAILED_HINT);
     } finally {
@@ -181,11 +213,20 @@ export class PlanSectionComponent {
     }
   }
 
+  /** Só regrava a via quando mudou (salvar a decisão sozinha não renova "desde quando" da via). */
+  private routeDiffers(): boolean {
+    const current = this.current();
+
+    return current === null || routeLabel(current.routes) !== routeLabel(this.selection());
+  }
+
   private async load(): Promise<void> {
     const token = ++this.token;
 
     this.current.set(null);
     this.selection.set([]);
+    this.savedSwallowing.set(null);
+    this.swallowing.set(null);
     this.hint.set(null);
     this.risk.set(null);
     this.riskFailed.set(false);
@@ -195,9 +236,14 @@ export class PlanSectionComponent {
     void this.loadRisk(token);
     void this.loadDysphagia(token);
     try {
-      const latest = await this.source.loadRoute(this.patientId());
+      const [latest, decision] = await Promise.all([
+        this.source.loadRoute(this.patientId()),
+        this.source.loadSwallowing(this.patientId()),
+      ]);
 
       if (token === this.token) {
+        this.savedSwallowing.set(decision);
+        this.swallowing.set(decision);
         this.current.set(latest);
         this.selection.set(latest?.routes ?? []);
         this.state.set('ready');

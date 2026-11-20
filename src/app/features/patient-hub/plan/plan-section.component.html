@@ -102,8 +102,30 @@
           }
           <p class="plan__help">{{ help() }}</p>
         </fieldset>
-        <div class="plan__card" data-testid="swallowing">
-          <span class="plan__label">Avaliação de deglutição</span>
+        <fieldset class="plan__card" data-testid="swallowing">
+          <legend class="plan__label">Avaliação de deglutição</legend>
+          @if (!isDoctor) {
+            <p class="plan__value" data-testid="swallowing-value">
+              {{ swallowingText() }}
+            </p>
+          } @else {
+            <div class="plan__options">
+              @for (option of swallowingOptions; track option.id) {
+                <label class="plan__option">
+                  <input
+                    type="radio"
+                    name="swallowing"
+                    class="plan__checkbox"
+                    [checked]="swallowing() === option.id"
+                    [disabled]="!connectivity.online()"
+                    [attr.data-swallowing]="option.id"
+                    (change)="chooseSwallowing(option.id)"
+                  />
+                  <span class="plan__option-text">{{ option.label }}</span>
+                </label>
+              }
+            </div>
+          }
           @if (dysphagiaFailed()) {
             <p class="plan__help" role="status" data-testid="dysphagia-failed">
               {{ dysphagiaFailedHint }}
@@ -113,7 +135,7 @@
               {{ dysphagiaHelp() }}
             </p>
           }
-        </div>
+        </fieldset>
       </section>
     }
     @if (hint(); as message) {
