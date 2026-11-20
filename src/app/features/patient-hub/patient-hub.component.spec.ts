@@ -6,8 +6,10 @@ import { of } from 'rxjs';
 import { ConnectivityService } from '../../shared/services/connectivity.service';
 import { LinkedHospitalsReader } from '../home/linked-hospitals';
 import { NOW, ProfessionalProfileReader } from '../home/professional-profile';
+import { NutritionHistorySource, NutritionValueWriter } from '../patients/nutrition-panel/nutrition-card-ports';
 import { NutritionValues } from '../patients/nutrition-panel/nutrition-panel.models';
 import { NutritionResultsSource } from '../patients/nutrition-panel/nutrition-results-source';
+import { ProvisionalNutritionCardStore } from '../patients/nutrition-panel/provisional-nutrition-card-store';
 import { PatientHubComponent, reloadsOnVisibility } from './patient-hub.component';
 import { HypothesisSaveRequest, PatientHubProfile } from './patient-hub.models';
 import {
@@ -103,6 +105,7 @@ class FakePriorSynth extends PriorStaysSynthesizer {
 
 const priorStays = new FakePriorStays();
 const priorSynth = new FakePriorSynth();
+let store = new ProvisionalNutritionCardStore();
 const results = new FakeResults();
 const synth = new FakeSynth();
 const writer = new FakeWriter();
@@ -119,6 +122,8 @@ async function setup(
       { provide: ActivatedRoute, useValue: { paramMap: of(convertToParamMap(id === null ? {} : { id })) } },
       { provide: PatientHubSource, useValue: source },
       { provide: NutritionResultsSource, useValue: results },
+      { provide: NutritionHistorySource, useFactory: (): ProvisionalNutritionCardStore => store },
+      { provide: NutritionValueWriter, useFactory: (): ProvisionalNutritionCardStore => store },
       { provide: HypothesisSynthesizer, useValue: synth },
       { provide: HypothesisWriter, useValue: writer },
       { provide: PriorStaysSource, useValue: priorStays },
@@ -162,6 +167,7 @@ const clickButton = async (f: ComponentFixture<unknown>, label: string): Promise
 
 describe('PatientHubComponent', () => {
   beforeEach(() => {
+    store = new ProvisionalNutritionCardStore();
     results.values = {};
     results.fail = false;
     results.calls = 0;
@@ -530,6 +536,199 @@ describe('PatientHubComponent', () => {
       expect(writer.saved).toEqual([]);
       expect(synth.calls.length).toBe(1);
       TestBed.inject(ConnectivityService).online.set(true);
+    });
+  });
+
+  describe('modal do card (US3)', () => {
+    const tile = (f: ComponentFixture<unknown>, label: string): HTMLButtonElement =>
+      Array.from((f.nativeElement as HTMLElement).querySelectorAll<HTMLButtonElement>('.nutrition-panel__card')).find(
+        b => b.textContent?.includes(label),
+      ) as HTMLButtonElement;
+    const modal = (f: ComponentFixture<unknown>): HTMLDialogElement =>
+      (f.nativeElement as HTMLElement).querySelector('.card-modal') as HTMLDialogElement;
+    const settle = async (f: ComponentFixture<unknown>): Promise<void> => {
+      f.detectChanges();
+      await f.whenStable();
+      f.detectChanges();
+    };
+    const type = async (f: ComponentFixture<unknown>, value: string): Promise<void> => {
+      const input = modal(f).querySelector('input') as HTMLInputElement;
+
+      input.value = value;
+      input.dispatchEvent(new Event('input'));
+      await settle(f);
+    };
+    const save = async (f: ComponentFixture<unknown>): Promise<void> => {
+      (modal(f).querySelector('app-button button') as HTMLButtonElement).click();
+      await settle(f);
+    };
+
+    it('abre ao tocar em cada um dos 8 cards, com o nome do indicador como título', async () => {
+      const f = await setup(new FakeSource());
+      const labels = Array.from((f.nativeElement as HTMLElement).querySelectorAll('.nutrition-panel__label')).map(
+        e => e.textContent?.trim() ?? '',
+      );
+
+      /* eslint-disable no-await-in-loop -- cada card é aberto e fechado em sequência */
+      for (const label of labels) {
+        tile(f, label).click();
+        await settle(f);
+
+        expect(modal(f).open).toBe(true);
+        expect(modal(f).querySelector('h2')?.textContent?.trim()).toBe(label);
+        (modal(f).querySelector('app-icon-button button') as HTMLButtonElement).click();
+        await settle(f);
+
+        expect(modal(f).open).toBe(false);
+      }
+      /* eslint-enable no-await-in-loop */
+    });
+
+    it('card Sem dados mostra "Ainda sem valor", sem seção de histórico, com ajuda e unidade', async () => {
+      const f = await setup(new FakeSource());
+
+      tile(f, 'Peso').click();
+      await settle(f);
+
+      expect(modal(f).textContent).toContain('Ainda sem valor');
+      expect(modal(f).textContent).not.toContain('Histórico desta internação');
+      expect(modal(f).textContent).toContain('Novo valor (kg)');
+      expect(modal(f).textContent).toContain('O valor anterior vai para o histórico.');
+    });
+
+    it('valor de outra feature mostra a origem; indicador sem unidade usa "Novo valor"', async () => {
+      results.values = { glim: 'Desnutrição' } as NutritionValues;
+      const f = await setup(new FakeSource());
+
+      tile(f, 'GLIM').click();
+      await settle(f);
+
+      expect(modal(f).textContent).toContain('Valor atual · resultado de outra feature');
+      expect(modal(f).querySelector('label')?.textContent?.trim()).toBe('Novo valor');
+    });
+
+    it('salvar mostra o valor na grid; reabrir mostra o anterior no histórico; audita autor e hora', async () => {
+      results.values = { glim: 'Desnutrição' } as NutritionValues;
+      const f = await setup(new FakeSource());
+
+      tile(f, 'GLIM').click();
+      await settle(f);
+      await type(f, '  Sem desnutrição ');
+      await save(f);
+
+      expect(modal(f).open).toBe(false);
+      expect(tile(f, 'GLIM').textContent).toContain('Sem desnutrição');
+      expect(store.auditTrail.length).toBe(1);
+      expect(store.auditTrail[0].author).toBe('Michelle');
+      expect(store.auditTrail[0].indicator).toBe('glim');
+      expect(store.auditTrail[0].previous?.value).toBe('Desnutrição');
+      expect(store.auditTrail[0].value).toBe('Sem desnutrição');
+      expect(store.auditTrail[0].at).toBe(new Date(2026, 4, 28, 12).toISOString());
+
+      tile(f, 'GLIM').click();
+      await settle(f);
+
+      expect(modal(f).textContent).toContain('Valor atual · informado pela equipe, 28/05');
+      expect(modal(f).textContent).toContain('Histórico desta internação');
+      expect(modal(f).querySelector('.card-modal__entry')?.textContent).toContain('Desnutrição');
+      expect(modal(f).querySelector('.card-modal__entry')?.textContent).toContain('resultado de outra feature');
+    });
+
+    it('card em Sem dados editado passa a exibir o valor, sem histórico', async () => {
+      const f = await setup(new FakeSource());
+
+      tile(f, 'Peso').click();
+      await settle(f);
+      await type(f, '51,0 kg');
+      await save(f);
+
+      expect(tile(f, 'Peso').textContent).toContain('51,0 kg');
+      expect(store.auditTrail[0].previous).toBeNull();
+      tile(f, 'Peso').click();
+      await settle(f);
+
+      expect(modal(f).textContent).not.toContain('Histórico desta internação');
+    });
+
+    it('campo vazio ou só espaços não grava e orienta a preencher', async () => {
+      const f = await setup(new FakeSource());
+
+      tile(f, 'Peso').click();
+      await settle(f);
+      await type(f, '   ');
+      await save(f);
+
+      expect(modal(f).open).toBe(true);
+      expect(modal(f).querySelector('[role="alert"]')?.textContent).toContain('Preencha um valor');
+      expect(modal(f).querySelector('input')?.getAttribute('aria-invalid')).toBe('true');
+      expect(store.auditTrail.length).toBe(0);
+      expect(tile(f, 'Peso').textContent).toContain('Sem dados');
+
+      await type(f, '5');
+
+      expect(modal(f).querySelector('[role="alert"]')).toBeNull();
+    });
+
+    it('falha ao salvar mostra erro no campo e mantém o botão ativo', async () => {
+      const f = await setup(new FakeSource());
+
+      spyOn(store, 'save').and.rejectWith(new Error('x'));
+      tile(f, 'Peso').click();
+      await settle(f);
+      await type(f, '50');
+      await save(f);
+
+      expect(modal(f).open).toBe(true);
+      expect(modal(f).querySelector('[role="alert"]')?.textContent).toContain('Não foi possível salvar');
+      expect((modal(f).querySelector('app-button button') as HTMLButtonElement).disabled).toBe(false);
+      expect(tile(f, 'Peso').textContent).toContain('Sem dados');
+    });
+
+    it('offline: salvar fica indisponível com mensagem de conexão necessária', async () => {
+      const f = await setup(new FakeSource());
+      const conn = TestBed.inject(ConnectivityService) as unknown as { online: { set(v: boolean): void } };
+
+      conn.online.set(false);
+      tile(f, 'Peso').click();
+      await settle(f);
+
+      expect((modal(f).querySelector('app-button button') as HTMLButtonElement).disabled).toBe(true);
+      expect(modal(f).textContent).toContain('Conexão necessária para salvar o valor.');
+      expect(modal(f).textContent).toContain('Ainda sem valor');
+    });
+
+    it('Esc e clique no scrim fecham sem alterar nada', async () => {
+      const f = await setup(new FakeSource());
+
+      tile(f, 'Peso').click();
+      await settle(f);
+      modal(f).dispatchEvent(new Event('cancel', { cancelable: true }));
+      await settle(f);
+
+      expect(modal(f).open).toBe(false);
+      tile(f, 'Peso').click();
+      await settle(f);
+      modal(f).click();
+      await settle(f);
+
+      expect(modal(f).open).toBe(false);
+      expect(store.auditTrail.length).toBe(0);
+    });
+
+    it('valor manual persiste ao reabrir o Hub e novo resultado de outra feature o substitui, indo ao histórico', async () => {
+      const f = await setup(new FakeSource());
+
+      tile(f, 'GLIM').click();
+      await settle(f);
+      await type(f, 'Manual');
+      await save(f);
+
+      results.values = { glim: 'Novo protocolo' } as NutritionValues;
+      await f.componentInstance.reloadResults();
+      await settle(f);
+
+      expect(tile(f, 'GLIM').textContent).toContain('Novo protocolo');
+      expect((await store.load('p1', 'glim')).map(e => e.value)).toEqual(['Manual']);
     });
   });
 

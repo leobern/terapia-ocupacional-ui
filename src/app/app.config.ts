@@ -41,7 +41,9 @@ import { PatientListAiCommandPort } from './features/patient-list/patient-list-a
 import { PatientListSource } from './features/patient-list/patient-list-source';
 import { ProvisionalPatientListSource } from './features/patient-list/provisional-patient-list';
 import { ProvisionalPatientListAiCommand } from './features/patient-list/provisional-patient-list-ai-command';
+import { NutritionHistorySource, NutritionValueWriter } from './features/patients/nutrition-panel/nutrition-card-ports';
 import { NutritionResultsSource } from './features/patients/nutrition-panel/nutrition-results-source';
+import { ProvisionalNutritionCardStore } from './features/patients/nutrition-panel/provisional-nutrition-card-store';
 import { ProvisionalNutritionResultsSource } from './features/patients/nutrition-panel/provisional-nutrition-results';
 import { LocalStartupStateReader } from './features/splash/local-startup-state-reader';
 import { StartupStateReader } from './features/splash/startup-state';
@@ -64,6 +66,9 @@ export const appConfig: ApplicationConfig = {
     { provide: PriorStaysSource, useClass: ProvisionalPriorStaysSource },
     { provide: PriorStaysSynthesizer, useClass: ProvisionalPriorStaysSynthesizer },
     { provide: NutritionResultsSource, useClass: ProvisionalNutritionResultsSource },
+    ProvisionalNutritionCardStore,
+    { provide: NutritionHistorySource, useExisting: ProvisionalNutritionCardStore },
+    { provide: NutritionValueWriter, useExisting: ProvisionalNutritionCardStore },
     { provide: HomeNotificationsSource, useClass: ProvisionalHomeNotificationsSource },
     // Provisórios (sem backend ainda): notificações em memória, hospital único e usuários de exemplo.
     { provide: NotificationsApiService, useClass: ProvisionalNotificationsApiService },

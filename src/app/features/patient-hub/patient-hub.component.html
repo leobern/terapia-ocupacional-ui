@@ -212,7 +212,17 @@
         }
 
         <!-- Painel Nutricional (FT-004-3): paciente novo mostra todos os cards em "Sem dados". -->
-        <app-nutrition-panel [values]="values()" />
+        <app-nutrition-panel
+          [values]="values()"
+          (cardSelect)="openCardModal($event)"
+        />
+        <app-nutrition-card-modal
+          [indicator]="openCard()"
+          [patientId]="patientIdValue()"
+          [current]="openCardCurrent()"
+          (closed)="closeCardModal()"
+          (saved)="onCardSaved($event)"
+        />
       }
       @case ('not-found') {
         <p class="hub__message" role="status">Paciente não encontrado.</p>
