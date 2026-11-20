@@ -15,12 +15,12 @@ import { PhIconComponent } from '../../../shared/icons/ph-icon/ph-icon.component
 import { ConnectivityService } from '../../../shared/services/connectivity.service';
 import {
   ASSESSMENT_SECTIONS,
-  ENERGY_SOURCE_CALORIMETRY,
-  ENERGY_SOURCE_KCAL_PER_KG,
-  KCAL_PER_KG,
   AssessmentFieldDefinition,
   AssessmentFieldId,
   AssessmentValues,
+  ENERGY_SOURCE_CALORIMETRY,
+  ENERGY_SOURCE_KCAL_PER_KG,
+  KCAL_PER_KG,
   LIMB_SIDES,
   NutritionFunctionalAssessment,
 } from './assessment.models';

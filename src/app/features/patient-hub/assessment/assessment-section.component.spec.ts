@@ -247,13 +247,17 @@ describe('AssessmentSectionComponent', () => {
       saveButton().click();
       await settle();
 
-      expect(writer.saved).toEqual([{ patientId: 'p1', values: {
-          energyExpenditure: '1238',
-          energySource: 'kcal/kg',
-          handgrip: '14',
-          weight: '49,5',
+      expect(writer.saved).toEqual([
+        {
+          patientId: 'p1',
+          values: {
+            energyExpenditure: '1238',
+            energySource: 'kcal/kg',
+            handgrip: '14',
+            weight: '49,5',
+          },
         },
-      }]);
+      ]);
     });
 
     it('salvar com tudo vazio é aceito e fecha o formulário', async () => {

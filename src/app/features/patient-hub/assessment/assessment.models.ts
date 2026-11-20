@@ -1,8 +1,17 @@
 export type AssessmentSectionId = 'nutritional' | 'functional';
 
 export type AssessmentFieldId =
-  'weight' | 'height' | 'calfCircumference' | 'calfSide' | 'armCircumference' | 'armSide' | 'handgrip' | 'dysphagia'
-  | 'indirectCalorimetry' | 'energyExpenditure' | 'energySource';
+  | 'weight'
+  | 'height'
+  | 'calfCircumference'
+  | 'calfSide'
+  | 'armCircumference'
+  | 'armSide'
+  | 'handgrip'
+  | 'dysphagia'
+  | 'indirectCalorimetry'
+  | 'energyExpenditure'
+  | 'energySource';
 
 /** Fator padrão do método simplificado kcal/kg (o mesmo "25 kcal/kg" do Figma de Metas); substituível aqui. */
 export const KCAL_PER_KG = 25;
