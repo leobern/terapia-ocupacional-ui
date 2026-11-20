@@ -1,7 +1,7 @@
 import { Location } from '@angular/common';
 import { signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { ActivatedRoute, convertToParamMap } from '@angular/router';
+import { ActivatedRoute, convertToParamMap, Router } from '@angular/router';
 import { of } from 'rxjs';
 
 import { ConnectivityService } from '../../shared/services/connectivity.service';
@@ -483,6 +483,70 @@ describe('DiagnosisComponent', () => {
 
       expect(el.textContent).toContain('Estadiamento: grave.');
       expect(el.textContent).toContain('Alterado pelo médico');
+    });
+  });
+  describe('completar dados (indeterminado)', () => {
+    const INDETERMINATE: GlimReading = {
+      ...CONFIRMED,
+      criteria: {
+        ...CONFIRMED.criteria,
+        inflammation: 'not-evaluated',
+        'reduced-intake': 'not-evaluated',
+        'weight-loss': 'not-evaluated',
+      },
+    };
+    const completeButton = (el: HTMLElement): HTMLButtonElement | null =>
+      Array.from(el.querySelectorAll<HTMLButtonElement>('app-button button')).find(b =>
+        b.textContent?.includes('Completar dados'),
+      ) ?? null;
+
+    it('mostra a ação no indeterminado, também para não médico, e leva ao hub do paciente', async () => {
+      role = 'other';
+      source.reading = Promise.resolve(INDETERMINATE);
+      const el = await render();
+      const navigate = spyOn(TestBed.inject(Router), 'navigate').and.resolveTo(true);
+
+      completeButton(el)?.click();
+
+      expect(navigate).toHaveBeenCalledWith(['/patients', 'p1']);
+    });
+
+    it('não mostra a ação em confirmada, excluída nem sem triagem', async () => {
+      expect(completeButton(await render())).toBeNull();
+      source.reading = Promise.resolve({
+        ...CONFIRMED,
+        criteria: {
+          ...CONFIRMED.criteria,
+          'low-muscle-mass': 'negative',
+          'low-bmi': 'negative',
+          inflammation: 'negative',
+          'reduced-intake': 'negative',
+          'weight-loss': 'negative',
+        },
+      });
+
+      expect(completeButton(await render())).toBeNull();
+      source.reading = Promise.resolve({ ...CONFIRMED, screeningPositive: false });
+
+      expect(completeButton(await render())).toBeNull();
+    });
+
+    it('recalcula com os dados completados ao reabrir a tela', async () => {
+      source.reading = Promise.resolve(INDETERMINATE);
+      let el = await render();
+
+      expect(el.querySelector('.diagnosis__result')?.textContent).toBe('Indeterminado');
+      source.reading = Promise.resolve(CONFIRMED);
+      el = await render();
+
+      expect(el.querySelector('.diagnosis__result')?.textContent).toContain('confirmada');
+      expect(completeButton(el)).toBeNull();
+    });
+
+    it('sem id de paciente a ação é ignorada', async () => {
+      const el = await render(null);
+
+      expect(completeButton(el)).toBeNull();
     });
   });
 });
