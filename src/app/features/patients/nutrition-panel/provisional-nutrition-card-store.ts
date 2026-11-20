@@ -1,6 +1,11 @@
 import { Injectable } from '@angular/core';
 
-import { NutritionAddedCards, NutritionHistorySource, NutritionValueWriter } from './nutrition-card-ports';
+import {
+  NutritionAddedCards,
+  NutritionHiddenCards,
+  NutritionHistorySource,
+  NutritionValueWriter,
+} from './nutrition-card-ports';
 import {
   CatalogNutritionIndicatorId,
   NutritionHistoryDeletion,
@@ -17,12 +22,13 @@ import {
 @Injectable()
 export class ProvisionalNutritionCardStore
   extends NutritionValueWriter
-  implements NutritionHistorySource, NutritionAddedCards
+  implements NutritionHistorySource, NutritionAddedCards, NutritionHiddenCards
 {
   /** Trilha de auditoria (append-only); exposta para testes e para a futura implementação real. */
   readonly auditTrail: NutritionValueEdit[] = [];
   /** Trilha de auditoria das exclusões de entradas do histórico (append-only). */
   readonly deletionAuditTrail: NutritionHistoryDeletion[] = [];
+  private readonly hidden = new Map<string, NutritionIndicatorId[]>();
   private readonly added = new Map<string, CatalogNutritionIndicatorId[]>();
   private nextId = 1;
   private readonly history = new Map<string, NutritionHistoryEntry[]>();
@@ -30,6 +36,19 @@ export class ProvisionalNutritionCardStore
 
   loadAdded(patientId: string): Promise<readonly CatalogNutritionIndicatorId[]> {
     return Promise.resolve([...(this.added.get(patientId) ?? [])]);
+  }
+
+  loadHidden(patientId: string): Promise<readonly NutritionIndicatorId[]> {
+    return Promise.resolve([...(this.hidden.get(patientId) ?? [])]);
+  }
+
+  setHidden(patientId: string, indicator: NutritionIndicatorId, hidden: boolean): Promise<void> {
+    const rest = (this.hidden.get(patientId) ?? []).filter(i => i !== indicator);
+
+    // Só a visibilidade muda: valor atual e histórico ficam intactos.
+    this.hidden.set(patientId, hidden ? [...rest, indicator] : rest);
+
+    return Promise.resolve();
   }
 
   load(patientId: string, indicator: NutritionIndicatorId): Promise<readonly NutritionHistoryEntry[]> {

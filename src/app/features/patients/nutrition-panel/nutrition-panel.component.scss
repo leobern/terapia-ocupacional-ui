@@ -84,3 +84,23 @@
 
   @include typography.title-md;
 }
+
+// Acesso aos cards ocultos (desenhado pelo agente): link em texto, alvo de toque >= 44px.
+.nutrition-panel__hidden {
+  align-self: flex-start;
+  min-height: 44px;
+  padding: 0 tokens.$space-8;
+  border: 0;
+  background: none;
+  color: tokens.c(content-3);
+  font: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+
+  @include typography.label-md;
+
+  &:focus-visible {
+    outline: 2px solid tokens.c(focus-ring);
+    outline-offset: 2px;
+  }
+}

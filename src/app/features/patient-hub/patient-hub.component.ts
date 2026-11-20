@@ -19,9 +19,14 @@ import {
 import { NutritionCardModalComponent } from '../patients/nutrition-panel/nutrition-card-modal.component';
 import {
   NutritionAddedCards,
+  NutritionHiddenCards,
   NutritionHistorySource,
   NutritionValueWriter,
 } from '../patients/nutrition-panel/nutrition-card-ports';
+import {
+  NutritionHiddenCardsSheetComponent,
+  SHOW_FAILED_HINT,
+} from '../patients/nutrition-panel/nutrition-hidden-cards-sheet.component';
 import { NutritionPanelComponent } from '../patients/nutrition-panel/nutrition-panel.component';
 import {
   CatalogNutritionIndicatorId,
@@ -63,6 +68,7 @@ const DAY_MS = 86_400_000;
     IconButtonComponent,
     NutritionAddCardSheetComponent,
     NutritionCardModalComponent,
+    NutritionHiddenCardsSheetComponent,
     NutritionPanelComponent,
     PageContainerComponent,
     PhIconComponent,
@@ -103,7 +109,11 @@ export class PatientHubComponent implements OnInit {
   /** Card aberto no modal de histórico/edição; `null` = fechado. */
   /** Cards adicionados pelo "+" (tipos do catálogo), na ordem de adição. */
   protected readonly addedCards = signal<readonly CatalogNutritionIndicatorId[]>([]);
+  /** Cards ocultos da grid (US6): o dado segue existindo e sendo atualizado por baixo. */
+  protected readonly hiddenCards = signal<readonly NutritionIndicatorId[]>([]);
   protected readonly addSheetOpen = signal(false);
+  protected readonly hiddenSheetOpen = signal(false);
+  protected readonly showError = signal<string | null>(null);
   protected readonly addError = signal<string | null>(null);
   protected readonly openCard = signal<NutritionIndicatorId | null>(null);
   protected readonly openCardCurrent = computed<NutritionCurrent | null>(() => {
@@ -162,6 +172,7 @@ export class PatientHubComponent implements OnInit {
   private resultsLoaded = false;
   private readonly cardStore = inject(NutritionHistorySource);
   private readonly addedStore = inject(NutritionAddedCards);
+  private readonly hiddenStore = inject(NutritionHiddenCards);
   private readonly cardWriter = inject(NutritionValueWriter);
   private readonly editing = signal<'paste' | 'edit' | null>(null);
   private readonly source = inject(PatientHubSource);
@@ -196,6 +207,7 @@ export class PatientHubComponent implements OnInit {
 
       this.manual.set(await this.cardStore.loadManual(id));
       this.addedCards.set(await this.addedStore.loadAdded(id));
+      this.hiddenCards.set(await this.hiddenStore.loadHidden(id));
       await this.supersedeManual(id, loaded);
       this.resultValues.set(loaded);
       this.resultsLoaded = true;
@@ -230,11 +242,45 @@ export class PatientHubComponent implements OnInit {
     }
   }
 
+  protected openHiddenSheet(): void {
+    this.showError.set(null);
+    this.hiddenSheetOpen.set(true);
+  }
+
+  protected closeHiddenSheet(): void {
+    this.hiddenSheetOpen.set(false);
+  }
+
+  /** US6/FR-021: reexibe o card (só visibilidade; valor e histórico já estavam preservados). */
+  protected async showCard(id: NutritionIndicatorId): Promise<void> {
+    const patient = this.patientId();
+
+    if (patient === null || !this.connectivity.online()) {
+      return;
+    }
+    this.showError.set(null);
+    try {
+      await this.hiddenStore.setHidden(patient, id, false);
+      this.hiddenCards.update(list => list.filter(i => i !== id));
+      if (this.hiddenCards().length === 0) {
+        this.hiddenSheetOpen.set(false);
+      }
+    } catch {
+      this.showError.set(SHOW_FAILED_HINT);
+    }
+  }
+
   protected openCardModal(id: NutritionIndicatorId): void {
     this.openCard.set(id);
   }
 
   protected closeCardModal(): void {
+    this.openCard.set(null);
+  }
+
+  /** US6: o modal já gravou a ocultação; o card sai da grid e o modal fecha. */
+  protected onCardHidden(id: NutritionIndicatorId): void {
+    this.hiddenCards.update(list => (list.includes(id) ? list : [...list, id]));
     this.openCard.set(null);
   }
 

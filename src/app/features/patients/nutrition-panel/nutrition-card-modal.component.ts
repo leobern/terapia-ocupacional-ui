@@ -16,7 +16,7 @@ import { ButtonComponent } from '../../../shared/components/button/button.compon
 import { IconButtonComponent } from '../../../shared/components/icon-button/icon-button.component';
 import { ConnectivityService } from '../../../shared/services/connectivity.service';
 import { NOW, ProfessionalProfileReader } from '../../home/professional-profile';
-import { NutritionHistorySource, NutritionValueWriter } from './nutrition-card-ports';
+import { NutritionHiddenCards, NutritionHistorySource, NutritionValueWriter } from './nutrition-card-ports';
 import {
   NUTRITION_UNITS,
   NutritionCurrent,
@@ -35,6 +35,8 @@ export const EMPTY_VALUE_HINT = 'Preencha um valor antes de salvar.';
 export const OFFLINE_SAVE_HINT = 'Conexão necessária para salvar o valor.';
 export const OFFLINE_DELETE_HINT = 'Conexão necessária para apagar a entrada.';
 export const DELETE_FAILED_HINT = 'Não foi possível apagar a entrada. Tente novamente.';
+export const OFFLINE_HIDE_HINT = 'Conexão necessária para ocultar o card.';
+export const HIDE_FAILED_HINT = 'Não foi possível ocultar o card. Tente novamente.';
 export const SAVE_FAILED_HINT = 'Não foi possível salvar o valor. Tente novamente.';
 
 /** Formata ISO como dd/MM (internação atual; o ano é omitido como no Figma 4679-8695). */
@@ -63,6 +65,8 @@ export class NutritionCardModalComponent {
   readonly current = input<NutritionCurrent | null>(null);
 
   readonly closed = output();
+  /** Card ocultado da grid com sucesso (o dado por baixo segue intacto). */
+  readonly hidden = output<NutritionIndicatorId>();
   readonly saved = output<{ current: NutritionCurrent; indicator: NutritionIndicatorId }>();
 
   protected readonly connectivity = inject(ConnectivityService);
@@ -70,6 +74,7 @@ export class NutritionCardModalComponent {
   protected readonly draft = signal('');
   protected readonly error = signal<string | null>(null);
   protected readonly deleteError = signal<string | null>(null);
+  protected readonly hideError = signal<string | null>(null);
   protected readonly saving = signal(false);
   protected readonly offline = computed(() => !this.connectivity.online());
 
@@ -101,6 +106,7 @@ export class NutritionCardModalComponent {
 
   private readonly dialogRef = viewChild<ElementRef<HTMLDialogElement>>('dialogEl');
   private readonly historySource = inject(NutritionHistorySource);
+  private readonly hiddenStore = inject(NutritionHiddenCards);
   private readonly writer = inject(NutritionValueWriter);
   private readonly professional = inject(ProfessionalProfileReader);
   private readonly now = inject(NOW);
@@ -116,6 +122,7 @@ export class NutritionCardModalComponent {
           this.draft.set('');
           this.error.set(null);
           this.deleteError.set(null);
+          this.hideError.set(null);
           void this.loadHistory(indicator);
         });
       } else if (indicator === null && element?.open) {
@@ -177,6 +184,27 @@ export class NutritionCardModalComponent {
       this.error.set(SAVE_FAILED_HINT);
     } finally {
       this.saving.set(false);
+    }
+  }
+
+  protected async hide(): Promise<void> {
+    const indicator = this.indicator();
+    const patientId = this.patientId();
+
+    if (indicator === null || patientId === null) {
+      return;
+    }
+    if (this.offline()) {
+      this.hideError.set(OFFLINE_HIDE_HINT);
+
+      return;
+    }
+    this.hideError.set(null);
+    try {
+      await this.hiddenStore.setHidden(patientId, indicator, true);
+      this.hidden.emit(indicator);
+    } catch {
+      this.hideError.set(HIDE_FAILED_HINT);
     }
   }
 

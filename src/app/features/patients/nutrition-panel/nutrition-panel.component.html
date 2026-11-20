@@ -29,4 +29,13 @@
       </li>
     }
   </ul>
+  @if (hiddenCards().length > 0) {
+    <button
+      type="button"
+      class="nutrition-panel__hidden"
+      (click)="hiddenRequest.emit()"
+    >
+      Cards ocultos ({{ hiddenCards().length }})
+    </button>
+  }
 </section>

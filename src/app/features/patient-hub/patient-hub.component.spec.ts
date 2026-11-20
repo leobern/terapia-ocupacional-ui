@@ -8,6 +8,7 @@ import { LinkedHospitalsReader } from '../home/linked-hospitals';
 import { NOW, ProfessionalProfileReader } from '../home/professional-profile';
 import {
   NutritionAddedCards,
+  NutritionHiddenCards,
   NutritionHistorySource,
   NutritionValueWriter,
 } from '../patients/nutrition-panel/nutrition-card-ports';
@@ -129,6 +130,7 @@ async function setup(
       { provide: NutritionHistorySource, useFactory: (): ProvisionalNutritionCardStore => store },
       { provide: NutritionValueWriter, useFactory: (): ProvisionalNutritionCardStore => store },
       { provide: NutritionAddedCards, useFactory: (): ProvisionalNutritionCardStore => store },
+      { provide: NutritionHiddenCards, useFactory: (): ProvisionalNutritionCardStore => store },
       { provide: HypothesisSynthesizer, useValue: synth },
       { provide: HypothesisWriter, useValue: writer },
       { provide: PriorStaysSource, useValue: priorStays },
@@ -1011,6 +1013,216 @@ describe('PatientHubComponent', () => {
 
       expect(Array.from(el().querySelectorAll('.nutrition-panel__card')).at(-1)?.textContent).toContain('1800');
       expect(store.auditTrail[0].indicator).toBe('indirect-calorimetry');
+    });
+  });
+
+  describe('ocultar card do painel (US6)', () => {
+    let f: ComponentFixture<PatientHubComponent>;
+    const el = (): HTMLElement => f.nativeElement;
+    const labels = (): string[] =>
+      Array.from(el().querySelectorAll('.nutrition-panel__label')).map(n => n.textContent?.trim() ?? '');
+    const flush = async (): Promise<void> => {
+      await f.whenStable();
+      await Promise.resolve();
+      f.detectChanges();
+    };
+    const openCardNamed = async (name: string): Promise<void> => {
+      Array.from(el().querySelectorAll<HTMLButtonElement>('.nutrition-panel__card'))
+        .find(b => b.textContent?.includes(name))
+        ?.click();
+      await flush();
+    };
+    const hideButton = (): HTMLButtonElement | undefined =>
+      Array.from(el().querySelectorAll('dialog button')).find(b => b.textContent?.includes('Ocultar do painel')) as
+        HTMLButtonElement | undefined;
+
+    beforeEach(async () => {
+      results.values = { glim: 'Desnutrição' } as NutritionValues;
+      f = await setup(new FakeSource());
+    });
+
+    afterEach(() => {
+      TestBed.inject(ConnectivityService).online.set(true);
+    });
+
+    it('ocultar tira o card da grid e fecha o modal, sem apagar valor nem histórico', async () => {
+      await openCardNamed('GLIM');
+      hideButton()?.click();
+      await flush();
+
+      expect(labels()).not.toContain('GLIM');
+      expect(labels().length).toBe(7);
+      expect(el().querySelector<HTMLDialogElement>('.card-modal')?.open).toBe(false);
+      expect(await store.loadHidden('p1')).toEqual(['glim']);
+      expect(store.auditTrail.length).toBe(0);
+    });
+
+    it('resultado novo de outra feature atualiza o dado por baixo sem reaparecer na grid', async () => {
+      await openCardNamed('GLIM');
+      hideButton()?.click();
+      await flush();
+      results.values = { glim: 'Sem desnutrição' } as NutritionValues;
+      await f.componentInstance.reloadResults();
+      await flush();
+
+      expect(labels()).not.toContain('GLIM');
+      expect((f.componentInstance as unknown as { values(): NutritionValues }).values().glim).toBe('Sem desnutrição');
+    });
+
+    it('tipo do catálogo oculto continua contando como presente e não volta ao "+"', async () => {
+      el().querySelector<HTMLButtonElement>('button[aria-label="Adicionar card ao painel"]')?.click();
+      await flush();
+      el().querySelector<HTMLButtonElement>('app-nutrition-add-card-sheet .add-sheet__option')?.click();
+      await flush();
+      await openCardNamed('Calorimetria indireta');
+      hideButton()?.click();
+      await flush();
+      el().querySelector<HTMLButtonElement>('button[aria-label="Adicionar card ao painel"]')?.click();
+      await flush();
+
+      expect(labels()).not.toContain('Calorimetria indireta');
+      expect(el().querySelector('app-nutrition-add-card-sheet .add-sheet__option')).toBeNull();
+    });
+
+    it('offline: ocultar fica desabilitado com a mensagem de conexão necessária', async () => {
+      TestBed.inject(ConnectivityService).online.set(false);
+      await openCardNamed('GLIM');
+
+      expect(hideButton()?.disabled).toBe(true);
+
+      expect(el().textContent).toContain('Conexão necessária para ocultar o card.');
+      expect(labels()).toContain('GLIM');
+    });
+
+    it('erro de gravação mostra mensagem e o card continua visível', async () => {
+      spyOn(store, 'setHidden').and.rejectWith(new Error('x'));
+      await openCardNamed('GLIM');
+      hideButton()?.click();
+      await flush();
+
+      expect(el().textContent).toContain('Não foi possível ocultar o card. Tente novamente.');
+      expect(labels()).toContain('GLIM');
+      expect(el().querySelector<HTMLDialogElement>('.card-modal')?.open).toBe(true);
+    });
+
+    it('ao reabrir o Hub, os cards ocultos seguem fora da grid', async () => {
+      await store.setHidden('p1', 'weight', true);
+      TestBed.resetTestingModule();
+      f = await setup(new FakeSource());
+
+      expect(labels()).not.toContain('Peso');
+    });
+  });
+
+  describe('reexibir cards ocultos (US6, FR-021)', () => {
+    let f: ComponentFixture<PatientHubComponent>;
+    const el = (): HTMLElement => f.nativeElement;
+    const labels = (): string[] =>
+      Array.from(el().querySelectorAll('.nutrition-panel__label')).map(n => n.textContent?.trim() ?? '');
+    const access = (): HTMLButtonElement | null => el().querySelector('.nutrition-panel__hidden');
+    const sheetOption = (): HTMLButtonElement | null =>
+      el().querySelector('app-nutrition-hidden-cards-sheet button.add-sheet__option');
+    const settle = async (): Promise<void> => {
+      await f.whenStable();
+      f.detectChanges();
+      await Promise.resolve();
+      f.detectChanges();
+    };
+
+    beforeEach(async () => {
+      results.values = { glim: 'Desnutrição' } as NutritionValues;
+      await store.setHidden('p1', 'glim', true);
+      f = await setup(new FakeSource());
+    });
+
+    afterEach(() => {
+      TestBed.inject(ConnectivityService).online.set(true);
+    });
+
+    it('com card oculto mostra o acesso e a lista identifica o card por texto', async () => {
+      expect(access()?.textContent).toContain('Cards ocultos (1)');
+      access()?.click();
+      await settle();
+
+      expect(sheetOption()?.textContent).toContain('GLIM');
+    });
+
+    it('sem card oculto o acesso não aparece', async () => {
+      await store.setHidden('p1', 'glim', false);
+      await f.componentInstance.reloadResults();
+      f.detectChanges();
+
+      expect(access()).toBeNull();
+    });
+
+    it('card oculto não pode ser aberto (não está na grid)', () => {
+      const cards = Array.from(el().querySelectorAll('.nutrition-panel__card'));
+
+      expect(cards.some(c => c.textContent?.includes('GLIM'))).toBe(false);
+    });
+
+    it('escolher o card o devolve à grid com valor e histórico íntegros', async () => {
+      access()?.click();
+      await settle();
+      sheetOption()?.click();
+      await settle();
+
+      expect(labels()).toContain('GLIM');
+      expect(
+        Array.from(el().querySelectorAll('.nutrition-panel__card')).find(c => c.textContent?.includes('GLIM'))
+          ?.textContent,
+      ).toContain('Desnutrição');
+
+      expect(access()).toBeNull();
+      expect(await store.loadHidden('p1')).toEqual([]);
+    });
+
+    it('resultado novo recebido enquanto oculto aparece ao reexibir', async () => {
+      results.values = { glim: 'Sem desnutrição' } as NutritionValues;
+      await f.componentInstance.reloadResults();
+      access()?.click();
+      await settle();
+      sheetOption()?.click();
+      await settle();
+
+      expect(el().textContent).toContain('Sem desnutrição');
+    });
+
+    it('offline: reexibir fica desabilitado com a mensagem de conexão necessária', async () => {
+      TestBed.inject(ConnectivityService).online.set(false);
+      access()?.click();
+      await settle();
+
+      expect(sheetOption()?.disabled).toBe(true);
+      expect(el().textContent).toContain('Conexão necessária para reexibir um card.');
+      await (f.componentInstance as unknown as { showCard(i: string): Promise<void> }).showCard('glim');
+
+      expect(await store.loadHidden('p1')).toEqual(['glim']);
+    });
+
+    it('erro de gravação mostra mensagem e o card segue oculto', async () => {
+      spyOn(store, 'setHidden').and.rejectWith(new Error('x'));
+      access()?.click();
+      await settle();
+      sheetOption()?.click();
+      await settle();
+
+      expect(el().textContent).toContain('Não foi possível reexibir o card. Tente novamente.');
+      expect(labels()).not.toContain('GLIM');
+    });
+
+    it('fechar a lista pelo botão e pelo Esc a esconde', async () => {
+      access()?.click();
+      await settle();
+      const dialog = el().querySelector<HTMLDialogElement>(
+        'app-nutrition-hidden-cards-sheet dialog',
+      ) as HTMLDialogElement;
+
+      expect(dialog.open).toBe(true);
+      dialog.dispatchEvent(new Event('cancel', { cancelable: true }));
+      await settle();
+
+      expect(dialog.open).toBe(false);
     });
   });
 });

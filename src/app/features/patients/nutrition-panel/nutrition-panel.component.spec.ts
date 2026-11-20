@@ -49,4 +49,14 @@ describe('NutritionPanelComponent', () => {
     expect(fixture.nativeElement.querySelector('h2')?.textContent?.trim()).toBe('Diagnóstico');
     expect(fixture.nativeElement.querySelector('section')?.getAttribute('aria-labelledby')).toBeTruthy();
   });
+
+  it('não lista cards ocultos, fixos ou adicionados (US6)', () => {
+    fixture.componentRef.setInput('addedCards', ['indirect-calorimetry']);
+    fixture.componentRef.setInput('hiddenCards', ['glim', 'indirect-calorimetry']);
+    fixture.detectChanges();
+
+    expect(cards().length).toBe(7);
+    expect(fixture.nativeElement.textContent).not.toContain('GLIM');
+    expect(fixture.nativeElement.textContent).not.toContain('Calorimetria');
+  });
 });

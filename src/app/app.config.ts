@@ -43,6 +43,7 @@ import { ProvisionalPatientListSource } from './features/patient-list/provisiona
 import { ProvisionalPatientListAiCommand } from './features/patient-list/provisional-patient-list-ai-command';
 import {
   NutritionAddedCards,
+  NutritionHiddenCards,
   NutritionHistorySource,
   NutritionValueWriter,
 } from './features/patients/nutrition-panel/nutrition-card-ports';
@@ -74,6 +75,7 @@ export const appConfig: ApplicationConfig = {
     { provide: NutritionHistorySource, useExisting: ProvisionalNutritionCardStore },
     { provide: NutritionValueWriter, useExisting: ProvisionalNutritionCardStore },
     { provide: NutritionAddedCards, useExisting: ProvisionalNutritionCardStore },
+    { provide: NutritionHiddenCards, useExisting: ProvisionalNutritionCardStore },
     { provide: HomeNotificationsSource, useClass: ProvisionalHomeNotificationsSource },
     // Provisórios (sem backend ainda): notificações em memória, hospital único e usuários de exemplo.
     { provide: NotificationsApiService, useClass: ProvisionalNotificationsApiService },

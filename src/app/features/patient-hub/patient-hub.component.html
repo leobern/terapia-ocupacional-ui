@@ -215,8 +215,10 @@
         <app-nutrition-panel
           [values]="values()"
           [addedCards]="addedCards()"
+          [hiddenCards]="hiddenCards()"
           (cardSelect)="openCardModal($event)"
           (addRequest)="openAddSheet()"
+          (hiddenRequest)="openHiddenSheet()"
         />
         <app-nutrition-add-card-sheet
           [open]="addSheetOpen()"
@@ -226,12 +228,21 @@
           (closed)="closeAddSheet()"
           (picked)="addCard($event)"
         />
+        <app-nutrition-hidden-cards-sheet
+          [open]="hiddenSheetOpen()"
+          [hidden]="hiddenCards()"
+          [offline]="!connectivity.online()"
+          [error]="showError()"
+          (closed)="closeHiddenSheet()"
+          (picked)="showCard($event)"
+        />
         <app-nutrition-card-modal
           [indicator]="openCard()"
           [patientId]="patientIdValue()"
           [current]="openCardCurrent()"
           (closed)="closeCardModal()"
           (saved)="onCardSaved($event)"
+          (hidden)="onCardHidden($event)"
         />
       }
       @case ('not-found') {
