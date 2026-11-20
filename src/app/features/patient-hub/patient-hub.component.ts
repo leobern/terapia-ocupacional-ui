@@ -12,8 +12,16 @@ import { PhIconComponent } from '../../shared/icons/ph-icon/ph-icon.component';
 import { ConnectivityService } from '../../shared/services/connectivity.service';
 import { HospitalContextService } from '../home/hospital-context.service';
 import { NOW, ProfessionalProfileReader } from '../home/professional-profile';
+import { NutritionCardModalComponent } from '../patients/nutrition-panel/nutrition-card-modal.component';
+import { NutritionHistorySource, NutritionValueWriter } from '../patients/nutrition-panel/nutrition-card-ports';
 import { NutritionPanelComponent } from '../patients/nutrition-panel/nutrition-panel.component';
-import { NutritionValues } from '../patients/nutrition-panel/nutrition-panel.models';
+import {
+  FIXED_NUTRITION_INDICATORS,
+  NutritionCurrent,
+  NutritionIndicatorId,
+  NutritionManualValues,
+  NutritionValues,
+} from '../patients/nutrition-panel/nutrition-panel.models';
 import { NutritionResultsSource } from '../patients/nutrition-panel/nutrition-results-source';
 import { HypothesisOrigin, PatientHubProfile } from './patient-hub.models';
 import { HypothesisSynthesizer, HypothesisWriter, PatientHubSource } from './patient-hub-source';
@@ -39,6 +47,7 @@ const DAY_MS = 86_400_000;
   imports: [
     ButtonComponent,
     IconButtonComponent,
+    NutritionCardModalComponent,
     NutritionPanelComponent,
     PageContainerComponent,
     PhIconComponent,
@@ -62,7 +71,30 @@ export class PatientHubComponent implements OnInit {
   /** Hipótese confirmada; `null` = ainda não preenchida. */
   protected readonly hypothesis = signal<string | null>(null);
   /** Resultados de outras features exibidos no Painel Nutricional; indicador ausente = "Sem dados". */
-  protected readonly values = signal<NutritionValues>({});
+  protected readonly values = computed<NutritionValues>(() => {
+    const merged: NutritionValues = { ...this.resultValues() };
+
+    for (const { id } of FIXED_NUTRITION_INDICATORS) {
+      const manual = this.manual()[id];
+
+      if (manual) {
+        merged[id] = manual.value;
+      }
+    }
+
+    return merged;
+  });
+  /** Card aberto no modal de histórico/edição; `null` = fechado. */
+  protected readonly openCard = signal<NutritionIndicatorId | null>(null);
+  protected readonly openCardCurrent = computed<NutritionCurrent | null>(() => {
+    const id = this.openCard();
+
+    if (id === null) {
+      return null;
+    }
+
+    return this.manual()[id] ?? this.fromResult(id);
+  });
 
   protected readonly phase = signal<FillPhase>('input');
   /** Texto colado do prontuário (permanece disponível se a síntese falhar). */
@@ -98,6 +130,13 @@ export class PatientHubComponent implements OnInit {
     };
   });
 
+  protected readonly patientIdValue = computed(() => this.patientId());
+  private readonly resultValues = signal<NutritionValues>({});
+  /** Valores informados manualmente; prevalecem sobre o resultado de outra feature até um novo resultado. */
+  private readonly manual = signal<NutritionManualValues>({});
+  private resultsLoaded = false;
+  private readonly cardStore = inject(NutritionHistorySource);
+  private readonly cardWriter = inject(NutritionValueWriter);
   private readonly source = inject(PatientHubSource);
   private readonly results = inject(NutritionResultsSource);
   private pullFrom: number | null = null;
@@ -126,10 +165,28 @@ export class PatientHubComponent implements OnInit {
       return;
     }
     try {
-      this.values.set(await this.results.load(id));
+      const loaded = await this.results.load(id);
+
+      this.manual.set(await this.cardStore.loadManual(id));
+      await this.supersedeManual(id, loaded);
+      this.resultValues.set(loaded);
+      this.resultsLoaded = true;
     } catch {
       // mantém os valores atuais
     }
+  }
+
+  protected openCardModal(id: NutritionIndicatorId): void {
+    this.openCard.set(id);
+  }
+
+  protected closeCardModal(): void {
+    this.openCard.set(null);
+  }
+
+  protected onCardSaved(event: { current: NutritionCurrent; indicator: NutritionIndicatorId }): void {
+    this.manual.update(m => ({ ...m, [event.indicator]: event.current }));
+    this.openCard.set(null);
   }
 
   protected onVisibility(): void {
@@ -236,6 +293,39 @@ export class PatientHubComponent implements OnInit {
     }
 
     return text === this.aiText.trim() ? 'ai' : 'ai-edited';
+  }
+
+  /** Resultado novo de outra feature substitui o valor manual; o manual substituído vai ao histórico (US2). */
+  private async supersedeManual(patientId: string, loaded: NutritionValues): Promise<void> {
+    const previous = this.resultValues();
+    const pending: Promise<void>[] = [];
+
+    for (const { id } of FIXED_NUTRITION_INDICATORS) {
+      const manual = this.manual()[id];
+      const value = loaded[id]?.trim();
+
+      if (this.resultsLoaded && manual && value && value !== previous[id]?.trim()) {
+        pending.push(
+          this.cardWriter.save({
+            at: this.now().toISOString(),
+            author: 'Sistema',
+            indicator: id,
+            newOrigin: 'result',
+            patientId,
+            previous: manual,
+            value,
+          }),
+        );
+        this.manual.update(m => ({ ...m, [id]: { at: null, origin: 'result', value } }));
+      }
+    }
+    await Promise.all(pending);
+  }
+
+  private fromResult(id: NutritionIndicatorId): NutritionCurrent | null {
+    const value = this.resultValues()[id]?.trim();
+
+    return value ? { at: null, origin: 'result', value } : null;
   }
 
   private async load(): Promise<void> {
