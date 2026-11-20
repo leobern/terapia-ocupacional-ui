@@ -1,5 +1,18 @@
 import { GLIM_CRITERIA, GlimDiagnosis, GlimReading, GlimSeverity } from './diagnosis.models';
 
+/** Grave se perda de peso ou IMC positivo for grave; senão moderada se algum for moderado. */
+function stagingOf(reading: GlimReading): GlimSeverity | null {
+  const grades = (['weight-loss', 'low-bmi'] as const)
+    .filter(id => reading.criteria[id] === 'positive')
+    .map(id => reading.severity[id]);
+
+  if (grades.includes('severe')) {
+    return 'severe';
+  }
+
+  return grades.includes('moderate') ? 'moderate' : null;
+}
+
 /**
  * Motor determinístico do GLIM (FT-004-5): só combina os estados dos 5 critérios já classificados.
  * - sem triagem positiva: não calcula;
@@ -21,17 +34,4 @@ export function evaluateGlim(reading: GlimReading): GlimDiagnosis {
   const allEvaluated = GLIM_CRITERIA.every(c => reading.criteria[c.id] !== 'not-evaluated');
 
   return { outcome: allEvaluated && !anyPositive ? 'excluded' : 'indeterminate', staging: null };
-}
-
-/** Grave se perda de peso ou IMC positivo for grave; senão moderada se algum for moderado. */
-function stagingOf(reading: GlimReading): GlimSeverity | null {
-  const grades = (['weight-loss', 'low-bmi'] as const)
-    .filter(id => reading.criteria[id] === 'positive')
-    .map(id => reading.severity[id]);
-
-  if (grades.includes('severe')) {
-    return 'severe';
-  }
-
-  return grades.includes('moderate') ? 'moderate' : null;
 }

@@ -5,10 +5,12 @@ import {
   type ElementRef,
   inject,
   input,
+  output,
   signal,
   viewChild,
 } from '@angular/core';
 
+import { ButtonComponent } from '../../../shared/components/button/button.component';
 import { IconButtonComponent } from '../../../shared/components/icon-button/icon-button.component';
 import { PhIconComponent } from '../../../shared/icons/ph-icon/ph-icon.component';
 import {
@@ -37,13 +39,15 @@ function shortDate(iso: string): string {
  */
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [IconButtonComponent, PhIconComponent],
+  imports: [ButtonComponent, IconButtonComponent, PhIconComponent],
   selector: 'app-assessment-section',
   styleUrl: './assessment-section.component.scss',
   templateUrl: './assessment-section.component.html',
 })
 export class AssessmentSectionComponent {
   readonly patientId = input.required<string>();
+  /** Avaliação concluída pelo profissional: o Hub abre o Diagnóstico (FT-004-5) se houver triagem positiva. */
+  readonly concluded = output();
 
   protected readonly sections = ASSESSMENT_SECTIONS;
   protected readonly assessment = signal<NutritionFunctionalAssessment | null>(null);
@@ -79,6 +83,11 @@ export class AssessmentSectionComponent {
   protected close(): void {
     this.token++;
     this.isOpen.set(false);
+  }
+
+  protected conclude(): void {
+    this.close();
+    this.concluded.emit();
   }
 
   protected onDialogClick(event: MouseEvent): void {

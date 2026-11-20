@@ -1,7 +1,7 @@
 import { Location } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, OnInit, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { map } from 'rxjs';
 
 import { ButtonComponent } from '../../shared/components/button/button.component';
@@ -10,6 +10,7 @@ import { PageContainerComponent } from '../../shared/components/page-container/p
 import { TherapyTagComponent } from '../../shared/components/therapy-tag/therapy-tag.component';
 import { PhIconComponent } from '../../shared/icons/ph-icon/ph-icon.component';
 import { ConnectivityService } from '../../shared/services/connectivity.service';
+import { DiagnosisSource } from '../diagnosis/diagnosis-source';
 import { HospitalContextService } from '../home/hospital-context.service';
 import { NOW, ProfessionalProfileReader } from '../home/professional-profile';
 import {
@@ -60,6 +61,10 @@ type CardMode = 'view' | 'paste' | 'edit';
 
 const OFFLINE_HINT = 'Conexão necessária para sintetizar ou confirmar a hipótese.';
 const DAY_MS = 86_400_000;
+
+export const DIAGNOSIS_OFFLINE_HINT = 'Sem conexão: o cálculo do diagnóstico precisa de conexão.';
+export const DIAGNOSIS_FAILED_HINT =
+  'Não foi possível calcular o diagnóstico agora. Abra a aba Diagnóstico para tentar de novo.';
 
 /** Hub do paciente (FT-004-2): cabeçalho e cartão "Hipótese diagnóstica" (Figma 4608:4375 / 4608:4845). */
 @Component({
@@ -140,6 +145,8 @@ export class PatientHubComponent implements OnInit {
   /** Orientação de validação/conexão/gravação exibida ao profissional. */
   protected readonly hint = signal<string | null>(null);
   protected readonly saving = signal(false);
+  /** Aviso do fluxo automático Avaliação → Diagnóstico (offline ou falha de leitura). */
+  protected readonly diagnosisHint = signal<string | null>(null);
   protected readonly offline = computed(() => !this.connectivity.online());
 
   protected readonly hospitalId = computed(() => this.context.selected()?.id ?? null);
@@ -182,6 +189,8 @@ export class PatientHubComponent implements OnInit {
   private pullFrom: number | null = null;
   private readonly context = inject(HospitalContextService);
   private readonly location = inject(Location);
+  private readonly router = inject(Router);
+  private readonly diagnosisSource = inject(DiagnosisSource);
   private readonly now = inject(NOW);
   private readonly synthesizer = inject(HypothesisSynthesizer);
   private readonly writer = inject(HypothesisWriter);
@@ -308,6 +317,36 @@ export class PatientHubComponent implements OnInit {
     this.pullFrom = null;
     if (from !== null && event.changedTouches[0].clientY - from > PULL_THRESHOLD) {
       void this.reloadResults();
+    }
+  }
+
+  /** US-004-5-01 cenário 1: concluída a avaliação, abre o Diagnóstico só se há triagem positiva. */
+  protected async onAssessmentConcluded(): Promise<void> {
+    const id = this.patientId();
+
+    this.diagnosisHint.set(null);
+    if (id === null) {
+      return;
+    }
+    if (!this.connectivity.online()) {
+      this.diagnosisHint.set(DIAGNOSIS_OFFLINE_HINT);
+
+      return;
+    }
+    try {
+      if ((await this.diagnosisSource.load(id)).screeningPositive) {
+        await this.router.navigate(['/patients', id, 'diagnosis']);
+      }
+    } catch {
+      this.diagnosisHint.set(DIAGNOSIS_FAILED_HINT);
+    }
+  }
+
+  protected openDiagnosis(): void {
+    const id = this.patientId();
+
+    if (id !== null) {
+      void this.router.navigate(['/patients', id, 'diagnosis']);
     }
   }
 

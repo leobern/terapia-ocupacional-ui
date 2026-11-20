@@ -60,7 +60,7 @@ describe('DiagnosisComponent', () => {
   let fixture: ComponentFixture<DiagnosisComponent>;
   let source: FakeDiagnosisSource;
   const online = signal(true);
-  const location = { back: jasmine.createSpy('back') };
+  let location: { back: jasmine.Spy };
 
   async function render(id: string | null = 'p1'): Promise<HTMLElement> {
     TestBed.overrideProvider(ActivatedRoute, {
@@ -76,6 +76,7 @@ describe('DiagnosisComponent', () => {
 
   beforeEach(() => {
     source = new FakeDiagnosisSource();
+    location = { back: jasmine.createSpy('back') };
     online.set(true);
     TestBed.configureTestingModule({
       imports: [DiagnosisComponent],
@@ -195,7 +196,7 @@ describe('DiagnosisComponent', () => {
 
     el.querySelector<HTMLButtonElement>('app-icon-button button')?.click();
 
-    expect(location.back).toHaveBeenCalled();
+    expect(location.back).toHaveBeenCalledWith();
   });
 
   it('shows the reliability alert with fluid retention, even with criteria not evaluated', async () => {
