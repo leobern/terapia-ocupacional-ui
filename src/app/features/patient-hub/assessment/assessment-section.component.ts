@@ -92,7 +92,6 @@ export class AssessmentSectionComponent {
   protected readonly saving = signal(false);
   protected readonly saveFailed = signal(false);
   protected readonly online = inject(ConnectivityService).online;
-  /** Valores em edição (começam da avaliação carregada); campo ausente = vazio. */
   /** Campos (card) preenchidos pela IA e ainda não revisados; só no rascunho, nunca gravado. */
   protected readonly suggested = signal<ReadonlySet<AssessmentFieldId>>(new Set());
   protected readonly aiProcessing = signal(false);
@@ -101,6 +100,7 @@ export class AssessmentSectionComponent {
   protected readonly aiUnavailableHint = AI_UNAVAILABLE_HINT;
   protected readonly aiReviewNote = AI_REVIEW_NOTE;
   protected readonly aiProcessingHint = AI_PROCESSING_HINT;
+  /** Valores em edição (começam da avaliação carregada); campo ausente = vazio. */
   private readonly draft = signal<Partial<Record<AssessmentFieldId, string>>>({});
 
   private readonly source = inject(AssessmentSource);
