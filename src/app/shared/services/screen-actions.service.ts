@@ -43,6 +43,8 @@ export interface ScreenAction {
   readonly label: string;
   /** Ausente = ação ainda não disponível (o painel avisa em vez de abrir um formulário). */
   readonly form?: FormActionDefinition;
+  /** Ação de navegação (fluxo de outra feature): o painel fecha e `navigate` leva ao destino; sem formulário. */
+  readonly navigate?: () => void;
 }
 
 /** Opção de ordenação pré-definida oferecida como chip no painel de Atalhos. */

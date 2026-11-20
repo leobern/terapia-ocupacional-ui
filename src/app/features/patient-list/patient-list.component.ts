@@ -110,8 +110,6 @@ const BED_COLLATOR = new Intl.Collator('pt-BR', { numeric: true, sensitivity: 'b
 export type PatientListStatus = 'loading' | 'ready' | 'error';
 
 const PATIENT_LIST_ACTIONS: readonly ScreenAction[] = [
-  { id: 'register-patient', label: 'Cadastrar paciente' },
-  { id: 'edit-patient', label: 'Editar paciente' },
   { id: 'end-follow-up', label: 'Encerrar acompanhamento' },
   { id: 'change-bed', label: 'Alterar leito' },
 ];
@@ -280,10 +278,16 @@ export class PatientListComponent implements OnInit {
   });
 
   constructor() {
-    // Atalhos da tela (padrão de cadastro): ações principais; os formulários chegam com a US-004-1-07.
+    // Atalhos da tela (padrão de cadastro): ações principais; os cadastro e edição navegam à FT-002-1 (US-004-1-07).
     // Em modo somente leitura (FR-014) todas levam a fluxos de escrita e saem dos atalhos.
     effect(onCleanup => {
-      const actions = this.readOnly() ? [] : PATIENT_LIST_ACTIONS;
+      const actions: readonly ScreenAction[] = this.readOnly()
+        ? []
+        : [
+            { id: 'register-patient', label: 'Cadastrar paciente', navigate: (): void => this.registerPatient() },
+            { id: 'edit-patient', label: 'Alterar dados de paciente', navigate: (): void => this.editPatient() },
+            ...PATIENT_LIST_ACTIONS,
+          ];
 
       onCleanup(this.screenActions.register(actions));
     });
@@ -464,7 +468,12 @@ export class PatientListComponent implements OnInit {
 
   /** Cadastro pertence à FT-002-1: aqui só navega (FR-027). */
   registerPatient(): void {
-    void this.router.navigate(['/home']);
+    void this.router.navigate(['/patients', 'register']);
+  }
+
+  /** Alteração de dados pertence à FT-002-1: entrada do fluxo de edição, onde o paciente é escolhido (FR-027). */
+  editPatient(): void {
+    void this.router.navigate(['/patients', 'edit']);
   }
 
   /**

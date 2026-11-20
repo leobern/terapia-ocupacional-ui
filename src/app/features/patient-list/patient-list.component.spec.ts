@@ -3,7 +3,7 @@ import { provideRouter, Router } from '@angular/router';
 
 import { AiAssistantService } from '../../shared/services/ai-assistant.service';
 import { ConnectivityService } from '../../shared/services/connectivity.service';
-import { ScreenActionsService } from '../../shared/services/screen-actions.service';
+import { type ScreenAction, ScreenActionsService } from '../../shared/services/screen-actions.service';
 import { LinkedHospitalsReader } from '../home/linked-hospitals';
 import { UnreadNotificationsReader } from '../home/unread-notifications-reader';
 import { PatientListComponent } from './patient-list.component';
@@ -615,7 +615,7 @@ describe('PatientListComponent', () => {
       TestBed.inject(ScreenActionsService)
         .actions()
         .map(a => a.label),
-    ).toEqual(['Cadastrar paciente', 'Editar paciente', 'Encerrar acompanhamento', 'Alterar leito']);
+    ).toEqual(['Cadastrar paciente', 'Alterar dados de paciente', 'Encerrar acompanhamento', 'Alterar leito']);
   });
 
   it('tabela desktop: colunas sem data de nascimento, metas com texto e clique na linha abre o Hub', async () => {
@@ -700,7 +700,56 @@ describe('PatientListComponent', () => {
     expect(text()).toContain('Nenhum paciente para este dia');
     q('.patient-list__register button')?.click();
 
-    expect(router.navigate).toHaveBeenCalledWith(['/home']);
+    expect(router.navigate).toHaveBeenCalledWith(['/patients', 'register']);
+  });
+
+  describe('atalhos de cadastro e edição (US-004-1-07)', () => {
+    const actionByLabel = (label: string): ScreenAction | undefined =>
+      TestBed.inject(ScreenActionsService)
+        .actions()
+        .find(a => a.label === label);
+
+    it('"Cadastrar paciente" fecha o painel e navega ao cadastro da FT-002-1', async () => {
+      await create();
+      const assistant = TestBed.inject(AiAssistantService);
+
+      assistant.openShortcuts();
+      assistant.openAction(actionByLabel('Cadastrar paciente') as ScreenAction);
+
+      expect(assistant.isOpen()).toBeFalse();
+      expect(router.navigate).toHaveBeenCalledWith(['/patients', 'register']);
+    });
+
+    it('"Alterar dados de paciente" fecha o painel e navega à entrada da edição', async () => {
+      await create();
+      const assistant = TestBed.inject(AiAssistantService);
+
+      assistant.openShortcuts();
+      assistant.openAction(actionByLabel('Alterar dados de paciente') as ScreenAction);
+
+      expect(assistant.isOpen()).toBeFalse();
+      expect(router.navigate).toHaveBeenCalledWith(['/patients', 'edit']);
+    });
+
+    it('pedir "cadastrar paciente" ao assistente leva à mesma navegação', async () => {
+      await create();
+      TestBed.inject(AiAssistantService).ask('quero cadastrar um paciente');
+
+      expect(router.navigate).toHaveBeenCalledWith(['/patients', 'register']);
+    });
+
+    it('em data retroativa as duas ações ficam indisponíveis', async () => {
+      await create();
+      const day = new Date();
+
+      day.setDate(day.getDate() - 1);
+      fixture.componentInstance.selectDate(day);
+      fixture.componentInstance.confirmPendingDate();
+      fixture.detectChanges();
+
+      expect(actionByLabel('Cadastrar paciente')).toBeUndefined();
+      expect(actionByLabel('Alterar dados de paciente')).toBeUndefined();
+    });
   });
 
   it('mostra erro e tenta de novo', async () => {

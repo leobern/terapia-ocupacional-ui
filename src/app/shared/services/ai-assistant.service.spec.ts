@@ -42,6 +42,16 @@ describe('AiAssistantService', () => {
     expect([service.view(), service.activeAction()]).toEqual(['unavailable', withoutForm]);
   });
 
+  it('openAction de navegação fecha o painel e navega, sem formulário', () => {
+    const navigate = jasmine.createSpy('navigate');
+
+    service.openShortcuts();
+    service.openAction({ id: 'go', label: 'Ir', navigate });
+
+    expect([service.isOpen(), service.view(), service.activeAction()]).toEqual([false, 'chat', null]);
+    expect(navigate).toHaveBeenCalledTimes(1);
+  });
+
   it('back returns to the shortcuts and clears the active action', () => {
     service.openAction(withForm);
     service.back();
