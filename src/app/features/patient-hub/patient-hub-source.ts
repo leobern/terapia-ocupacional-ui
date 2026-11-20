@@ -24,3 +24,20 @@ export abstract class HypothesisSynthesizer {
 export abstract class HypothesisWriter {
   abstract save(request: HypothesisSaveRequest): Promise<void>;
 }
+
+/**
+ * Porta de leitura da existência de internação anterior do paciente no MESMO hospital
+ * (mesmo paciente cadastrado E mesma unidade hospitalar). Sem contrato de API real; offline, a
+ * implementação real só responde se a informação estiver local. Rejeita quando não consegue consultar.
+ */
+export abstract class PriorStaysSource {
+  abstract hasPriorStays(patientId: string, hospitalId: string): Promise<boolean>;
+}
+
+/**
+ * Porta do serviço de IA que sintetiza condutas e intercorrências de terapia nutricional das internações
+ * anteriores (fora de escopo: só entrada/saída). Texto livre; rejeita se falhar ou estiver indisponível.
+ */
+export abstract class PriorStaysSynthesizer {
+  abstract synthesize(patientId: string, hospitalId: string): Promise<string>;
+}

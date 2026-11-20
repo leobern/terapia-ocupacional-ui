@@ -2,7 +2,13 @@ import { inject, Injectable } from '@angular/core';
 
 import { PatientListSource } from '../patient-list/patient-list-source';
 import { HypothesisSaveRequest, PatientHubProfile } from './patient-hub.models';
-import { HypothesisSynthesizer, HypothesisWriter, PatientHubSource } from './patient-hub-source';
+import {
+  HypothesisSynthesizer,
+  HypothesisWriter,
+  PatientHubSource,
+  PriorStaysSource,
+  PriorStaysSynthesizer,
+} from './patient-hub-source';
 
 const key = (patientId: string): string => `conductia:hypothesis:${patientId}`;
 
@@ -57,5 +63,28 @@ export class ProvisionalHypothesisSynthesizer extends HypothesisSynthesizer {
     const text = pastedText.trim().replace(/\s+/g, ' ');
 
     return Promise.resolve(text.length > 240 ? `${text.slice(0, 237)}...` : text);
+  }
+}
+
+/** Provisório: só o paciente `p1` tem internação anterior (no hospital de exemplo). */
+const PRIOR_STAYS: Readonly<Record<string, string | undefined>> = {
+  'hospital-vila-nova-star:p1':
+    'Internação anterior (2025): NE por sonda com boa tolerância; intercorrência de broncoaspiração tratada, com ajuste de velocidade da dieta.',
+};
+
+@Injectable()
+export class ProvisionalPriorStaysSource extends PriorStaysSource {
+  hasPriorStays(patientId: string, hospitalId: string): Promise<boolean> {
+    return Promise.resolve(`${hospitalId}:${patientId}` in PRIOR_STAYS);
+  }
+}
+
+/** Provisório: devolve o texto de exemplo (a IA real é dependência externa). */
+@Injectable()
+export class ProvisionalPriorStaysSynthesizer extends PriorStaysSynthesizer {
+  synthesize(patientId: string, hospitalId: string): Promise<string> {
+    const text = PRIOR_STAYS[`${hospitalId}:${patientId}`];
+
+    return text === undefined ? Promise.reject(new Error('sem internação anterior')) : Promise.resolve(text);
   }
 }

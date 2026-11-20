@@ -23,11 +23,19 @@ import {
   ProvisionalHomeApiService,
   ProvisionalNotificationsApiService,
 } from './features/notifications/data-access/provisional-notifications-api.service';
-import { HypothesisSynthesizer, HypothesisWriter, PatientHubSource } from './features/patient-hub/patient-hub-source';
+import {
+  HypothesisSynthesizer,
+  HypothesisWriter,
+  PatientHubSource,
+  PriorStaysSource,
+  PriorStaysSynthesizer,
+} from './features/patient-hub/patient-hub-source';
 import {
   ProvisionalHypothesisSynthesizer,
   ProvisionalHypothesisWriter,
   ProvisionalPatientHubSource,
+  ProvisionalPriorStaysSource,
+  ProvisionalPriorStaysSynthesizer,
 } from './features/patient-hub/provisional-patient-hub';
 import { PatientListAiCommandPort } from './features/patient-list/patient-list-ai-command';
 import { PatientListSource } from './features/patient-list/patient-list-source';
@@ -53,6 +61,8 @@ export const appConfig: ApplicationConfig = {
     { provide: PatientHubSource, useClass: ProvisionalPatientHubSource },
     { provide: HypothesisSynthesizer, useClass: ProvisionalHypothesisSynthesizer },
     { provide: HypothesisWriter, useClass: ProvisionalHypothesisWriter },
+    { provide: PriorStaysSource, useClass: ProvisionalPriorStaysSource },
+    { provide: PriorStaysSynthesizer, useClass: ProvisionalPriorStaysSynthesizer },
     { provide: NutritionResultsSource, useClass: ProvisionalNutritionResultsSource },
     { provide: HomeNotificationsSource, useClass: ProvisionalHomeNotificationsSource },
     // Provisórios (sem backend ainda): notificações em memória, hospital único e usuários de exemplo.
