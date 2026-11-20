@@ -40,6 +40,8 @@ describe('PatientListComponent', () => {
 
   const text = (): string => (fixture.nativeElement as HTMLElement).textContent ?? '';
   const q = (sel: string): HTMLElement | null => (fixture.nativeElement as HTMLElement).querySelector(sel);
+  const qa = (sel: string): HTMLElement[] =>
+    Array.from((fixture.nativeElement as HTMLElement).querySelectorAll<HTMLElement>(sel));
 
   async function create(): Promise<void> {
     fixture = TestBed.createComponent(PatientListComponent);
@@ -523,6 +525,48 @@ describe('PatientListComponent', () => {
     await create();
 
     expect(text()).toContain('2 pacientes');
+  });
+
+  describe('finalizado no dia (FR-016/017/018)', () => {
+    const finished = (n: number): CensusPatient[] => census(n).map(p => ({ ...p, pendingTasks: 0 }));
+
+    it('mantém o finalizado na lista, em cinza e com rótulo textual, na lista e na tabela', async () => {
+      source.result = Promise.resolve([...census(1), { ...census(2)[1], pendingTasks: 0 }]);
+      await create();
+
+      expect(text()).toContain('2 pacientes');
+      expect(qa('.patient-list__row--finished').length).toBe(1);
+      expect(qa('.patient-list__tr--finished').length).toBe(1);
+      expect(q('.patient-list__row--finished')?.textContent).toContain('Finalizado');
+      expect(q('.patient-list__tr--finished')?.textContent).toContain('Finalizado');
+      expect(q('.patient-list__row--finished')?.getAttribute('aria-label')).toContain('finalizado no dia');
+    });
+
+    it('com todos finalizados, todos seguem listados e não há estado vazio', async () => {
+      source.result = Promise.resolve(finished(3));
+      await create();
+
+      expect(text()).toContain('3 pacientes');
+      expect(qa('.patient-list__row').length).toBe(3);
+      expect(text()).not.toContain('Nenhum paciente para este dia');
+    });
+
+    it('não trata paciente sem pendingTasks como finalizado', async () => {
+      source.result = Promise.resolve(census(2));
+      await create();
+
+      expect(q('.patient-list__row--finished')).toBeNull();
+    });
+
+    it('toque na linha e no controle de abrir do finalizado navega ao Hub', async () => {
+      source.result = Promise.resolve(finished(1));
+      await create();
+      q('.patient-list__row--finished')?.click();
+      q('.patient-list__open')?.click();
+
+      expect(router.navigate).toHaveBeenCalledTimes(2);
+      expect(router.navigate).toHaveBeenCalledWith(['/patients', 'p0']);
+    });
   });
 
   it('mostra estado vazio e o botão de cadastrar apenas navega', async () => {

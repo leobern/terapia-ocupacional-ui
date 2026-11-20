@@ -88,4 +88,18 @@ describe('assemblePatientList', () => {
       expect(assemblePatientList([base], 'h1', day).map(p => p.id)).toEqual(['a']);
     });
   });
+
+  it('marca finalizado só quando não há pendências abertas na data', () => {
+    const [done, open, unknown] = assemblePatientList(
+      [
+        { ...base, bed: '1', id: 'a', pendingTasks: 0 },
+        { ...base, bed: '2', id: 'b', pendingTasks: 2 },
+        { ...base, bed: '3', id: 'c' },
+      ],
+      'h1',
+      day,
+    );
+
+    expect([done.finished, open.finished, unknown.finished]).toEqual([true, false, false]);
+  });
 });

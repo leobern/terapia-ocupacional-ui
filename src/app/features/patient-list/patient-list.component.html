@@ -377,6 +377,7 @@
                 @for (patient of sorted(); track patient.id) {
                   <tr
                     class="patient-list__tr"
+                    [class.patient-list__tr--finished]="patient.finished"
                     (click)="openPatient(patient.id)"
                   >
                     <td>
@@ -384,6 +385,9 @@
                         <span class="patient-list__name">{{
                           patient.name
                         }}</span>
+                        @if (patient.finished) {
+                          <app-therapy-tag label="Finalizado" />
+                        }
                       </span>
                     </td>
                     <td>
@@ -490,10 +494,20 @@
                         <button
                           type="button"
                           class="patient-list__row"
-                          [attr.aria-label]="'Abrir ' + patient.name"
+                          [class.patient-list__row--finished]="patient.finished"
+                          [attr.aria-label]="
+                            'Abrir ' +
+                            patient.name +
+                            (patient.finished ? ', finalizado no dia' : '')
+                          "
                           (click)="openPatient(patient.id)"
                         >
                           <span class="patient-list__info">
+                            @if (patient.finished) {
+                              <span class="patient-list__first">
+                                <app-therapy-tag label="Finalizado" />
+                              </span>
+                            }
                             @if (patient.firstEvaluation) {
                               <span class="patient-list__first">
                                 <app-therapy-tag

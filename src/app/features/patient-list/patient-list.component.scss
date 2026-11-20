@@ -610,3 +610,10 @@
   clip-path: inset(50%);
   white-space: nowrap;
 }
+
+// Finalizado no dia (FR-016): linha em preto e branco e levemente esmaecida; o rótulo "Finalizado" garante a distinção sem cor.
+.patient-list__row--finished,
+.patient-list__tr--finished {
+  filter: grayscale(1);
+  opacity: 0.75;
+}
