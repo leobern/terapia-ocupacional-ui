@@ -40,8 +40,8 @@ describe('PharmacyComponent', () => {
   });
 
   it('mostra o catálogo agrupado nas 4 categorias com os atributos', () => {
-    const titles = Array.from(fixture.nativeElement.querySelectorAll('.pharmacy__group-title')).map(
-      el => (el as HTMLElement).textContent,
+    const titles = Array.from(fixture.nativeElement.querySelectorAll('.pharmacy__group-title')).map(el =>
+      (el as HTMLElement).textContent?.trim(),
     );
 
     expect(titles).toEqual(['Enterais', 'Parenterais', 'Suplementos orais', 'Medicamentos']);
