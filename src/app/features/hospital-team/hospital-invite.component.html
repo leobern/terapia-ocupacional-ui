@@ -1,0 +1,126 @@
+<app-page-container>
+  <div class="invite">
+    <header class="invite__header">
+      <app-icon-button
+        kind="primary"
+        appearance="icon"
+        icon="arrow-left"
+        ariaLabel="Voltar"
+        (click)="back()"
+      />
+      <div class="invite__heading">
+        <h1 class="invite__title">Convidar profissional</h1>
+        <p class="invite__subtitle">{{ hospitalName() }}</p>
+      </div>
+    </header>
+
+    <section class="invite__card" aria-label="Convite de profissional">
+      @if (phase() === 'done') {
+        <p class="invite__status" role="status">
+          @if (approvedRequest()) {
+            Solicitação aprovada: o vínculo de {{ invitedName() }} com
+            {{ hospitalName() }} está aprovado. O profissional foi notificado.
+          } @else {
+            Convite concluído: o vínculo de {{ invitedName() }} com
+            {{ hospitalName() }} está aprovado. O profissional foi notificado.
+          }
+        </p>
+        <div class="invite__actions">
+          <app-button
+            size="md"
+            label="Convidar outro profissional"
+            (click)="cancel()"
+          />
+        </div>
+      } @else {
+        <label class="invite__label" for="invite-email"
+          >E-mail do profissional</label
+        >
+        <input
+          id="invite-email"
+          class="invite__input"
+          type="email"
+          autocomplete="off"
+          placeholder="nome@exemplo.com"
+          [value]="email()"
+          [disabled]="phase() === 'searching' || phase() === 'confirming'"
+          (input)="onEmail($event)"
+          (keydown.enter)="search()"
+        />
+        <div class="invite__actions">
+          <app-button
+            size="md"
+            iconLeft="magnifying-glass"
+            [label]="phase() === 'searching' ? 'Buscando…' : 'Buscar'"
+            [disabled]="!canSearch()"
+            (click)="search()"
+          />
+        </div>
+
+        @if (offline()) {
+          <p class="invite__status" role="status">
+            Sem conexão. Conecte-se para convidar um profissional.
+          </p>
+        }
+        @if (error(); as message) {
+          <p class="invite__status" role="alert">{{ message }}</p>
+        }
+
+        @if (lookup(); as result) {
+          @if (result.kind === 'not-registered') {
+            <p class="invite__status" role="status">
+              Este profissional ainda não tem cadastro no Conductia. Ele precisa
+              se cadastrar primeiro antes de poder ser convidado.
+            </p>
+          } @else {
+            <dl class="invite__profile" aria-label="Perfil declarado">
+              <dt>Nome</dt>
+              <dd>{{ result.profile.name }}</dd>
+              <dt>E-mail</dt>
+              <dd>{{ result.profile.email }}</dd>
+              <dt>Perfil/especialidade declarado</dt>
+              <dd>{{ result.profile.specialty }}</dd>
+            </dl>
+            @if (result.relation === 'approved') {
+              <p class="invite__status" role="status">
+                Já existe vínculo aprovado deste profissional com
+                {{ hospitalName() }}. Não é possível convidar novamente.
+              </p>
+            } @else {
+              @if (result.relation === 'pending') {
+                <p class="invite__status" role="status">
+                  Este profissional tem uma solicitação aguardando aprovação
+                  neste hospital. Confirmar o convite aprova essa solicitação.
+                </p>
+              }
+              <p class="invite__status">
+                Confira o perfil declarado antes de confirmar o convite.
+              </p>
+              <div class="invite__actions">
+                <app-button
+                  size="md"
+                  iconLeft="check"
+                  [label]="
+                    phase() === 'confirming'
+                      ? 'Confirmando…'
+                      : 'Confirmar convite'
+                  "
+                  [disabled]="!canConfirm()"
+                  (click)="confirm()"
+                />
+                <app-button
+                  size="md"
+                  kind="primary"
+                  appearance="outlined"
+                  label="Cancelar"
+                  [disabled]="phase() === 'confirming'"
+                  (click)="cancel()"
+                />
+              </div>
+            }
+          }
+        }
+      }
+    </section>
+  </div>
+</app-page-container>

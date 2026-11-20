@@ -17,6 +17,11 @@ import { ProfessionalProfileReader } from './features/home/professional-profile'
 import { ProvisionalDailyPatientsSource } from './features/home/provisional-daily-patients';
 import { ProvisionalHomeNotificationsSource } from './features/home/provisional-home-notifications';
 import { UnreadNotificationsReader } from './features/home/unread-notifications-reader';
+import { HospitalInvitePort, ManagerAccessReader } from './features/hospital-team/hospital-invite-port';
+import {
+  ProvisionalHospitalInvite,
+  ProvisionalManagerAccess,
+} from './features/hospital-team/provisional-hospital-invite';
 import { PendingNotificationsQueryResolver } from './features/notifications/assistant/pending-notifications-query.resolver';
 import { NotificationsApiService } from './features/notifications/data-access/notifications-api.service';
 import {
@@ -58,6 +63,8 @@ export const appConfig: ApplicationConfig = {
     // Provisórios (sem backend ainda): notificações em memória, hospital único e usuários de exemplo.
     { provide: NotificationsApiService, useClass: ProvisionalNotificationsApiService },
     { provide: HomeApiService, useClass: ProvisionalHomeApiService },
+    { provide: HospitalInvitePort, useClass: ProvisionalHospitalInvite },
+    { provide: ManagerAccessReader, useClass: ProvisionalManagerAccess },
     { provide: UserDirectory, useClass: ProvisionalUserDirectory },
     // Consultas de leitura do assistente (um resolvedor por intenção).
     { multi: true, provide: ASSISTANT_QUERY_RESOLVERS, useClass: PendingNotificationsQueryResolver },

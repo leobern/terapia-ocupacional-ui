@@ -73,6 +73,11 @@ export const routes: Routes = [
     loadComponent: () =>
       import('./features/pending-screen/pending-screen.component').then(m => m.PendingScreenComponent),
   })),
+  // Convite direto de profissional (FT-009-1): só gestor.
+  {
+    path: 'hospital-team',
+    loadChildren: () => import('./features/hospital-team/hospital-team.routes').then(m => m.HOSPITAL_TEAM_ROUTES),
+  },
   // Hub do paciente (FT-004-2): destino da lista de pacientes e das notificações.
   {
     path: 'patients/:id',
