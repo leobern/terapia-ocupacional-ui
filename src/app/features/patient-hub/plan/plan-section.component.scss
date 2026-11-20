@@ -1,0 +1,200 @@
+@use '../../../shared/styles/tokens';
+@use '../../../shared/styles/breakpoints';
+@use '../../../shared/styles/typography';
+
+:host {
+  display: block;
+}
+
+// Linha da seção recolhida (padrão da caixa "Internações anteriores").
+.plan__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: tokens.$space-8;
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 44px;
+  padding: tokens.$space-8 tokens.$space-16;
+  border: 0;
+  border-radius: tokens.$radius-md;
+  background: tokens.c(surface-2);
+  color: tokens.c(content-1);
+  text-align: start;
+  cursor: pointer;
+
+  @include typography.label-md;
+
+  &:focus-visible {
+    outline: var(--focus-ring-width) solid tokens.c(focus-ring);
+    outline-offset: var(--focus-ring-offset);
+  }
+}
+
+.plan__row-title {
+  flex: 1 0 0;
+}
+
+// Figma 4682-9078 (bottom-sheet · avaliação): fundo surface, padding 12/16/24/16, gap 16.
+.plan {
+  display: none;
+  flex-direction: column;
+  gap: tokens.$space-16;
+  box-sizing: border-box;
+  width: 100%;
+  max-width: none;
+  max-height: 93dvh;
+  margin: auto 0 0;
+  padding: tokens.$space-12 tokens.$space-16 tokens.$space-24;
+  overflow: hidden;
+  border: 0;
+  border-radius: tokens.$radius-md tokens.$radius-md 0 0;
+  background: tokens.c(surface);
+  color: tokens.c(content-1);
+
+  &[open] {
+    display: flex;
+  }
+
+  &::backdrop {
+    background: tokens.c(scrim);
+  }
+
+  // Desktop: sem desenho 1920; diálogo centralizado com a mesma estrutura.
+  @include breakpoints.md {
+    width: 480px;
+    margin: auto;
+    padding-block: tokens.$space-16 tokens.$space-24;
+    border-radius: tokens.$radius-md;
+  }
+}
+
+.plan__handle {
+  align-self: center;
+  width: 40px;
+  height: 4px;
+  border-radius: 2px;
+  background: tokens.c(border-2);
+
+  @include breakpoints.md {
+    display: none;
+  }
+}
+
+.plan__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: tokens.$space-8;
+  min-height: 44px;
+}
+
+.plan__title {
+  margin: 0;
+  color: tokens.c(content-1);
+
+  @include typography.title-lg;
+}
+
+// Formulário com rolagem própria; clusters por seção separados por space-16.
+.plan__body {
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$space-16;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.plan__section {
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$space-8;
+}
+
+.plan__section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: tokens.$space-8;
+  padding: tokens.$space-8 tokens.$space-16;
+}
+
+.plan__section-title {
+  margin: 0;
+  color: tokens.c(content-1);
+
+  @include typography.title-md;
+}
+
+.plan__card {
+  min-inline-size: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$space-8;
+  padding: tokens.$space-16;
+  border: 1px solid tokens.c(border);
+  border-radius: tokens.$radius-md;
+  background: tokens.c(surface);
+}
+
+.plan__label {
+  color: tokens.c(content-1);
+
+  @include typography.title-md;
+}
+
+.plan__options {
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$space-8;
+}
+
+.plan__option {
+  display: flex;
+  align-items: center;
+  gap: tokens.$space-12;
+  min-height: 44px;
+  color: tokens.c(content-1);
+  cursor: pointer;
+
+  @include typography.body-lg;
+}
+
+.plan__checkbox {
+  flex: none;
+  width: 24px;
+  height: 24px;
+  margin: 0;
+  accent-color: tokens.c(primary);
+
+  &:focus-visible {
+    outline: 2px solid tokens.c(input-focus-ring);
+    outline-offset: 2px;
+  }
+}
+
+.plan__value {
+  margin: 0;
+  color: tokens.c(content-1);
+
+  @include typography.body-lg;
+}
+
+.plan__help {
+  margin: 0;
+  color: tokens.c(content-4);
+
+  @include typography.caption;
+}
+
+.plan__status {
+  margin: 0;
+  color: tokens.c(content-4);
+
+  @include typography.body-md;
+
+  &--warning {
+    color: tokens.c(content-1);
+  }
+}

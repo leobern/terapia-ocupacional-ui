@@ -6,6 +6,6 @@ import { ProfessionalProfile, ProfessionalProfileReader } from './professional-p
 @Injectable()
 export class LocalProfessionalProfileReader extends ProfessionalProfileReader {
   read(): ProfessionalProfile {
-    return { name: 'Michelle Franklin' };
+    return { name: 'Michelle Franklin', role: 'doctor' };
   }
 }
