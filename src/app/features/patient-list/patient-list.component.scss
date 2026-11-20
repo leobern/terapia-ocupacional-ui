@@ -592,3 +592,9 @@
     background: tokens.c(comm-warning-strong);
   }
 }
+
+// Modo somente leitura (FR-013): toda a lista em preto e branco; o status segue em texto.
+.patient-list--read-only .patient-list__clusters,
+.patient-list--read-only .patient-list__table-card {
+  filter: grayscale(1);
+}

@@ -2,7 +2,6 @@ import {
   ChangeDetectionStrategy,
   Component,
   computed,
-  DestroyRef,
   effect,
   type ElementRef,
   inject,
@@ -15,6 +14,7 @@ import { Router } from '@angular/router';
 
 import { BadgeComponent } from '../../shared/components/badge/badge.component';
 import { ButtonComponent } from '../../shared/components/button/button.component';
+import { ConfirmDialogComponent } from '../../shared/components/confirm-dialog/confirm-dialog.component';
 import { DateStripComponent } from '../../shared/components/date-strip/date-strip.component';
 import { GraphMetaComponent } from '../../shared/components/graph-meta/graph-meta.component';
 import { IconButtonComponent } from '../../shared/components/icon-button/icon-button.component';
@@ -46,6 +46,25 @@ function lowestGoal(adequacy: PatientCard['adequacy']): number {
 function isOutOfTarget(adequacy: PatientCard['adequacy']): boolean {
   return lowestGoal(adequacy) < 50;
 }
+
+function isSameDay(a: Date, b: Date): boolean {
+  return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+}
+
+const MONTHS = [
+  'janeiro',
+  'fevereiro',
+  'março',
+  'abril',
+  'maio',
+  'junho',
+  'julho',
+  'agosto',
+  'setembro',
+  'outubro',
+  'novembro',
+  'dezembro',
+];
 
 export type ColumnKey = 'name' | 'age' | 'therapy' | 'caloric' | 'protein' | 'location' | 'first';
 
@@ -106,6 +125,7 @@ const SORT_VALUE: Readonly<Record<SortKey, (p: PatientCard) => number | string |
   imports: [
     BadgeComponent,
     ButtonComponent,
+    ConfirmDialogComponent,
     DateStripComponent,
     GraphMetaComponent,
     IconButtonComponent,
@@ -119,6 +139,15 @@ const SORT_VALUE: Readonly<Record<SortKey, (p: PatientCard) => number | string |
 })
 export class PatientListComponent implements OnInit {
   readonly selectedDate = signal(new Date());
+  /** Data retroativa aguardando confirmação (FR-012): enquanto existir, data e lista não mudam. */
+  readonly pendingDate = signal<Date | null>(null);
+  /**
+   * Modo somente leitura (FR-013/FR-014): qualquer data diferente de hoje (datas futuras seguem o mesmo
+   * caminho, a confirmar no refinamento). Os swipes das US-004-1-08/09 devem consultar este sinal.
+   */
+  readonly readOnly = computed(() => !isSameDay(this.selectedDate(), this.today));
+  readonly pendingTitle = computed(() => `Ver o dia ${this.pendingDate()?.getDate() ?? ''} de ${this.pendingMonth()}?`);
+  readonly pendingConfirmLabel = computed(() => `Ver o dia ${this.pendingDate()?.getDate() ?? ''}`);
   readonly status = signal<PatientListStatus>('loading');
   readonly patients = signal<readonly PatientCard[]>([]);
   readonly hospitalName = computed(() => this.context.selected()?.name ?? '');
@@ -199,10 +228,21 @@ export class PatientListComponent implements OnInit {
   private readonly unread = inject(UnreadNotificationsReader);
   private readonly screenActions = inject(ScreenActionsService);
   private generation = 0;
+  private readonly today = new Date();
+  private readonly pendingMonth = computed(() => {
+    const d = this.pendingDate();
+
+    return d === null ? '' : MONTHS[d.getMonth()];
+  });
 
   constructor() {
     // Atalhos da tela (padrão de cadastro): ações principais; os formulários chegam com a US-004-1-07.
-    inject(DestroyRef).onDestroy(this.screenActions.register(PATIENT_LIST_ACTIONS));
+    // Em modo somente leitura (FR-014) todas levam a fluxos de escrita e saem dos atalhos.
+    effect(onCleanup => {
+      const actions = this.readOnly() ? [] : PATIENT_LIST_ACTIONS;
+
+      onCleanup(this.screenActions.register(actions));
+    });
     const zone = inject(NgZone);
 
     // Observa o card da tabela: rolagem horizontal só existe quando o conteúdo passa da largura.
@@ -368,9 +408,30 @@ export class PatientListComponent implements OnInit {
     void this.router.navigate(['/home']);
   }
 
-  /** Troca a data do carrossel; a lista recarrega via effect. Data retroativa (US3) fica fora desta story. */
+  /**
+   * Troca a data do carrossel; a lista recarrega via effect. Voltar a hoje restaura o modo normal sem alerta
+   * (FR-015); qualquer outra data pede confirmação antes de aplicar (FR-012).
+   */
   selectDate(day: Date): void {
-    this.selectedDate.set(day);
+    if (isSameDay(day, this.today)) {
+      this.pendingDate.set(null);
+      this.selectedDate.set(day);
+    } else {
+      this.pendingDate.set(day);
+    }
+  }
+
+  confirmPendingDate(): void {
+    const day = this.pendingDate();
+
+    if (day !== null) {
+      this.selectedDate.set(day);
+      this.pendingDate.set(null);
+    }
+  }
+
+  cancelPendingDate(): void {
+    this.pendingDate.set(null);
   }
 
   openPatient(id: string): void {

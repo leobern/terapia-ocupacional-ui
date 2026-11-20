@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
 
-import { ButtonComponent } from '../../../../shared/components/button/button.component';
+import { ButtonComponent } from '../button/button.component';
 
 /**
  * Diálogo de confirmação de descarte de rascunho (FR-010a/FR-004b de
@@ -10,13 +10,11 @@ import { ButtonComponent } from '../../../../shared/components/button/button.com
  * com tokens já catalogados (cor/tipografia/spacing/radius), reaproveitando
  * `app-button` para as duas ações.
  *
- * Escopo local desta feature (não um entry de design system compartilhado
- * ainda) — promover para `shared/components/` se um segundo consumidor
- * aparecer (research.md §7).
+ * Compartilhado desde a US-004-1-03 (segundo consumidor: troca para data retroativa).
  */
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
-  host: { role: 'alertdialog', '[attr.aria-hidden]': '!open()' },
+  host: { role: 'alertdialog', '[attr.aria-hidden]': '!open()', '(document:keydown.escape)': 'onEscape()' },
   imports: [ButtonComponent],
   selector: 'app-confirm-dialog',
   styleUrl: './confirm-dialog.component.scss',
@@ -32,4 +30,10 @@ export class ConfirmDialogComponent {
 
   readonly confirmed = output();
   readonly cancelled = output();
+
+  protected onEscape(): void {
+    if (this.open()) {
+      this.cancelled.emit();
+    }
+  }
 }

@@ -24,6 +24,7 @@ import {
   CardNotifyReply,
   CardNotifyType,
 } from '../../shared/components/card-notify/card-notify.component';
+import { ConfirmDialogComponent } from '../../shared/components/confirm-dialog/confirm-dialog.component';
 import { IconButtonComponent } from '../../shared/components/icon-button/icon-button.component';
 import { InputChatComponent } from '../../shared/components/input-chat/input-chat.component';
 import { PageContainerComponent } from '../../shared/components/page-container/page-container.component';
@@ -33,7 +34,6 @@ import { type ScreenAction, ScreenActionsService } from '../../shared/services/s
 import { type DirectoryUser } from '../../shared/services/user-directory';
 import { formatRelativeTime } from '../../shared/utils/relative-time';
 import { HospitalContextService } from '../home/hospital-context.service';
-import { ConfirmDialogComponent } from './components/confirm-dialog/confirm-dialog.component';
 import { NotificationSectionTitleComponent } from './components/notification-section-title/notification-section-title.component';
 import { NotificationsRepository } from './data-access/notifications-repository.service';
 import { Notification } from './notifications.models';
