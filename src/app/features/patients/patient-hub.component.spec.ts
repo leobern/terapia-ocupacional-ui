@@ -18,11 +18,11 @@ describe('PatientHubComponent', () => {
     load = jasmine.createSpy('load').and.resolveTo({});
   });
 
-  const setup = (hospital: { name: string } | null): void => {
+  const setup = (hospital: { name: string } | null, params: Record<string, string> = { id: 'p1' }): void => {
     TestBed.configureTestingModule({
       imports: [PatientHubComponent],
       providers: [
-        { provide: ActivatedRoute, useValue: { snapshot: { paramMap: convertToParamMap({ id: 'p1' }) } } },
+        { provide: ActivatedRoute, useValue: { snapshot: { paramMap: convertToParamMap(params) } } },
         { provide: NutritionResultsSource, useValue: { load } },
         { provide: HospitalContextService, useValue: { selected: (): { name: string } | null => hospital } },
       ],
@@ -170,5 +170,32 @@ describe('PatientHubComponent', () => {
     fixture.detectChanges();
 
     expect(valueTexts()[3]).toBe('Desnutrição');
+  });
+
+  it('visibilitychange oculto não recarrega', async () => {
+    setup(null);
+    await fixture.whenStable();
+    Object.defineProperty(document, 'visibilityState', { configurable: true, get: () => 'hidden' });
+    document.dispatchEvent(new Event('visibilitychange'));
+    Reflect.deleteProperty(document, 'visibilityState');
+
+    expect(load).toHaveBeenCalledTimes(1);
+  });
+
+  it('visibilitychange visível recarrega', async () => {
+    setup(null);
+    await fixture.whenStable();
+    Object.defineProperty(document, 'visibilityState', { configurable: true, get: () => 'visible' });
+    document.dispatchEvent(new Event('visibilitychange'));
+    Reflect.deleteProperty(document, 'visibilityState');
+
+    expect(load).toHaveBeenCalledTimes(2);
+  });
+
+  it('rota sem id consulta com id vazio', async () => {
+    setup(null, {});
+    await fixture.whenStable();
+
+    expect(load).toHaveBeenCalledWith('');
   });
 });
