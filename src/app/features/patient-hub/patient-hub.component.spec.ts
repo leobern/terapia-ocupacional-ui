@@ -117,6 +117,24 @@ async function setup(
 
 const text = (f: ComponentFixture<unknown>): string => (f.nativeElement as HTMLElement).textContent ?? '';
 
+const typeInto = (f: ComponentFixture<unknown>, id: string, value: string): void => {
+  const area = (f.nativeElement as HTMLElement).querySelector<HTMLTextAreaElement>(`#${id}`) as HTMLTextAreaElement;
+
+  area.value = value;
+  area.dispatchEvent(new Event('input'));
+  f.detectChanges();
+};
+
+const clickButton = async (f: ComponentFixture<unknown>, label: string): Promise<void> => {
+  const root = f.nativeElement as HTMLElement;
+
+  Array.from(root.querySelectorAll('button'))
+    .find(b => b.textContent?.includes(label))
+    ?.click();
+  await f.whenStable();
+  f.detectChanges();
+};
+
 describe('PatientHubComponent', () => {
   beforeEach(() => {
     store = new ProvisionalNutritionCardStore();
@@ -656,6 +674,142 @@ describe('PatientHubComponent', () => {
 
       expect(tile(f, 'GLIM').textContent).toContain('Novo protocolo');
       expect((await store.load('p1', 'glim')).map(e => e.value)).toEqual(['Manual']);
+    });
+  });
+
+  describe('atualização da Hipótese já preenchida', () => {
+    let f: ComponentFixture<PatientHubComponent>;
+    const el = (): HTMLElement => f.nativeElement as HTMLElement;
+    const area = (id: string): HTMLTextAreaElement =>
+      el().querySelector<HTMLTextAreaElement>(`#${id}`) as HTMLTextAreaElement;
+    const type = (id: string, value: string): void => typeInto(f, id, value);
+    const click = (label: string): Promise<void> => clickButton(f, label);
+
+    beforeEach(async () => {
+      synth.calls.length = 0;
+      synth.result = Promise.resolve('Texto da IA');
+      writer.saved.length = 0;
+      writer.fail = false;
+      f = await setup(new FakeSource());
+    });
+
+    it('mostra as ações de atualizar e o texto atual segue visível durante o fluxo', async () => {
+      expect(text(f)).toContain('Atualizar com novo texto');
+      expect(text(f)).toContain('Editar texto');
+      await click('Atualizar com novo texto');
+
+      expect(text(f)).toContain('Insuficiência respiratória aguda.');
+      expect(text(f)).not.toContain('Ainda não há hipótese');
+      expect(text(f)).not.toContain('Editar texto');
+    });
+
+    it('colar novo trecho → síntese → confirmar substitui a hipótese e grava origem ai', async () => {
+      await click('Atualizar com novo texto');
+      type('paste-text', 'novo trecho');
+      await click('Sintetizar com IA');
+
+      expect(text(f)).toContain('Gerado por IA');
+      await click('Confirmar hipótese');
+
+      expect(writer.saved).toEqual([
+        jasmine.objectContaining({ author: 'Michelle', origin: 'ai', text: 'Texto da IA' }),
+      ]);
+
+      expect(writer.saved[0].at).toMatch(/^\d{4}-/);
+      expect(text(f)).toContain('Texto da IA');
+      expect(text(f)).toContain('Editar texto');
+      expect(el().querySelector('textarea')).toBeNull();
+    });
+
+    it('cancelar mantém a hipótese anterior sem gravar', async () => {
+      await click('Atualizar com novo texto');
+      await click('Cancelar');
+
+      expect(writer.saved).toEqual([]);
+      expect(text(f)).toContain('Insuficiência respiratória aguda.');
+      expect(el().querySelector('textarea')).toBeNull();
+    });
+
+    it('texto vazio não aciona a IA; falha da IA libera digitação manual', async () => {
+      await click('Atualizar com novo texto');
+      await click('Sintetizar com IA');
+
+      expect(synth.calls).toEqual([]);
+      synth.result = Promise.reject(new Error('x'));
+      type('paste-text', 'abc');
+      await click('Sintetizar com IA');
+      type('draft-text', 'Manual');
+      await click('Confirmar hipótese');
+
+      expect(writer.saved).toEqual([jasmine.objectContaining({ origin: 'manual', text: 'Manual' })]);
+    });
+
+    it('falha ao gravar mantém a hipótese anterior e informa', async () => {
+      writer.fail = true;
+      await click('Editar texto');
+      type('edit-text', 'Novo');
+      await click('Salvar');
+
+      expect(text(f)).toContain('Não foi possível gravar');
+      await click('Cancelar');
+
+      expect(text(f)).toContain('Insuficiência respiratória aguda.');
+    });
+
+    it('edição direta: mostra o texto atual editável e só substitui ao salvar (origem manual)', async () => {
+      await click('Editar texto');
+
+      expect(area('edit-text').value).toBe('Insuficiência respiratória aguda.');
+      expect(text(f)).not.toContain('Atualizar com novo texto');
+      type('edit-text', '  Pneumonia  ');
+
+      expect(writer.saved).toEqual([]);
+      await click('Salvar');
+
+      expect(writer.saved).toEqual([
+        jasmine.objectContaining({ author: 'Michelle', origin: 'manual', patientId: 'p1', text: 'Pneumonia' }),
+      ]);
+
+      expect(text(f)).toContain('Pneumonia');
+      expect(el().querySelector('textarea')).toBeNull();
+    });
+
+    it('edição direta: cancelar descarta; vazio não salva', async () => {
+      await click('Editar texto');
+      type('edit-text', '   ');
+      await click('Salvar');
+
+      expect(text(f)).toContain('Escreva a hipótese diagnóstica antes de confirmar.');
+      expect(writer.saved).toEqual([]);
+      await click('Cancelar');
+
+      expect(text(f)).toContain('Insuficiência respiratória aguda.');
+      expect(el().querySelector('textarea')).toBeNull();
+    });
+
+    it('edição direta offline: salvar indisponível com mensagem; leitura continua', async () => {
+      await click('Editar texto');
+      TestBed.inject(ConnectivityService).online.set(false);
+      f.detectChanges();
+
+      expect(text(f)).toContain('Conexão necessária');
+      expect(text(f)).toContain('Insuficiência respiratória aguda.');
+      await (f.componentInstance as unknown as { confirm(): Promise<void> }).confirm();
+
+      expect(writer.saved).toEqual([]);
+      TestBed.inject(ConnectivityService).online.set(true);
+    });
+
+    it('a hipótese não muda sem ação explícita do profissional (FR-009)', async () => {
+      await click('Editar texto');
+      type('edit-text', 'rascunho não salvo');
+      f.detectChanges();
+      await f.whenStable();
+
+      expect(writer.saved).toEqual([]);
+      await click('Cancelar');
+
+      expect(text(f)).toContain('Insuficiência respiratória aguda.');
     });
   });
 });

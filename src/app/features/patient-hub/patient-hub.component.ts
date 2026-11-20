@@ -38,6 +38,9 @@ export function reloadsOnVisibility(state: DocumentVisibilityState): boolean {
   return state === 'visible';
 }
 
+/** Modo do cartão: leitura, colar novo texto (fluxo da IA) ou edição direta. Sem hipótese, sempre "paste". */
+type CardMode = 'view' | 'paste' | 'edit';
+
 const OFFLINE_HINT = 'Conexão necessária para sintetizar ou confirmar a hipótese.';
 const DAY_MS = 86_400_000;
 
@@ -96,6 +99,10 @@ export class PatientHubComponent implements OnInit {
     return this.manual()[id] ?? this.fromResult(id);
   });
 
+  protected readonly mode = computed<CardMode>(() =>
+    this.hypothesis() === null ? 'paste' : (this.editing() ?? 'view'),
+  );
+
   protected readonly phase = signal<FillPhase>('input');
   /** Texto colado do prontuário (permanece disponível se a síntese falhar). */
   protected readonly pasted = signal('');
@@ -137,6 +144,7 @@ export class PatientHubComponent implements OnInit {
   private resultsLoaded = false;
   private readonly cardStore = inject(NutritionHistorySource);
   private readonly cardWriter = inject(NutritionValueWriter);
+  private readonly editing = signal<'paste' | 'edit' | null>(null);
   private readonly source = inject(PatientHubSource);
   private readonly results = inject(NutritionResultsSource);
   private pullFrom: number | null = null;
@@ -273,7 +281,7 @@ export class PatientHubComponent implements OnInit {
         text,
       });
       this.hypothesis.set(text);
-      this.hint.set(null);
+      this.resetFlow();
     } catch {
       this.hint.set('Não foi possível gravar a hipótese. Tente novamente.');
     } finally {
@@ -281,9 +289,36 @@ export class PatientHubComponent implements OnInit {
     }
   }
 
+  /** Cenário 1 (US2): atualizar colando um novo trecho, mesmo fluxo do preenchimento inicial. */
+  protected startPaste(): void {
+    this.resetFlow();
+    this.editing.set('paste');
+  }
+
+  /** Cenário 2 (US2): edição direta do texto atual, sem IA; só grava em "Salvar". */
+  protected startEdit(): void {
+    this.resetFlow();
+    this.draft.set(this.hypothesis() ?? '');
+    this.editing.set('edit');
+  }
+
+  /** Fecha o fluxo de atualização mantendo a hipótese anterior intacta. */
+  protected cancel(): void {
+    this.resetFlow();
+  }
+
   /** Descarta a revisão e volta ao texto colado (mantido). */
   protected discard(): void {
     this.phase.set('input');
+    this.hint.set(null);
+  }
+
+  private resetFlow(): void {
+    this.editing.set(null);
+    this.phase.set('input');
+    this.pasted.set('');
+    this.draft.set('');
+    this.aiText = '';
     this.hint.set(null);
   }
 
