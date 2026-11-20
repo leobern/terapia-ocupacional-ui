@@ -149,7 +149,6 @@ const PULL_THRESHOLD = 80;
 })
 export class PatientListComponent implements OnInit {
   readonly selectedDate = signal(new Date());
-  private pullFrom: number | null = null;
   /** Data retroativa aguardando confirmação (FR-012): enquanto existir, data e lista não mudam. */
   readonly pendingDate = signal<Date | null>(null);
   /**
@@ -242,6 +241,7 @@ export class PatientListComponent implements OnInit {
   private readonly unread = inject(UnreadNotificationsReader);
   private readonly screenActions = inject(ScreenActionsService);
   private generation = 0;
+  private pullFrom: number | null = null;
   private readonly today = new Date();
   private readonly pendingMonth = computed(() => {
     const d = this.pendingDate();
@@ -341,26 +341,6 @@ export class PatientListComponent implements OnInit {
       }
     } catch {
       // Mantém o último cache exibido.
-    }
-  }
-
-  protected onVisibility(): void {
-    if (document.visibilityState === 'visible') {
-      void this.refresh();
-    }
-  }
-
-  /** Puxar-para-atualizar: arrasto vertical de mais de 80px a partir do topo da página. */
-  protected pullStart(event: TouchEvent): void {
-    this.pullFrom = window.scrollY <= 0 ? event.touches[0].clientY : null;
-  }
-
-  protected pullEnd(event: TouchEvent): void {
-    const from = this.pullFrom;
-
-    this.pullFrom = null;
-    if (from !== null && event.changedTouches[0].clientY - from > PULL_THRESHOLD) {
-      void this.refresh();
     }
   }
 
@@ -560,6 +540,26 @@ export class PatientListComponent implements OnInit {
 
   protected therapyLabel(therapy: TherapyType): string {
     return THERAPY_LABEL[therapy];
+  }
+
+  protected onVisibility(): void {
+    if (document.visibilityState === 'visible') {
+      void this.refresh();
+    }
+  }
+
+  /** Puxar-para-atualizar: arrasto vertical de mais de 80px a partir do topo da página. */
+  protected pullStart(event: TouchEvent): void {
+    this.pullFrom = window.scrollY <= 0 ? event.touches[0].clientY : null;
+  }
+
+  protected pullEnd(event: TouchEvent): void {
+    const from = this.pullFrom;
+
+    this.pullFrom = null;
+    if (from !== null && event.changedTouches[0].clientY - from > PULL_THRESHOLD) {
+      void this.refresh();
+    }
   }
 
   private setWidth(key: ColumnKey, width: number): void {
