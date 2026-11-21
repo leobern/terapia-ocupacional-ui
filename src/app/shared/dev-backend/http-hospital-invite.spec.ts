@@ -48,13 +48,18 @@ describe('HttpHospitalInvite', () => {
 
     profileRequest().flush({ ...PROFILE, perfilDeclarado: 'OUTRO', relacao: 'NENHUMA' });
 
-    expect(await promise).toEqual(jasmine.objectContaining({ profile: jasmine.objectContaining({ specialty: 'OUTRO' }) }));
+    expect(await promise).toEqual(
+      jasmine.objectContaining({ profile: jasmine.objectContaining({ specialty: 'OUTRO' }) }),
+    );
   });
 
   it('404 de conta inexistente vira "not-registered"', async () => {
     const promise = invite.lookup('1', 'x@y.com');
 
-    profileRequest().flush({ message: 'O profissional precisa se cadastrar primeiro' }, { status: 404, statusText: 'Not Found' });
+    profileRequest().flush(
+      { message: 'O profissional precisa se cadastrar primeiro' },
+      { status: 404, statusText: 'Not Found' },
+    );
 
     expect(await promise).toEqual({ kind: 'not-registered' });
   });

@@ -16,12 +16,10 @@ export class DevTokenService {
   private token$?: Observable<string>;
 
   token(): Observable<string> {
-    this.token$ ??= this.http
-      .get<{ accessToken: string }>(`${environment.apiBaseUrl}${DevTokenService.path}`)
-      .pipe(
-        map(response => response.accessToken),
-        shareReplay({ bufferSize: 1, refCount: false }),
-      );
+    this.token$ ??= this.http.get<{ accessToken: string }>(`${environment.apiBaseUrl}${DevTokenService.path}`).pipe(
+      map(response => response.accessToken),
+      shareReplay({ bufferSize: 1, refCount: false }),
+    );
 
     return this.token$;
   }
