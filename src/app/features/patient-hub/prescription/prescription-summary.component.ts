@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 
 import { formatNumber } from '../plan/plan-targets';
-import { modalityLabel, Prescription, scheduleText } from './prescription.models';
+import { modalityLabel, Prescription, routeTitle, scheduleText } from './prescription.models';
 
 /**
  * Prescrição vigente em leitura (FT-004-8; Figma 4718-10198, seção "Prescrição ativa"): usada no Hub e na
@@ -14,20 +14,21 @@ import { modalityLabel, Prescription, scheduleText } from './prescription.models
   templateUrl: './prescription-summary.component.html',
 })
 export class PrescriptionSummaryComponent {
-  readonly prescription = input<Prescription | null>(null);
+  /** Uma por via ativa; vazio = sem prescrição. */
+  readonly prescriptions = input<readonly Prescription[]>([]);
   readonly title = input('Prescrição ativa');
 
   protected readonly lines = computed(() => {
-    const p = this.prescription();
+    const list = this.prescriptions();
 
-    return p === null
-      ? null
-      : {
-          formula: p.formulaName,
-          modality: modalityLabel(p.modality),
-          notes: p.nursingNotes,
-          schedule: scheduleText(p),
-          volume: `${formatNumber(p.volumeMl)} mL/dia`,
-        };
+    return list.map(p => ({
+      formula: p.formulaName,
+      modality: modalityLabel(p.modality),
+      notes: p.nursingNotes,
+      route: p.route,
+      routeTitle: list.length > 1 ? routeTitle(p.route) : null,
+      schedule: scheduleText(p),
+      volume: `${formatNumber(p.volumeMl)} mL/dia`,
+    }));
   });
 }
