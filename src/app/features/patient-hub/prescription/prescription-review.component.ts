@@ -19,6 +19,7 @@ import { DailyAdequacy } from '../../daily-evolution/adequacy/adequacy.models';
 import { NOW, ProfessionalProfileReader } from '../../home/professional-profile';
 import { dayKey, registeredAt } from '../daily-record/daily-record.models';
 import { PlanSource } from '../plan/plan-source';
+import { TargetsEditorComponent } from '../plan/targets-editor.component';
 import { formatNumber, NutritionTargets } from '../plan/plan-targets';
 import { ActivePrescription, formatOptional, PrescriptionReview } from './prescription.models';
 import { PrescriptionSource } from './prescription-source';
@@ -26,6 +27,9 @@ import { PrescriptionSource } from './prescription-source';
 export const REVIEW_LOAD_FAILED_HINT = 'Não foi possível carregar a prescrição. Tente novamente em instantes.';
 export const REVIEW_SAVE_FAILED_HINT = 'Não foi possível registrar a revisão. Nada foi alterado; tente novamente.';
 export const REVIEW_OFFLINE_HINT = 'Conexão necessária para manter a prescrição.';
+export const TARGETS_OFFLINE_HINT = 'Conexão necessária para ajustar a meta.';
+export const TARGETS_SAVE_FAILED_HINT = 'Não foi possível salvar a meta. A meta anterior foi mantida; tente novamente.';
+export const TARGETS_NOTHING_HINT = 'Nada a salvar: altere o peso de referência ou os fatores da meta.';
 export const NO_PRESCRIPTION_TEXT = 'Nenhuma prescrição ativa para este paciente.';
 export const ADEQUACY_UNAVAILABLE_TEXT = 'Adequação indisponível.';
 export const TARGETS_UNAVAILABLE_TEXT = 'Meta indisponível: defina a meta calórica e proteica no Plano de intervenção.';
@@ -39,7 +43,7 @@ type LoadState = 'idle' | 'loading' | 'ready' | 'error';
  */
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ButtonComponent, IconButtonComponent],
+  imports: [ButtonComponent, IconButtonComponent, TargetsEditorComponent],
   selector: 'app-prescription-review',
   styleUrl: './prescription-review.component.scss',
   templateUrl: './prescription-review.component.html',
@@ -50,6 +54,8 @@ export class PrescriptionReviewComponent {
   /** % de adequação já calculada pela Evolução Diária (FT-004-7); nunca recalculada aqui. */
   readonly adequacy = input<DailyAdequacy | null>(null);
   readonly closed = output();
+  /** Meta gravada aqui: o Hub recalcula a % de adequação (cálculo único). */
+  readonly targetsSaved = output();
 
   protected readonly state = signal<LoadState>('idle');
   protected readonly prescription = signal<ActivePrescription | null>(null);
@@ -57,6 +63,10 @@ export class PrescriptionReviewComponent {
   protected readonly review = signal<PrescriptionReview | null>(null);
   protected readonly saving = signal(false);
   protected readonly saveFailed = signal(false);
+  protected readonly adjustingTargets = signal(false);
+  protected readonly savingTargets = signal(false);
+  protected readonly targetsHint = signal<string | null>(null);
+  protected readonly targetsOfflineHint = TARGETS_OFFLINE_HINT;
   /** Só o médico abre e decide; para os demais a ação não existe. */
   protected readonly isDoctor = inject(ProfessionalProfileReader).read().role === 'doctor';
   protected readonly online = inject(ConnectivityService).online;
@@ -89,6 +99,7 @@ export class PrescriptionReviewComponent {
     () => this.state() === 'ready' && !this.saving() && this.online() && this.review() === null,
   );
 
+  private readonly targetsEditor = viewChild(TargetsEditorComponent);
   private readonly source = inject(PrescriptionSource);
   private readonly plan = inject(PlanSource);
   private readonly profile = inject(ProfessionalProfileReader);
@@ -168,6 +179,81 @@ export class PrescriptionReviewComponent {
     }
   }
 
+  protected startTargets(): void {
+    if (this.isDoctor && this.online()) {
+      this.targetsHint.set(null);
+      this.adjustingTargets.set(true);
+    }
+  }
+
+  protected cancelTargets(): void {
+    this.adjustingTargets.set(false);
+    this.targetsHint.set(null);
+  }
+
+  /**
+   * Grava a meta pelo mesmo mecanismo do Plano de Intervenção (autor e data/hora na trilha da FT-004-6).
+   * Independente da prescrição: não toca nela nem na decisão "manter".
+   */
+  protected async saveTargets(): Promise<void> {
+    const editor = this.targetsEditor();
+
+    if (!this.isDoctor || editor === undefined || this.savingTargets()) {
+      return;
+    }
+    if (!this.online()) {
+      this.targetsHint.set(TARGETS_OFFLINE_HINT);
+
+      return;
+    }
+    const pending = editor.pending();
+
+    if (pending.error !== null) {
+      this.targetsHint.set(pending.error);
+
+      return;
+    }
+    if (pending.reference === null && pending.targets === null) {
+      this.targetsHint.set(TARGETS_NOTHING_HINT);
+
+      return;
+    }
+    const token = this.token;
+    const at = this.now();
+
+    this.savingTargets.set(true);
+    this.targetsHint.set(null);
+    try {
+      await editor.commit(
+        { at: at.toISOString(), author: this.profile.read().name, patientId: this.patientId() },
+        pending,
+      );
+    } catch {
+      if (token === this.token) {
+        this.targetsHint.set(TARGETS_SAVE_FAILED_HINT);
+      }
+    } finally {
+      this.savingTargets.set(false);
+    }
+  }
+
+  /** A meta vigente passou a ser a nova: relê, fecha a edição e avisa o Hub. */
+  protected async onTargetsSaved(): Promise<void> {
+    const token = this.token;
+
+    this.adjustingTargets.set(false);
+    this.targetsSaved.emit();
+    try {
+      const targets = await this.plan.loadTargets(this.patientId());
+
+      if (token === this.token) {
+        this.targets.set(targets);
+      }
+    } catch {
+      // Mantém a meta já exibida; o Hub recalcula a adequação com a meta gravada.
+    }
+  }
+
   private async load(patientId: string): Promise<void> {
     const token = ++this.token;
 
@@ -176,6 +262,8 @@ export class PrescriptionReviewComponent {
     this.targets.set(null);
     this.review.set(null);
     this.saveFailed.set(false);
+    this.adjustingTargets.set(false);
+    this.targetsHint.set(null);
     try {
       const [prescription, targets, review] = await Promise.all([
         this.source.loadActive(patientId),
