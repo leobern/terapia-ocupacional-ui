@@ -5,6 +5,7 @@ import { Prescription } from './prescription.models';
 import { ProvisionalPrescriptionSource } from './provisional-prescription-source';
 
 const next: Prescription = {
+  route: 'NE',
   at: '2026-11-21T10:00:00Z',
   author: 'Dra. Ana',
   formulaId: 'x',
@@ -33,20 +34,20 @@ describe('ProvisionalPrescriptionSource', () => {
   it('devolve null para paciente sem prescrição ou revisão', async () => {
     const source = make('doctor');
 
-    expect(await source.load('zz')).toBeNull();
-    expect(await source.loadActive('zz')).toBeNull();
+    expect(await source.load('zz')).toEqual([]);
+    expect(await source.loadActive('zz')).toEqual([]);
     expect(await source.loadReview('p1', '2026-11-21')).toBeNull();
   });
 
   it('gravar substitui a vigente anterior e o resumo da revisão acompanha', async () => {
     const source = make('doctor');
 
-    expect((await source.load('p1'))?.volumeMl).toBe(900);
-    expect((await source.loadActive('p1'))?.volumeMlPerDay).toBe(900);
-    await source.save({ patientId: 'p1', prescription: next });
+    expect((await source.load('p1'))[0]?.volumeMl).toBe(900);
+    expect((await source.loadActive('p1'))[0]?.volumeMlPerDay).toBe(900);
+    await source.save({ patientId: 'p1', prescriptions: [next] });
 
-    expect(await source.load('p1')).toEqual(next);
-    expect(await source.loadActive('p1')).toEqual(
+    expect(await source.load('p1')).toEqual([next]);
+    expect((await source.loadActive('p1'))[0]).toEqual(
       jasmine.objectContaining({ formula: 'X', kcal: 500, proteinG: 20, volumeMlPerDay: 500 }),
     );
   });

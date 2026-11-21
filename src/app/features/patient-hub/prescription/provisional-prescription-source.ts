@@ -16,39 +16,40 @@ import { PrescriptionSource } from './prescription-source';
 export class ProvisionalPrescriptionSource extends PrescriptionSource {
   private readonly profile = inject(ProfessionalProfileReader);
   private readonly reviews = new Map<string, PrescriptionReview>();
-  private readonly store = new Map<string, Prescription>([
+  private readonly store = new Map<string, readonly Prescription[]>([
     [
       'p1',
-      {
-        at: '2026-11-20T13:33:00',
-        author: 'Rafael Dutra Rabello Duarte',
-        formulaId: 'enteral-1',
-        formulaName: 'Fórmula polimérica 1.0',
-        kcalPerMl: 1,
-        modality: 'continuous',
-        nursingNotes: '',
-        pauseTimes: [],
-        proteinPerMl: 0.04,
-        startTime: '08:00',
-        volumeMl: 900,
-      },
+      [
+        {
+          at: '2026-11-20T13:33:00',
+          author: 'Rafael Dutra Rabello Duarte',
+          formulaId: 'enteral-1',
+          formulaName: 'Fórmula polimérica 1.0',
+          kcalPerMl: 1,
+          modality: 'continuous',
+          nursingNotes: '',
+          pauseTimes: [],
+          proteinPerMl: 0.04,
+          route: 'NE',
+          startTime: '08:00',
+          volumeMl: 900,
+        },
+      ],
     ],
   ]);
 
-  load(patientId: string): Promise<Prescription | null> {
-    return Promise.resolve(this.store.get(patientId) ?? null);
+  load(patientId: string): Promise<readonly Prescription[]> {
+    return Promise.resolve(this.store.get(patientId) ?? []);
   }
 
-  save(request: PrescriptionSaveRequest): Promise<Prescription> {
-    this.store.set(request.patientId, request.prescription);
+  save(request: PrescriptionSaveRequest): Promise<readonly Prescription[]> {
+    this.store.set(request.patientId, request.prescriptions);
 
-    return Promise.resolve(request.prescription);
+    return Promise.resolve(request.prescriptions);
   }
 
-  loadActive(patientId: string): Promise<ActivePrescription | null> {
-    const prescription = this.store.get(patientId);
-
-    return Promise.resolve(prescription === undefined ? null : toActivePrescription(prescription));
+  loadActive(patientId: string): Promise<readonly ActivePrescription[]> {
+    return Promise.resolve((this.store.get(patientId) ?? []).map(toActivePrescription));
   }
 
   loadReview(patientId: string, day: string): Promise<PrescriptionReview | null> {

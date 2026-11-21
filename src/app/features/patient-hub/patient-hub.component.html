@@ -271,7 +271,7 @@
           @if (adequacy(); as a) {
             <app-adequacy-summary [adequacy]="a" />
           }
-          <app-prescription-summary [prescription]="prescription()" />
+          <app-prescription-summary [prescriptions]="prescription()" />
           <app-plan-section
             [patientId]="p.id"
             (targetsSaved)="reloadResults()"

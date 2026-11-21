@@ -1,3 +1,4 @@
+import { NUTRITION_ROUTES, NutritionRoute } from '../plan/plan.models';
 import { formatNumber } from '../plan/plan-targets';
 
 export type AdministrationModality = 'continuous' | 'intermittent' | 'cyclic';
@@ -30,8 +31,12 @@ export interface PrescriptionDraft {
   readonly nursingNotes: string;
 }
 
-/** Prescrição vigente do paciente (uma por paciente nesta story). */
+/** Via assumida quando o paciente ainda não tem via definida (decisão: a fórmula do catálogo é enteral). */
+export const DEFAULT_PRESCRIPTION_ROUTES: readonly NutritionRoute[] = ['NE'];
+
+/** Uma prescrição por via ativa; o conjunto delas é a prescrição vigente do paciente (FR-019). */
 export interface Prescription {
+  readonly route: NutritionRoute;
   readonly formulaId: string;
   readonly formulaName: string;
   readonly kcalPerMl: number;
@@ -46,9 +51,10 @@ export interface Prescription {
   readonly author: string;
 }
 
+/** Substitui a prescrição vigente inteira: uma entrada por via ativa. */
 export interface PrescriptionSaveRequest {
   readonly patientId: string;
-  readonly prescription: Prescription;
+  readonly prescriptions: readonly Prescription[];
 }
 
 /** Metas vigentes usadas na comparação; `null` = sem meta definida. */
@@ -64,6 +70,14 @@ export interface PrescriptionIntake {
   readonly hours: number;
   readonly rateMlPerHour: number;
   /** Percentuais frente à meta; `null` quando não há meta. */
+  readonly kcalPercent: number | null;
+  readonly proteinPercent: number | null;
+}
+
+/** Aporte somado das vias ativas frente à meta (FR-005/FR-019). */
+export interface TotalIntake {
+  readonly kcal: number;
+  readonly protein: number;
   readonly kcalPercent: number | null;
   readonly proteinPercent: number | null;
 }
@@ -180,10 +194,42 @@ export function evaluatePrescription(draft: PrescriptionDraft, targets: IntakeTa
   };
 }
 
+/** Soma o aporte de cada via ativa; `null` se alguma via ainda não tem aporte confiável (nunca um total parcial). */
+export function totalIntake(
+  intakes: readonly (PrescriptionIntake | null)[],
+  targets: IntakeTargets | null,
+): TotalIntake | null {
+  const known = intakes.filter((i): i is PrescriptionIntake => i !== null);
+
+  if (known.length === 0 || known.length !== intakes.length) {
+    return null;
+  }
+  const kcal = round(
+    known.reduce((sum, i) => sum + i.kcal, 0),
+    1,
+  );
+  const protein = round(
+    known.reduce((sum, i) => sum + i.protein, 0),
+    1,
+  );
+
+  return {
+    kcal,
+    kcalPercent: targets ? Math.round((kcal / targets.kcalPerDay) * 100) : null,
+    protein,
+    proteinPercent: targets ? Math.round((protein / targets.proteinPerDay) * 100) : null,
+  };
+}
+
+/** Rótulo da via no formulário e no resumo: "NE · Nutrição enteral". */
+export function routeTitle(route: NutritionRoute): string {
+  return `${route} · ${NUTRITION_ROUTES.find(r => r.id === route)?.label ?? ''}`;
+}
+
 /** Monta a prescrição a gravar; `null` se o rascunho não é salvável. */
 export function toPrescription(
   draft: PrescriptionDraft,
-  context: { readonly at: string; readonly author: string },
+  context: { readonly at: string; readonly author: string; readonly route: NutritionRoute },
 ): Prescription | null {
   const evaluation = evaluatePrescription(draft, null);
   const volume = parseVolume(draft.volume);
@@ -203,6 +249,7 @@ export function toPrescription(
     nursingNotes: draft.nursingNotes.trim(),
     pauseTimes: draft.modality === 'continuous' ? [] : [...draft.pauseTimes].sort((a, b) => a.localeCompare(b)),
     proteinPerMl: formula.proteinPerMl as number,
+    route: context.route,
     startTime: draft.startTime,
     volumeMl: volume,
   };
@@ -235,6 +282,7 @@ export interface ActivePrescription {
   /** Módulo proteico em g; `null` quando não há. */
   readonly proteinModuleG: number | null;
   readonly role: string;
+  readonly route: NutritionRoute;
   readonly volumeMlPerDay: number;
 }
 
@@ -272,6 +320,7 @@ export function toActivePrescription(prescription: Prescription): ActivePrescrip
     proteinG: Math.round(prescription.proteinPerMl * prescription.volumeMl * 10) / 10,
     proteinModuleG: null,
     role: PRESCRIBER_ROLE,
+    route: prescription.route,
     volumeMlPerDay: prescription.volumeMl,
   };
 }
