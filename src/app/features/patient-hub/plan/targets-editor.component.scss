@@ -1,0 +1,94 @@
+@use '../../../shared/styles/tokens';
+@use '../../../shared/styles/typography';
+
+:host {
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$space-8;
+}
+
+.targets__card {
+  min-inline-size: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$space-8;
+  padding: tokens.$space-16;
+  border: 1px solid tokens.c(border);
+  border-radius: tokens.$radius-md;
+  background: tokens.c(surface);
+}
+
+.targets__label {
+  color: tokens.c(content-1);
+
+  @include typography.title-md;
+}
+
+.targets__options {
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$space-8;
+}
+
+.targets__option {
+  display: flex;
+  align-items: center;
+  gap: tokens.$space-12;
+  min-height: 44px;
+  color: tokens.c(content-1);
+  cursor: pointer;
+
+  @include typography.body-lg;
+}
+
+.targets__checkbox {
+  flex: none;
+  width: 24px;
+  height: 24px;
+  margin: 0;
+  accent-color: tokens.c(primary);
+
+  &:focus-visible {
+    outline: 2px solid tokens.c(input-focus-ring);
+    outline-offset: 2px;
+  }
+}
+
+.targets__value {
+  margin: 0;
+  color: tokens.c(content-1);
+
+  @include typography.body-lg;
+}
+
+.targets__help {
+  margin: 0;
+  color: tokens.c(content-4);
+
+  @include typography.caption;
+}
+
+.targets__field {
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$space-4;
+}
+
+.targets__input {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 44px;
+  padding: 0 tokens.$space-16;
+  border: 1px solid tokens.c(border);
+  border-radius: tokens.$radius-12;
+  background: tokens.c(surface);
+  color: tokens.c(content-1);
+
+  @include typography.body-lg;
+
+  &:focus-visible {
+    outline: 2px solid tokens.c(input-focus-ring);
+    outline-offset: 2px;
+  }
+}

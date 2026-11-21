@@ -1,5 +1,6 @@
-import { Injectable } from '@angular/core';
+import { inject, Injectable } from '@angular/core';
 
+import { FollowUpClosureSource } from '../follow-up-closure/follow-up-closure-source';
 import { CensusPatient } from './patient-list.models';
 import { PatientListSource } from './patient-list-source';
 
@@ -33,8 +34,22 @@ const p = (
 /** Provisório: dados de exemplo (sem backend), incluindo um paciente do censo geral não admitido. */
 @Injectable()
 export class ProvisionalPatientListSource extends PatientListSource {
-  loadCensus(): Promise<readonly CensusPatient[]> {
-    return Promise.resolve([
+  private readonly closures = inject(FollowUpClosureSource);
+
+  async loadCensus(): Promise<readonly CensusPatient[]> {
+    const census = this.seed();
+    // O encerramento mais recente de cada paciente define a data de efeito (FR-005).
+    const latest = new Map((await this.closures.listAll()).map(c => [c.patientId, c.effectiveDate]));
+
+    return census.map(patient => {
+      const effective = latest.get(patient.id);
+
+      return effective === undefined ? patient : { ...patient, followUpEndDate: effective };
+    });
+  }
+
+  private seed(): readonly CensusPatient[] {
+    return [
       p(
         'p1',
         'Lucas Henrique Pimentel',
@@ -128,6 +143,6 @@ export class ProvisionalPatientListSource extends PatientListSource {
         ...p('x2', 'Paciente sem cadastro', '1980-01-01', 'Ala 3', '2', 'VO', '2026-11-01', null, 0),
         registeredInConductia: false,
       },
-    ]);
+    ];
   }
 }

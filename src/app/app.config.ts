@@ -17,6 +17,8 @@ import { DiagnosisDecisionSource } from './features/diagnosis/diagnosis-decision
 import { DiagnosisSource } from './features/diagnosis/diagnosis-source';
 import { ProvisionalDiagnosisDecisionSource } from './features/diagnosis/provisional-diagnosis-decision-source';
 import { ProvisionalDiagnosisSource } from './features/diagnosis/provisional-diagnosis-source';
+import { FollowUpClosureSource, FollowUpClosureWriter } from './features/follow-up-closure/follow-up-closure-source';
+import { ProvisionalFollowUpClosureSource } from './features/follow-up-closure/provisional-follow-up-closure';
 import { DailyPatientsSource } from './features/home/daily-patients';
 import { HomeApiService } from './features/home/data-access/home-api.service';
 import { HomeNotificationsSource } from './features/home/home-notifications-source';
@@ -110,6 +112,9 @@ export const appConfig: ApplicationConfig = {
     { provide: UnreadNotificationsReader, useClass: LocalUnreadNotificationsReader },
     { provide: DailyPatientsSource, useClass: ProvisionalDailyPatientsSource },
     { provide: PatientListAiCommandPort, useClass: ProvisionalPatientListAiCommand },
+    ProvisionalFollowUpClosureSource,
+    { provide: FollowUpClosureSource, useExisting: ProvisionalFollowUpClosureSource },
+    { provide: FollowUpClosureWriter, useExisting: ProvisionalFollowUpClosureSource },
     { provide: PatientListSource, useClass: ProvisionalPatientListSource },
     { provide: PatientHubSource, useClass: ProvisionalPatientHubSource },
     { provide: HypothesisSynthesizer, useClass: ProvisionalHypothesisSynthesizer },

@@ -594,6 +594,14 @@
         }
       }
     }
+    @if (closureTarget(); as target) {
+      <app-follow-up-closure-sheet
+        [open]="true"
+        [patient]="target"
+        (saved)="closureSaved()"
+        (closed)="closeClosure()"
+      />
+    }
     <p class="patient-list__sr-only" role="status" aria-live="polite">
       {{ offlineNotice() }}
     </p>

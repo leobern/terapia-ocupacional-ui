@@ -101,6 +101,53 @@
                   {{ targetsUnavailableText }}
                 </p>
               }
+              @if (adjustingTargets()) {
+                <app-targets-editor
+                  [patientId]="patientId()"
+                  [editable]="true"
+                  (edited)="targetsHint.set(null)"
+                  (saved)="onTargetsSaved()"
+                />
+                <div class="review__actions">
+                  <app-button
+                    kind="secondary"
+                    label="Cancelar"
+                    [disabled]="savingTargets()"
+                    (click)="cancelTargets()"
+                  />
+                  <app-button
+                    label="Salvar meta"
+                    [disabled]="savingTargets() || !online()"
+                    (click)="saveTargets()"
+                  />
+                </div>
+              } @else {
+                <app-button
+                  kind="secondary"
+                  label="Ajustar meta"
+                  data-testid="adjust-targets"
+                  [disabled]="!online() || saving()"
+                  (click)="startTargets()"
+                />
+              }
+              @if (!online()) {
+                <p
+                  class="review__status review__status--warning"
+                  role="status"
+                  data-testid="targets-offline"
+                >
+                  {{ targetsOfflineHint }}
+                </p>
+              }
+              @if (targetsHint(); as message) {
+                <p
+                  class="review__status review__status--error"
+                  role="alert"
+                  data-testid="targets-hint"
+                >
+                  {{ message }}
+                </p>
+              }
             </div>
           </section>
 

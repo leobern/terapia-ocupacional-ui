@@ -1,0 +1,132 @@
+<!-- Figma 4719-10550 (bottom-sheet · encerrar, desenhado pelo agente). O clique no <dialog> é o scrim; Esc fecha. -->
+<!-- eslint-disable-next-line @angular-eslint/template/click-events-have-key-events, @angular-eslint/template/interactive-supports-focus -->
+<dialog
+  #dialogEl
+  class="closure"
+  aria-labelledby="closure-title"
+  (click)="onDialogClick($event)"
+  (cancel)="onCancel($event)"
+>
+  <span class="closure__handle" aria-hidden="true"></span>
+  <div class="closure__header">
+    <h2 id="closure-title" class="closure__title">Encerrar acompanhamento</h2>
+    <app-icon-button
+      kind="secondary"
+      appearance="icon"
+      icon="x"
+      ariaLabel="Fechar"
+      (click)="close()"
+    />
+  </div>
+
+  <div class="closure__body">
+    <section class="closure__patient" aria-label="Paciente">
+      <p class="closure__location">
+        {{ patient().ward }} · Leito {{ patient().bed }}
+      </p>
+      <p class="closure__name">{{ patient().name }}</p>
+    </section>
+
+    <p class="closure__banner">
+      <ph-icon name="check-circle" [size]="24" />
+      <span
+        >O paciente sai da lista do dia a partir da data de efeito. O histórico
+        é mantido.</span
+      >
+    </p>
+
+    <fieldset class="closure__card">
+      <legend class="closure__label">Motivo</legend>
+      @for (option of reasons; track option.id) {
+        <label class="closure__option">
+          <input
+            type="radio"
+            name="closure-reason"
+            [value]="option.id"
+            [checked]="reason() === option.id"
+            (change)="selectReason(option.id)"
+          />
+          <span class="closure__option-text">
+            <span>{{ option.label }}</span>
+            @if (option.help) {
+              <span class="closure__help">{{ option.help }}</span>
+            }
+          </span>
+        </label>
+      }
+      @if (reasonError(); as error) {
+        <p class="closure__status closure__status--error" role="alert">
+          {{ error }}
+        </p>
+      }
+    </fieldset>
+
+    <div class="closure__card">
+      <label class="closure__label" for="closure-date"
+        >Data do encerramento</label
+      >
+      <input
+        id="closure-date"
+        class="closure__input"
+        type="date"
+        aria-describedby="closure-date-help"
+        [max]="maxDate()"
+        [value]="date()"
+        [attr.aria-invalid]="dateError() ? 'true' : null"
+        (input)="setDate($any($event.target).value)"
+      />
+      @if (dateError(); as error) {
+        <p class="closure__status closure__status--error" role="alert">
+          {{ error }}
+        </p>
+      }
+      <p id="closure-date-help" class="closure__help">
+        Hoje por padrão; não aceita data futura.
+      </p>
+    </div>
+  </div>
+
+  @if (!online()) {
+    <p class="closure__status closure__status--warning" role="status">
+      {{ offlineHint }}
+    </p>
+  }
+  @if (failed()) {
+    <p class="closure__status closure__status--warning" role="alert">
+      {{ failedHint }}
+    </p>
+  }
+
+  @if (confirming()) {
+    <section class="closure__confirm" aria-labelledby="closure-confirm-title">
+      <h3 id="closure-confirm-title" class="closure__confirm-title">
+        Confirmar o encerramento?
+      </h3>
+      <p class="closure__confirm-text">
+        {{ patient().name }}: {{ summary() }}. Esta ação fica registrada com
+        autor e data/hora.
+      </p>
+      <app-button
+        label="Confirmar encerramento"
+        [fullWidth]="true"
+        [disabled]="saving() || !online()"
+        (click)="confirm()"
+      />
+      <app-button
+        kind="primary"
+        appearance="outlined"
+        label="Voltar"
+        [fullWidth]="true"
+        [disabled]="saving()"
+        (click)="backToEdit()"
+      />
+    </section>
+  } @else {
+    <app-button
+      label="Encerrar acompanhamento"
+      [fullWidth]="true"
+      [disabled]="!online()"
+      (click)="review()"
+    />
+  }
+</dialog>
