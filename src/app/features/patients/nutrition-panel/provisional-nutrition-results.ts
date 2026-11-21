@@ -12,10 +12,8 @@ export class ProvisionalNutritionResultsSource extends NutritionResultsSource {
     }
 
     return Promise.resolve({
-      'calorie-adequacy': '82%',
       glim: 'Desnutrição moderada',
       'nrs-2002': 'Em risco (3 pontos)',
-      'protein-adequacy': '74%',
       'sarc-f': 'Baixo risco (2 pontos)',
       'therapy-type': 'Enteral',
     });

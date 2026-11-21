@@ -6,6 +6,7 @@ import {
   type ElementRef,
   inject,
   input,
+  output,
   signal,
   viewChild,
 } from '@angular/core';
@@ -110,6 +111,8 @@ function shortDate(iso: string): string {
 })
 export class PlanSectionComponent {
   readonly patientId = input.required<string>();
+  /** Metas gravadas: o Hub recalcula a % de adequação (cálculo único). */
+  readonly targetsSaved = output();
 
   protected readonly options = NUTRITION_ROUTES;
   protected readonly current = signal<CurrentRoute | null>(null);
@@ -516,6 +519,7 @@ export class PlanSectionComponent {
     if (pending.targets !== null) {
       this.savedTargets.set(await this.source.saveTargets({ at, author, patientId, targets: pending.targets }));
       this.targetsTouched.set(false);
+      this.targetsSaved.emit();
     }
     if (days !== null) {
       this.applyCadence(await this.source.saveCadence({ at, author, days, patientId }));

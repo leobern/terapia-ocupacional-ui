@@ -7,6 +7,12 @@ import { provideRouterStore } from '@ngrx/router-store';
 import { provideStore } from '@ngrx/store';
 
 import { routes } from './app.routing';
+import {
+  FoodRecallSource,
+  InfusedIntakeSource,
+  ProvisionalFoodRecallSource,
+  ProvisionalInfusedIntakeSource,
+} from './features/daily-evolution/adequacy/intake-sources';
 import { DiagnosisDecisionSource } from './features/diagnosis/diagnosis-decision-source';
 import { DiagnosisSource } from './features/diagnosis/diagnosis-source';
 import { ProvisionalDiagnosisDecisionSource } from './features/diagnosis/provisional-diagnosis-decision-source';
@@ -106,6 +112,8 @@ export const appConfig: ApplicationConfig = {
     { provide: PlanSource, useClass: ProvisionalPlanSource },
     { provide: NutritionTargetsReader, useClass: PlanNutritionTargetsReader },
     { provide: RefeedingRiskSource, useClass: ProvisionalRefeedingRiskSource },
+    { provide: InfusedIntakeSource, useClass: ProvisionalInfusedIntakeSource },
+    { provide: FoodRecallSource, useClass: ProvisionalFoodRecallSource },
     { provide: PriorStaysSource, useClass: ProvisionalPriorStaysSource },
     { provide: PriorStaysSynthesizer, useClass: ProvisionalPriorStaysSynthesizer },
     { provide: NutritionResultsSource, useClass: ProvisionalNutritionResultsSource },

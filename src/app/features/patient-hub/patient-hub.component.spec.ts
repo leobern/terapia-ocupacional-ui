@@ -4,6 +4,8 @@ import { ActivatedRoute, convertToParamMap, provideRouter, Router } from '@angul
 import { of } from 'rxjs';
 
 import { ConnectivityService } from '../../shared/services/connectivity.service';
+import { DailyAdequacy } from '../daily-evolution/adequacy/adequacy.models';
+import { DailyAdequacyService } from '../daily-evolution/adequacy/daily-adequacy.service';
 import { GlimReading } from '../diagnosis/diagnosis.models';
 import { DiagnosisSource } from '../diagnosis/diagnosis-source';
 import { LinkedHospitalsReader } from '../home/linked-hospitals';
@@ -151,6 +153,35 @@ const results = new FakeResults();
 const synth = new FakeSynth();
 const writer = new FakeWriter();
 
+class FakeAdequacy {
+  calls = 0;
+  fail = false;
+  result: DailyAdequacy = { reason: 'no-target', status: 'unavailable' };
+
+  calculate(): Promise<DailyAdequacy> {
+    this.calls += 1;
+
+    return this.fail ? Promise.reject(new Error('x')) : Promise.resolve(this.result);
+  }
+}
+
+const adequacy = new FakeAdequacy();
+const AVAILABLE: DailyAdequacy = {
+  calories: { intake: 1425, percent: 76, target: 1875 },
+  protein: { intake: 82.5, percent: 73, target: 112.5 },
+  sources: { food: null, infusion: { kcal: 1425, proteinG: 82.5 } },
+  status: 'available',
+  targets: {
+    calorimetry: null,
+    formula: 'simplified',
+    kcalPerDay: 1875,
+    kcalPerKg: 25,
+    proteinPerDay: 112.5,
+    proteinPerKg: 1.5,
+    referenceWeight: { kg: 75, kind: 'current' },
+  },
+};
+
 async function setup(
   source: FakeSource,
   id: string | null = 'p1',
@@ -163,6 +194,7 @@ async function setup(
       { provide: ActivatedRoute, useValue: { paramMap: of(convertToParamMap(id === null ? {} : { id })) } },
       { provide: PatientHubSource, useValue: source },
       { provide: NutritionResultsSource, useValue: results },
+      { provide: DailyAdequacyService, useValue: adequacy },
       { provide: NutritionHistorySource, useFactory: (): ProvisionalNutritionCardStore => store },
       { provide: NutritionValueWriter, useFactory: (): ProvisionalNutritionCardStore => store },
       { provide: NutritionAddedCards, useFactory: (): ProvisionalNutritionCardStore => store },
@@ -226,12 +258,19 @@ const clickButton = async (f: ComponentFixture<unknown>, label: string): Promise
   f.detectChanges();
 };
 
+const cards = (f: ComponentFixture<unknown>): string[] =>
+  Array.from((f.nativeElement as HTMLElement).querySelectorAll('.nutrition-panel__value')).map(
+    v => v.textContent?.trim() ?? '',
+  );
+
 describe('PatientHubComponent', () => {
   beforeEach(() => {
     store = new ProvisionalNutritionCardStore();
     results.values = {};
     results.fail = false;
     results.calls = 0;
+    adequacy.result = { reason: 'no-target', status: 'unavailable' };
+    adequacy.fail = false;
     priorStays.has = false;
     priorStays.fail = false;
     priorStays.calls.length = 0;
@@ -289,12 +328,39 @@ describe('PatientHubComponent', () => {
     expect(values.every(v => v.textContent?.trim() === 'Sem dados')).toBeTrue();
   });
 
-  describe('resultados do painel (FT-004-3, US2)', () => {
-    const cards = (f: ComponentFixture<unknown>): string[] =>
-      Array.from((f.nativeElement as HTMLElement).querySelectorAll('.nutrition-panel__value')).map(
-        v => v.textContent?.trim() ?? '',
-      );
+  describe('% de adequação (FT-004-7, US3)', () => {
+    it('Painel e resumo do Hub mostram o mesmo resultado calculado', async () => {
+      adequacy.result = AVAILABLE;
+      const f = await setup(new FakeSource());
 
+      expect(cards(f)).toContain('76%');
+      expect(cards(f)).toContain('73%');
+      expect(text(f)).toContain('76% da meta (1.875 kcal)');
+      expect(text(f)).toContain('73% da meta (112,5 g)');
+    });
+
+    it('sem meta, painel em "Sem dados" e resumo indisponível com orientação, sem percentual', async () => {
+      const f = await setup(new FakeSource());
+
+      expect(cards(f).filter(v => v === 'Sem dados').length).toBe(8);
+      expect(text(f)).toContain('defina a meta calórica e proteica no Plano de intervenção');
+      expect(text(f)).not.toContain('% da meta');
+    });
+
+    it('falha no cálculo mantém o que já estava exibido', async () => {
+      adequacy.result = AVAILABLE;
+      const f = await setup(new FakeSource());
+
+      adequacy.fail = true;
+      window.dispatchEvent(new Event('focus'));
+      await f.whenStable();
+      f.detectChanges();
+
+      expect(cards(f)).toContain('76%');
+    });
+  });
+
+  describe('resultados do painel (FT-004-3, US2)', () => {
     it('carrega ao abrir e mostra cada resultado; sem resultado o card segue em "Sem dados"', async () => {
       results.values = { glim: 'Desnutrição' } as NutritionValues;
       const f = await setup(new FakeSource());
@@ -1290,9 +1356,9 @@ describe('PatientHubComponent', () => {
     });
 
     it('card oculto não pode ser aberto (não está na grid)', () => {
-      const cards = Array.from(el().querySelectorAll('.nutrition-panel__card'));
+      const panelCards = Array.from(el().querySelectorAll('.nutrition-panel__card'));
 
-      expect(cards.some(c => c.textContent?.includes('GLIM'))).toBe(false);
+      expect(panelCards.some(c => c.textContent?.includes('GLIM'))).toBe(false);
     });
 
     it('escolher o card o devolve à grid com valor e histórico íntegros', async () => {
