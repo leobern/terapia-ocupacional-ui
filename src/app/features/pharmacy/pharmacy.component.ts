@@ -2,11 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, DestroyRef, effect, injec
 
 import { PageContainerComponent } from '../../shared/components/page-container/page-container.component';
 import { PhIconComponent } from '../../shared/icons/ph-icon/ph-icon.component';
-import {
-  type FormValues,
-  type ScreenAction,
-  ScreenActionsService,
-} from '../../shared/services/screen-actions.service';
+import { type FormValues, type ScreenAction, ScreenActionsService } from '../../shared/services/screen-actions.service';
 import { HospitalContextService } from '../home/hospital-context.service';
 import { Formula, FORMULA_CATEGORIES } from './formulas.models';
 import { FormulasApi } from './formulas-api';
@@ -124,18 +120,6 @@ export class PharmacyComponent {
       this.savingId.set(null);
     }
   }
-
-  /** Envia o pedido pelo formulário dos atalhos; lançar erro mantém o formulário aberto com as respostas. */
-  private async requestFormula(values: FormValues): Promise<void> {
-    const hospitalId = this.hospital()?.id;
-    const description = typeof values['description'] === 'string' ? values['description'].trim() : '';
-
-    if (!hospitalId || !this.online() || !description) {
-      throw new Error('Solicitação indisponível');
-    }
-    await this.api.requestFormula(hospitalId, description);
-  }
-
   protected yesNo(value: boolean): string {
     return value ? 'Sim' : 'Não';
   }
@@ -150,5 +134,16 @@ export class PharmacyComponent {
     }
 
     return formula.vegetarian ? 'Vegetariano' : 'Não se aplica';
+  }
+
+  /** Envia o pedido pelo formulário dos atalhos; lançar erro mantém o formulário aberto com as respostas. */
+  private async requestFormula(values: FormValues): Promise<void> {
+    const hospitalId = this.hospital()?.id;
+    const description = typeof values['description'] === 'string' ? values['description'].trim() : '';
+
+    if (!hospitalId || !this.online() || !description) {
+      throw new Error('Solicitação indisponível');
+    }
+    await this.api.requestFormula(hospitalId, description);
   }
 }
