@@ -1,0 +1,58 @@
+@if (history().length > 0) {
+  <section class="status" aria-labelledby="follow-up-status-title">
+    <h2 id="follow-up-status-title" class="status__title">Acompanhamento</h2>
+
+    @if (current(); as closure) {
+      <p class="status__banner" role="status">
+        Acompanhamento encerrado: {{ closureLabel(closure) }}. O paciente está
+        fora da lista "a avaliar".
+      </p>
+      @if (canReopen()) {
+        <app-button
+          size="md"
+          kind="primary"
+          appearance="outlined"
+          iconLeft="arrow-counter-clockwise"
+          label="Reabrir acompanhamento"
+          [disabled]="saving()"
+          (click)="askReopen()"
+        />
+      }
+    }
+    @if (hint(); as message) {
+      <p class="status__hint" role="alert">{{ message }}</p>
+    }
+
+    <h3 class="status__subtitle">Histórico</h3>
+    <ol class="status__history">
+      @for (entry of history(); track $index) {
+        <li class="status__entry">
+          @if (entry.kind === 'closure') {
+            <p class="status__what">Encerramento: {{ closureText(entry) }}</p>
+            <p class="status__who">
+              {{ stamp(entry.closure.author, entry.closure.at) }}
+            </p>
+            @if (entry.reopening; as reopening) {
+              <p class="status__reverted">{{ revertedText(reopening) }}</p>
+            }
+          } @else {
+            <p class="status__what">Reabertura do acompanhamento</p>
+            <p class="status__who">
+              {{ stamp(entry.reopening.author, entry.reopening.at) }}
+            </p>
+          }
+        </li>
+      }
+    </ol>
+  </section>
+}
+
+<app-confirm-dialog
+  title="Reabrir acompanhamento?"
+  message='O paciente volta à lista "a avaliar". O encerramento original continua no histórico, e a reabertura fica registrada com autor e data/hora.'
+  confirmLabel="Reabrir"
+  cancelLabel="Cancelar"
+  [open]="confirmOpen()"
+  (confirmed)="confirmReopen()"
+  (cancelled)="cancelReopen()"
+/>

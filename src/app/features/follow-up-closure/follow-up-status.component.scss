@@ -1,0 +1,70 @@
+@use '../../shared/styles/tokens';
+@use '../../shared/styles/typography';
+
+:host {
+  display: block;
+}
+
+// Mesmo cartão do Hub (hub__hypothesis): surface-2, raio md, padding 16, gap 12.
+.status {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: tokens.$space-12;
+  padding: tokens.$space-16;
+  border-radius: tokens.$radius-md;
+  background: tokens.c(surface-2);
+}
+
+.status__title,
+.status__subtitle {
+  margin: 0;
+  color: tokens.c(content-4);
+
+  @include typography.label-md;
+}
+
+.status__banner,
+.status__hint {
+  margin: 0;
+  color: tokens.c(content-1);
+
+  @include typography.body-lg;
+}
+
+.status__hint {
+  color: tokens.c(comm-alert);
+}
+
+.status__history {
+  display: flex;
+  flex-direction: column;
+  align-self: stretch;
+  gap: tokens.$space-12;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.status__entry {
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$space-4;
+  padding-top: tokens.$space-12;
+  border-top: 1px solid tokens.c(border);
+}
+
+.status__what {
+  margin: 0;
+  color: tokens.c(content-1);
+
+  @include typography.body-lg;
+}
+
+.status__who,
+.status__reverted {
+  margin: 0;
+  color: tokens.c(content-4);
+
+  @include typography.body-md;
+}

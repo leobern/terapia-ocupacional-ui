@@ -246,6 +246,10 @@
         />
 
         @if (profile(); as p) {
+          <app-follow-up-status
+            [patientId]="p.id"
+            [canReopen]="hospitalId() !== null"
+          />
           <app-assessment-section
             [patientId]="p.id"
             (concluded)="onAssessmentConcluded()"

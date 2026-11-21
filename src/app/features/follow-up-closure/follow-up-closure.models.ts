@@ -64,3 +64,59 @@ export function validateEffectiveDate(value: string, today: Date): string | null
 
   return value > toIsoDate(today) ? FUTURE_DATE_HINT : null;
 }
+
+/** Dados de uma reabertura a gravar: autor e data/hora seguem para a trilha de auditoria (FR-012). */
+export interface FollowUpReopeningRequest {
+  readonly patientId: string;
+  /** Encerramento que a reabertura reverte; ele permanece intacto no histórico. */
+  readonly closureId: string;
+  readonly author: string;
+  /** ISO 8601: data/hora do registro. */
+  readonly at: string;
+}
+
+/** Registro imutável, ligado ao encerramento original (nunca o altera nem o apaga). */
+export interface FollowUpReopening extends FollowUpReopeningRequest {
+  readonly id: string;
+}
+
+export const OFFLINE_REOPEN_HINT = 'Conexão necessária para reabrir o acompanhamento.';
+export const REOPEN_FAILED_HINT = 'Não foi possível reabrir o acompanhamento. Nada foi alterado; tente novamente.';
+
+/** Encerramentos ainda em vigor: os que nenhuma reabertura reverteu. */
+export function activeClosures(
+  closures: readonly FollowUpClosure[],
+  reopenings: readonly FollowUpReopening[],
+): readonly FollowUpClosure[] {
+  const reverted = new Set(reopenings.map(r => r.closureId));
+
+  return closures.filter(c => !reverted.has(c.id));
+}
+
+/** Uma linha do histórico: encerramento (com a reabertura que o reverteu, se houver) ou a própria reabertura. */
+export type FollowUpHistoryEntry =
+  | { readonly kind: 'closure'; readonly closure: FollowUpClosure; readonly reopening: FollowUpReopening | null }
+  | { readonly kind: 'reopening'; readonly reopening: FollowUpReopening; readonly closure: FollowUpClosure | null };
+
+/** Histórico em ordem cronológica (data/hora do registro); todos os ciclos, nunca só o último. */
+export function buildHistory(
+  closures: readonly FollowUpClosure[],
+  reopenings: readonly FollowUpReopening[],
+): readonly FollowUpHistoryEntry[] {
+  const entries: FollowUpHistoryEntry[] = [
+    ...closures.map((closure): FollowUpHistoryEntry => ({
+      closure,
+      kind: 'closure',
+      reopening: reopenings.find(r => r.closureId === closure.id) ?? null,
+    })),
+    ...reopenings.map((reopening): FollowUpHistoryEntry => ({
+      closure: closures.find(c => c.id === reopening.closureId) ?? null,
+      kind: 'reopening',
+      reopening,
+    })),
+  ];
+  const at = (entry: FollowUpHistoryEntry): string =>
+    entry.kind === 'closure' ? entry.closure.at : entry.reopening.at;
+
+  return entries.sort((a, b) => at(a).localeCompare(at(b)));
+}

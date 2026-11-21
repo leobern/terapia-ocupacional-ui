@@ -10,6 +10,8 @@ import { DailyAdequacy } from '../daily-evolution/adequacy/adequacy.models';
 import { DailyAdequacyService } from '../daily-evolution/adequacy/daily-adequacy.service';
 import { GlimReading } from '../diagnosis/diagnosis.models';
 import { DiagnosisSource } from '../diagnosis/diagnosis-source';
+import { FollowUpClosureSource, FollowUpClosureWriter } from '../follow-up-closure/follow-up-closure-source';
+import { ProvisionalFollowUpClosureSource } from '../follow-up-closure/provisional-follow-up-closure';
 import { LinkedHospitalsReader } from '../home/linked-hospitals';
 import { NOW, ProfessionalProfileReader } from '../home/professional-profile';
 import {
@@ -251,6 +253,9 @@ async function setup(
       { provide: DailyRecordWriter, useValue: { record: (): Promise<[]> => Promise.resolve([]) } },
       { provide: FormulasApi, useValue: { list: (): Promise<[]> => Promise.resolve([]) } },
       { provide: NutritionTargetsReader, useValue: { current: (): Promise<null> => Promise.resolve(null) } },
+      ProvisionalFollowUpClosureSource,
+      { provide: FollowUpClosureSource, useExisting: ProvisionalFollowUpClosureSource },
+      { provide: FollowUpClosureWriter, useExisting: ProvisionalFollowUpClosureSource },
       { provide: PriorStaysSource, useValue: priorStays },
       { provide: PriorStaysSynthesizer, useValue: priorSynth },
       {
