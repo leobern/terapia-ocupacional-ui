@@ -336,6 +336,23 @@ describe('AppComponent', () => {
     expect(fixture.componentInstance.menuOpen()).toBeFalse();
   });
 
+  it('navigates to /pharmacy and closes the mobile menu when Farmácia is clicked', () => {
+    const router = TestBed.inject(Router);
+
+    spyOn(router, 'navigate').and.resolveTo(true);
+    fixture.componentInstance.menuOpen.set(true);
+    fixture.detectChanges();
+    const item = Array.from<HTMLButtonElement>(
+      fixture.nativeElement.querySelectorAll('app-nav-menu .nav-menu__links .nav-menu__link'),
+    ).find(el => el.textContent?.includes('Farmácia'));
+
+    item?.click();
+    fixture.detectChanges();
+
+    expect(router.navigate).toHaveBeenCalledWith(['/pharmacy']);
+    expect(fixture.componentInstance.menuOpen()).toBeFalse();
+  });
+
   it('navigates to /home and closes the mobile menu when the Home item is clicked', () => {
     const router = TestBed.inject(Router);
 
