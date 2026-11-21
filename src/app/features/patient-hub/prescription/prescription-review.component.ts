@@ -19,8 +19,8 @@ import { DailyAdequacy } from '../../daily-evolution/adequacy/adequacy.models';
 import { NOW, ProfessionalProfileReader } from '../../home/professional-profile';
 import { dayKey, registeredAt } from '../daily-record/daily-record.models';
 import { PlanSource } from '../plan/plan-source';
-import { TargetsEditorComponent } from '../plan/targets-editor.component';
 import { formatNumber, NutritionTargets } from '../plan/plan-targets';
+import { TargetsEditorComponent } from '../plan/targets-editor.component';
 import { ActivePrescription, formatOptional, PrescriptionReview } from './prescription.models';
 import { PrescriptionSource } from './prescription-source';
 

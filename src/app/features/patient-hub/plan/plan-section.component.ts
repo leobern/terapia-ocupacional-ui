@@ -29,7 +29,6 @@ import {
   swallowingLabel,
 } from './plan.models';
 import { PlanSource } from './plan-source';
-import { PendingTargets, TargetsEditorComponent } from './targets-editor.component';
 import { RefeedingRisk, RefeedingRiskSource } from './refeeding-risk-source';
 import {
   cadenceLabel,
@@ -40,6 +39,7 @@ import {
   Weekday,
   WEEKDAYS,
 } from './review-cadence';
+import { PendingTargets, TargetsEditorComponent } from './targets-editor.component';
 
 type LoadState = 'idle' | 'loading' | 'ready' | 'error';
 

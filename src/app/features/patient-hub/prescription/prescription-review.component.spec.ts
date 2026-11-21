@@ -39,7 +39,12 @@ const PRESCRIPTION: ActivePrescription = {
   role: 'Nutrólogo',
   volumeMlPerDay: 900,
 };
-const TARGETS = { kcalPerDay: 1875, proteinPerDay: 112.5 } as NutritionTargets;
+const TARGETS: NutritionTargets = computeTargets({
+  calorimetry: null,
+  kcalPerKg: 25,
+  proteinPerKg: 1.5,
+  referenceWeight: { kg: 75, kind: 'current' },
+});
 const ADEQUACY = {
   calories: { intake: 1425, percent: 76, target: 1875 },
   protein: { intake: 82.5, percent: 73, target: 112.5 },
@@ -91,7 +96,10 @@ describe('PrescriptionReviewComponent', () => {
   const text = (): string => el().textContent.replace(/\s+/gu, ' ');
   const keepButton = (): HTMLButtonElement | null =>
     Array.from(el().querySelectorAll('button')).find(b => b.textContent.includes('Manter prescrição')) ?? null;
+  // Duas rodadas: o editor de metas filho só carrega depois de criado na primeira renderização.
   const settle = async (): Promise<void> => {
+    fixture.detectChanges();
+    await fixture.whenStable();
     fixture.detectChanges();
     await fixture.whenStable();
     fixture.detectChanges();
