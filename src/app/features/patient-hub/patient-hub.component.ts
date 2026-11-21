@@ -40,6 +40,7 @@ import {
 } from '../patients/nutrition-panel/nutrition-panel.models';
 import { NutritionResultsSource } from '../patients/nutrition-panel/nutrition-results-source';
 import { AssessmentSectionComponent } from './assessment/assessment-section.component';
+import { DailyRecordSectionComponent } from './daily-record/daily-record-section.component';
 import { HypothesisOrigin, PatientHubProfile } from './patient-hub.models';
 import { HypothesisSynthesizer, HypothesisWriter, PatientHubSource } from './patient-hub-source';
 import { PlanSectionComponent } from './plan/plan-section.component';
@@ -81,6 +82,7 @@ export const DIAGNOSIS_FAILED_HINT =
     PageContainerComponent,
     PhIconComponent,
     PlanSectionComponent,
+    DailyRecordSectionComponent,
     PriorStaysBoxComponent,
     TherapyTagComponent,
   ],
