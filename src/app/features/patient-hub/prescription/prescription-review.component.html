@@ -103,6 +103,16 @@
               }
             </div>
           </section>
+
+          <section class="review__section" aria-labelledby="review-route-title">
+            <h3 id="review-route-title" class="review__section-title">
+              Via de nutrição
+            </h3>
+            <app-route-change
+              [patientId]="patientId()"
+              (routeSaved)="routeSaved.emit($event)"
+            />
+          </section>
         }
       }
     </div>

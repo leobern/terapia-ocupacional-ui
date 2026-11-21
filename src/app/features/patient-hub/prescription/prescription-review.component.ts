@@ -18,10 +18,12 @@ import { ConnectivityService } from '../../../shared/services/connectivity.servi
 import { DailyAdequacy } from '../../daily-evolution/adequacy/adequacy.models';
 import { NOW, ProfessionalProfileReader } from '../../home/professional-profile';
 import { dayKey, registeredAt } from '../daily-record/daily-record.models';
+import { CurrentRoute } from '../plan/plan.models';
 import { PlanSource } from '../plan/plan-source';
 import { formatNumber, NutritionTargets } from '../plan/plan-targets';
 import { ActivePrescription, formatOptional, PrescriptionReview } from './prescription.models';
 import { PrescriptionSource } from './prescription-source';
+import { RouteChangeComponent } from './route-change.component';
 
 export const REVIEW_LOAD_FAILED_HINT = 'Não foi possível carregar a prescrição. Tente novamente em instantes.';
 export const REVIEW_SAVE_FAILED_HINT = 'Não foi possível registrar a revisão. Nada foi alterado; tente novamente.';
@@ -39,7 +41,7 @@ type LoadState = 'idle' | 'loading' | 'ready' | 'error';
  */
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ButtonComponent, IconButtonComponent],
+  imports: [ButtonComponent, IconButtonComponent, RouteChangeComponent],
   selector: 'app-prescription-review',
   styleUrl: './prescription-review.component.scss',
   templateUrl: './prescription-review.component.html',
@@ -50,6 +52,8 @@ export class PrescriptionReviewComponent {
   /** % de adequação já calculada pela Evolução Diária (FT-004-7); nunca recalculada aqui. */
   readonly adequacy = input<DailyAdequacy | null>(null);
   readonly closed = output();
+  /** Emite a nova via vigente depois de salva (o Plano de Intervenção a relê ao abrir). */
+  readonly routeSaved = output<CurrentRoute>();
 
   protected readonly state = signal<LoadState>('idle');
   protected readonly prescription = signal<ActivePrescription | null>(null);

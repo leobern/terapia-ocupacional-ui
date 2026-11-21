@@ -23,6 +23,7 @@ import {
   normalizeRoutes,
   NUTRITION_ROUTES,
   NutritionRoute,
+  routeDiffers,
   routeLabel,
   SWALLOWING_OPTIONS,
   SwallowingDecision,
@@ -560,9 +561,7 @@ export class PlanSectionComponent {
 
   /** Só regrava a via quando mudou (salvar a decisão sozinha não renova "desde quando" da via). */
   private routeDiffers(): boolean {
-    const current = this.current();
-
-    return current === null || routeLabel(current.routes) !== routeLabel(this.selection());
+    return routeDiffers(this.current(), this.selection());
   }
 
   private async load(): Promise<void> {

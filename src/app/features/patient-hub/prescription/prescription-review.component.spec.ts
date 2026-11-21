@@ -1,4 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
 
 import { ConnectivityService } from '../../../shared/services/connectivity.service';
 import { DailyAdequacy } from '../../daily-evolution/adequacy/adequacy.models';
@@ -22,6 +23,7 @@ import {
   TARGETS_UNAVAILABLE_TEXT,
 } from './prescription-review.component';
 import { PrescriptionSource } from './prescription-source';
+import { RouteChangeComponent } from './route-change.component';
 
 const PRESCRIPTION: ActivePrescription = {
   at: '2026-11-20T13:33:00',
@@ -99,7 +101,10 @@ describe('PrescriptionReviewComponent', () => {
         { provide: PrescriptionSource, useValue: source },
         {
           provide: PlanSource,
-          useValue: { loadTargets: (): Promise<NutritionTargets | null> => Promise.resolve(targets) },
+          useValue: {
+            loadRoute: (): Promise<null> => Promise.resolve(null),
+            loadTargets: (): Promise<NutritionTargets | null> => Promise.resolve(targets),
+          },
         },
         {
           provide: ProfessionalProfileReader,
@@ -265,5 +270,27 @@ describe('PrescriptionReviewComponent', () => {
     await (fixture.componentInstance as unknown as { keep(): Promise<void> }).keep();
 
     expect(source.kept).toEqual([]);
+  });
+
+  it('médico vê a seção "Via de nutrição" e o evento de via salva sobe para o Hub', async () => {
+    await setup();
+    const saved: unknown[] = [];
+
+    fixture.componentInstance.routeSaved.subscribe(r => saved.push(r));
+    const route = { routes: ['VO', 'NE'], since: '2026-11-21T10:00:00.000Z' };
+
+    expect(text()).toContain('Via de nutrição');
+    expect(el().querySelector('app-route-change')).not.toBeNull();
+    (
+      fixture.debugElement.query(By.directive(RouteChangeComponent)).componentInstance as RouteChangeComponent
+    ).routeSaved.emit(route as never);
+
+    expect(saved).toEqual([route]);
+  });
+
+  it('não médico não vê a seção de via (nem a revisão)', async () => {
+    await setup('other');
+
+    expect(el().querySelector('app-route-change')).toBeNull();
   });
 });
