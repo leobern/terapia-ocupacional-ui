@@ -51,3 +51,18 @@ export interface SwallowingSaveRequest {
 export function swallowingLabel(decision: SwallowingDecision | null): string {
   return SWALLOWING_OPTIONS.find(o => o.id === decision)?.label ?? '';
 }
+
+/** Sinalização informal de mudança de conduta feita por não-médico; só alerta, sem efeito na via (FR-016). */
+export interface ConductFlag {
+  readonly at: string;
+  readonly author: string;
+  readonly id: string;
+  readonly text: string;
+}
+
+export interface ConductFlagRequest {
+  readonly at: string;
+  readonly author: string;
+  readonly patientId: string;
+  readonly text: string;
+}

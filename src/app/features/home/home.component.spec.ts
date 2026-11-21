@@ -1,6 +1,8 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter, Router } from '@angular/router';
 
+import { ScreenActionsService } from '../../shared/services/screen-actions.service';
+import { ManagerAccessReader } from '../hospital-team/hospital-invite-port';
 import { DailyPatientsSource, DailyPatientsSummary } from './daily-patients';
 import { HomeComponent } from './home.component';
 import { HomeNotification, NotificationPage } from './home.models';
@@ -800,6 +802,41 @@ describe('HomeComponent', () => {
 
       expect(errorBlock()).toBeNull();
       expect(q('.home__local')).toBeTruthy();
+    });
+  });
+
+  describe('atalho do gestor (FT-009-1)', () => {
+    it('gestor vê "Convidar profissional" nos atalhos e ele navega ao convite', async () => {
+      await setup();
+      TestBed.resetTestingModule();
+      await TestBed.configureTestingModule({
+        imports: [HomeComponent],
+        providers: [
+          provideRouter([]),
+          { provide: DailyPatientsSource, useValue: new FakePatients() },
+          { provide: HomeNotificationsSource, useValue: new FakeNotifications() },
+          { provide: ProfessionalProfileReader, useClass: LocalProfessionalProfileReader },
+          { provide: ManagerAccessReader, useValue: { isManager: (): boolean => true } },
+          {
+            provide: LinkedHospitalsReader,
+            useValue: { read: (): readonly LinkedHospital[] => [{ id: 'h1', name: 'H1' }] },
+          },
+          { provide: UnreadNotificationsReader, useValue: { countUnread: (): Promise<number> => Promise.resolve(0) } },
+        ],
+      }).compileComponents();
+      const router = TestBed.inject(Router);
+
+      spyOn(router, 'navigate').and.resolveTo(true);
+      TestBed.inject(HomeStateService).setStatus('success');
+      TestBed.createComponent(HomeComponent).detectChanges();
+      const action = TestBed.inject(ScreenActionsService)
+        .actions()
+        .find(a => a.id === 'invite-professional');
+
+      action?.navigate?.();
+
+      expect(action?.label).toBe('Convidar profissional');
+      expect(router.navigate).toHaveBeenCalledWith(['/hospital-team', 'invite']);
     });
   });
 });

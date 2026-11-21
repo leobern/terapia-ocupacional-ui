@@ -121,6 +121,7 @@ export class ProvisionalPatientListSource extends PatientListSource {
           2,
         ),
         pendingTasks: 0,
+        reassessmentDone: true,
       },
       p('x1', 'Paciente do censo geral', '1980-01-01', 'Ala 3', '1', 'VO', '2026-11-01', null, 0, false),
       {

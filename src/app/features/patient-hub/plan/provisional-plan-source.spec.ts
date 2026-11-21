@@ -30,6 +30,44 @@ describe('ProvisionalPlanSource', () => {
     expect(await source.loadSwallowing('p1')).toBe('needed');
   });
 
+  it('cadência: começa vazia (vale a diária), grava normalizada e não mexe na via', async () => {
+    const source = new ProvisionalPlanSource();
+
+    expect(await source.loadCadence('p1')).toBeNull();
+    await source.saveCadence({ at: 'x', author: 'A', days: [5, 1], patientId: 'p1' });
+
+    expect(await source.loadCadence('p1')).toEqual([1, 5]);
+    expect((await source.loadRoute('p1'))?.routes).toEqual(['NE']);
+  });
+
+  it('responsável: começa vazio, grava e lista médicos', async () => {
+    const source = new ProvisionalPlanSource();
+
+    expect(await source.loadResponsible('p1')).toBeNull();
+    await source.saveResponsible({ at: 'x', author: 'A', name: 'Dra. Ana', patientId: 'p1' });
+
+    expect(await source.loadResponsible('p1')).toBe('Dra. Ana');
+    expect(await source.loadResponsibleOptions()).toContain('Dra. Ana');
+  });
+
+  it('sinalizações: acumulam por paciente, não mexem na via e geram trilha de auditoria só de acréscimo', async () => {
+    const source = new ProvisionalPlanSource();
+
+    expect(await source.loadConductFlags('p1')).toEqual([]);
+    await source.addConductFlag({ at: '2026-11-20T10:00:00Z', author: 'A', patientId: 'p1', text: 'Liberar VO' });
+    await source.addConductFlag({ at: '2026-11-20T11:00:00Z', author: 'B', patientId: 'p1', text: 'Reavaliar' });
+
+    expect((await source.loadConductFlags('p1')).map(f => f.text)).toEqual(['Liberar VO', 'Reavaliar']);
+    expect(await source.loadConductFlags('x')).toEqual([]);
+    expect((await source.loadRoute('p1'))?.routes).toEqual(['NE']);
+    expect(source.auditTrail()).toEqual([
+      { at: '2026-11-20T10:00:00Z', author: 'A', flagId: 'p1-1', patientId: 'p1' },
+      { at: '2026-11-20T11:00:00Z', author: 'B', flagId: 'p1-2', patientId: 'p1' },
+    ]);
+
+    expect(Object.isFrozen(source.auditTrail()[0])).toBe(true);
+  });
+
   it('pesos calculados, peso de referência e metas: leitura e última gravação', async () => {
     const source = new ProvisionalPlanSource();
     const weight = { kg: 68, kind: 'adjusted' } as const;

@@ -1,0 +1,114 @@
+@use '../../shared/styles/breakpoints';
+@use '../../shared/styles/tokens';
+@use '../../shared/styles/typography';
+
+:host {
+  --page-container-margin: var(--layout-page-margin, 16px);
+}
+
+.invite {
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$space-16;
+  min-height: calc(100dvh - var(--bottom-nav-bar-height));
+  padding-top: tokens.$space-8;
+  padding-bottom: tokens.$space-24;
+
+  @include breakpoints.md {
+    max-width: 578px;
+    min-height: 100dvh;
+    padding: tokens.$space-24 tokens.$space-32 tokens.$space-32;
+  }
+}
+
+.invite__header {
+  display: flex;
+  align-items: center;
+  gap: tokens.$space-8;
+}
+
+.invite__heading {
+  display: flex;
+  flex: 1 0 0;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.invite__title {
+  margin: 0;
+  color: tokens.c(content-1);
+
+  @include typography.headline;
+}
+
+.invite__subtitle {
+  margin: 0;
+  color: tokens.c(content-4);
+
+  @include typography.caption;
+}
+
+.invite__card {
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$space-12;
+  padding: tokens.$space-16;
+  border-radius: tokens.$radius-md;
+  background: tokens.c(surface);
+}
+
+.invite__label {
+  color: tokens.c(content-4);
+
+  @include typography.label-md;
+}
+
+.invite__input {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 44px;
+  padding: tokens.$space-12;
+  border: 1px solid tokens.c(border);
+  border-radius: tokens.$radius-sm;
+  background: tokens.c(surface);
+  color: tokens.c(content-1);
+
+  @include typography.body-lg;
+
+  &:focus-visible {
+    outline: var(--focus-ring-width) solid tokens.c(focus-ring);
+    outline-offset: 2px;
+  }
+}
+
+.invite__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: tokens.$space-8;
+}
+
+.invite__status {
+  margin: 0;
+  color: tokens.c(content-1);
+
+  @include typography.body-md;
+}
+
+.invite__profile {
+  display: grid;
+  gap: tokens.$space-4;
+  margin: 0;
+
+  dt {
+    color: tokens.c(content-4);
+
+    @include typography.label-md;
+  }
+
+  dd {
+    margin: 0 0 tokens.$space-8;
+    color: tokens.c(content-1);
+
+    @include typography.body-lg;
+  }
+}

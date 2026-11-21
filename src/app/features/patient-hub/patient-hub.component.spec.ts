@@ -4,6 +4,8 @@ import { ActivatedRoute, convertToParamMap, provideRouter, Router } from '@angul
 import { of } from 'rxjs';
 
 import { ConnectivityService } from '../../shared/services/connectivity.service';
+import { DailyAdequacy } from '../daily-evolution/adequacy/adequacy.models';
+import { DailyAdequacyService } from '../daily-evolution/adequacy/daily-adequacy.service';
 import { GlimReading } from '../diagnosis/diagnosis.models';
 import { DiagnosisSource } from '../diagnosis/diagnosis-source';
 import { LinkedHospitalsReader } from '../home/linked-hospitals';
@@ -15,8 +17,6 @@ import {
   NutritionValueWriter,
 } from '../patients/nutrition-panel/nutrition-card-ports';
 import { NutritionValues } from '../patients/nutrition-panel/nutrition-panel.models';
-import { DailyAdequacy } from '../daily-evolution/adequacy/adequacy.models';
-import { DailyAdequacyService } from '../daily-evolution/adequacy/daily-adequacy.service';
 import { NutritionResultsSource } from '../patients/nutrition-panel/nutrition-results-source';
 import { ProvisionalNutritionCardStore } from '../patients/nutrition-panel/provisional-nutrition-card-store';
 import { AssessmentAiStructurer } from './assessment/assessment-ai-structurer';
@@ -207,6 +207,9 @@ async function setup(
         useValue: {
           loadRoute: (): Promise<null> => Promise.resolve(null),
           loadSwallowing: (): Promise<null> => Promise.resolve(null),
+          loadCadence: (): Promise<null> => Promise.resolve(null),
+          loadResponsible: (): Promise<null> => Promise.resolve(null),
+          loadResponsibleOptions: (): Promise<string[]> => Promise.resolve([]),
         },
       },
       { provide: RefeedingRiskSource, useValue: { load: (): Promise<null> => Promise.resolve(null) } },
@@ -254,6 +257,11 @@ const clickButton = async (f: ComponentFixture<unknown>, label: string): Promise
   await f.whenStable();
   f.detectChanges();
 };
+
+const cards = (f: ComponentFixture<unknown>): string[] =>
+  Array.from((f.nativeElement as HTMLElement).querySelectorAll('.nutrition-panel__value')).map(
+    v => v.textContent?.trim() ?? '',
+  );
 
 describe('PatientHubComponent', () => {
   beforeEach(() => {
@@ -321,11 +329,6 @@ describe('PatientHubComponent', () => {
   });
 
   describe('% de adequação (FT-004-7, US3)', () => {
-    const cards = (f: ComponentFixture<unknown>): string[] =>
-      Array.from((f.nativeElement as HTMLElement).querySelectorAll('.nutrition-panel__value')).map(
-        v => v.textContent?.trim() ?? '',
-      );
-
     it('Painel e resumo do Hub mostram o mesmo resultado calculado', async () => {
       adequacy.result = AVAILABLE;
       const f = await setup(new FakeSource());
@@ -358,11 +361,6 @@ describe('PatientHubComponent', () => {
   });
 
   describe('resultados do painel (FT-004-3, US2)', () => {
-    const cards = (f: ComponentFixture<unknown>): string[] =>
-      Array.from((f.nativeElement as HTMLElement).querySelectorAll('.nutrition-panel__value')).map(
-        v => v.textContent?.trim() ?? '',
-      );
-
     it('carrega ao abrir e mostra cada resultado; sem resultado o card segue em "Sem dados"', async () => {
       results.values = { glim: 'Desnutrição' } as NutritionValues;
       const f = await setup(new FakeSource());
@@ -1358,9 +1356,9 @@ describe('PatientHubComponent', () => {
     });
 
     it('card oculto não pode ser aberto (não está na grid)', () => {
-      const cards = Array.from(el().querySelectorAll('.nutrition-panel__card'));
+      const panelCards = Array.from(el().querySelectorAll('.nutrition-panel__card'));
 
-      expect(cards.some(c => c.textContent?.includes('GLIM'))).toBe(false);
+      expect(panelCards.some(c => c.textContent?.includes('GLIM'))).toBe(false);
     });
 
     it('escolher o card o devolve à grid com valor e histórico íntegros', async () => {
