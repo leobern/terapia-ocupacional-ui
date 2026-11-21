@@ -23,7 +23,9 @@ import { PageContainerComponent } from '../../shared/components/page-container/p
 import { TagComponent } from '../../shared/components/tag/tag.component';
 import { PhIconComponent } from '../../shared/icons/ph-icon/ph-icon.component';
 import { AiAssistantService } from '../../shared/services/ai-assistant.service';
+import { ScreenActionsService } from '../../shared/services/screen-actions.service';
 import { formatRelativeTime } from '../../shared/utils/relative-time';
+import { ManagerAccessReader } from '../hospital-team/hospital-invite-port';
 import { HomeErrorComponent } from './components/home-error/home-error.component';
 import { HomeSkeletonComponent } from './components/home-skeleton/home-skeleton.component';
 import { DailyPatientsSource, DailyPatientsSummary } from './daily-patients';
@@ -124,6 +126,8 @@ export class HomeComponent implements OnInit, OnDestroy {
   private readonly patients = inject(DailyPatientsSource);
   private readonly notificationsSource = inject(HomeNotificationsSource);
   private readonly injector = inject(Injector);
+  private readonly screenActions = inject(ScreenActionsService);
+  private readonly managerAccess = inject(ManagerAccessReader, { optional: true });
   private readonly scrollSentinel = viewChild<ElementRef<HTMLElement>>('scrollSentinel');
   private intersectionObserver?: IntersectionObserver;
   private feedGeneration = 0;
@@ -135,6 +139,21 @@ export class HomeComponent implements OnInit, OnDestroy {
     this.professionalName = profile.name;
     this.professionalPhotoUrl = profile.photoUrl ?? '';
     this.professionalAvatarType = signal<AvatarType>(this.professionalPhotoUrl ? 'photo' : 'user');
+
+    // Atalho do gestor (FT-009-1): convidar diretamente um profissional já cadastrado.
+    if (this.managerAccess?.isManager()) {
+      effect(onCleanup => {
+        onCleanup(
+          this.screenActions.register([
+            {
+              id: 'invite-professional',
+              label: 'Convidar profissional',
+              navigate: (): void => void this.router.navigate(['/hospital-team', 'invite']),
+            },
+          ]),
+        );
+      });
+    }
 
     effect(() => {
       const hospitalId = this.context.selected()?.id;

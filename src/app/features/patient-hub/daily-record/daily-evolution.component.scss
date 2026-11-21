@@ -1,0 +1,107 @@
+@use '../../../shared/styles/tokens';
+@use '../../../shared/styles/typography';
+
+:host {
+  display: block;
+}
+
+.evolution {
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$space-8;
+}
+
+.evolution__section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: tokens.$space-8;
+  padding: tokens.$space-8 tokens.$space-16;
+}
+
+.evolution__section-title {
+  margin: 0;
+  color: tokens.c(content-1);
+
+  @include typography.title-md;
+}
+
+.evolution__card {
+  min-inline-size: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$space-8;
+  padding: tokens.$space-16;
+  border: 1px solid tokens.c(border);
+  border-radius: tokens.$radius-md;
+  background: tokens.c(surface);
+}
+
+.evolution__label {
+  color: tokens.c(content-1);
+
+  @include typography.title-md;
+}
+
+.evolution__value {
+  margin: 0;
+  color: tokens.c(content-1);
+
+  @include typography.body-lg;
+}
+
+.evolution__help {
+  margin: 0;
+  color: tokens.c(content-4);
+
+  @include typography.caption;
+}
+
+.evolution__status {
+  margin: 0;
+  color: tokens.c(content-4);
+
+  @include typography.body-md;
+
+  &--warning {
+    color: tokens.c(content-1);
+  }
+}
+
+.evolution__textarea {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 96px;
+  padding: tokens.$space-12;
+  border: 1px solid tokens.c(border);
+  border-radius: tokens.$radius-12;
+  background: tokens.c(surface);
+  color: tokens.c(content-1);
+  resize: vertical;
+
+  @include typography.body-lg;
+
+  &:focus-visible {
+    outline: 2px solid tokens.c(input-focus-ring);
+    outline-offset: 2px;
+  }
+}
+
+.evolution__chat {
+  display: block;
+}
+
+.evolution__ai-tag {
+  display: inline-flex;
+  align-items: center;
+  align-self: flex-start;
+  gap: tokens.$space-4;
+  height: 24px;
+  padding-inline: tokens.$space-8;
+  border-radius: tokens.$radius-pill;
+  background: tokens.c(surface-2);
+  color: tokens.c(secondary);
+
+  @include typography.label-sm;
+}

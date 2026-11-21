@@ -3,6 +3,8 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Router, RouterModule, Routes } from '@angular/router';
 
 import { AppComponent } from './app.component';
+import { ProvisionalSessionRoleReader } from './shared/auth/provisional-session-role-reader';
+import { SessionRoleReader } from './shared/auth/session-role';
 
 @Component({ changeDetection: ChangeDetectionStrategy.OnPush, template: '' })
 class DummyComponent {}
@@ -45,6 +47,7 @@ describe('AppComponent', () => {
 
     await TestBed.configureTestingModule({
       imports: [AppComponent, RouterModule.forRoot(ROUTES)],
+      providers: [{ provide: SessionRoleReader, useClass: ProvisionalSessionRoleReader }],
     }).compileComponents();
 
     fixture = TestBed.createComponent(AppComponent);
@@ -119,6 +122,7 @@ describe('AppComponent', () => {
 
     await TestBed.configureTestingModule({
       imports: [AppComponent, RouterModule.forRoot(ROUTES)],
+      providers: [{ provide: SessionRoleReader, useClass: ProvisionalSessionRoleReader }],
     }).compileComponents();
 
     fixture = TestBed.createComponent(AppComponent);
@@ -147,6 +151,8 @@ describe('AppComponent', () => {
     TestBed.inject(Router).resetConfig([
       { children: [], path: 'home' },
       { children: [], path: 'notifications' },
+      { children: [], path: 'pharmacy' },
+      { children: [], path: 'patients' },
       { children: [], path: 'login' },
     ]);
     await TestBed.inject(Router).navigateByUrl('/home');
@@ -156,6 +162,14 @@ describe('AppComponent', () => {
     await TestBed.inject(Router).navigateByUrl('/notifications');
 
     expect(component.activeNavItem()).toBe('notificacoes');
+
+    await TestBed.inject(Router).navigateByUrl('/pharmacy');
+
+    expect(component.activeNavItem()).toBe('farmacia');
+
+    await TestBed.inject(Router).navigateByUrl('/patients');
+
+    expect(component.activeNavItem()).toBe('pacientes');
 
     await TestBed.inject(Router).navigateByUrl('/login');
 
@@ -319,6 +333,23 @@ describe('AppComponent', () => {
     fixture.detectChanges();
 
     expect(router.navigate).toHaveBeenCalledWith(['/notifications']);
+    expect(fixture.componentInstance.menuOpen()).toBeFalse();
+  });
+
+  it('navigates to /pharmacy and closes the mobile menu when Farmácia is clicked', () => {
+    const router = TestBed.inject(Router);
+
+    spyOn(router, 'navigate').and.resolveTo(true);
+    fixture.componentInstance.menuOpen.set(true);
+    fixture.detectChanges();
+    const item = Array.from<HTMLButtonElement>(
+      fixture.nativeElement.querySelectorAll('app-nav-menu .nav-menu__links .nav-menu__link'),
+    ).find(el => el.textContent?.includes('Farmácia'));
+
+    item?.click();
+    fixture.detectChanges();
+
+    expect(router.navigate).toHaveBeenCalledWith(['/pharmacy']);
     expect(fixture.componentInstance.menuOpen()).toBeFalse();
   });
 

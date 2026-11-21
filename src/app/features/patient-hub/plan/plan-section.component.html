@@ -136,6 +136,168 @@
             </p>
           }
         </fieldset>
+        <fieldset class="plan__card" data-testid="cadence">
+          <legend class="plan__label">Próxima revisão</legend>
+          @if (!isDoctor) {
+            <p class="plan__value" data-testid="cadence-value">
+              {{ cadenceText() }}
+            </p>
+          } @else {
+            <div class="plan__options">
+              <label class="plan__option">
+                <input
+                  type="radio"
+                  name="cadence"
+                  class="plan__checkbox"
+                  data-cadence="daily"
+                  [checked]="cadenceMode() === 'daily'"
+                  [disabled]="!connectivity.online()"
+                  (change)="chooseCadenceMode('daily')"
+                />
+                <span class="plan__option-text">Diária</span>
+              </label>
+              <label class="plan__option">
+                <input
+                  type="radio"
+                  name="cadence"
+                  class="plan__checkbox"
+                  data-cadence="weekdays"
+                  [checked]="cadenceMode() === 'weekdays'"
+                  [disabled]="!connectivity.online()"
+                  (change)="chooseCadenceMode('weekdays')"
+                />
+                <span class="plan__option-text"
+                  >Dias específicos da semana</span
+                >
+              </label>
+            </div>
+            @if (cadenceMode() === 'weekdays') {
+              <div
+                class="plan__options"
+                role="group"
+                aria-label="Dias da semana"
+              >
+                @for (day of weekdays; track day.id) {
+                  <label class="plan__option">
+                    <input
+                      type="checkbox"
+                      class="plan__checkbox"
+                      [checked]="isDayPicked(day.id)"
+                      [disabled]="!connectivity.online()"
+                      [attr.data-day]="day.id"
+                      (change)="toggleDay(day.id)"
+                    />
+                    <span class="plan__option-text">{{ day.full }}</span>
+                  </label>
+                }
+              </div>
+            }
+            <p class="plan__value" data-testid="cadence-value">
+              Vigente: {{ cadenceText() }}
+            </p>
+          }
+          <p class="plan__help">
+            Define em quais dias o paciente aparece como pendente de reavaliação
+            na Listagem do dia.
+          </p>
+        </fieldset>
+        <fieldset class="plan__card" data-testid="responsible">
+          <legend class="plan__label">Responsável pelo plano</legend>
+          @if (!isDoctor) {
+            <p class="plan__value" data-testid="responsible-value">
+              {{ responsibleText() }}
+            </p>
+          } @else {
+            <select
+              class="plan__select"
+              aria-label="Responsável pelo plano"
+              data-testid="responsible-select"
+              [disabled]="!connectivity.online()"
+              (change)="chooseResponsible($any($event.target).value)"
+            >
+              @for (name of responsibleChoices(); track name) {
+                <option [value]="name" [selected]="name === responsibleShown()">
+                  {{ name }}
+                </option>
+              }
+            </select>
+            <p class="plan__value" data-testid="responsible-value">
+              Vigente: {{ responsibleText() }}
+            </p>
+          }
+          @if (responsibleOptionsFailed()) {
+            <p class="plan__help" role="status">
+              {{ responsibleOptionsFailedHint }}
+            </p>
+          }
+        </fieldset>
+        <fieldset class="plan__card" data-testid="conduct-flags">
+          <legend class="plan__label">Sinalizações de conduta</legend>
+          @if (flagsFailed()) {
+            <p class="plan__help" role="status" data-testid="flags-failed">
+              {{ flagsFailedHint }}
+            </p>
+          }
+          @for (flag of flags(); track flag.id) {
+            <div class="plan__flag" role="status" data-testid="conduct-flag">
+              <ph-icon name="flag" [size]="20" />
+              <div class="plan__flag-body">
+                <p class="plan__flag-text">
+                  <strong>Sugestão de mudança de conduta:</strong>
+                  {{ flag.text }}
+                </p>
+                <p class="plan__help">
+                  {{ flag.author }} · {{ formatFlagDate(flag.at) }}
+                </p>
+              </div>
+            </div>
+          } @empty {
+            @if (!flagsFailed()) {
+              <p class="plan__help" data-testid="flags-empty">
+                Nenhuma sinalização registrada.
+              </p>
+            }
+          }
+          <p class="plan__help">
+            É só um alerta para o médico: não altera a via vigente.
+          </p>
+          @if (!isDoctor) {
+            <label class="plan__label" for="flag-text">
+              Sinalizar mudança de conduta
+            </label>
+            <textarea
+              id="flag-text"
+              class="plan__textarea"
+              rows="2"
+              placeholder="Ex.: liberar dieta por via oral"
+              [value]="flagDraft()"
+              (input)="onFlagInput($event)"
+            ></textarea>
+            @if (flagHint(); as message) {
+              <p
+                class="plan__status plan__status--warning"
+                role="alert"
+                data-testid="flag-hint"
+              >
+                {{ message }}
+              </p>
+            }
+            @if (!connectivity.online()) {
+              <p
+                class="plan__status plan__status--warning"
+                role="status"
+                data-testid="flag-offline"
+              >
+                {{ flagOfflineHint }}
+              </p>
+            }
+            <app-button
+              label="Sinalizar"
+              [disabled]="flagSaving() || !connectivity.online()"
+              (click)="sendFlag()"
+            />
+          }
+        </fieldset>
       </section>
       <section class="plan__section" aria-label="Metas">
         <div class="plan__section-header">

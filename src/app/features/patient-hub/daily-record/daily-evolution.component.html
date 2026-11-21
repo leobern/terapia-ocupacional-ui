@@ -1,0 +1,112 @@
+<!-- Figma 4717-9855 (Registro diário, desenhado pelo agente): seção "Evolução médica" dentro do bottom sheet. -->
+@if (state() !== 'idle' && (state() !== 'loading' || isDoctor)) {
+  <section class="evolution" aria-label="Evolução médica">
+    <div class="evolution__section-header">
+      <h3 class="evolution__section-title">Evolução médica</h3>
+    </div>
+    @if (state() === 'loading') {
+      <p class="evolution__status" role="status">Carregando a evolução…</p>
+    }
+    @if (state() === 'error') {
+      <p class="evolution__status evolution__status--warning" role="alert">
+        {{ loadFailedHint }}
+      </p>
+    }
+    <div class="evolution__card" data-testid="evolution">
+      @if (isDoctor) {
+        <label class="evolution__label" for="evolution-text">
+          Evolução do dia
+        </label>
+        @if (suggestion() !== null) {
+          <span class="evolution__ai-tag" data-testid="ai-tag">
+            <ph-icon name="sparkle" [size]="16" />
+            Gerado por IA
+          </span>
+          <p class="evolution__help" role="status">{{ aiReviewNote }}</p>
+        }
+        <textarea
+          id="evolution-text"
+          class="evolution__textarea"
+          rows="5"
+          placeholder="Ex.: paciente estável, tolerando NE a 60 mL/h"
+          aria-describedby="evolution-help"
+          [value]="draft()"
+          (input)="onDraft($event)"
+        ></textarea>
+        <p id="evolution-help" class="evolution__help">{{ help }}</p>
+      } @else {
+        <span class="evolution__label">Evolução do dia</span>
+        @if (saved(); as s) {
+          <p class="evolution__value" data-testid="evolution-text">
+            {{ s.text }}
+          </p>
+        } @else {
+          <p class="evolution__help" data-testid="evolution-empty">
+            {{ emptyText }}
+          </p>
+        }
+      }
+      @if (saved()) {
+        <p class="evolution__help" data-testid="evolution-meta">
+          {{ registeredText() }}
+        </p>
+      }
+    </div>
+
+    @if (isDoctor) {
+      @if (aiProcessing()) {
+        <p class="evolution__status" role="status">{{ aiProcessingHint }}</p>
+      }
+      @if (!connectivity.online()) {
+        <p class="evolution__status evolution__status--warning" role="status">
+          {{ aiUnavailableHint }}
+        </p>
+      } @else if (aiNotice(); as notice) {
+        <p class="evolution__status evolution__status--warning" role="alert">
+          {{ notice }}
+        </p>
+      }
+      <!-- Offline: o campo é recriado desabilitado (libera o microfone de uma gravação em curso). -->
+      @if (connectivity.online()) {
+        <app-input-chat
+          class="evolution__chat"
+          placeholder="Grave um áudio com a evolução do dia"
+          [disabled]="aiProcessing() || state() === 'loading'"
+          (audioSend)="onAudio($event)"
+          (audioModeError)="onAudioError($event)"
+        />
+      } @else {
+        <app-input-chat
+          class="evolution__chat"
+          placeholder="Grave um áudio com a evolução do dia"
+          [disabled]="true"
+        />
+      }
+      @if (!connectivity.online()) {
+        <p class="evolution__status evolution__status--warning" role="status">
+          {{ offlineHint }}
+        </p>
+      }
+      @if (saveFailed()) {
+        <p class="evolution__status evolution__status--warning" role="alert">
+          {{ saveFailedHint }}
+        </p>
+      }
+      <app-button
+        [label]="suggestion() === null ? 'Salvar evolução' : 'Confirmar evolução'"
+        [fullWidth]="true"
+        [disabled]="!canSave()"
+        (click)="save()"
+      />
+      @if (suggestion() !== null) {
+        <app-button
+          kind="primary"
+          appearance="outlined"
+          label="Descartar sugestão"
+          [fullWidth]="true"
+          (click)="discard()"
+        />
+      }
+    }
+  </section>
+}

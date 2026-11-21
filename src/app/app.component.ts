@@ -3,6 +3,7 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { NavigationEnd, Router, RouterOutlet } from '@angular/router';
 import { filter, map } from 'rxjs';
 
+import { Role, SessionRoleReader } from './shared/auth/session-role';
 import { AssistantContentComponent } from './shared/components/assistant-content/assistant-content.component';
 import { AssistantHeadingComponent } from './shared/components/assistant-header/assistant-heading.component';
 import { AssistantSubmitComponent } from './shared/components/assistant-submit/assistant-submit.component';
@@ -58,6 +59,10 @@ export class AppComponent {
   readonly aiAssistant = inject(AiAssistantService);
   readonly menuOpen = signal(false);
 
+  /** Itens do menu sem acesso para o perfil atual (Farmácia é exclusiva do gestor). */
+  protected readonly disabledNavItems: readonly NavMenuItemKey[] =
+    inject(SessionRoleReader).read() === Role.GESTOR ? [] : ['farmacia'];
+
   protected readonly viewportBreakpoint = inject(ViewportBreakpointService);
   /** Rotas com `data.hideShell` (ex.: splash) ocultam a navegação e o assistente. */
   protected readonly showShell: Signal<boolean>;
@@ -68,6 +73,10 @@ export class AppComponent {
 
     if (url.startsWith('/home')) {
       return 'home';
+    }
+
+    if (url.startsWith('/pharmacy')) {
+      return 'farmacia';
     }
 
     if (url.startsWith('/patients')) {
@@ -185,5 +194,10 @@ export class AppComponent {
   protected onNotificacoesClick(): void {
     this.menuOpen.set(false);
     this.router.navigate(['/notifications']);
+  }
+
+  protected onFarmaciaClick(): void {
+    this.menuOpen.set(false);
+    void this.router.navigate(['/pharmacy']);
   }
 }

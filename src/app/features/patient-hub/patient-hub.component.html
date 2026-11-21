@@ -264,8 +264,18 @@
             <span class="hub__diagnosis-title">Diagnóstico</span>
             <ph-icon name="caret-right" [size]="16" />
           </button>
-          <app-plan-section [patientId]="p.id" />
-          <app-daily-record-section [patientId]="p.id" />
+          @if (adequacy(); as a) {
+            <app-adequacy-summary [adequacy]="a" />
+          }
+          <app-plan-section
+            [patientId]="p.id"
+            (targetsSaved)="reloadResults()"
+          />
+          <app-daily-record-sheet
+            [open]="dailyRecordOpen()"
+            [patientId]="p.id"
+            (closed)="dailyRecordOpen.set(false)"
+          />
         }
       }
       @case ('not-found') {

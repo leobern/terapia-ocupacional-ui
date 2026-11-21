@@ -3,15 +3,13 @@ import {
   Component,
   computed,
   effect,
-  type ElementRef,
   inject,
   input,
   signal,
-  viewChild,
+  untracked,
 } from '@angular/core';
 
 import { ButtonComponent } from '../../../shared/components/button/button.component';
-import { IconButtonComponent } from '../../../shared/components/icon-button/icon-button.component';
 import { PhIconComponent } from '../../../shared/icons/ph-icon/ph-icon.component';
 import { InputChatAudioError, InputChatComponent } from '../../../shared/components/input-chat/input-chat.component';
 import { ConnectivityService } from '../../../shared/services/connectivity.service';
@@ -40,19 +38,21 @@ export const EVOLUTION_AI_REVIEW_NOTE = 'Texto sugerido pela IA. Revise e confir
 export const EVOLUTION_HELP = 'Só médico registra. Texto da IA vem marcado e só salva ao confirmar.';
 
 /**
- * Seção "Registro diário" do Hub (FT-004-7, US-004-7-04), Figma 4717-9855 (desenhado pelo agente). Hoje traz
- * a "Evolução médica" do dia; os Parâmetros assistenciais são outra story e entram como seção independente.
- * Só o médico registra/edita; os demais perfis só consultam. A evolução só muda por salvamento explícito.
+ * Seção "Evolução médica" do Registro diário (FT-004-7, US-004-7-04), Figma 4717-9855 (desenhado pelo agente),
+ * renderizada dentro do bottom sheet. Só o médico registra/edita; os demais perfis só consultam. A evolução
+ * só muda por salvamento explícito (o texto da IA só vale após "Confirmar evolução").
  */
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ButtonComponent, IconButtonComponent, InputChatComponent, PhIconComponent],
-  selector: 'app-daily-record-section',
-  styleUrl: './daily-record-section.component.scss',
-  templateUrl: './daily-record-section.component.html',
+  imports: [ButtonComponent, InputChatComponent, PhIconComponent],
+  selector: 'app-daily-evolution',
+  styleUrl: './daily-evolution.component.scss',
+  templateUrl: './daily-evolution.component.html',
 })
-export class DailyRecordSectionComponent {
+export class DailyEvolutionComponent {
   readonly patientId = input.required<string>();
+  /** Aberto = o Registro diário está visível; a evolução do dia é lida a cada abertura. */
+  readonly open = input(false);
 
   protected readonly state = signal<LoadState>('idle');
   protected readonly saved = signal<DailyEvolution | null>(null);
@@ -88,47 +88,21 @@ export class DailyRecordSectionComponent {
   private previousDraft = '';
   private readonly profile = inject(ProfessionalProfileReader);
   private readonly now = inject(NOW);
-  private readonly isOpen = signal(false);
   private readonly touched = signal(false);
   /** Descarta respostas de uma abertura anterior (fechar e reabrir rápido, ou troca de paciente). */
   private token = 0;
-  private readonly dialogRef = viewChild<ElementRef<HTMLDialogElement>>('dialogEl');
 
   constructor() {
     effect(() => {
-      const element = this.dialogRef()?.nativeElement;
+      if (this.open()) {
+        const id = this.patientId();
 
-      if (!element) {
-        return;
-      }
-      if (this.isOpen() && !element.open) {
-        element.showModal();
-      } else if (!this.isOpen() && element.open) {
-        element.close();
+        untracked(() => void this.load(id));
+      } else {
+        // Fechou: respostas pendentes de uma abertura anterior são descartadas.
+        untracked(() => this.token++);
       }
     });
-  }
-
-  protected open(): void {
-    this.isOpen.set(true);
-    void this.load();
-  }
-
-  protected close(): void {
-    this.token++;
-    this.isOpen.set(false);
-  }
-
-  protected onDialogClick(event: MouseEvent): void {
-    // Clique no ::backdrop chega com o próprio <dialog> como alvo.
-    if (event.target instanceof HTMLDialogElement) {
-      this.close();
-    }
-  }
-
-  protected onCancel(event: Event): void {
-    event.preventDefault();
-    this.close();
   }
 
   protected onDraft(event: Event): void {
@@ -232,7 +206,7 @@ export class DailyRecordSectionComponent {
     return this.draft().trim() === suggested ? 'ai' : 'ai-edited';
   }
 
-  private async load(): Promise<void> {
+  private async load(patientId: string): Promise<void> {
     const token = ++this.token;
 
     this.state.set('loading');
@@ -244,7 +218,7 @@ export class DailyRecordSectionComponent {
     this.aiNotice.set(null);
     this.aiProcessing.set(false);
     try {
-      const current = await this.source.load(this.patientId(), dayKey(this.now()));
+      const current = await this.source.load(patientId, dayKey(this.now()));
 
       if (token !== this.token) {
         return;

@@ -6,6 +6,7 @@ import {
   type ElementRef,
   inject,
   input,
+  output,
   signal,
   viewChild,
 } from '@angular/core';
@@ -17,6 +18,7 @@ import { ConnectivityService } from '../../../shared/services/connectivity.servi
 import { NOW, ProfessionalProfileReader } from '../../home/professional-profile';
 import { AssessmentSource } from '../assessment/assessment-source';
 import {
+  ConductFlag,
   CurrentRoute,
   normalizeRoutes,
   NUTRITION_ROUTES,
@@ -46,6 +48,15 @@ import {
   TargetFormula,
 } from './plan-targets';
 import { RefeedingRisk, RefeedingRiskSource } from './refeeding-risk-source';
+import {
+  cadenceLabel,
+  DAILY_CADENCE,
+  isDailyCadence,
+  normalizeCadence,
+  ReviewCadence,
+  Weekday,
+  WEEKDAYS,
+} from './review-cadence';
 
 type LoadState = 'idle' | 'loading' | 'ready' | 'error';
 
@@ -55,6 +66,10 @@ export const RISK_FAILED_HINT = 'Não foi possível verificar o risco de síndro
 export const DYSPHAGIA_FAILED_HINT = 'Não foi possível ler o risco de disfagia da Avaliação agora.';
 export const DYSPHAGIA_MISSING_HINT = 'Risco de disfagia ainda não registrado na Avaliação nutricional.';
 export const OFFLINE_HINT = 'Sem conexão: não é possível salvar o plano agora.';
+export const FLAGS_FAILED_HINT = 'Não foi possível carregar as sinalizações de mudança de conduta agora.';
+export const FLAG_SAVE_FAILED_HINT = 'Não foi possível registrar a sinalização. O texto foi mantido; tente novamente.';
+export const FLAG_OFFLINE_HINT = 'Sem conexão: não é possível registrar a sinalização agora.';
+export const FLAG_EMPTY_HINT = 'Escreva a sugestão de mudança de conduta para sinalizar.';
 export const WEIGHTS_FAILED_HINT = 'Não foi possível ler os pesos calculados na Avaliação agora.';
 export const WEIGHTS_MISSING_HINT =
   'Sem peso calculado na Avaliação nutricional: preencha a Avaliação para escolher o peso de referência.';
@@ -62,7 +77,18 @@ export const CALORIMETRY_FAILED_HINT = 'Não foi possível ler a calorimetria in
 export const NO_REFERENCE_HINT = 'Selecione o peso de referência para calcular as metas.';
 export const INVALID_FACTOR_HINT = 'Informe fatores kcal/kg e g/kg numéricos maiores que zero.';
 export const INVALID_PERCENT_HINT = `Informe um percentual da calorimetria maior que zero e até ${MAX_CALORIMETRY_PERCENT}%.`;
+export const RESPONSIBLE_OPTIONS_FAILED_HINT =
+  'Não foi possível carregar a lista de médicos. O responsável atual foi mantido.';
+export const EMPTY_CADENCE_HINT = 'Marque ao menos um dia da semana para a revisão ou escolha a cadência diária.';
 export const EMPTY_SELECTION_HINT = 'Selecione ao menos uma via de nutrição para salvar.';
+
+/** Formata ISO como dd/MM/aaaa HH:mm. */
+function fullDateTime(iso: string): string {
+  const d = new Date(iso);
+  const p = (n: number): string => String(n).padStart(2, '0');
+
+  return `${p(d.getDate())}/${p(d.getMonth() + 1)}/${d.getFullYear()} ${p(d.getHours())}:${p(d.getMinutes())}`;
+}
 
 /** Formata ISO como dd/MM (ano omitido, como no Figma 4716-9503). */
 function shortDate(iso: string): string {
@@ -85,6 +111,8 @@ function shortDate(iso: string): string {
 })
 export class PlanSectionComponent {
   readonly patientId = input.required<string>();
+  /** Metas gravadas: o Hub recalcula a % de adequação (cálculo único). */
+  readonly targetsSaved = output();
 
   protected readonly options = NUTRITION_ROUTES;
   protected readonly current = signal<CurrentRoute | null>(null);
@@ -95,6 +123,36 @@ export class PlanSectionComponent {
   protected readonly swallowingText = computed(
     () => swallowingLabel(this.savedSwallowing()) || 'Sem decisão registrada',
   );
+  protected readonly weekdays = WEEKDAYS;
+  /** Cadência salva (padrão diária) e a escolha em edição (só vira salva em "Salvar plano"). */
+  protected readonly savedCadence = signal<ReviewCadence>(DAILY_CADENCE);
+  protected readonly cadenceMode = signal<'daily' | 'weekdays'>('daily');
+  protected readonly pickedDays = signal<readonly Weekday[]>([]);
+  protected readonly cadenceText = computed(() => cadenceLabel(this.savedCadence()));
+  /** Responsável salvo e a escolha explícita em edição (`null` = não mexeu). */
+  protected readonly savedResponsible = signal<string | null>(null);
+  protected readonly pickedResponsible = signal<string | null>(null);
+  protected readonly responsibleOptionList = signal<readonly string[]>([]);
+  protected readonly responsibleOptionsFailed = signal(false);
+  protected readonly responsibleOptionsFailedHint = RESPONSIBLE_OPTIONS_FAILED_HINT;
+  /** Exibido ao médico: escolha > salvo > ele mesmo (responsável inicial). */
+  protected readonly responsibleShown = computed(
+    () => this.pickedResponsible() ?? this.savedResponsible() ?? this.profile.read().name,
+  );
+  protected readonly responsibleChoices = computed(() => {
+    const shown = this.responsibleShown();
+    const list = this.responsibleOptionList();
+
+    return list.includes(shown) ? list : [shown, ...list];
+  });
+  protected readonly responsibleText = computed(() => this.savedResponsible() ?? 'Sem responsável definido');
+  protected readonly flags = signal<readonly ConductFlag[]>([]);
+  protected readonly flagsFailed = signal(false);
+  protected readonly flagsFailedHint = FLAGS_FAILED_HINT;
+  protected readonly flagDraft = signal('');
+  protected readonly flagHint = signal<string | null>(null);
+  protected readonly flagSaving = signal(false);
+  protected readonly flagOfflineHint = FLAG_OFFLINE_HINT;
   protected readonly selection = signal<readonly NutritionRoute[]>([]);
   protected readonly state = signal<LoadState>('idle');
   protected readonly saving = signal(false);
@@ -266,6 +324,79 @@ export class PlanSectionComponent {
     this.swallowing.set(id);
   }
 
+  protected formatFlagDate(iso: string): string {
+    return fullDateTime(iso);
+  }
+
+  protected onFlagInput(event: Event): void {
+    this.flagHint.set(null);
+    this.flagDraft.set((event.target as HTMLTextAreaElement).value);
+  }
+
+  /** Registra a sinalização (só não-médico, online, com texto); não toca na via nem no formulário do médico. */
+  protected async sendFlag(): Promise<void> {
+    if (this.isDoctor || this.flagSaving()) {
+      return;
+    }
+    if (!this.connectivity.online()) {
+      this.flagHint.set(FLAG_OFFLINE_HINT);
+
+      return;
+    }
+    const text = this.flagDraft().trim();
+
+    if (text === '') {
+      this.flagHint.set(FLAG_EMPTY_HINT);
+
+      return;
+    }
+    this.flagSaving.set(true);
+    this.flagHint.set(null);
+    try {
+      const flag = await this.source.addConductFlag({
+        at: this.now().toISOString(),
+        author: this.profile.read().name,
+        patientId: this.patientId(),
+        text,
+      });
+
+      this.flags.update(list => [...list, flag]);
+      this.flagDraft.set('');
+    } catch {
+      this.flagHint.set(FLAG_SAVE_FAILED_HINT);
+    } finally {
+      this.flagSaving.set(false);
+    }
+  }
+
+  protected chooseResponsible(name: string): void {
+    if (!this.isDoctor || !this.connectivity.online()) {
+      return;
+    }
+    this.hint.set(null);
+    this.pickedResponsible.set(name);
+  }
+
+  protected chooseCadenceMode(mode: 'daily' | 'weekdays'): void {
+    if (!this.isDoctor || !this.connectivity.online()) {
+      return;
+    }
+    this.hint.set(null);
+    this.cadenceMode.set(mode);
+  }
+
+  protected toggleDay(id: Weekday): void {
+    if (!this.isDoctor || !this.connectivity.online()) {
+      return;
+    }
+    this.hint.set(null);
+    this.pickedDays.update(list => normalizeCadence(list.includes(id) ? list.filter(d => d !== id) : [...list, id]));
+  }
+
+  protected isDayPicked(id: Weekday): boolean {
+    return this.pickedDays().includes(id);
+  }
+
   protected chooseReference(kind: ReferenceWeightKind): void {
     if (!this.isDoctor || !this.connectivity.online()) {
       return;
@@ -320,7 +451,25 @@ export class PlanSectionComponent {
 
       return;
     }
-    if (this.selection().length === 0 && !swallowingChanged && reference === null && targets === null) {
+    const days = this.cadenceMode() === 'daily' ? DAILY_CADENCE : normalizeCadence(this.pickedDays());
+
+    if (days.length === 0) {
+      this.hint.set(EMPTY_CADENCE_HINT);
+
+      return;
+    }
+    const cadenceChanged = days.join() !== normalizeCadence(this.savedCadence()).join();
+    const explicit = this.pickedResponsible();
+    const explicitResponsible = explicit !== null && explicit !== this.savedResponsible();
+
+    if (
+      this.selection().length === 0 &&
+      !swallowingChanged &&
+      reference === null &&
+      targets === null &&
+      !cadenceChanged &&
+      !explicitResponsible
+    ) {
       this.hint.set(EMPTY_SELECTION_HINT);
 
       return;
@@ -342,17 +491,45 @@ export class PlanSectionComponent {
       if (swallowingChanged && decision !== null) {
         this.savedSwallowing.set(await this.source.saveSwallowing({ at, author, decision, patientId }));
       }
-      if (reference !== null) {
-        this.savedReference.set(await this.source.saveReferenceWeight({ at, author, patientId, weight: reference }));
-      }
-      if (targets !== null) {
-        this.savedTargets.set(await this.source.saveTargets({ at, author, patientId, targets }));
-        this.targetsTouched.set(false);
-      }
+      await this.saveTargetsAndSchedule(
+        { at, author, patientId },
+        { reference, targets },
+        cadenceChanged ? days : null,
+      );
     } catch {
       this.hint.set(SAVE_FAILED_HINT);
     } finally {
       this.saving.set(false);
+    }
+  }
+
+  /** Grava peso, metas, cadência e responsável (nesta ordem); `days` é `null` quando a cadência não mudou. */
+  private async saveTargetsAndSchedule(
+    meta: { at: string; author: string; patientId: string },
+    pending: { reference: ReferenceWeight | null; targets: NutritionTargets | null },
+    days: ReviewCadence | null,
+  ): Promise<void> {
+    const { at, author, patientId } = meta;
+
+    if (pending.reference !== null) {
+      this.savedReference.set(
+        await this.source.saveReferenceWeight({ at, author, patientId, weight: pending.reference }),
+      );
+    }
+    if (pending.targets !== null) {
+      this.savedTargets.set(await this.source.saveTargets({ at, author, patientId, targets: pending.targets }));
+      this.targetsTouched.set(false);
+      this.targetsSaved.emit();
+    }
+    if (days !== null) {
+      this.applyCadence(await this.source.saveCadence({ at, author, days, patientId }));
+    }
+    // Sem responsável salvo, quem define o plano passa a ser o responsável inicial.
+    const name = this.pickedResponsible() ?? (this.savedResponsible() === null ? author : null);
+
+    if (name !== null && name !== this.savedResponsible()) {
+      this.savedResponsible.set(await this.source.saveResponsible({ at, author, name, patientId }));
+      this.pickedResponsible.set(null);
     }
   }
 
@@ -375,6 +552,12 @@ export class PlanSectionComponent {
     };
   }
 
+  private applyCadence(days: ReviewCadence): void {
+    this.savedCadence.set(days);
+    this.cadenceMode.set(isDailyCadence(days) ? 'daily' : 'weekdays');
+    this.pickedDays.set(isDailyCadence(days) ? [] : days);
+  }
+
   /** Só regrava a via quando mudou (salvar a decisão sozinha não renova "desde quando" da via). */
   private routeDiffers(): boolean {
     const current = this.current();
@@ -389,11 +572,20 @@ export class PlanSectionComponent {
     this.selection.set([]);
     this.savedSwallowing.set(null);
     this.swallowing.set(null);
+    this.applyCadence(DAILY_CADENCE);
+    this.savedResponsible.set(null);
+    this.pickedResponsible.set(null);
+    this.responsibleOptionList.set([]);
+    this.responsibleOptionsFailed.set(false);
     this.hint.set(null);
     this.risk.set(null);
     this.riskFailed.set(false);
     this.dysphagia.set(null);
     this.dysphagiaFailed.set(false);
+    this.flags.set([]);
+    this.flagsFailed.set(false);
+    this.flagDraft.set('');
+    this.flagHint.set(null);
     this.weights.set({});
     this.weightsFailed.set(false);
     this.savedReference.set(null);
@@ -407,13 +599,17 @@ export class PlanSectionComponent {
     this.percent.set(formatNumber(DEFAULT_CALORIMETRY_PERCENT));
     this.targetsTouched.set(false);
     this.state.set('loading');
+    void this.loadFlags(token);
     void this.loadWeights(token);
+    void this.loadResponsibleOptions(token);
     void this.loadRisk(token);
     void this.loadDysphagia(token);
     try {
-      const [latest, decision] = await Promise.all([
+      const [latest, decision, cadence, responsible] = await Promise.all([
         this.source.loadRoute(this.patientId()),
         this.source.loadSwallowing(this.patientId()),
+        this.source.loadCadence(this.patientId()),
+        this.source.loadResponsible(this.patientId()),
       ]);
       const [reference, targets] = await Promise.all([
         this.source.loadReferenceWeight(this.patientId()).catch(() => null),
@@ -423,6 +619,8 @@ export class PlanSectionComponent {
       if (token === this.token) {
         this.savedSwallowing.set(decision);
         this.swallowing.set(decision);
+        this.applyCadence(cadence ?? DAILY_CADENCE);
+        this.savedResponsible.set(responsible);
         this.current.set(latest);
         this.selection.set(latest?.routes ?? []);
         this.savedReference.set(reference);
@@ -434,6 +632,21 @@ export class PlanSectionComponent {
     } catch {
       if (token === this.token) {
         this.state.set('error');
+      }
+    }
+  }
+
+  /** Independente do resto do Plano: falha só avisa em texto na área de sinalizações. */
+  private async loadFlags(token: number): Promise<void> {
+    try {
+      const list = await this.source.loadConductFlags(this.patientId());
+
+      if (token === this.token) {
+        this.flags.set(list);
+      }
+    } catch {
+      if (token === this.token) {
+        this.flagsFailed.set(true);
       }
     }
   }
@@ -462,6 +675,21 @@ export class PlanSectionComponent {
     } catch {
       if (token === this.token) {
         this.weightsFailed.set(true);
+      }
+    }
+  }
+
+  /** Lista de médicos: falha degrada só este campo, sem perder a escolha. */
+  private async loadResponsibleOptions(token: number): Promise<void> {
+    try {
+      const list = await this.source.loadResponsibleOptions(this.patientId());
+
+      if (token === this.token) {
+        this.responsibleOptionList.set(list);
+      }
+    } catch {
+      if (token === this.token) {
+        this.responsibleOptionsFailed.set(true);
       }
     }
   }

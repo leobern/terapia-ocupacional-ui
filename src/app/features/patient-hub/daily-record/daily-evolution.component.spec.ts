@@ -8,7 +8,7 @@ import { DailyEvolutionSource } from './daily-evolution-source';
 import { EvolutionAiStructurer } from './evolution-ai-structurer';
 import { DailyEvolution, EvolutionSaveRequest } from './daily-record.models';
 import {
-  DailyRecordSectionComponent,
+  DailyEvolutionComponent,
   EVOLUTION_AI_EMPTY_HINT,
   EVOLUTION_AI_FAILED_HINT,
   EVOLUTION_AI_UNAVAILABLE_HINT,
@@ -18,7 +18,7 @@ import {
   EVOLUTION_LOAD_FAILED_HINT,
   EVOLUTION_OFFLINE_HINT,
   EVOLUTION_SAVE_FAILED_HINT,
-} from './daily-record-section.component';
+} from './daily-evolution.component';
 
 class FakeSource extends DailyEvolutionSource {
   current: DailyEvolution | null = null;
@@ -55,23 +55,27 @@ class FakeAi extends EvolutionAiStructurer {
   }
 }
 
-describe('DailyRecordSectionComponent', () => {
+describe('DailyEvolutionComponent', () => {
   let ai: FakeAi;
-  let fixture: ComponentFixture<DailyRecordSectionComponent>;
+  let fixture: ComponentFixture<DailyEvolutionComponent>;
   let source: FakeSource;
 
   const el = (): HTMLElement => fixture.nativeElement as HTMLElement;
   const text = (): string => el().textContent.replace(/\s+/gu, ' ');
   const area = (): HTMLTextAreaElement | null => el().querySelector('textarea');
   const saveButton = (): HTMLButtonElement | null =>
-    Array.from(el().querySelectorAll('button')).find(b => b.textContent.includes('Salvar registro')) ?? null;
+    Array.from(el().querySelectorAll('button')).find(b => b.textContent.includes('Salvar evolução')) ?? null;
   const settle = async (): Promise<void> => {
     fixture.detectChanges();
     await fixture.whenStable();
     fixture.detectChanges();
   };
   const openIt = async (): Promise<void> => {
-    (el().querySelector('.record__row') as HTMLButtonElement).click();
+    fixture.componentRef.setInput('open', true);
+    await settle();
+  };
+  const closeIt = async (): Promise<void> => {
+    fixture.componentRef.setInput('open', false);
     await settle();
   };
   const type = async (value: string): Promise<void> => {
@@ -105,7 +109,7 @@ describe('DailyRecordSectionComponent', () => {
         { provide: NOW, useValue: (): Date => new Date(2026, 10, 20, 15, 30) },
       ],
     });
-    fixture = TestBed.createComponent(DailyRecordSectionComponent);
+    fixture = TestBed.createComponent(DailyEvolutionComponent);
     fixture.componentRef.setInput('patientId', 'p9');
     await settle();
   };
@@ -227,32 +231,10 @@ describe('DailyRecordSectionComponent', () => {
 
     it('fechar descarta respostas pendentes e reabrir recarrega', async () => {
       await openIt();
-      (el().querySelector('app-icon-button button') as HTMLButtonElement).click();
-      await settle();
-
-      expect(el().querySelector('dialog')?.open).toBe(false);
+      await closeIt();
       await openIt();
 
       expect(source.loadedDays).toEqual(['p9|2026-11-20', 'p9|2026-11-20']);
-    });
-
-    it('Esc e clique no scrim fecham o diálogo; salvar sem condição é ignorado', async () => {
-      await openIt();
-      const dialog = el().querySelector('dialog') as HTMLDialogElement;
-
-      dialog.dispatchEvent(new Event('cancel', { cancelable: true }));
-      await settle();
-
-      expect(dialog.open).toBe(false);
-      await openIt();
-      dialog.click();
-      await settle();
-
-      expect(dialog.open).toBe(false);
-      await openIt();
-      el().querySelector<HTMLElement>('.record__body')?.click();
-
-      expect(dialog.open).toBe(true);
     });
   });
 
@@ -289,7 +271,7 @@ describe('DailyRecordSectionComponent', () => {
         jasmine.objectContaining({ author: 'Dra. Ana', origin: 'ai', text: 'Texto sugerido pela IA.' }),
       );
       expect(el().querySelector('[data-testid="ai-tag"]')).toBeNull();
-      expect(buttonByLabel('Salvar registro')).not.toBeNull();
+      expect(buttonByLabel('Salvar evolução')).not.toBeNull();
       expect(text()).toContain('Registrada por Dra. Ana');
     });
 

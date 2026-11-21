@@ -6,37 +6,8 @@
   display: block;
 }
 
-// Linha da seção recolhida (padrão da caixa "Internações anteriores").
-.record__row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: tokens.$space-8;
-  box-sizing: border-box;
-  width: 100%;
-  min-height: 44px;
-  padding: tokens.$space-8 tokens.$space-16;
-  border: 0;
-  border-radius: tokens.$radius-md;
-  background: tokens.c(surface-2);
-  color: tokens.c(content-1);
-  text-align: start;
-  cursor: pointer;
-
-  @include typography.label-md;
-
-  &:focus-visible {
-    outline: var(--focus-ring-width) solid tokens.c(focus-ring);
-    outline-offset: var(--focus-ring-offset);
-  }
-}
-
-.record__row-title {
-  flex: 1 0 0;
-}
-
-// Figma 4682-9078 (bottom-sheet · avaliação): fundo surface, padding 12/16/24/16, gap 16.
-.record {
+// Figma 4717-9855 (bottom-sheet · registro diário): fundo surface, padding 12/16/24/16, gap 16.
+.daily {
   display: none;
   flex-direction: column;
   gap: tokens.$space-16;
@@ -69,7 +40,7 @@
   }
 }
 
-.record__handle {
+.daily__handle {
   align-self: center;
   width: 40px;
   height: 4px;
@@ -81,7 +52,7 @@
   }
 }
 
-.record__header {
+.daily__header {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -89,7 +60,7 @@
   min-height: 44px;
 }
 
-.record__title {
+.daily__title {
   margin: 0;
   color: tokens.c(content-1);
 
@@ -97,7 +68,7 @@
 }
 
 // Formulário com rolagem própria; clusters por seção separados por space-16.
-.record__body {
+.daily__body {
   display: flex;
   flex-direction: column;
   gap: tokens.$space-16;
@@ -105,13 +76,13 @@
   overflow-y: auto;
 }
 
-.record__section {
+.daily__section {
   display: flex;
   flex-direction: column;
   gap: tokens.$space-8;
 }
 
-.record__section-header {
+.daily__section-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -119,16 +90,20 @@
   padding: tokens.$space-8 tokens.$space-16;
 }
 
-.record__section-title {
+.daily__section-title {
   margin: 0;
   color: tokens.c(content-1);
 
   @include typography.title-md;
 }
 
-.record__card {
-  min-inline-size: 0;
-  margin: 0;
+.daily__count {
+  color: tokens.c(content-4);
+
+  @include typography.label-md;
+}
+
+.daily__card {
   display: flex;
   flex-direction: column;
   gap: tokens.$space-8;
@@ -138,47 +113,21 @@
   background: tokens.c(surface);
 }
 
-.record__label {
+.daily__label {
   color: tokens.c(content-1);
 
   @include typography.title-md;
 }
 
-.record__value {
-  margin: 0;
-  color: tokens.c(content-1);
-
-  @include typography.body-lg;
-}
-
-.record__help {
-  margin: 0;
-  color: tokens.c(content-4);
-
-  @include typography.caption;
-}
-
-.record__status {
-  margin: 0;
-  color: tokens.c(content-4);
-
-  @include typography.body-md;
-
-  &--warning {
-    color: tokens.c(content-1);
-  }
-}
-
-.record__textarea {
+.daily__input {
   box-sizing: border-box;
   width: 100%;
-  min-height: 96px;
-  padding: tokens.$space-12;
-  border: 1px solid tokens.c(border);
-  border-radius: tokens.$radius-12;
+  min-height: 48px;
+  padding: 0 tokens.$space-16;
+  border: 1px solid tokens.c(border-2);
+  border-radius: tokens.$radius-sm;
   background: tokens.c(surface);
   color: tokens.c(content-1);
-  resize: vertical;
 
   @include typography.body-lg;
 
@@ -188,20 +137,66 @@
   }
 }
 
-.record__chat {
+.daily__help {
+  margin: 0;
+  color: tokens.c(content-4);
+
+  @include typography.caption;
+}
+
+// Histórico do dia dentro do card: um ponto por linha (valor + autor · hora), sem depender de cor.
+.daily__history {
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$space-4;
+  margin: 0;
+  padding: tokens.$space-8 0 0;
+  border-top: 1px solid tokens.c(border);
+  list-style: none;
+}
+
+.daily__point {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: tokens.$space-8;
+  color: tokens.c(content-1);
+
+  @include typography.body-md;
+
+  &--empty {
+    color: tokens.c(content-4);
+  }
+}
+
+.daily__point-meta {
+  color: tokens.c(content-4);
+
+  @include typography.caption;
+}
+
+.daily__status {
+  margin: 0;
+  color: tokens.c(content-4);
+
+  @include typography.body-md;
+
+  &--warning {
+    color: tokens.c(content-1);
+  }
+
+  &--error {
+    color: tokens.c(comm-alert);
+  }
+}
+
+.daily__save {
   display: block;
 }
 
-.record__ai-tag {
-  display: inline-flex;
-  align-items: center;
-  align-self: flex-start;
-  gap: tokens.$space-4;
-  height: 24px;
-  padding-inline: tokens.$space-8;
-  border-radius: tokens.$radius-pill;
-  background: tokens.c(surface-2);
-  color: tokens.c(secondary);
-
-  @include typography.label-sm;
+.daily__failure {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: tokens.$space-8;
 }
