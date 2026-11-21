@@ -1,6 +1,7 @@
-import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { ApplicationConfig, provideZoneChangeDetection } from '@angular/core';
 import { provideRouter } from '@angular/router';
+import { environment } from '@environments/environment';
 import { provideEffects } from '@ngrx/effects';
 import { provideRouterStore } from '@ngrx/router-store';
 import { provideStore } from '@ngrx/store';
@@ -78,6 +79,8 @@ import { LocalStartupStateReader } from './features/splash/local-startup-state-r
 import { StartupStateReader } from './features/splash/startup-state';
 import { ProvisionalSessionRoleReader } from './shared/auth/provisional-session-role-reader';
 import { SessionRoleReader } from './shared/auth/session-role';
+import { DEV_BACKEND_PROVIDERS } from './shared/dev-backend/dev-backend.providers';
+import { devTokenInterceptor } from './shared/dev-backend/dev-token.interceptor';
 import { ASSISTANT_QUERY_RESOLVERS } from './shared/services/assistant-query-resolver';
 import { ProvisionalUserDirectory } from './shared/services/provisional-user-directory';
 import { UserDirectory } from './shared/services/user-directory';
@@ -124,9 +127,11 @@ export const appConfig: ApplicationConfig = {
     { multi: true, provide: ASSISTANT_QUERY_RESOLVERS, useClass: PendingNotificationsQueryResolver },
     provideZoneChangeDetection({ eventCoalescing: true }),
     provideRouter(routes),
-    provideHttpClient(),
+    provideHttpClient(withInterceptors(environment.devBackend ? [devTokenInterceptor] : [])),
     provideStore(),
     provideEffects(),
     provideRouterStore(),
+    // Backend real do EP-009 com token de teste: só em `ng serve --configuration local`.
+    ...(environment.devBackend ? DEV_BACKEND_PROVIDERS : []),
   ],
 };
