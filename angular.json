@@ -41,6 +41,7 @@
               "optimization": false,
               "sourceMap": true
             },
+"local": {              "extractLicenses": false,              "fileReplacements": [                {                  "replace": "src/environments/environment.ts",                  "with": "src/environments/environment.local.ts"                }              ],              "optimization": false,              "sourceMap": true            },
             "production": {
               "budgets": [
                 {
@@ -103,7 +104,7 @@
             },
             "local": {
               "proxyConfig": "proxies/proxy.local.conf.js",
-              "buildTarget": "terapia-nutricional-ui:build:development",
+              "buildTarget": "terapia-nutricional-ui:build:local",
               "host": "127.0.0.1",
               "open": true
             },
