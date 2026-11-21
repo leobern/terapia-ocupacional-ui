@@ -54,6 +54,9 @@
               {{ error }}
             </p>
           }
+          @if (aiNotes()[parameter.id]; as note) {
+            <p class="daily__ai-note" role="status">{{ note }}</p>
+          }
           <p class="daily__help" [id]="'daily-help-' + parameter.id">
             {{ helpOf(parameter) }}
           </p>
@@ -77,6 +80,54 @@
               </li>
             }
           </ul>
+        </div>
+      }
+      @for (extra of extras(); track extra.id) {
+        <div class="daily__card" data-testid="extra-card">
+          <label class="daily__label" [for]="'daily-name-' + extra.id"
+            >Nome do parâmetro</label
+          >
+          <input
+            class="daily__input"
+            type="text"
+            autocomplete="off"
+            [id]="'daily-name-' + extra.id"
+            [value]="extra.label"
+            (input)="editExtra(extra.id, 'label', $any($event.target).value)"
+          />
+          <label class="daily__label" [for]="'daily-unit-' + extra.id"
+            >Unidade</label
+          >
+          <input
+            class="daily__input"
+            type="text"
+            autocomplete="off"
+            [id]="'daily-unit-' + extra.id"
+            [value]="extra.unit"
+            (input)="editExtra(extra.id, 'unit', $any($event.target).value)"
+          />
+          <label class="daily__label" [for]="'daily-' + extra.id">Valor</label>
+          <input
+            class="daily__input"
+            type="text"
+            inputmode="decimal"
+            autocomplete="off"
+            [id]="'daily-' + extra.id"
+            [value]="valueOf(extra.id)"
+            [attr.aria-invalid]="errors()[extra.id] ? 'true' : null"
+            (input)="edit(extra.id, $any($event.target).value)"
+          />
+          @if (errors()[extra.id]; as error) {
+            <p class="daily__status daily__status--error" role="alert">
+              {{ error }}
+            </p>
+          }
+          @if (aiNotes()[extra.id]; as note) {
+            <p class="daily__ai-note" role="status">{{ note }}</p>
+          }
+          <p class="daily__help">
+            Parâmetro fora da lista: só é gravado ao salvar o registro.
+          </p>
         </div>
       }
     </section>
@@ -108,6 +159,34 @@
         (click)="save()"
       />
     </div>
+  }
+  @if (aiProcessing()) {
+    <p class="daily__status" role="status">{{ aiProcessingHint }}</p>
+  }
+  @if (!online()) {
+    <p class="daily__status daily__status--warning" role="status">
+      {{ aiUnavailableHint }}
+    </p>
+  } @else if (aiNotice(); as notice) {
+    <p class="daily__status daily__status--warning" role="alert">
+      {{ notice }}
+    </p>
+  }
+  <!-- Offline: o campo é recriado desabilitado (libera o microfone de uma gravação em curso). -->
+  @if (online()) {
+    <app-input-chat
+      class="daily__chat"
+      [placeholder]="aiPlaceholder"
+      [disabled]="aiProcessing()"
+      (audioSend)="onAudio($event)"
+      (audioModeError)="onAudioError($event)"
+    />
+  } @else {
+    <app-input-chat
+      class="daily__chat"
+      [placeholder]="aiPlaceholder"
+      [disabled]="true"
+    />
   }
   <app-button
     class="daily__save"

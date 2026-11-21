@@ -10,7 +10,7 @@ import { PageContainerComponent } from '../../shared/components/page-container/p
 import { TherapyTagComponent } from '../../shared/components/therapy-tag/therapy-tag.component';
 import { PhIconComponent } from '../../shared/icons/ph-icon/ph-icon.component';
 import { ConnectivityService } from '../../shared/services/connectivity.service';
-import { ScreenActionsService } from '../../shared/services/screen-actions.service';
+import { ScreenAction, ScreenActionsService } from '../../shared/services/screen-actions.service';
 import { adequacyPanelValues, DailyAdequacy } from '../daily-evolution/adequacy/adequacy.models';
 import { AdequacySummaryComponent } from '../daily-evolution/adequacy/adequacy-summary.component';
 import { DailyAdequacyService } from '../daily-evolution/adequacy/daily-adequacy.service';
@@ -49,6 +49,7 @@ import { HypothesisOrigin, PatientHubProfile } from './patient-hub.models';
 import { HypothesisSynthesizer, HypothesisWriter, PatientHubSource } from './patient-hub-source';
 import { PlanSectionComponent } from './plan/plan-section.component';
 import { Prescription } from './prescription/prescription.models';
+import { PrescriptionReviewComponent } from './prescription/prescription-review.component';
 import { PrescriptionSheetComponent } from './prescription/prescription-sheet.component';
 import { PrescriptionSource } from './prescription/prescription-source';
 import { PrescriptionSummaryComponent } from './prescription/prescription-summary.component';
@@ -93,6 +94,7 @@ export const DIAGNOSIS_FAILED_HINT =
     PlanSectionComponent,
     PrescriptionSheetComponent,
     PrescriptionSummaryComponent,
+    PrescriptionReviewComponent,
     AdequacySummaryComponent,
     PriorStaysBoxComponent,
     TherapyTagComponent,
@@ -158,6 +160,8 @@ export class PatientHubComponent implements OnInit {
   protected readonly prescriptionOpen = signal(false);
   /** Prescrição vigente exibida no Hub; `null` = sem prescrição (ou leitura falhou). */
   protected readonly prescription = signal<Prescription | null>(null);
+  /** Revisão diária da prescrição (FT-004-8), aberta pela ação dos atalhos; só para o médico. */
+  protected readonly prescriptionReviewOpen = signal(false);
 
   protected readonly phase = signal<FillPhase>('input');
   /** Texto colado do prontuário (permanece disponível se a síntese falhar). */
@@ -232,20 +236,25 @@ export class PatientHubComponent implements OnInit {
     // A ação só existe com o paciente carregado e hospital com vínculo aprovado em contexto.
     effect(onCleanup => {
       if (this.status() === 'ready' && this.hospitalId() !== null) {
-        onCleanup(
-          this.screenActions.register([
-            { id: 'daily-record', label: 'Registro diário', navigate: (): void => this.dailyRecordOpen.set(true) },
-            ...(this.professional.read().role === 'doctor'
-              ? [
-                  {
-                    id: 'adjust-prescription',
-                    label: 'Ajustar a prescrição',
-                    navigate: (): void => this.prescriptionOpen.set(true),
-                  },
-                ]
-              : []),
-          ]),
-        );
+        const actions: ScreenAction[] = [
+          { id: 'daily-record', label: 'Registro diário', navigate: (): void => this.dailyRecordOpen.set(true) },
+        ];
+
+        if (this.professional.read().role === 'doctor') {
+          actions.push(
+            {
+              id: 'adjust-prescription',
+              label: 'Ajustar a prescrição',
+              navigate: (): void => this.prescriptionOpen.set(true),
+            },
+            {
+              id: 'prescription-review',
+              label: 'Revisão da prescrição',
+              navigate: (): void => this.prescriptionReviewOpen.set(true),
+            },
+          );
+        }
+        onCleanup(this.screenActions.register(actions));
       }
     });
   }

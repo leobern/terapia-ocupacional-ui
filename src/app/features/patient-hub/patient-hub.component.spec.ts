@@ -29,6 +29,7 @@ import { DailyEvolutionSource } from './daily-record/daily-evolution-source';
 import { DailyRecordSource } from './daily-record/daily-record-source';
 import { DailyRecordWriter } from './daily-record/daily-record-writer';
 import { EvolutionAiStructurer } from './daily-record/evolution-ai-structurer';
+import { ParameterAiStructurer } from './daily-record/parameter-ai-structurer';
 import {
   DIAGNOSIS_FAILED_HINT,
   DIAGNOSIS_OFFLINE_HINT,
@@ -159,7 +160,6 @@ class FakeDiagnosis extends DiagnosisSource {
 const diagnosis = new FakeDiagnosis();
 const priorStays = new FakePriorStays();
 const priorSynth = new FakePriorSynth();
-let profileRole = 'doctor';
 const prescriptionStore: { fail: boolean; value: Prescription | null } = { fail: false, value: null };
 const PRESCRIPTION: Prescription = {
   at: '2026-11-21T10:00:00Z',
@@ -212,6 +212,7 @@ async function setup(
   source: FakeSource,
   id: string | null = 'p1',
   hospitals: unknown[] = [{ id: 'h', name: 'Hospital Vila Nova Star' }],
+  role = 'doctor',
 ): Promise<ComponentFixture<PatientHubComponent>> {
   TestBed.configureTestingModule({
     providers: [
@@ -240,6 +241,7 @@ async function setup(
       },
       { provide: DailyEvolutionSource, useValue: { load: (): Promise<null> => Promise.resolve(null) } },
       { provide: EvolutionAiStructurer, useValue: { suggest: (): Promise<string> => Promise.resolve('') } },
+      { provide: ParameterAiStructurer, useValue: { suggest: (): Promise<readonly never[]> => Promise.resolve([]) } },
       { provide: RefeedingRiskSource, useValue: { load: (): Promise<null> => Promise.resolve(null) } },
       { provide: AssessmentSource, useValue: { loadLatest: (): Promise<null> => Promise.resolve(null) } },
       { provide: AssessmentAiStructurer, useValue: { structure: (): Promise<object> => Promise.resolve({}) } },
@@ -248,18 +250,20 @@ async function setup(
       { provide: DailyRecordWriter, useValue: { record: (): Promise<[]> => Promise.resolve([]) } },
       { provide: FormulasApi, useValue: { list: (): Promise<[]> => Promise.resolve([]) } },
       { provide: NutritionTargetsReader, useValue: { current: (): Promise<null> => Promise.resolve(null) } },
+      { provide: PriorStaysSource, useValue: priorStays },
+      { provide: PriorStaysSynthesizer, useValue: priorSynth },
+      {
+        provide: ProfessionalProfileReader,
+        useValue: { read: (): { name: string; role: string } => ({ name: 'Michelle', role }) },
+      },
       {
         provide: PrescriptionSource,
         useValue: {
           load: (): Promise<Prescription | null> =>
             prescriptionStore.fail ? Promise.reject(new Error('x')) : Promise.resolve(prescriptionStore.value),
+          loadActive: (): Promise<null> => Promise.resolve(null),
+          loadReview: (): Promise<null> => Promise.resolve(null),
         },
-      },
-      { provide: PriorStaysSource, useValue: priorStays },
-      { provide: PriorStaysSynthesizer, useValue: priorSynth },
-      {
-        provide: ProfessionalProfileReader,
-        useValue: { read: (): { name: string; role: string } => ({ name: 'Michelle', role: profileRole }) },
       },
       { provide: NOW, useValue: (): Date => new Date(2026, 4, 28, 12) },
       {
@@ -304,7 +308,6 @@ const cards = (f: ComponentFixture<unknown>): string[] =>
 
 describe('PatientHubComponent', () => {
   beforeEach(() => {
-    profileRole = 'doctor';
     prescriptionStore.fail = false;
     prescriptionStore.value = null;
     store = new ProvisionalNutritionCardStore();
@@ -371,9 +374,38 @@ describe('PatientHubComponent', () => {
       const dialog = (): HTMLDialogElement =>
         (f.nativeElement as HTMLElement).querySelector('app-daily-record-sheet dialog') as HTMLDialogElement;
 
-      expect(actions.map(a => a.label)).toEqual(['Registro diário', 'Ajustar a prescrição']);
+      expect(actions.map(a => a.label)).toEqual(['Registro diário', 'Ajustar a prescrição', 'Revisão da prescrição']);
       expect(dialog().open).toBe(false);
       actions[0].navigate?.();
+      f.detectChanges();
+      await f.whenStable();
+
+      expect(dialog().open).toBe(true);
+      dialog().dispatchEvent(new Event('cancel', { cancelable: true }));
+      f.detectChanges();
+
+      expect(dialog().open).toBe(false);
+    });
+
+    it('perfil não médico não recebe a ação "Revisão da prescrição"', async () => {
+      await setup(new FakeSource(), 'p1', [{ id: 'h', name: 'Hospital Vila Nova Star' }], 'other');
+
+      expect(
+        TestBed.inject(ScreenActionsService)
+          .actions()
+          .map(a => a.label),
+      ).toEqual(['Registro diário']);
+    });
+
+    it('médico abre a revisão da prescrição pelos atalhos e fecha com Esc', async () => {
+      const f = await setup(new FakeSource());
+      const action = TestBed.inject(ScreenActionsService)
+        .actions()
+        .find(a => a.id === 'prescription-review');
+      const dialog = (): HTMLDialogElement =>
+        (f.nativeElement as HTMLElement).querySelector('app-prescription-review dialog') as HTMLDialogElement;
+
+      action?.navigate?.();
       f.detectChanges();
       await f.whenStable();
 
@@ -402,17 +434,6 @@ describe('PatientHubComponent', () => {
       f.detectChanges();
 
       expect(dialog().open).toBe(false);
-    });
-
-    it('perfil que não é médico não vê a ação de ajustar a prescrição', async () => {
-      profileRole = 'other';
-      await setup(new FakeSource());
-
-      expect(
-        TestBed.inject(ScreenActionsService)
-          .actions()
-          .map(a => a.label),
-      ).toEqual(['Registro diário']);
     });
 
     it('sem hospital com vínculo em contexto, a ação não é oferecida', async () => {

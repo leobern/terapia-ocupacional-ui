@@ -1,3 +1,5 @@
+import { formatNumber } from '../plan/plan-targets';
+
 export type AdministrationModality = 'continuous' | 'intermittent' | 'cyclic';
 
 export const MODALITY_OPTIONS: readonly { readonly id: AdministrationModality; readonly label: string }[] = [
@@ -215,4 +217,61 @@ export function scheduleText(prescription: Prescription): string {
   const start = `Início ${prescription.startTime}`;
 
   return prescription.pauseTimes.length === 0 ? start : `${start} · pausa ${prescription.pauseTimes.join(', ')}`;
+}
+
+/** Prescrição ativa do paciente (FT-004-8). Somente leitura nesta story: manter não altera nenhum campo. */
+export interface ActivePrescription {
+  /** ISO de quando foi prescrita. */
+  readonly at: string;
+  readonly author: string;
+  /** Nome da fórmula do catálogo da Farmácia. */
+  readonly formula: string;
+  /** Horas de administração por dia; `null` quando não informado. */
+  readonly hoursPerDay: number | null;
+  readonly kcal: number;
+  /** Vazão em ml/h; `null` quando não se aplica. */
+  readonly flowMlPerHour: number | null;
+  readonly proteinG: number;
+  /** Módulo proteico em g; `null` quando não há. */
+  readonly proteinModuleG: number | null;
+  readonly role: string;
+  readonly volumeMlPerDay: number;
+}
+
+/** Registro de que a revisão diária ocorreu (decisão "manter"). */
+export interface PrescriptionReview {
+  readonly at: string;
+  readonly author: string;
+  /** Dia da revisão (AAAA-MM-DD). */
+  readonly day: string;
+}
+
+export interface PrescriptionReviewRequest extends PrescriptionReview {
+  readonly patientId: string;
+}
+
+/** Texto de um número opcional com unidade; "—" quando ausente. */
+export function formatOptional(value: number | null, unit: string, digits = 0): string {
+  return value === null ? '—' : `${formatNumber(value, 0, digits)} ${unit}`;
+}
+
+/** Papel exibido na projeção da prescrição para o resumo da revisão (só o médico prescreve). */
+export const PRESCRIBER_ROLE = 'Médico';
+
+/** Projeção somente leitura da prescrição vigente para o resumo da revisão diária (FT-004-8). */
+export function toActivePrescription(prescription: Prescription): ActivePrescription {
+  const continuous = prescription.modality === 'continuous';
+
+  return {
+    at: prescription.at,
+    author: prescription.author,
+    flowMlPerHour: continuous ? Math.round(prescription.volumeMl / CONTINUOUS_HOURS) : null,
+    formula: prescription.formulaName,
+    hoursPerDay: continuous ? CONTINUOUS_HOURS : null,
+    kcal: Math.round(prescription.kcalPerMl * prescription.volumeMl),
+    proteinG: Math.round(prescription.proteinPerMl * prescription.volumeMl * 10) / 10,
+    proteinModuleG: null,
+    role: PRESCRIBER_ROLE,
+    volumeMlPerDay: prescription.volumeMl,
+  };
 }

@@ -6,6 +6,7 @@ import {
   PAUSE_DUPLICATED_HINT,
   PAUSE_REQUIRED_HINT,
   PrescriptionDraft,
+  toActivePrescription,
   toPrescription,
 } from './prescription.models';
 
@@ -133,5 +134,43 @@ describe('toPrescription', () => {
 
   it('devolve null se inválida', () => {
     expect(toPrescription({ ...base, volume: '' }, ctx)).toBeNull();
+  });
+});
+
+describe('toActivePrescription', () => {
+  const prescription = {
+    at: '2026-11-20T13:33:00',
+    author: 'Rafael',
+    formulaId: 'f1',
+    formulaName: 'Hiper',
+    kcalPerMl: 1.5,
+    modality: 'continuous',
+    nursingNotes: '',
+    pauseTimes: [],
+    proteinPerMl: 0.06,
+    startTime: '08:00',
+    volumeMl: 1200,
+  } as const;
+
+  it('contínua: calcula kcal, proteína e vazão sobre 24 h', () => {
+    expect(toActivePrescription(prescription)).toEqual({
+      at: prescription.at,
+      author: 'Rafael',
+      flowMlPerHour: 50,
+      formula: 'Hiper',
+      hoursPerDay: 24,
+      kcal: 1800,
+      proteinG: 72,
+      proteinModuleG: null,
+      role: 'Médico',
+      volumeMlPerDay: 1200,
+    });
+  });
+
+  it('intermitente ou cíclica: sem horas nem vazão informadas', () => {
+    const active = toActivePrescription({ ...prescription, modality: 'intermittent' });
+
+    expect(active.hoursPerDay).toBeNull();
+    expect(active.flowMlPerHour).toBeNull();
   });
 });

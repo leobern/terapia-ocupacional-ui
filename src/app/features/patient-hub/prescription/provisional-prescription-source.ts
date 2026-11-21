@@ -1,11 +1,21 @@
-import { Injectable } from '@angular/core';
+import { inject, Injectable } from '@angular/core';
 
-import { Prescription, PrescriptionSaveRequest } from './prescription.models';
+import { ProfessionalProfileReader } from '../../home/professional-profile';
+import {
+  ActivePrescription,
+  Prescription,
+  PrescriptionReview,
+  PrescriptionReviewRequest,
+  PrescriptionSaveRequest,
+  toActivePrescription,
+} from './prescription.models';
 import { PrescriptionSource } from './prescription-source';
 
-/** Provisório, em memória: o `p1` começa com a prescrição do exemplo do Figma. */
+/** Provisório, em memória: o `p1` começa com a prescrição do exemplo do Figma; a revisão vale até recarregar. */
 @Injectable()
 export class ProvisionalPrescriptionSource extends PrescriptionSource {
+  private readonly profile = inject(ProfessionalProfileReader);
+  private readonly reviews = new Map<string, PrescriptionReview>();
   private readonly store = new Map<string, Prescription>([
     [
       'p1',
@@ -33,5 +43,26 @@ export class ProvisionalPrescriptionSource extends PrescriptionSource {
     this.store.set(request.patientId, request.prescription);
 
     return Promise.resolve(request.prescription);
+  }
+
+  loadActive(patientId: string): Promise<ActivePrescription | null> {
+    const prescription = this.store.get(patientId);
+
+    return Promise.resolve(prescription === undefined ? null : toActivePrescription(prescription));
+  }
+
+  loadReview(patientId: string, day: string): Promise<PrescriptionReview | null> {
+    return Promise.resolve(this.reviews.get(`${patientId}|${day}`) ?? null);
+  }
+
+  keep(request: PrescriptionReviewRequest): Promise<PrescriptionReview> {
+    if (this.profile.read().role !== 'doctor') {
+      return Promise.reject(new Error('Somente o médico revisa a prescrição.'));
+    }
+    const review: PrescriptionReview = { at: request.at, author: request.author, day: request.day };
+
+    this.reviews.set(`${request.patientId}|${request.day}`, review);
+
+    return Promise.resolve(review);
   }
 }

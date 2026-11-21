@@ -5,7 +5,13 @@ import { NOW, ProfessionalProfileReader } from '../../home/professional-profile'
 import { Formula } from '../../pharmacy/formulas.models';
 import { FormulasApi } from '../../pharmacy/formulas-api';
 import { NutritionTargetsReader } from '../plan/nutrition-targets-reader';
-import { Prescription, PrescriptionSaveRequest } from './prescription.models';
+import {
+  ActivePrescription,
+  Prescription,
+  PrescriptionReview,
+  PrescriptionReviewRequest,
+  PrescriptionSaveRequest,
+} from './prescription.models';
 import { PrescriptionSheetComponent } from './prescription-sheet.component';
 import { PrescriptionSource } from './prescription-source';
 
@@ -58,6 +64,15 @@ class FakeSource extends PrescriptionSource {
     this.saved.push(request);
 
     return Promise.resolve(request.prescription);
+  }
+  loadActive(): Promise<ActivePrescription | null> {
+    return Promise.resolve(null);
+  }
+  loadReview(): Promise<PrescriptionReview | null> {
+    return Promise.resolve(null);
+  }
+  keep(request: PrescriptionReviewRequest): Promise<PrescriptionReview> {
+    return Promise.resolve({ at: request.at, author: request.author, day: request.day });
   }
 }
 

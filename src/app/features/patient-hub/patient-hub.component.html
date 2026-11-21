@@ -287,6 +287,12 @@
             [patientId]="p.id"
             (closed)="dailyRecordOpen.set(false)"
           />
+          <app-prescription-review
+            [open]="prescriptionReviewOpen()"
+            [patientId]="p.id"
+            [adequacy]="adequacy()"
+            (closed)="prescriptionReviewOpen.set(false)"
+          />
         }
       }
       @case ('not-found') {
