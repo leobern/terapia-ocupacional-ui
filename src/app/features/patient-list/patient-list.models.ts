@@ -1,3 +1,5 @@
+import { ReviewCadence } from '../patient-hub/plan/review-cadence';
+
 /** Tipo de terapia nutricional exibido em texto no card (FR-003). */
 export type TherapyType = 'VO' | 'NE' | 'NP' | 'MISTA';
 
@@ -38,6 +40,15 @@ export interface CensusPatient {
    * Ausente = não informado: o paciente segue como ativo. Alta/óbito/transferência não entram aqui (FR-016).
    */
   readonly pendingTasks?: number;
+
+  /**
+   * Cadência da próxima revisão definida no Plano de Intervenção (FT-004-6), só leitura.
+   * Ausente = sem cadência gravada: vale a diária.
+   */
+  readonly reviewCadence?: ReviewCadence;
+
+  /** A reavaliação da data selecionada já foi concluída. Ausente = ainda aberta. */
+  readonly reassessmentDone?: boolean;
 }
 
 /** Projeção somente leitura "paciente em visão de card" (sem data de nascimento — FR-003). */
@@ -56,4 +67,6 @@ export interface PatientCard {
   readonly firstEvaluation: boolean;
   /** FR-016: todas as pendências da data concluídas; segue na lista, em cinza. */
   readonly finished: boolean;
+  /** FT-004-6: a data cai na cadência de revisão do Plano e a reavaliação ainda está aberta. */
+  readonly reassessmentDue: boolean;
 }
