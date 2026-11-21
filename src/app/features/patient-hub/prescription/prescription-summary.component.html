@@ -1,10 +1,13 @@
-@if (lines(); as l) {
+@for (l of lines(); track l.route) {
   <section
     class="rx-summary"
     aria-label="Prescrição vigente"
     data-testid="rx-summary"
   >
     <h3 class="rx-summary__title">{{ title() }}</h3>
+    @if (l.routeTitle; as via) {
+      <p class="rx-summary__route" data-testid="rx-summary-route">{{ via }}</p>
+    }
     <dl class="rx-summary__list">
       <div class="rx-summary__item">
         <dt>Fórmula</dt>

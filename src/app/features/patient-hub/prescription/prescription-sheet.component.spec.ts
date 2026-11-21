@@ -54,19 +54,19 @@ class FakeCatalog extends FormulasApi {
 class FakeSource extends PrescriptionSource {
   saved: PrescriptionSaveRequest[] = [];
   fail = false;
-  load(): Promise<Prescription | null> {
-    return Promise.resolve(null);
+  load(): Promise<readonly Prescription[]> {
+    return Promise.resolve([]);
   }
-  save(request: PrescriptionSaveRequest): Promise<Prescription> {
+  save(request: PrescriptionSaveRequest): Promise<readonly Prescription[]> {
     if (this.fail) {
       return Promise.reject(new Error('x'));
     }
     this.saved.push(request);
 
-    return Promise.resolve(request.prescription);
+    return Promise.resolve(request.prescriptions);
   }
-  loadActive(): Promise<ActivePrescription | null> {
-    return Promise.resolve(null);
+  loadActive(): Promise<readonly ActivePrescription[]> {
+    return Promise.resolve([]);
   }
   loadReview(): Promise<PrescriptionReview | null> {
     return Promise.resolve(null);
@@ -243,7 +243,7 @@ describe('PrescriptionSheetComponent', () => {
     saveButton(f).click();
     await f.whenStable();
 
-    expect(src.saved[0].prescription).toEqual(
+    expect(src.saved[0].prescriptions[0]).toEqual(
       jasmine.objectContaining({
         author: 'Dra. Ana',
         formulaId: 'a',

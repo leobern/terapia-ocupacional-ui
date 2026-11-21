@@ -12,13 +12,13 @@ import { PrescriptionSummaryComponent } from './prescription-summary.component';
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [PrescriptionSummaryComponent],
   selector: 'app-prescription-guidance',
-  template: '<app-prescription-summary title="Prescrição vigente" [prescription]="prescription()" />',
+  template: '<app-prescription-summary title="Prescrição vigente" [prescriptions]="prescriptions()" />',
 })
 export class PrescriptionGuidanceComponent {
   readonly open = input(false);
   readonly patientId = input.required<string>();
 
-  protected readonly prescription = signal<Prescription | null>(null);
+  protected readonly prescriptions = signal<readonly Prescription[]>([]);
 
   private readonly source = inject(PrescriptionSource);
   private token = 0;
@@ -40,11 +40,11 @@ export class PrescriptionGuidanceComponent {
       const loaded = await this.source.load(patientId);
 
       if (token === this.token) {
-        this.prescription.set(loaded);
+        this.prescriptions.set(loaded);
       }
     } catch {
       if (token === this.token) {
-        this.prescription.set(null);
+        this.prescriptions.set([]);
       }
     }
   }

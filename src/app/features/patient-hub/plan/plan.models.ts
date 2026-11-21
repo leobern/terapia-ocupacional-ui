@@ -32,6 +32,11 @@ export function routeLabel(routes: readonly NutritionRoute[]): string {
   return normalizeRoutes(routes).join('/');
 }
 
+/** A seleção difere da via vigente (ou não há via ainda)? Regrava só quando mudou, sem renovar o "desde quando". */
+export function routeDiffers(current: CurrentRoute | null, selection: readonly NutritionRoute[]): boolean {
+  return current === null || routeLabel(current.routes) !== routeLabel(selection);
+}
+
 /** Decisão do médico sobre a necessidade de avaliação de deglutição (sem encaminhamento automático). */
 export type SwallowingDecision = 'needed' | 'not-needed';
 

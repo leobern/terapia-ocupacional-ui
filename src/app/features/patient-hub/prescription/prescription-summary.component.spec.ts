@@ -6,6 +6,7 @@ import { PrescriptionSource } from './prescription-source';
 import { PrescriptionSummaryComponent } from './prescription-summary.component';
 
 const rx: Prescription = {
+  route: 'NE',
   at: '2026-11-21T10:00:00Z',
   author: 'Dra. Ana',
   formulaId: 'a',
@@ -23,7 +24,7 @@ describe('PrescriptionSummaryComponent', () => {
   it('mostra fórmula, volume, modalidade, horários e orientações', () => {
     const f = TestBed.createComponent(PrescriptionSummaryComponent);
 
-    f.componentRef.setInput('prescription', rx);
+    f.componentRef.setInput('prescriptions', [rx]);
     f.detectChanges();
     const text = (f.nativeElement as HTMLElement).textContent ?? '';
 
@@ -37,14 +38,14 @@ describe('PrescriptionSummaryComponent', () => {
   it('sem orientações não mostra o campo; contínua mostra só o início; sem prescrição não renderiza', () => {
     const f = TestBed.createComponent(PrescriptionSummaryComponent);
 
-    f.componentRef.setInput('prescription', { ...rx, modality: 'continuous', nursingNotes: '', pauseTimes: [] });
+    f.componentRef.setInput('prescriptions', [{ ...rx, modality: 'continuous', nursingNotes: '', pauseTimes: [] }]);
     f.detectChanges();
     const el = f.nativeElement as HTMLElement;
 
     expect(el.querySelector('[data-testid="rx-summary-notes"]')).toBeNull();
     expect(el.textContent).toContain('Início 08:00');
     expect(el.textContent).not.toContain('pausa');
-    f.componentRef.setInput('prescription', null);
+    f.componentRef.setInput('prescriptions', []);
     f.detectChanges();
 
     expect(el.querySelector('[data-testid="rx-summary"]')).toBeNull();
@@ -53,7 +54,7 @@ describe('PrescriptionSummaryComponent', () => {
 
 describe('PrescriptionGuidanceComponent', () => {
   const setup = async (
-    load: () => Promise<Prescription | null>,
+    load: () => Promise<readonly Prescription[]>,
   ): Promise<{ el: HTMLElement; open: (v: boolean) => Promise<void>; settle: () => Promise<void> }> => {
     TestBed.configureTestingModule({ providers: [{ provide: PrescriptionSource, useValue: { load } }] });
     const f = TestBed.createComponent(PrescriptionGuidanceComponent);
@@ -75,7 +76,7 @@ describe('PrescriptionGuidanceComponent', () => {
   };
 
   it('ao abrir, mostra horários e orientações da prescrição vigente', async () => {
-    const { el, open } = await setup(() => Promise.resolve(rx));
+    const { el, open } = await setup(() => Promise.resolve([rx]));
 
     await open(true);
 
@@ -100,15 +101,15 @@ describe('PrescriptionGuidanceComponent', () => {
   });
 
   it('descarta resposta de uma abertura anterior', async () => {
-    const resolvers: ((v: Prescription | null) => void)[] = [];
+    const resolvers: ((v: readonly Prescription[]) => void)[] = [];
     const { el, open, settle } = await setup(() => new Promise(r => resolvers.push(r)));
 
     await open(true);
     await open(false);
     await open(true);
-    resolvers[1](rx);
+    resolvers[1]([rx]);
     await settle();
-    resolvers[0](null);
+    resolvers[0]([]);
     await settle();
 
     expect(el.textContent).toContain('Hiper');
