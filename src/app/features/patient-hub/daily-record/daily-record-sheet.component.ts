@@ -16,6 +16,7 @@ import { ButtonComponent } from '../../../shared/components/button/button.compon
 import { IconButtonComponent } from '../../../shared/components/icon-button/icon-button.component';
 import { ConnectivityService } from '../../../shared/services/connectivity.service';
 import { NOW, ProfessionalProfileReader } from '../../home/professional-profile';
+import { DailyEvolutionComponent } from './daily-evolution.component';
 import {
   formatEntryTime,
   formatParameterValue,
@@ -28,7 +29,6 @@ import {
   ParameterEntry,
   parseParameterValue,
 } from './daily-record.models';
-import { DailyEvolutionComponent } from './daily-evolution.component';
 import { DailyRecordSource } from './daily-record-source';
 import { DailyRecordWriter } from './daily-record-writer';
 

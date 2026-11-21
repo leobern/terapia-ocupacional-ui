@@ -4,21 +4,21 @@ import { By } from '@angular/platform-browser';
 import { InputChatComponent } from '../../../shared/components/input-chat/input-chat.component';
 import { ConnectivityService } from '../../../shared/services/connectivity.service';
 import { NOW, ProfessionalProfile, ProfessionalProfileReader } from '../../home/professional-profile';
-import { DailyEvolutionSource } from './daily-evolution-source';
-import { EvolutionAiStructurer } from './evolution-ai-structurer';
-import { DailyEvolution, EvolutionSaveRequest } from './daily-record.models';
 import {
   DailyEvolutionComponent,
   EVOLUTION_AI_EMPTY_HINT,
   EVOLUTION_AI_FAILED_HINT,
   EVOLUTION_AI_UNAVAILABLE_HINT,
   EVOLUTION_EMPTY_TEXT,
+  EVOLUTION_LOAD_FAILED_HINT,
   EVOLUTION_MIC_DENIED_HINT,
   EVOLUTION_MIC_FAILED_HINT,
-  EVOLUTION_LOAD_FAILED_HINT,
   EVOLUTION_OFFLINE_HINT,
   EVOLUTION_SAVE_FAILED_HINT,
 } from './daily-evolution.component';
+import { DailyEvolutionSource } from './daily-evolution-source';
+import { DailyEvolution, EvolutionSaveRequest } from './daily-record.models';
+import { EvolutionAiStructurer } from './evolution-ai-structurer';
 
 class FakeSource extends DailyEvolutionSource {
   current: DailyEvolution | null = null;
@@ -270,6 +270,7 @@ describe('DailyEvolutionComponent', () => {
       expect(source.saves[0]).toEqual(
         jasmine.objectContaining({ author: 'Dra. Ana', origin: 'ai', text: 'Texto sugerido pela IA.' }),
       );
+
       expect(el().querySelector('[data-testid="ai-tag"]')).toBeNull();
       expect(buttonByLabel('Salvar evolução')).not.toBeNull();
       expect(text()).toContain('Registrada por Dra. Ana');
@@ -307,6 +308,7 @@ describe('DailyEvolutionComponent', () => {
       expect(area()?.value).toBe('Outra sugestão.');
       buttonByLabel('Descartar sugestão')?.click();
       await settle();
+
       expect(area()?.value).toBe('rascunho');
     });
 
@@ -318,6 +320,7 @@ describe('DailyEvolutionComponent', () => {
       expect(text()).toContain(EVOLUTION_AI_FAILED_HINT);
       await type('manual');
       await save();
+
       expect(source.saves[0].origin).toBe('manual');
     });
 
@@ -335,9 +338,11 @@ describe('DailyEvolutionComponent', () => {
       await openIt();
       chat()?.audioModeError.emit('permission-denied');
       await settle();
+
       expect(text()).toContain(EVOLUTION_MIC_DENIED_HINT);
       chat()?.audioModeError.emit('unavailable');
       await settle();
+
       expect(text()).toContain(EVOLUTION_MIC_FAILED_HINT);
     });
 
@@ -348,6 +353,7 @@ describe('DailyEvolutionComponent', () => {
       expect(text()).toContain(EVOLUTION_AI_UNAVAILABLE_HINT);
       expect(area()?.disabled).toBe(false);
       await send();
+
       expect(ai.calls).toEqual([]);
     });
 
@@ -378,7 +384,7 @@ describe('DailyEvolutionComponent', () => {
       });
       await openIt();
       await send();
-      (el().querySelector('app-icon-button button') as HTMLButtonElement).click();
+      await closeIt();
       finishers[0]('tarde demais');
       await settle();
       await openIt();

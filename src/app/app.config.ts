@@ -45,10 +45,12 @@ import { AssessmentWriter } from './features/patient-hub/assessment/assessment-w
 import { ProvisionalAssessmentAiStructurer } from './features/patient-hub/assessment/provisional-assessment-ai-structurer';
 import { ProvisionalAssessmentSource } from './features/patient-hub/assessment/provisional-assessment-source';
 import { DailyEvolutionSource } from './features/patient-hub/daily-record/daily-evolution-source';
-import { ProvisionalDailyEvolutionSource } from './features/patient-hub/daily-record/provisional-daily-evolution-source';
 import { DailyRecordSource } from './features/patient-hub/daily-record/daily-record-source';
 import { DailyRecordWriter } from './features/patient-hub/daily-record/daily-record-writer';
+import { EvolutionAiStructurer } from './features/patient-hub/daily-record/evolution-ai-structurer';
+import { ProvisionalDailyEvolutionSource } from './features/patient-hub/daily-record/provisional-daily-evolution-source';
 import { ProvisionalDailyRecordSource } from './features/patient-hub/daily-record/provisional-daily-record-source';
+import { ProvisionalEvolutionAiStructurer } from './features/patient-hub/daily-record/provisional-evolution-ai-structurer';
 import {
   HypothesisSynthesizer,
   HypothesisWriter,
@@ -60,8 +62,6 @@ import {
   NutritionTargetsReader,
   PlanNutritionTargetsReader,
 } from './features/patient-hub/plan/nutrition-targets-reader';
-import { EvolutionAiStructurer } from './features/patient-hub/daily-record/evolution-ai-structurer';
-import { ProvisionalEvolutionAiStructurer } from './features/patient-hub/daily-record/provisional-evolution-ai-structurer';
 import { PlanSource } from './features/patient-hub/plan/plan-source';
 import { ProvisionalPlanSource } from './features/patient-hub/plan/provisional-plan-source';
 import { ProvisionalRefeedingRiskSource } from './features/patient-hub/plan/provisional-refeeding-risk-source';

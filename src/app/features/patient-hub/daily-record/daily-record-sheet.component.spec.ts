@@ -3,9 +3,8 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { ConnectivityService } from '../../../shared/services/connectivity.service';
 import { NOW, ProfessionalProfileReader } from '../../home/professional-profile';
-import { DailyEvolution, ParameterEntry } from './daily-record.models';
 import { DailyEvolutionSource } from './daily-evolution-source';
-import { EvolutionAiStructurer } from './evolution-ai-structurer';
+import { DailyEvolution, ParameterEntry } from './daily-record.models';
 import {
   DailyRecordSheetComponent,
   LOAD_FAILED_HINT,
@@ -15,6 +14,7 @@ import {
 } from './daily-record-sheet.component';
 import { DailyRecordSource } from './daily-record-source';
 import { DailyRecordWriter } from './daily-record-writer';
+import { EvolutionAiStructurer } from './evolution-ai-structurer';
 import { ProvisionalDailyRecordSource } from './provisional-daily-record-source';
 
 const TODAY = new Date(2026, 4, 28, 12, 0);

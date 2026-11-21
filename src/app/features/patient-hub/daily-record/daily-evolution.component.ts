@@ -1,22 +1,13 @@
-import {
-  ChangeDetectionStrategy,
-  Component,
-  computed,
-  effect,
-  inject,
-  input,
-  signal,
-  untracked,
-} from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, input, signal, untracked } from '@angular/core';
 
 import { ButtonComponent } from '../../../shared/components/button/button.component';
-import { PhIconComponent } from '../../../shared/icons/ph-icon/ph-icon.component';
 import { InputChatAudioError, InputChatComponent } from '../../../shared/components/input-chat/input-chat.component';
+import { PhIconComponent } from '../../../shared/icons/ph-icon/ph-icon.component';
 import { ConnectivityService } from '../../../shared/services/connectivity.service';
 import { NOW, ProfessionalProfileReader } from '../../home/professional-profile';
 import { DailyEvolutionSource } from './daily-evolution-source';
-import { EvolutionAiStructurer } from './evolution-ai-structurer';
 import { DailyEvolution, dayKey, EvolutionOrigin, registeredAt } from './daily-record.models';
+import { EvolutionAiStructurer } from './evolution-ai-structurer';
 
 type LoadState = 'idle' | 'loading' | 'ready' | 'error';
 

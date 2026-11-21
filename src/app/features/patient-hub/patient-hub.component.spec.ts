@@ -26,6 +26,7 @@ import { AssessmentWriter } from './assessment/assessment-writer';
 import { DailyEvolutionSource } from './daily-record/daily-evolution-source';
 import { DailyRecordSource } from './daily-record/daily-record-source';
 import { DailyRecordWriter } from './daily-record/daily-record-writer';
+import { EvolutionAiStructurer } from './daily-record/evolution-ai-structurer';
 import {
   DIAGNOSIS_FAILED_HINT,
   DIAGNOSIS_OFFLINE_HINT,
@@ -40,7 +41,6 @@ import {
   PriorStaysSource,
   PriorStaysSynthesizer,
 } from './patient-hub-source';
-import { EvolutionAiStructurer } from './daily-record/evolution-ai-structurer';
 import { PlanSource } from './plan/plan-source';
 import { RefeedingRiskSource } from './plan/refeeding-risk-source';
 
