@@ -671,10 +671,11 @@ describe('PatientListComponent', () => {
   });
 
   describe('finalizado no dia (FR-016/017/018)', () => {
-    const finished = (n: number): CensusPatient[] => census(n).map(p => ({ ...p, pendingTasks: 0 }));
+    const finished = (n: number): CensusPatient[] =>
+      census(n).map(p => ({ ...p, pendingTasks: 0, reassessmentDone: true }));
 
     it('mantém o finalizado na lista, em cinza e com rótulo textual, na lista e na tabela', async () => {
-      source.result = Promise.resolve([...census(1), { ...census(2)[1], pendingTasks: 0 }]);
+      source.result = Promise.resolve([...census(1), { ...census(2)[1], pendingTasks: 0, reassessmentDone: true }]);
       await create();
 
       expect(text()).toContain('2 pacientes');
