@@ -17,6 +17,7 @@ import { ConnectivityService } from '../../../shared/services/connectivity.servi
 import { NOW, ProfessionalProfileReader } from '../../home/professional-profile';
 import { AssessmentSource } from '../assessment/assessment-source';
 import {
+  ConductFlag,
   CurrentRoute,
   normalizeRoutes,
   NUTRITION_ROUTES,
@@ -37,7 +38,19 @@ export const RISK_FAILED_HINT = 'Não foi possível verificar o risco de síndro
 export const DYSPHAGIA_FAILED_HINT = 'Não foi possível ler o risco de disfagia da Avaliação agora.';
 export const DYSPHAGIA_MISSING_HINT = 'Risco de disfagia ainda não registrado na Avaliação nutricional.';
 export const OFFLINE_HINT = 'Sem conexão: não é possível salvar o plano agora.';
+export const FLAGS_FAILED_HINT = 'Não foi possível carregar as sinalizações de mudança de conduta agora.';
+export const FLAG_SAVE_FAILED_HINT = 'Não foi possível registrar a sinalização. O texto foi mantido; tente novamente.';
+export const FLAG_OFFLINE_HINT = 'Sem conexão: não é possível registrar a sinalização agora.';
+export const FLAG_EMPTY_HINT = 'Escreva a sugestão de mudança de conduta para sinalizar.';
 export const EMPTY_SELECTION_HINT = 'Selecione ao menos uma via de nutrição para salvar.';
+
+/** Formata ISO como dd/MM/aaaa HH:mm. */
+function fullDateTime(iso: string): string {
+  const d = new Date(iso);
+  const p = (n: number): string => String(n).padStart(2, '0');
+
+  return `${p(d.getDate())}/${p(d.getMonth() + 1)}/${d.getFullYear()} ${p(d.getHours())}:${p(d.getMinutes())}`;
+}
 
 /** Formata ISO como dd/MM (ano omitido, como no Figma 4716-9503). */
 function shortDate(iso: string): string {
@@ -70,6 +83,13 @@ export class PlanSectionComponent {
   protected readonly swallowingText = computed(
     () => swallowingLabel(this.savedSwallowing()) || 'Sem decisão registrada',
   );
+  protected readonly flags = signal<readonly ConductFlag[]>([]);
+  protected readonly flagsFailed = signal(false);
+  protected readonly flagsFailedHint = FLAGS_FAILED_HINT;
+  protected readonly flagDraft = signal('');
+  protected readonly flagHint = signal<string | null>(null);
+  protected readonly flagSaving = signal(false);
+  protected readonly flagOfflineHint = FLAG_OFFLINE_HINT;
   protected readonly selection = signal<readonly NutritionRoute[]>([]);
   protected readonly state = signal<LoadState>('idle');
   protected readonly saving = signal(false);
@@ -159,6 +179,51 @@ export class PlanSectionComponent {
     this.swallowing.set(id);
   }
 
+  protected formatFlagDate(iso: string): string {
+    return fullDateTime(iso);
+  }
+
+  protected onFlagInput(event: Event): void {
+    this.flagHint.set(null);
+    this.flagDraft.set((event.target as HTMLTextAreaElement).value);
+  }
+
+  /** Registra a sinalização (só não-médico, online, com texto); não toca na via nem no formulário do médico. */
+  protected async sendFlag(): Promise<void> {
+    if (this.isDoctor || this.flagSaving()) {
+      return;
+    }
+    if (!this.connectivity.online()) {
+      this.flagHint.set(FLAG_OFFLINE_HINT);
+
+      return;
+    }
+    const text = this.flagDraft().trim();
+
+    if (text === '') {
+      this.flagHint.set(FLAG_EMPTY_HINT);
+
+      return;
+    }
+    this.flagSaving.set(true);
+    this.flagHint.set(null);
+    try {
+      const flag = await this.source.addConductFlag({
+        at: this.now().toISOString(),
+        author: this.profile.read().name,
+        patientId: this.patientId(),
+        text,
+      });
+
+      this.flags.update(list => [...list, flag]);
+      this.flagDraft.set('');
+    } catch {
+      this.flagHint.set(FLAG_SAVE_FAILED_HINT);
+    } finally {
+      this.flagSaving.set(false);
+    }
+  }
+
   protected isSelected(id: NutritionRoute): boolean {
     return this.selection().includes(id);
   }
@@ -232,7 +297,12 @@ export class PlanSectionComponent {
     this.riskFailed.set(false);
     this.dysphagia.set(null);
     this.dysphagiaFailed.set(false);
+    this.flags.set([]);
+    this.flagsFailed.set(false);
+    this.flagDraft.set('');
+    this.flagHint.set(null);
     this.state.set('loading');
+    void this.loadFlags(token);
     void this.loadRisk(token);
     void this.loadDysphagia(token);
     try {
@@ -251,6 +321,21 @@ export class PlanSectionComponent {
     } catch {
       if (token === this.token) {
         this.state.set('error');
+      }
+    }
+  }
+
+  /** Independente do resto do Plano: falha só avisa em texto na área de sinalizações. */
+  private async loadFlags(token: number): Promise<void> {
+    try {
+      const list = await this.source.loadConductFlags(this.patientId());
+
+      if (token === this.token) {
+        this.flags.set(list);
+      }
+    } catch {
+      if (token === this.token) {
+        this.flagsFailed.set(true);
       }
     }
   }

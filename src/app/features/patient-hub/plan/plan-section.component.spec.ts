@@ -4,9 +4,20 @@ import { ConnectivityService } from '../../../shared/services/connectivity.servi
 import { NOW, ProfessionalProfile, ProfessionalProfileReader } from '../../home/professional-profile';
 import { NutritionFunctionalAssessment } from '../assessment/assessment.models';
 import { AssessmentSource } from '../assessment/assessment-source';
-import { CurrentRoute, RouteSaveRequest, SwallowingDecision, SwallowingSaveRequest } from './plan.models';
+import {
+  ConductFlag,
+  ConductFlagRequest,
+  CurrentRoute,
+  RouteSaveRequest,
+  SwallowingDecision,
+  SwallowingSaveRequest,
+} from './plan.models';
 import {
   DYSPHAGIA_FAILED_HINT,
+  FLAG_EMPTY_HINT,
+  FLAG_OFFLINE_HINT,
+  FLAG_SAVE_FAILED_HINT,
+  FLAGS_FAILED_HINT,
   DYSPHAGIA_MISSING_HINT,
   EMPTY_SELECTION_HINT,
   LOAD_FAILED_HINT,
@@ -27,6 +38,26 @@ class FakeSource extends PlanSource {
   swallowing: SwallowingDecision | null = null;
   swallowLoadFails = false;
   swallowSaveFails = false;
+  flags: ConductFlag[] = [];
+  flagLoadFails = false;
+  flagSaveFails = false;
+  readonly flagSaves: ConductFlagRequest[] = [];
+
+  loadConductFlags(): Promise<readonly ConductFlag[]> {
+    return this.flagLoadFails ? Promise.reject(new Error('x')) : Promise.resolve(this.flags);
+  }
+
+  addConductFlag(request: ConductFlagRequest): Promise<ConductFlag> {
+    if (this.flagSaveFails) {
+      return Promise.reject(new Error('x'));
+    }
+    this.flagSaves.push(request);
+    const flag = { at: request.at, author: request.author, id: `f${this.flagSaves.length}`, text: request.text };
+
+    this.flags = [...this.flags, flag];
+
+    return Promise.resolve(flag);
+  }
 
   loadRoute(): Promise<CurrentRoute | null> {
     return this.loadFails ? Promise.reject(new Error('x')) : Promise.resolve(this.current);
@@ -126,6 +157,150 @@ describe('PlanSectionComponent', () => {
     source = new FakeSource();
     riskSource = new FakeRisk();
     assessment = new FakeAssessment();
+  });
+
+  describe('sinalização de mudança de conduta', () => {
+    const flagEls = (): HTMLElement[] => Array.from(el().querySelectorAll('[data-testid="conduct-flag"]'));
+    const area = (): HTMLTextAreaElement | null => el().querySelector('#flag-text');
+    const type = async (value: string): Promise<void> => {
+      const a = area() as HTMLTextAreaElement;
+
+      a.value = value;
+      a.dispatchEvent(new Event('input'));
+      await settle();
+    };
+    const send = async (): Promise<void> => {
+      Array.from(el().querySelectorAll('button'))
+        .find(b => b.textContent.includes('Sinalizar'))
+        ?.click();
+      await settle();
+    };
+    const hint = (): string => el().querySelector('[data-testid="flag-hint"]')?.textContent.trim() ?? '';
+
+    it('não-médico registra a sinalização; ela aparece com texto, autor e data/hora e o campo limpa', async () => {
+      await setup('other');
+      await openIt();
+      await type('  Liberar dieta por via oral ');
+      await send();
+
+      expect(source.flagSaves).toEqual([
+        { at: '2026-11-20T15:00:00.000Z', author: 'Dra. Ana', patientId: 'p9', text: 'Liberar dieta por via oral' },
+      ]);
+      expect(flagEls().length).toBe(1);
+      expect(flagEls()[0].textContent).toContain('Liberar dieta por via oral');
+      expect(flagEls()[0].textContent).toContain('Dra. Ana · 20/11/2026');
+      expect(area()?.value).toBe('');
+    });
+
+    it('texto vazio não é aceito', async () => {
+      await setup('other');
+      await openIt();
+      await type('   ');
+      await send();
+
+      expect(source.flagSaves.length).toBe(0);
+      expect(hint()).toBe(FLAG_EMPTY_HINT);
+    });
+
+    it('médico vê as sinalizações já registradas, sem campo de sinalizar nem aceitar/rejeitar', async () => {
+      source.flags = [{ at: '2026-11-19T10:00:00', author: 'Enf. Bia', id: 'f0', text: 'Liberar VO' }];
+      await setup('doctor');
+      await openIt();
+
+      expect(flagEls()[0].textContent).toContain('Enf. Bia');
+      expect(area()).toBeNull();
+      expect(text()).not.toMatch(/aceitar|rejeitar/iu);
+    });
+
+    it('sinalizar não muda a via vigente nem o formulário do médico', async () => {
+      source.current = { routes: ['NE'], since: '2026-11-12T12:00:00' };
+      await setup('other');
+      await openIt();
+      await type('Liberar VO');
+      await send();
+
+      expect(source.saves.length).toBe(0);
+      expect(el().querySelector('[data-testid="current-route"]')?.textContent.trim()).toBe('NE');
+    });
+
+    it('sinalização permanece ao reabrir o plano', async () => {
+      await setup('other');
+      await openIt();
+      await type('Liberar VO');
+      await send();
+      (el().querySelector('app-icon-button button') as HTMLButtonElement).click();
+      await settle();
+      await openIt();
+
+      expect(flagEls().length).toBe(1);
+    });
+
+    it('sem conexão: ação desabilitada com aviso, mas as sinalizações seguem visíveis', async () => {
+      source.flags = [{ at: '2026-11-19T10:00:00', author: 'Enf. Bia', id: 'f0', text: 'Liberar VO' }];
+      await setup('other');
+      TestBed.inject(ConnectivityService).online.set(false);
+      await openIt();
+
+      expect(el().querySelector('[data-testid="flag-offline"]')?.textContent).toContain(FLAG_OFFLINE_HINT);
+      expect(flagEls().length).toBe(1);
+      await type('Liberar VO');
+      await send();
+
+      expect(source.flagSaves.length).toBe(0);
+      (fixture.componentInstance as unknown as { sendFlag(): Promise<void> }).sendFlag();
+      await settle();
+
+      expect(hint()).toBe(FLAG_OFFLINE_HINT);
+    });
+
+    it('falha ao gravar: mostra mensagem e mantém o texto digitado', async () => {
+      source.flagSaveFails = true;
+      await setup('other');
+      await openIt();
+      await type('Liberar VO');
+      await send();
+
+      expect(hint()).toBe(FLAG_SAVE_FAILED_HINT);
+      expect(area()?.value).toBe('Liberar VO');
+    });
+
+    it('falha ao carregar: aviso em texto e o campo segue utilizável', async () => {
+      source.flagLoadFails = true;
+      await setup('other');
+      await openIt();
+
+      expect(el().querySelector('[data-testid="flags-failed"]')?.textContent).toContain(FLAGS_FAILED_HINT);
+      await type('Liberar VO');
+      await send();
+
+      expect(source.flagSaves.length).toBe(1);
+    });
+
+    it('sem sinalizações: informa em texto', async () => {
+      await setup('other');
+      await openIt();
+
+      expect(el().querySelector('[data-testid="flags-empty"]')).not.toBeNull();
+    });
+
+    it('envio duplo enquanto grava registra uma só vez', async () => {
+      await setup('other');
+      await openIt();
+      await type('Liberar VO');
+      const c = fixture.componentInstance as unknown as { sendFlag(): Promise<void> };
+
+      await Promise.all([c.sendFlag(), c.sendFlag()]);
+
+      expect(source.flagSaves.length).toBe(1);
+    });
+
+    it('médico não consegue enviar sinalização nem por chamada direta', async () => {
+      await setup('doctor');
+      await openIt();
+      await (fixture.componentInstance as unknown as { sendFlag(): Promise<void> }).sendFlag();
+
+      expect(source.flagSaves.length).toBe(0);
+    });
   });
 
   describe('risco de disfagia (apoio da avaliação de deglutição)', () => {
