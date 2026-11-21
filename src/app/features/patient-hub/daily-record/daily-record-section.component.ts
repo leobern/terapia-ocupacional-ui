@@ -13,10 +13,12 @@ import {
 import { ButtonComponent } from '../../../shared/components/button/button.component';
 import { IconButtonComponent } from '../../../shared/components/icon-button/icon-button.component';
 import { PhIconComponent } from '../../../shared/icons/ph-icon/ph-icon.component';
+import { InputChatAudioError, InputChatComponent } from '../../../shared/components/input-chat/input-chat.component';
 import { ConnectivityService } from '../../../shared/services/connectivity.service';
 import { NOW, ProfessionalProfileReader } from '../../home/professional-profile';
 import { DailyEvolutionSource } from './daily-evolution-source';
-import { DailyEvolution, dayKey, registeredAt } from './daily-record.models';
+import { EvolutionAiStructurer } from './evolution-ai-structurer';
+import { DailyEvolution, dayKey, EvolutionOrigin, registeredAt } from './daily-record.models';
 
 type LoadState = 'idle' | 'loading' | 'ready' | 'error';
 
@@ -25,6 +27,16 @@ export const EVOLUTION_SAVE_FAILED_HINT = 'Não foi possível salvar a evoluçã
 export const EVOLUTION_OFFLINE_HINT =
   'Sem conexão: o salvamento no servidor fica pendente até haver conexão. Você pode continuar digitando.';
 export const EVOLUTION_EMPTY_TEXT = 'Nenhuma evolução médica registrada hoje.';
+export const EVOLUTION_AI_UNAVAILABLE_HINT = 'Registro por IA indisponível sem conexão. Digite a evolução manualmente.';
+export const EVOLUTION_AI_FAILED_HINT =
+  'Não foi possível gerar o texto por IA. Digite a evolução manualmente ou tente de novo.';
+export const EVOLUTION_AI_EMPTY_HINT =
+  'A IA não identificou texto no áudio. Digite a evolução manualmente ou grave de novo.';
+export const EVOLUTION_MIC_DENIED_HINT =
+  'Sem acesso ao microfone. Digite manualmente ou permita o microfone e tente de novo.';
+export const EVOLUTION_MIC_FAILED_HINT = 'Não foi possível gravar o áudio. Digite manualmente ou tente de novo.';
+export const EVOLUTION_AI_PROCESSING_HINT = 'Processando o áudio…';
+export const EVOLUTION_AI_REVIEW_NOTE = 'Texto sugerido pela IA. Revise e confirme para registrar a evolução.';
 export const EVOLUTION_HELP = 'Só médico registra. Texto da IA vem marcado e só salva ao confirmar.';
 
 /**
@@ -34,7 +46,7 @@ export const EVOLUTION_HELP = 'Só médico registra. Texto da IA vem marcado e s
  */
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ButtonComponent, IconButtonComponent, PhIconComponent],
+  imports: [ButtonComponent, IconButtonComponent, InputChatComponent, PhIconComponent],
   selector: 'app-daily-record-section',
   styleUrl: './daily-record-section.component.scss',
   templateUrl: './daily-record-section.component.html',
@@ -46,6 +58,13 @@ export class DailyRecordSectionComponent {
   protected readonly saved = signal<DailyEvolution | null>(null);
   protected readonly draft = signal('');
   protected readonly saving = signal(false);
+  /** Texto sugerido pela IA em revisão (`null` = sem sugestão); só vale após confirmação. */
+  protected readonly suggestion = signal<string | null>(null);
+  protected readonly aiProcessing = signal(false);
+  protected readonly aiNotice = signal<string | null>(null);
+  protected readonly aiUnavailableHint = EVOLUTION_AI_UNAVAILABLE_HINT;
+  protected readonly aiProcessingHint = EVOLUTION_AI_PROCESSING_HINT;
+  protected readonly aiReviewNote = EVOLUTION_AI_REVIEW_NOTE;
   protected readonly saveFailed = signal(false);
   protected readonly connectivity = inject(ConnectivityService);
   protected readonly isDoctor = inject(ProfessionalProfileReader).read().role === 'doctor';
@@ -64,6 +83,9 @@ export class DailyRecordSectionComponent {
   );
 
   private readonly source = inject(DailyEvolutionSource);
+  private readonly structurer = inject(EvolutionAiStructurer);
+  /** Texto que estava no campo antes da sugestão, restaurado ao descartar. */
+  private previousDraft = '';
   private readonly profile = inject(ProfessionalProfileReader);
   private readonly now = inject(NOW);
   private readonly isOpen = signal(false);
@@ -114,6 +136,58 @@ export class DailyRecordSectionComponent {
     this.draft.set((event.target as HTMLTextAreaElement).value);
   }
 
+  /** Áudio gravado: a IA sugere o texto no campo, marcado "gerado por IA"; nunca salva. */
+  protected async onAudio(audio: Blob): Promise<void> {
+    if (!this.isDoctor || !this.connectivity.online() || this.aiProcessing()) {
+      return;
+    }
+    const token = this.token;
+
+    this.aiNotice.set(null);
+    this.aiProcessing.set(true);
+    try {
+      const text = (await this.structurer.suggest(audio)).trim();
+
+      // Fechou/reabriu, ou a conexão caiu: descarta só o áudio, sem tocar no campo.
+      if (token !== this.token || !this.connectivity.online()) {
+        if (token === this.token) {
+          this.aiNotice.set(EVOLUTION_AI_FAILED_HINT);
+        }
+
+        return;
+      }
+      if (text === '') {
+        this.aiNotice.set(EVOLUTION_AI_EMPTY_HINT);
+
+        return;
+      }
+      if (this.suggestion() === null) {
+        this.previousDraft = this.draft();
+      }
+      this.suggestion.set(text);
+      this.draft.set(text);
+      this.touched.set(true);
+    } catch {
+      if (token === this.token) {
+        this.aiNotice.set(EVOLUTION_AI_FAILED_HINT);
+      }
+    } finally {
+      if (token === this.token) {
+        this.aiProcessing.set(false);
+      }
+    }
+  }
+
+  protected onAudioError(reason: InputChatAudioError): void {
+    this.aiNotice.set(reason === 'permission-denied' ? EVOLUTION_MIC_DENIED_HINT : EVOLUTION_MIC_FAILED_HINT);
+  }
+
+  /** Descarta a sugestão: a evolução vigente e o texto anterior do campo ficam como estavam. */
+  protected discard(): void {
+    this.suggestion.set(null);
+    this.draft.set(this.previousDraft);
+  }
+
   protected async save(): Promise<void> {
     if (!this.canSave()) {
       return;
@@ -128,7 +202,7 @@ export class DailyRecordSectionComponent {
         at: at.toISOString(),
         author: this.profile.read().name,
         day: dayKey(at),
-        origin: 'manual',
+        origin: this.origin(),
         patientId: this.patientId(),
         text: this.draft().trim(),
       });
@@ -136,6 +210,7 @@ export class DailyRecordSectionComponent {
       if (token === this.token) {
         this.saved.set(saved);
         this.draft.set(saved.text);
+        this.suggestion.set(null);
         this.touched.set(false);
       }
     } catch {
@@ -147,6 +222,16 @@ export class DailyRecordSectionComponent {
     }
   }
 
+  private origin(): EvolutionOrigin {
+    const suggested = this.suggestion();
+
+    if (suggested === null) {
+      return 'manual';
+    }
+
+    return this.draft().trim() === suggested ? 'ai' : 'ai-edited';
+  }
+
   private async load(): Promise<void> {
     const token = ++this.token;
 
@@ -155,6 +240,9 @@ export class DailyRecordSectionComponent {
     this.draft.set('');
     this.touched.set(false);
     this.saveFailed.set(false);
+    this.suggestion.set(null);
+    this.aiNotice.set(null);
+    this.aiProcessing.set(false);
     try {
       const current = await this.source.load(this.patientId(), dayKey(this.now()));
 

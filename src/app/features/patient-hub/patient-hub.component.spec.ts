@@ -35,6 +35,7 @@ import {
   PriorStaysSource,
   PriorStaysSynthesizer,
 } from './patient-hub-source';
+import { EvolutionAiStructurer } from './daily-record/evolution-ai-structurer';
 import { PlanSource } from './plan/plan-source';
 import { RefeedingRiskSource } from './plan/refeeding-risk-source';
 
@@ -179,6 +180,7 @@ async function setup(
         },
       },
       { provide: DailyEvolutionSource, useValue: { load: (): Promise<null> => Promise.resolve(null) } },
+      { provide: EvolutionAiStructurer, useValue: { suggest: (): Promise<string> => Promise.resolve('') } },
       { provide: RefeedingRiskSource, useValue: { load: (): Promise<null> => Promise.resolve(null) } },
       { provide: AssessmentSource, useValue: { loadLatest: (): Promise<null> => Promise.resolve(null) } },
       { provide: AssessmentAiStructurer, useValue: { structure: (): Promise<object> => Promise.resolve({}) } },

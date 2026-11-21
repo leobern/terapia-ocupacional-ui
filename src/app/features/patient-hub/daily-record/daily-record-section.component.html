@@ -50,6 +50,13 @@
             <label class="record__label" for="evolution-text">
               Evolução do dia
             </label>
+            @if (suggestion() !== null) {
+              <span class="record__ai-tag" data-testid="ai-tag">
+                <ph-icon name="sparkle" [size]="16" />
+                Gerado por IA
+              </span>
+              <p class="record__help" role="status">{{ aiReviewNote }}</p>
+            }
             <textarea
               id="evolution-text"
               class="record__textarea"
@@ -83,6 +90,34 @@
   </div>
 
   @if (isDoctor) {
+    @if (aiProcessing()) {
+      <p class="record__status" role="status">{{ aiProcessingHint }}</p>
+    }
+    @if (!connectivity.online()) {
+      <p class="record__status record__status--warning" role="status">
+        {{ aiUnavailableHint }}
+      </p>
+    } @else if (aiNotice(); as notice) {
+      <p class="record__status record__status--warning" role="alert">
+        {{ notice }}
+      </p>
+    }
+    <!-- Offline: o campo é recriado desabilitado (libera o microfone de uma gravação em curso). -->
+    @if (connectivity.online()) {
+      <app-input-chat
+        class="record__chat"
+        placeholder="Grave um áudio com a evolução do dia"
+        [disabled]="aiProcessing() || state() === 'loading'"
+        (audioSend)="onAudio($event)"
+        (audioModeError)="onAudioError($event)"
+      />
+    } @else {
+      <app-input-chat
+        class="record__chat"
+        placeholder="Grave um áudio com a evolução do dia"
+        [disabled]="true"
+      />
+    }
     @if (!connectivity.online()) {
       <p class="record__status record__status--warning" role="status">
         {{ offlineHint }}
@@ -94,10 +129,19 @@
       </p>
     }
     <app-button
-      label="Salvar registro"
+      [label]="suggestion() === null ? 'Salvar registro' : 'Confirmar evolução'"
       [fullWidth]="true"
       [disabled]="!canSave()"
       (click)="save()"
     />
+    @if (suggestion() !== null) {
+      <app-button
+        kind="primary"
+        appearance="outlined"
+        label="Descartar sugestão"
+        [fullWidth]="true"
+        (click)="discard()"
+      />
+    }
   }
 </dialog>

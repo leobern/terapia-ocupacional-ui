@@ -45,6 +45,8 @@ import {
   NutritionTargetsReader,
   PlanNutritionTargetsReader,
 } from './features/patient-hub/plan/nutrition-targets-reader';
+import { EvolutionAiStructurer } from './features/patient-hub/daily-record/evolution-ai-structurer';
+import { ProvisionalEvolutionAiStructurer } from './features/patient-hub/daily-record/provisional-evolution-ai-structurer';
 import { PlanSource } from './features/patient-hub/plan/plan-source';
 import { ProvisionalPlanSource } from './features/patient-hub/plan/provisional-plan-source';
 import { ProvisionalRefeedingRiskSource } from './features/patient-hub/plan/provisional-refeeding-risk-source';
@@ -94,6 +96,7 @@ export const appConfig: ApplicationConfig = {
     { provide: DiagnosisSource, useClass: ProvisionalDiagnosisSource },
     { provide: DiagnosisDecisionSource, useClass: ProvisionalDiagnosisDecisionSource },
     { provide: DailyEvolutionSource, useClass: ProvisionalDailyEvolutionSource },
+    { provide: EvolutionAiStructurer, useClass: ProvisionalEvolutionAiStructurer },
     { provide: PlanSource, useClass: ProvisionalPlanSource },
     { provide: NutritionTargetsReader, useClass: PlanNutritionTargetsReader },
     { provide: RefeedingRiskSource, useClass: ProvisionalRefeedingRiskSource },

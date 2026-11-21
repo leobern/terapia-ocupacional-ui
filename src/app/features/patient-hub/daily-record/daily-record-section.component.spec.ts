@@ -1,12 +1,20 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
 
+import { InputChatComponent } from '../../../shared/components/input-chat/input-chat.component';
 import { ConnectivityService } from '../../../shared/services/connectivity.service';
 import { NOW, ProfessionalProfile, ProfessionalProfileReader } from '../../home/professional-profile';
 import { DailyEvolutionSource } from './daily-evolution-source';
+import { EvolutionAiStructurer } from './evolution-ai-structurer';
 import { DailyEvolution, EvolutionSaveRequest } from './daily-record.models';
 import {
   DailyRecordSectionComponent,
+  EVOLUTION_AI_EMPTY_HINT,
+  EVOLUTION_AI_FAILED_HINT,
+  EVOLUTION_AI_UNAVAILABLE_HINT,
   EVOLUTION_EMPTY_TEXT,
+  EVOLUTION_MIC_DENIED_HINT,
+  EVOLUTION_MIC_FAILED_HINT,
   EVOLUTION_LOAD_FAILED_HINT,
   EVOLUTION_OFFLINE_HINT,
   EVOLUTION_SAVE_FAILED_HINT,
@@ -36,7 +44,19 @@ class FakeSource extends DailyEvolutionSource {
   }
 }
 
+class FakeAi extends EvolutionAiStructurer {
+  result: Promise<string> = Promise.resolve('Texto sugerido pela IA.');
+  readonly calls: Blob[] = [];
+
+  suggest(audio: Blob): Promise<string> {
+    this.calls.push(audio);
+
+    return this.result;
+  }
+}
+
 describe('DailyRecordSectionComponent', () => {
+  let ai: FakeAi;
   let fixture: ComponentFixture<DailyRecordSectionComponent>;
   let source: FakeSource;
 
@@ -61,6 +81,14 @@ describe('DailyRecordSectionComponent', () => {
     a.dispatchEvent(new Event('input'));
     await settle();
   };
+  const chat = (): InputChatComponent | undefined =>
+    fixture.debugElement.query(By.directive(InputChatComponent))?.componentInstance as InputChatComponent | undefined;
+  const send = async (): Promise<void> => {
+    chat()?.audioSend.emit(new Blob(['x']));
+    await settle();
+  };
+  const buttonByLabel = (label: string): HTMLButtonElement | null =>
+    Array.from(el().querySelectorAll('button')).find(b => b.textContent.includes(label)) ?? null;
   const save = async (): Promise<void> => {
     saveButton()?.click();
     await settle();
@@ -69,6 +97,7 @@ describe('DailyRecordSectionComponent', () => {
     TestBed.configureTestingModule({
       providers: [
         { provide: DailyEvolutionSource, useValue: source },
+        { provide: EvolutionAiStructurer, useValue: ai },
         {
           provide: ProfessionalProfileReader,
           useValue: { read: (): ProfessionalProfile => ({ name: 'Dra. Ana', role }) },
@@ -83,6 +112,7 @@ describe('DailyRecordSectionComponent', () => {
 
   beforeEach(() => {
     source = new FakeSource();
+    ai = new FakeAi();
   });
 
   describe('médico', () => {
@@ -226,6 +256,155 @@ describe('DailyRecordSectionComponent', () => {
     });
   });
 
+  describe('médico: registro por IA', () => {
+    beforeEach(async () => {
+      await setup('doctor');
+    });
+
+    it('narra por áudio: aparece o texto sugerido, marcado "gerado por IA" e editável, sem salvar', async () => {
+      source.current = {
+        author: 'Dr. Beto',
+        at: new Date(2026, 10, 20, 8, 0).toISOString(),
+        origin: 'manual',
+        text: 'vigente',
+      };
+      await openIt();
+      await send();
+
+      expect(ai.calls).toHaveSize(1);
+      expect(area()?.value).toBe('Texto sugerido pela IA.');
+      expect(el().querySelector('[data-testid="ai-tag"]')?.textContent).toContain('Gerado por IA');
+      expect(buttonByLabel('Confirmar evolução')).not.toBeNull();
+      expect(source.saves).toEqual([]);
+      expect(source.current.text).toBe('vigente');
+    });
+
+    it('confirma sem editar: grava com origem ai, autor e data/hora, e a marca some', async () => {
+      await openIt();
+      await send();
+      buttonByLabel('Confirmar evolução')?.click();
+      await settle();
+
+      expect(source.saves[0]).toEqual(
+        jasmine.objectContaining({ author: 'Dra. Ana', origin: 'ai', text: 'Texto sugerido pela IA.' }),
+      );
+      expect(el().querySelector('[data-testid="ai-tag"]')).toBeNull();
+      expect(buttonByLabel('Salvar registro')).not.toBeNull();
+      expect(text()).toContain('Registrada por Dra. Ana');
+    });
+
+    it('edita antes de confirmar: grava o texto editado com origem ai-edited', async () => {
+      await openIt();
+      await send();
+      await type('Texto revisado.');
+      buttonByLabel('Confirmar evolução')?.click();
+      await settle();
+
+      expect(source.saves[0]).toEqual(jasmine.objectContaining({ origin: 'ai-edited', text: 'Texto revisado.' }));
+    });
+
+    it('descartar restaura o campo e não altera a evolução vigente', async () => {
+      await openIt();
+      await type('rascunho');
+      await send();
+      buttonByLabel('Descartar sugestão')?.click();
+      await settle();
+
+      expect(area()?.value).toBe('rascunho');
+      expect(el().querySelector('[data-testid="ai-tag"]')).toBeNull();
+      expect(source.saves).toEqual([]);
+    });
+
+    it('nova sugestão sobre outra mantém o rascunho original para o descarte', async () => {
+      await openIt();
+      await type('rascunho');
+      await send();
+      ai.result = Promise.resolve('Outra sugestão.');
+      await send();
+
+      expect(area()?.value).toBe('Outra sugestão.');
+      buttonByLabel('Descartar sugestão')?.click();
+      await settle();
+      expect(area()?.value).toBe('rascunho');
+    });
+
+    it('IA falha: avisa em texto e a digitação manual segue possível', async () => {
+      ai.result = Promise.reject(new Error('x'));
+      await openIt();
+      await send();
+
+      expect(text()).toContain(EVOLUTION_AI_FAILED_HINT);
+      await type('manual');
+      await save();
+      expect(source.saves[0].origin).toBe('manual');
+    });
+
+    it('IA sem texto reconhecido: avisa e não mexe no campo', async () => {
+      ai.result = Promise.resolve('   ');
+      await openIt();
+      await type('antes');
+      await send();
+
+      expect(text()).toContain(EVOLUTION_AI_EMPTY_HINT);
+      expect(area()?.value).toBe('antes');
+    });
+
+    it('erros de microfone viram aviso em texto', async () => {
+      await openIt();
+      chat()?.audioModeError.emit('permission-denied');
+      await settle();
+      expect(text()).toContain(EVOLUTION_MIC_DENIED_HINT);
+      chat()?.audioModeError.emit('unavailable');
+      await settle();
+      expect(text()).toContain(EVOLUTION_MIC_FAILED_HINT);
+    });
+
+    it('offline: a IA fica indisponível com aviso e a digitação segue', async () => {
+      TestBed.inject(ConnectivityService).online.set(false);
+      await openIt();
+
+      expect(text()).toContain(EVOLUTION_AI_UNAVAILABLE_HINT);
+      expect(area()?.disabled).toBe(false);
+      await send();
+      expect(ai.calls).toEqual([]);
+    });
+
+    it('a conexão cai durante o processamento: descarta a resposta e avisa', async () => {
+      const connectivity = TestBed.inject(ConnectivityService);
+      const finishers: ((value: string) => void)[] = [];
+
+      ai.result = new Promise<string>(resolve => {
+        finishers.push(resolve);
+      });
+      await openIt();
+      await send();
+      connectivity.online.set(false);
+      finishers[0]('tarde demais');
+      await settle();
+      connectivity.online.set(true);
+      await settle();
+
+      expect(area()?.value).toBe('');
+      expect(text()).toContain(EVOLUTION_AI_FAILED_HINT);
+    });
+
+    it('fechar durante o processamento descarta a resposta', async () => {
+      const finishers: ((value: string) => void)[] = [];
+
+      ai.result = new Promise<string>(resolve => {
+        finishers.push(resolve);
+      });
+      await openIt();
+      await send();
+      (el().querySelector('app-icon-button button') as HTMLButtonElement).click();
+      finishers[0]('tarde demais');
+      await settle();
+      await openIt();
+
+      expect(area()?.value).toBe('');
+    });
+  });
+
   describe('profissional que não é médico', () => {
     beforeEach(async () => {
       await setup('other');
@@ -237,6 +416,7 @@ describe('DailyRecordSectionComponent', () => {
       expect(text()).toContain(EVOLUTION_EMPTY_TEXT);
       expect(area()).toBeNull();
       expect(saveButton()).toBeNull();
+      expect(chat()).toBeUndefined();
     });
 
     it('vê a evolução registrada com autor e data/hora, sem edição', async () => {
