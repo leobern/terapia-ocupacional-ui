@@ -43,6 +43,7 @@ import {
 } from './patient-hub-source';
 import { PlanSource } from './plan/plan-source';
 import { RefeedingRiskSource } from './plan/refeeding-risk-source';
+import { PrescriptionSource } from './prescription/prescription-source';
 
 const PROFILE: PatientHubProfile = {
   bed: '35',
@@ -191,6 +192,7 @@ async function setup(
   source: FakeSource,
   id: string | null = 'p1',
   hospitals: unknown[] = [{ id: 'h', name: 'Hospital Vila Nova Star' }],
+  role = 'doctor',
 ): Promise<ComponentFixture<PatientHubComponent>> {
   TestBed.configureTestingModule({
     providers: [
@@ -229,7 +231,14 @@ async function setup(
       { provide: PriorStaysSynthesizer, useValue: priorSynth },
       {
         provide: ProfessionalProfileReader,
-        useValue: { read: (): { name: string; role: string } => ({ name: 'Michelle', role: 'doctor' }) },
+        useValue: { read: (): { name: string; role: string } => ({ name: 'Michelle', role }) },
+      },
+      {
+        provide: PrescriptionSource,
+        useValue: {
+          loadActive: (): Promise<null> => Promise.resolve(null),
+          loadReview: (): Promise<null> => Promise.resolve(null),
+        },
       },
       { provide: NOW, useValue: (): Date => new Date(2026, 4, 28, 12) },
       {
@@ -304,9 +313,38 @@ describe('PatientHubComponent', () => {
       const dialog = (): HTMLDialogElement =>
         (f.nativeElement as HTMLElement).querySelector('app-daily-record-sheet dialog') as HTMLDialogElement;
 
-      expect(actions.map(a => a.label)).toEqual(['Registro diário']);
+      expect(actions.map(a => a.label)).toEqual(['Registro diário', 'Revisão da prescrição']);
       expect(dialog().open).toBe(false);
       actions[0].navigate?.();
+      f.detectChanges();
+      await f.whenStable();
+
+      expect(dialog().open).toBe(true);
+      dialog().dispatchEvent(new Event('cancel', { cancelable: true }));
+      f.detectChanges();
+
+      expect(dialog().open).toBe(false);
+    });
+
+    it('perfil não médico não recebe a ação "Revisão da prescrição"', async () => {
+      await setup(new FakeSource(), 'p1', [{ id: 'h', name: 'Hospital Vila Nova Star' }], 'other');
+
+      expect(
+        TestBed.inject(ScreenActionsService)
+          .actions()
+          .map(a => a.label),
+      ).toEqual(['Registro diário']);
+    });
+
+    it('médico abre a revisão da prescrição pelos atalhos e fecha com Esc', async () => {
+      const f = await setup(new FakeSource());
+      const action = TestBed.inject(ScreenActionsService)
+        .actions()
+        .find(a => a.id === 'prescription-review');
+      const dialog = (): HTMLDialogElement =>
+        (f.nativeElement as HTMLElement).querySelector('app-prescription-review dialog') as HTMLDialogElement;
+
+      action?.navigate?.();
       f.detectChanges();
       await f.whenStable();
 

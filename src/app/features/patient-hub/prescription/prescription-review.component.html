@@ -1,0 +1,136 @@
+<!-- Figma 4718-10198 (bottom-sheet · revisão diária, desenhado pelo agente). O clique no <dialog> é o scrim; Esc fecha. -->
+<!-- eslint-disable-next-line @angular-eslint/template/click-events-have-key-events, @angular-eslint/template/interactive-supports-focus -->
+<dialog
+  #dialogEl
+  class="review"
+  aria-labelledby="review-title"
+  (click)="onDialogClick($event)"
+  (cancel)="onCancel($event)"
+>
+  <span class="review__handle" aria-hidden="true"></span>
+  <div class="review__header">
+    <h2 id="review-title" class="review__title">Revisão da prescrição</h2>
+    <app-icon-button
+      kind="secondary"
+      appearance="icon"
+      icon="x"
+      ariaLabel="Fechar"
+      (click)="close()"
+    />
+  </div>
+
+  @if (isDoctor) {
+    <div class="review__body">
+      @switch (state()) {
+        @case ('loading') {
+          <p class="review__status" role="status">Carregando a prescrição…</p>
+        }
+        @case ('error') {
+          <p class="review__status review__status--warning" role="alert">
+            {{ loadFailedHint }}
+          </p>
+        }
+        @case ('ready') {
+          <p class="review__banner" data-testid="adequacy">
+            {{ adequacyText() }}
+          </p>
+
+          <section class="review__section" aria-labelledby="review-rx-title">
+            <h3 id="review-rx-title" class="review__section-title">
+              Prescrição ativa
+            </h3>
+            <div class="review__card" data-testid="prescription">
+              @if (prescription(); as p) {
+                <p class="review__meta">{{ prescribedText() }}</p>
+                <dl class="review__grid">
+                  <div class="review__tile review__tile--wide">
+                    <dt>Fórmula</dt>
+                    <dd>{{ p.formula }}</dd>
+                  </div>
+                  <div class="review__tile">
+                    <dt>Vazão</dt>
+                    <dd>{{ formatOptional(p.flowMlPerHour, 'ml/h') }}</dd>
+                  </div>
+                  <div class="review__tile">
+                    <dt>Volume/dia</dt>
+                    <dd>{{ formatOptional(p.volumeMlPerDay, 'ml') }}</dd>
+                  </div>
+                  <div class="review__tile">
+                    <dt>Tempo</dt>
+                    <dd>{{ formatOptional(p.hoursPerDay, 'h') }}</dd>
+                  </div>
+                  <div class="review__tile">
+                    <dt>Módulo proteico</dt>
+                    <dd>{{ formatOptional(p.proteinModuleG, 'g') }}</dd>
+                  </div>
+                  <div class="review__tile">
+                    <dt>Aporte calórico</dt>
+                    <dd>{{ formatOptional(p.kcal, 'kcal') }}</dd>
+                  </div>
+                  <div class="review__tile">
+                    <dt>Aporte proteico</dt>
+                    <dd>{{ formatOptional(p.proteinG, 'g', 1) }}</dd>
+                  </div>
+                </dl>
+              } @else {
+                <p class="review__help" data-testid="no-prescription">
+                  {{ noPrescriptionText }}
+                </p>
+              }
+            </div>
+          </section>
+
+          <section class="review__section" aria-labelledby="review-goal-title">
+            <h3 id="review-goal-title" class="review__section-title">
+              Meta vigente
+            </h3>
+            <div class="review__card" data-testid="targets">
+              @if (targets(); as t) {
+                <dl class="review__grid">
+                  <div class="review__tile">
+                    <dt>Meta calórica</dt>
+                    <dd>{{ formatNumber(t.kcalPerDay) }} kcal/dia</dd>
+                  </div>
+                  <div class="review__tile">
+                    <dt>Meta proteica</dt>
+                    <dd>{{ formatNumber(t.proteinPerDay, 0, 1) }} g/dia</dd>
+                  </div>
+                </dl>
+              } @else {
+                <p class="review__help" data-testid="no-targets">
+                  {{ targetsUnavailableText }}
+                </p>
+              }
+            </div>
+          </section>
+        }
+      }
+    </div>
+
+    @if (review()) {
+      <p class="review__status" role="status" data-testid="reviewed">
+        {{ reviewedText() }}
+      </p>
+    }
+    @if (!online()) {
+      <p
+        class="review__status review__status--warning"
+        role="status"
+        data-testid="offline"
+      >
+        {{ offlineHint }}
+      </p>
+    }
+    @if (saveFailed()) {
+      <p class="review__status review__status--error" role="alert">
+        {{ saveFailedHint }}
+      </p>
+    }
+    <app-button
+      label="Manter prescrição"
+      [fullWidth]="true"
+      [disabled]="!canKeep()"
+      (click)="keep()"
+    />
+  }
+</dialog>
