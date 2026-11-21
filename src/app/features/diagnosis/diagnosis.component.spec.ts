@@ -485,6 +485,7 @@ describe('DiagnosisComponent', () => {
       expect(el.textContent).toContain('Alterado pelo médico');
     });
   });
+
   describe('completar dados (indeterminado)', () => {
     const INDETERMINATE: GlimReading = {
       ...CONFIRMED,

@@ -4,20 +4,43 @@ import { ConnectivityService } from '../../../shared/services/connectivity.servi
 import { NOW, ProfessionalProfile, ProfessionalProfileReader } from '../../home/professional-profile';
 import { NutritionFunctionalAssessment } from '../assessment/assessment.models';
 import { AssessmentSource } from '../assessment/assessment-source';
-import { CurrentRoute, RouteSaveRequest, SwallowingDecision, SwallowingSaveRequest } from './plan.models';
 import {
+  ConductFlag,
+  ConductFlagRequest,
+  CurrentRoute,
+  RouteSaveRequest,
+  SwallowingDecision,
+  SwallowingSaveRequest,
+} from './plan.models';
+import {
+  CALORIMETRY_FAILED_HINT,
   DYSPHAGIA_FAILED_HINT,
   DYSPHAGIA_MISSING_HINT,
   EMPTY_CADENCE_HINT,
   EMPTY_SELECTION_HINT,
+  FLAG_EMPTY_HINT,
+  FLAG_OFFLINE_HINT,
+  FLAG_SAVE_FAILED_HINT,
+  FLAGS_FAILED_HINT,
+  INVALID_FACTOR_HINT,
+  INVALID_PERCENT_HINT,
   LOAD_FAILED_HINT,
   OFFLINE_HINT,
   RESPONSIBLE_OPTIONS_FAILED_HINT,
   PlanSectionComponent,
   RISK_FAILED_HINT,
   SAVE_FAILED_HINT,
+  WEIGHTS_FAILED_HINT,
+  WEIGHTS_MISSING_HINT,
 } from './plan-section.component';
 import { PlanSource, ResponsibleSaveRequest } from './plan-source';
+import {
+  CalculatedWeights,
+  NutritionTargets,
+  ReferenceWeight,
+  ReferenceWeightSaveRequest,
+  TargetsSaveRequest,
+} from './plan-targets';
 import { RefeedingRisk, RefeedingRiskSource } from './refeeding-risk-source';
 import { CadenceSaveRequest, ReviewCadence } from './review-cadence';
 
@@ -39,6 +62,17 @@ class FakeSource extends PlanSource {
   optionsFail = false;
   responsibleSaveFails = false;
   readonly responsibleSaves: ResponsibleSaveRequest[] = [];
+  flags: ConductFlag[] = [];
+  flagLoadFails = false;
+  flagSaveFails = false;
+  readonly flagSaves: ConductFlagRequest[] = [];
+  calculated: CalculatedWeights = {};
+  weightsFail = false;
+  reference: ReferenceWeight | null = null;
+  targets: NutritionTargets | null = null;
+  targetsSaveFails = false;
+  readonly referenceSaves: ReferenceWeightSaveRequest[] = [];
+  readonly targetSaves: TargetsSaveRequest[] = [];
 
   loadResponsible(): Promise<string | null> {
     return Promise.resolve(this.responsible);
@@ -70,6 +104,51 @@ class FakeSource extends PlanSource {
     this.cadence = request.days;
 
     return Promise.resolve(request.days);
+  }
+
+  loadConductFlags(): Promise<readonly ConductFlag[]> {
+    return this.flagLoadFails ? Promise.reject(new Error('x')) : Promise.resolve(this.flags);
+  }
+
+  addConductFlag(request: ConductFlagRequest): Promise<ConductFlag> {
+    if (this.flagSaveFails) {
+      return Promise.reject(new Error('x'));
+    }
+    this.flagSaves.push(request);
+    const flag = { at: request.at, author: request.author, id: `f${this.flagSaves.length}`, text: request.text };
+
+    this.flags = [...this.flags, flag];
+
+    return Promise.resolve(flag);
+  }
+
+  loadCalculatedWeights(): Promise<CalculatedWeights> {
+    return this.weightsFail ? Promise.reject(new Error('x')) : Promise.resolve(this.calculated);
+  }
+
+  loadReferenceWeight(): Promise<ReferenceWeight | null> {
+    return Promise.resolve(this.reference);
+  }
+
+  saveReferenceWeight(request: ReferenceWeightSaveRequest): Promise<ReferenceWeight> {
+    this.referenceSaves.push(request);
+    this.reference = request.weight;
+
+    return Promise.resolve(request.weight);
+  }
+
+  loadTargets(): Promise<NutritionTargets | null> {
+    return Promise.resolve(this.targets);
+  }
+
+  saveTargets(request: TargetsSaveRequest): Promise<NutritionTargets> {
+    if (this.targetsSaveFails) {
+      return Promise.reject(new Error('x'));
+    }
+    this.targetSaves.push(request);
+    this.targets = request.targets;
+
+    return Promise.resolve(request.targets);
   }
 
   loadRoute(): Promise<CurrentRoute | null> {
@@ -413,6 +492,151 @@ describe('PlanSectionComponent', () => {
       await settle();
 
       expect(value()).toBe('Diária');
+    });
+  });
+
+  describe('sinalização de mudança de conduta', () => {
+    const flagEls = (): HTMLElement[] => Array.from(el().querySelectorAll('[data-testid="conduct-flag"]'));
+    const area = (): HTMLTextAreaElement | null => el().querySelector('#flag-text');
+    const type = async (value: string): Promise<void> => {
+      const a = area() as HTMLTextAreaElement;
+
+      a.value = value;
+      a.dispatchEvent(new Event('input'));
+      await settle();
+    };
+    const send = async (): Promise<void> => {
+      Array.from(el().querySelectorAll('button'))
+        .find(b => b.textContent.includes('Sinalizar'))
+        ?.click();
+      await settle();
+    };
+    const hint = (): string => el().querySelector('[data-testid="flag-hint"]')?.textContent.trim() ?? '';
+
+    it('não-médico registra a sinalização; ela aparece com texto, autor e data/hora e o campo limpa', async () => {
+      await setup('other');
+      await openIt();
+      await type('  Liberar dieta por via oral ');
+      await send();
+
+      expect(source.flagSaves).toEqual([
+        { at: '2026-11-20T15:00:00.000Z', author: 'Dra. Ana', patientId: 'p9', text: 'Liberar dieta por via oral' },
+      ]);
+
+      expect(flagEls().length).toBe(1);
+      expect(flagEls()[0].textContent).toContain('Liberar dieta por via oral');
+      expect(flagEls()[0].textContent).toContain('Dra. Ana · 20/11/2026');
+      expect(area()?.value).toBe('');
+    });
+
+    it('texto vazio não é aceito', async () => {
+      await setup('other');
+      await openIt();
+      await type('   ');
+      await send();
+
+      expect(source.flagSaves.length).toBe(0);
+      expect(hint()).toBe(FLAG_EMPTY_HINT);
+    });
+
+    it('médico vê as sinalizações já registradas, sem campo de sinalizar nem aceitar/rejeitar', async () => {
+      source.flags = [{ at: '2026-11-19T10:00:00', author: 'Enf. Bia', id: 'f0', text: 'Liberar VO' }];
+      await setup('doctor');
+      await openIt();
+
+      expect(flagEls()[0].textContent).toContain('Enf. Bia');
+      expect(area()).toBeNull();
+      expect(text()).not.toMatch(/aceitar|rejeitar/iu);
+    });
+
+    it('sinalizar não muda a via vigente nem o formulário do médico', async () => {
+      source.current = { routes: ['NE'], since: '2026-11-12T12:00:00' };
+      await setup('other');
+      await openIt();
+      await type('Liberar VO');
+      await send();
+
+      expect(source.saves.length).toBe(0);
+      expect(el().querySelector('[data-testid="current-route"]')?.textContent.trim()).toBe('NE');
+    });
+
+    it('sinalização permanece ao reabrir o plano', async () => {
+      await setup('other');
+      await openIt();
+      await type('Liberar VO');
+      await send();
+      (el().querySelector('app-icon-button button') as HTMLButtonElement).click();
+      await settle();
+      await openIt();
+
+      expect(flagEls().length).toBe(1);
+    });
+
+    it('sem conexão: ação desabilitada com aviso, mas as sinalizações seguem visíveis', async () => {
+      source.flags = [{ at: '2026-11-19T10:00:00', author: 'Enf. Bia', id: 'f0', text: 'Liberar VO' }];
+      await setup('other');
+      TestBed.inject(ConnectivityService).online.set(false);
+      await openIt();
+
+      expect(el().querySelector('[data-testid="flag-offline"]')?.textContent).toContain(FLAG_OFFLINE_HINT);
+      expect(flagEls().length).toBe(1);
+      await type('Liberar VO');
+      await send();
+
+      expect(source.flagSaves.length).toBe(0);
+      (fixture.componentInstance as unknown as { sendFlag(): Promise<void> }).sendFlag();
+      await settle();
+
+      expect(hint()).toBe(FLAG_OFFLINE_HINT);
+    });
+
+    it('falha ao gravar: mostra mensagem e mantém o texto digitado', async () => {
+      source.flagSaveFails = true;
+      await setup('other');
+      await openIt();
+      await type('Liberar VO');
+      await send();
+
+      expect(hint()).toBe(FLAG_SAVE_FAILED_HINT);
+      expect(area()?.value).toBe('Liberar VO');
+    });
+
+    it('falha ao carregar: aviso em texto e o campo segue utilizável', async () => {
+      source.flagLoadFails = true;
+      await setup('other');
+      await openIt();
+
+      expect(el().querySelector('[data-testid="flags-failed"]')?.textContent).toContain(FLAGS_FAILED_HINT);
+      await type('Liberar VO');
+      await send();
+
+      expect(source.flagSaves.length).toBe(1);
+    });
+
+    it('sem sinalizações: informa em texto', async () => {
+      await setup('other');
+      await openIt();
+
+      expect(el().querySelector('[data-testid="flags-empty"]')).not.toBeNull();
+    });
+
+    it('envio duplo enquanto grava registra uma só vez', async () => {
+      await setup('other');
+      await openIt();
+      await type('Liberar VO');
+      const c = fixture.componentInstance as unknown as { sendFlag(): Promise<void> };
+
+      await Promise.all([c.sendFlag(), c.sendFlag()]);
+
+      expect(source.flagSaves.length).toBe(1);
+    });
+
+    it('médico não consegue enviar sinalização nem por chamada direta', async () => {
+      await setup('doctor');
+      await openIt();
+      await (fixture.componentInstance as unknown as { sendFlag(): Promise<void> }).sendFlag();
+
+      expect(source.flagSaves.length).toBe(0);
     });
   });
 
@@ -770,6 +994,310 @@ describe('PlanSectionComponent', () => {
       await settle();
 
       expect(dialog().open).toBe(false);
+    });
+  });
+
+  describe('peso de referência e metas', () => {
+    const all: CalculatedWeights = { adjusted: 68, current: 75, dry: 72.5, ideal: 62 };
+    const ref = (kind: string): HTMLInputElement =>
+      el().querySelector(`[data-reference="${kind}"]`) as HTMLInputElement;
+    const field = (name: string): HTMLInputElement => el().querySelector(`[data-input="${name}"]`) as HTMLInputElement;
+    const section = (id: string): string =>
+      (el().querySelector(`[data-testid="${id}"]`) as HTMLElement).textContent.replace(/\s+/gu, ' ');
+    const pick = async (kind: string): Promise<void> => {
+      ref(kind).click();
+      await settle();
+    };
+    const type = async (name: string, value: string): Promise<void> => {
+      const input = field(name);
+
+      input.value = value;
+      input.dispatchEvent(new Event('input'));
+      await settle();
+    };
+    const calorimetry = (): void => {
+      assessment.latest = { previous: {}, values: { indirectCalorimetry: '1450' } };
+    };
+    const formulaRadio = (f: string): HTMLInputElement =>
+      el().querySelector(`[data-formula="${f}"]`) as HTMLInputElement;
+
+    it('mostra as quatro opções com valor e só as existentes', async () => {
+      source.calculated = all;
+      await setup('doctor');
+      await openIt();
+
+      expect(text()).toContain('Ideal · 62,0 kg');
+      expect(text()).toContain('Ajustado · 68,0 kg');
+      expect(text()).toContain('Seco · 72,5 kg');
+      expect(text()).toContain('Atual · 75,0 kg');
+    });
+
+    it('omite pesos inexistentes', async () => {
+      source.calculated = { current: 75 };
+      await setup('doctor');
+      await openIt();
+
+      expect(ref('current')).not.toBeNull();
+      expect(ref('ideal')).toBeNull();
+    });
+
+    it('sem pesos: explica e não salva peso nem metas', async () => {
+      await setup('doctor');
+      await openIt();
+
+      expect(text()).toContain(WEIGHTS_MISSING_HINT);
+      expect(section('targets-empty')).toContain('Selecione o peso de referência');
+      await save();
+
+      expect(source.referenceSaves).toEqual([]);
+      expect(source.targetSaves).toEqual([]);
+    });
+
+    it('falha ao ler pesos: aviso e a via continua funcionando', async () => {
+      source.weightsFail = true;
+      await setup('doctor');
+      await openIt();
+
+      expect(text()).toContain(WEIGHTS_FAILED_HINT);
+      await toggle('NE');
+      await save();
+
+      expect(source.saves.length).toBe(1);
+    });
+
+    it('escolher o peso calcula as metas na hora (75 kg × 25 e × 1,5) sem gravar', async () => {
+      source.calculated = all;
+      await setup('doctor');
+      await openIt();
+      await pick('current');
+
+      expect(section('target-kcal')).toContain('1.875 kcal/dia (25 kcal/kg)');
+      expect(section('target-protein')).toContain('112,5 g/dia (1,5 g/kg)');
+      await pick('adjusted');
+
+      expect(section('target-kcal')).toContain('1.700 kcal/dia');
+      expect(source.targetSaves).toEqual([]);
+    });
+
+    it('salva peso e metas com fórmula, fatores e peso como dados de entrada; reabre selecionado', async () => {
+      source.calculated = all;
+      await setup('doctor');
+      await openIt();
+      await pick('current');
+      await save();
+
+      expect(source.referenceSaves[0].weight).toEqual({ kg: 75, kind: 'current' });
+      expect(source.targetSaves[0].targets).toEqual({
+        calorimetry: null,
+        formula: 'simplified',
+        kcalPerDay: 1875,
+        kcalPerKg: 25,
+        proteinPerDay: 112.5,
+        proteinPerKg: 1.5,
+        referenceWeight: { kg: 75, kind: 'current' },
+      });
+      await save();
+
+      expect(source.targetSaves.length).toBe(1);
+      (el().querySelector('.plan__header app-icon-button') as HTMLElement).click();
+      await openIt();
+
+      expect(ref('current').checked).toBe(true);
+      expect(section('target-basis')).toContain('Atual · 75,0 kg');
+    });
+
+    it('salvar só a via não renova o peso de referência já salvo', async () => {
+      source.calculated = all;
+      source.reference = { kg: 75, kind: 'current' };
+      await setup('doctor');
+      await openIt();
+      await toggle('VO');
+      await save();
+
+      expect(source.saves.length).toBe(1);
+      expect(source.referenceSaves).toEqual([]);
+    });
+
+    it('ajusta os fatores; inválidos são recusados e não gravam', async () => {
+      source.calculated = all;
+      await setup('doctor');
+      await openIt();
+      await pick('current');
+      await type('kcal', '30');
+      await type('protein', '2');
+
+      expect(section('target-kcal')).toContain('2.250 kcal/dia');
+      expect(section('target-protein')).toContain('150 g/dia');
+      for (const bad of ['', '0', '-3', 'abc']) {
+        /* eslint-disable no-await-in-loop -- cada valor inválido é digitado e salvo em sequência */
+        await type('kcal', bad);
+        await save();
+        /* eslint-enable no-await-in-loop */
+
+        expect(section('targets-error')).toContain(INVALID_FACTOR_HINT);
+      }
+
+      expect(source.targetSaves).toEqual([]);
+      expect(source.referenceSaves).toEqual([]);
+    });
+
+    it('falha ao salvar as metas: aviso e a edição é mantida', async () => {
+      source.calculated = all;
+      source.targetsSaveFails = true;
+      await setup('doctor');
+      await openIt();
+      await pick('current');
+      await save();
+
+      expect(text()).toContain(SAVE_FAILED_HINT);
+      expect(ref('current').checked).toBe(true);
+    });
+
+    it('com calorimetria: opção aparece, 70% de 1.450 = 1.015 e proteína segue por kg', async () => {
+      source.calculated = all;
+      calorimetry();
+      await setup('doctor');
+      await openIt();
+      await pick('current');
+      formulaRadio('indirect-calorimetry').click();
+      await settle();
+
+      expect(field('percent').value).toBe('70');
+      expect(section('target-kcal')).toContain('1.015 kcal/dia');
+      expect(section('target-protein')).toContain('112,5 g/dia');
+      expect(section('target-basis')).toContain('70% de 1.450 kcal/dia (calorimetria indireta)');
+      formulaRadio('simplified').click();
+      await settle();
+
+      expect(section('target-kcal')).toContain('1.875 kcal/dia');
+      expect(source.targetSaves).toEqual([]);
+    });
+
+    it('salva a origem calorimetria com percentual e valor; reabre exibindo-os', async () => {
+      source.calculated = all;
+      calorimetry();
+      await setup('doctor');
+      await openIt();
+      await pick('current');
+      formulaRadio('indirect-calorimetry').click();
+      await settle();
+      await type('percent', '80');
+      await save();
+
+      expect(source.targetSaves[0].targets.calorimetry).toEqual({ kcal: 1450, percent: 80 });
+      expect(source.targetSaves[0].targets.formula).toBe('indirect-calorimetry');
+      expect(source.targetSaves[0].targets.kcalPerDay).toBe(1160);
+      (el().querySelector('.plan__header app-icon-button') as HTMLElement).click();
+      await openIt();
+
+      expect(formulaRadio('indirect-calorimetry').checked).toBe(true);
+      expect(field('percent').value).toBe('80');
+    });
+
+    it('percentual inválido ou acima do limite é recusado', async () => {
+      source.calculated = all;
+      calorimetry();
+      await setup('doctor');
+      await openIt();
+      await pick('current');
+      formulaRadio('indirect-calorimetry').click();
+      await settle();
+      for (const bad of ['', '0', '-1', 'x', '151']) {
+        /* eslint-disable no-await-in-loop -- cada valor inválido é digitado e salvo em sequência */
+        await type('percent', bad);
+        await save();
+        /* eslint-enable no-await-in-loop */
+
+        expect(section('targets-error')).toContain(INVALID_PERCENT_HINT);
+      }
+
+      expect(source.targetSaves).toEqual([]);
+    });
+
+    it('sem calorimetria: sem a opção, fórmula simplificada', async () => {
+      source.calculated = all;
+      await setup('doctor');
+      await openIt();
+      await pick('current');
+
+      expect(formulaRadio('indirect-calorimetry')).toBeNull();
+    });
+
+    it('falha ao ler a calorimetria: aviso discreto e fórmula simplificada', async () => {
+      source.calculated = all;
+      assessment.fails = true;
+      await setup('doctor');
+      await openIt();
+      await pick('current');
+
+      expect(text()).toContain(CALORIMETRY_FAILED_HINT);
+      expect(section('target-kcal')).toContain('1.875');
+    });
+
+    it('calorimetria sumiu ao reabrir: metas salvas seguem como gravadas e sem regravar', async () => {
+      source.calculated = all;
+      source.reference = { kg: 75, kind: 'current' };
+      source.targets = {
+        calorimetry: { kcal: 1450, percent: 70 },
+        formula: 'indirect-calorimetry',
+        kcalPerDay: 1015,
+        kcalPerKg: 13.5,
+        proteinPerDay: 112.5,
+        proteinPerKg: 1.5,
+        referenceWeight: { kg: 75, kind: 'current' },
+      };
+      await setup('doctor');
+      await openIt();
+
+      expect(section('target-kcal')).toContain('1.015 kcal/dia');
+      await toggle('VO');
+      await save();
+
+      expect(source.targetSaves).toEqual([]);
+    });
+
+    it('não médico: vê peso e metas vigentes sem controles', async () => {
+      source.reference = { kg: 75, kind: 'current' };
+      source.targets = {
+        calorimetry: null,
+        formula: 'simplified',
+        kcalPerDay: 1875,
+        kcalPerKg: 25,
+        proteinPerDay: 112.5,
+        proteinPerKg: 1.5,
+        referenceWeight: { kg: 75, kind: 'current' },
+      };
+      await setup('other');
+      await openIt();
+
+      expect(section('reference-value')).toContain('Atual · 75,0 kg');
+      expect(section('target-kcal')).toContain('1.875 kcal/dia');
+      expect(el().querySelector('[data-reference], [data-input]')).toBeNull();
+    });
+
+    it('não médico sem dados: textos de vazio', async () => {
+      await setup('other');
+      await openIt();
+
+      expect(section('reference-value')).toContain('Sem peso de referência');
+      expect(section('targets-empty')).toContain('Sem metas definidas');
+    });
+
+    it('offline: seleção desabilitada, aviso e a visualização continua', async () => {
+      source.calculated = all;
+      source.reference = { kg: 75, kind: 'current' };
+      await setup('doctor');
+      TestBed.inject(ConnectivityService).online.set(false);
+      await openIt();
+
+      expect(ref('current').disabled).toBe(true);
+      expect(ref('current').checked).toBe(true);
+      expect(text()).toContain(OFFLINE_HINT);
+      const c = fixture.componentInstance as unknown as { chooseReference(k: string): void };
+
+      c.chooseReference('ideal');
+
+      expect(ref('current').checked).toBe(true);
     });
   });
 

@@ -244,3 +244,66 @@
     outline-offset: var(--focus-ring-offset);
   }
 }
+
+// Sinalização de mudança de conduta (não está no Figma 4716-9503): mesmo padrão do v2/Banner, com texto
+// e ícone (nunca só cor) e autor/data/hora logo abaixo.
+.plan__flag {
+  display: flex;
+  align-items: flex-start;
+  gap: tokens.$space-8;
+  padding: 10px tokens.$space-16;
+  border: 1px solid tokens.c(border-2);
+  border-radius: tokens.$radius-12;
+  background: tokens.c(surface-2);
+  color: tokens.c(content-1);
+
+  ph-icon {
+    flex: none;
+  }
+}
+
+.plan__flag-body {
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$space-4;
+  min-inline-size: 0;
+}
+
+.plan__flag-text {
+  margin: 0;
+  overflow-wrap: anywhere;
+
+  @include typography.body-md;
+}
+
+.plan__field {
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$space-4;
+}
+
+.plan__input,
+.plan__textarea {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 44px;
+  padding: 0 tokens.$space-16;
+  border: 1px solid tokens.c(border);
+  border-radius: tokens.$radius-12;
+  background: tokens.c(surface);
+  color: tokens.c(content-1);
+
+  @include typography.body-lg;
+
+  &:focus-visible {
+    outline: 2px solid tokens.c(input-focus-ring);
+    outline-offset: 2px;
+  }
+}
+
+// Sinalização: caixa de texto de várias linhas.
+.plan__textarea {
+  padding: tokens.$space-8 tokens.$space-12;
+  font: inherit;
+  resize: vertical;
+}

@@ -49,4 +49,46 @@ describe('ProvisionalPlanSource', () => {
     expect(await source.loadResponsible('p1')).toBe('Dra. Ana');
     expect(await source.loadResponsibleOptions()).toContain('Dra. Ana');
   });
+
+  it('sinalizações: acumulam por paciente, não mexem na via e geram trilha de auditoria só de acréscimo', async () => {
+    const source = new ProvisionalPlanSource();
+
+    expect(await source.loadConductFlags('p1')).toEqual([]);
+    await source.addConductFlag({ at: '2026-11-20T10:00:00Z', author: 'A', patientId: 'p1', text: 'Liberar VO' });
+    await source.addConductFlag({ at: '2026-11-20T11:00:00Z', author: 'B', patientId: 'p1', text: 'Reavaliar' });
+
+    expect((await source.loadConductFlags('p1')).map(f => f.text)).toEqual(['Liberar VO', 'Reavaliar']);
+    expect(await source.loadConductFlags('x')).toEqual([]);
+    expect((await source.loadRoute('p1'))?.routes).toEqual(['NE']);
+    expect(source.auditTrail()).toEqual([
+      { at: '2026-11-20T10:00:00Z', author: 'A', flagId: 'p1-1', patientId: 'p1' },
+      { at: '2026-11-20T11:00:00Z', author: 'B', flagId: 'p1-2', patientId: 'p1' },
+    ]);
+
+    expect(Object.isFrozen(source.auditTrail()[0])).toBe(true);
+  });
+
+  it('pesos calculados, peso de referência e metas: leitura e última gravação', async () => {
+    const source = new ProvisionalPlanSource();
+    const weight = { kg: 68, kind: 'adjusted' } as const;
+    const targets = {
+      calorimetry: null,
+      formula: 'simplified',
+      kcalPerDay: 1700,
+      kcalPerKg: 25,
+      proteinPerDay: 102,
+      proteinPerKg: 1.5,
+      referenceWeight: weight,
+    } as const;
+
+    expect((await source.loadCalculatedWeights('p1')).adjusted).toBe(68);
+    expect(await source.loadCalculatedWeights('x')).toEqual({});
+    expect(await source.loadReferenceWeight('p1')).toBeNull();
+    expect(await source.loadTargets('p1')).toBeNull();
+    await source.saveReferenceWeight({ at: 'x', author: 'A', patientId: 'p1', weight });
+    await source.saveTargets({ at: 'x', author: 'A', patientId: 'p1', targets });
+
+    expect(await source.loadReferenceWeight('p1')).toEqual(weight);
+    expect(await source.loadTargets('p1')).toEqual(targets);
+  });
 });
