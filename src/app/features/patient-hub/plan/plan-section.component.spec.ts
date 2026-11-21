@@ -8,6 +8,7 @@ import { CurrentRoute, RouteSaveRequest, SwallowingDecision, SwallowingSaveReque
 import {
   DYSPHAGIA_FAILED_HINT,
   DYSPHAGIA_MISSING_HINT,
+  EMPTY_CADENCE_HINT,
   EMPTY_SELECTION_HINT,
   LOAD_FAILED_HINT,
   OFFLINE_HINT,
@@ -17,6 +18,7 @@ import {
 } from './plan-section.component';
 import { PlanSource } from './plan-source';
 import { RefeedingRisk, RefeedingRiskSource } from './refeeding-risk-source';
+import { CadenceSaveRequest, ReviewCadence } from './review-cadence';
 
 class FakeSource extends PlanSource {
   current: CurrentRoute | null = null;
@@ -27,6 +29,24 @@ class FakeSource extends PlanSource {
   swallowing: SwallowingDecision | null = null;
   swallowLoadFails = false;
   swallowSaveFails = false;
+  cadence: ReviewCadence | null = null;
+  cadenceLoadFails = false;
+  cadenceSaveFails = false;
+  readonly cadenceSaves: CadenceSaveRequest[] = [];
+
+  loadCadence(): Promise<ReviewCadence | null> {
+    return this.cadenceLoadFails ? Promise.reject(new Error('x')) : Promise.resolve(this.cadence);
+  }
+
+  saveCadence(request: CadenceSaveRequest): Promise<ReviewCadence> {
+    if (this.cadenceSaveFails) {
+      return Promise.reject(new Error('x'));
+    }
+    this.cadenceSaves.push(request);
+    this.cadence = request.days;
+
+    return Promise.resolve(request.days);
+  }
 
   loadRoute(): Promise<CurrentRoute | null> {
     return this.loadFails ? Promise.reject(new Error('x')) : Promise.resolve(this.current);
@@ -126,6 +146,151 @@ describe('PlanSectionComponent', () => {
     source = new FakeSource();
     riskSource = new FakeRisk();
     assessment = new FakeAssessment();
+  });
+
+  describe('cadência da próxima revisão', () => {
+    const mode = (id: string): HTMLInputElement => el().querySelector(`[data-cadence="${id}"]`) as HTMLInputElement;
+    const day = (id: number): HTMLInputElement => el().querySelector(`[data-day="${id}"]`) as HTMLInputElement;
+    const click = async (input: HTMLInputElement): Promise<void> => {
+      input.click();
+      await settle();
+    };
+    const value = (): string => (el().querySelector('[data-testid="cadence-value"]') as HTMLElement).textContent.trim();
+
+    it('sem cadência gravada: "Diária" é o padrão e nenhum dia precisa ser marcado (Cenário 1)', async () => {
+      await setup('doctor');
+      await openIt();
+
+      expect(mode('daily').checked).toBe(true);
+      expect(el().querySelector('[data-day]')).toBeNull();
+      expect(value()).toBe('Vigente: Diária');
+    });
+
+    it('médico marca dias específicos, salva, e reabrir mostra os dias salvos (Cenário 2)', async () => {
+      await setup('doctor');
+      await openIt();
+      await click(mode('weekdays'));
+      await click(day(5));
+      await click(day(1));
+      await save();
+
+      expect(source.cadenceSaves.length).toBe(1);
+      expect(source.cadenceSaves[0]).toEqual({
+        at: '2026-11-20T15:00:00.000Z',
+        author: 'Dra. Ana',
+        days: [1, 5],
+        patientId: 'p9',
+      });
+
+      expect(value()).toBe('Vigente: Seg e sex');
+      (el().querySelector('.plan__header app-icon-button button') as HTMLButtonElement).click();
+      await settle();
+      await openIt();
+
+      expect(mode('weekdays').checked).toBe(true);
+      expect(day(1).checked).toBe(true);
+      expect(day(5).checked).toBe(true);
+      expect(day(2).checked).toBe(false);
+    });
+
+    it('voltar a "Diária" persiste', async () => {
+      source.cadence = [1, 3];
+      await setup('doctor');
+      await openIt();
+      await click(mode('daily'));
+      await save();
+
+      expect(source.cadence?.length).toBe(7);
+      expect(value()).toBe('Vigente: Diária');
+    });
+
+    it('dias específicos sem nenhum dia marcado: aviso em texto e nada é gravado', async () => {
+      await setup('doctor');
+      await openIt();
+      await click(mode('weekdays'));
+      await save();
+
+      expect(text()).toContain(EMPTY_CADENCE_HINT);
+      expect(source.cadenceSaves.length).toBe(0);
+      await click(day(2));
+
+      expect(text()).not.toContain(EMPTY_CADENCE_HINT);
+    });
+
+    it('sem alteração, não regrava a cadência', async () => {
+      source.cadence = [2];
+      await setup('doctor');
+      await openIt();
+      await toggle('NE');
+      await save();
+
+      expect(source.cadenceSaves.length).toBe(0);
+      expect(source.saves.length).toBe(1);
+    });
+
+    it('não-médico vê a cadência sem controles de edição', async () => {
+      source.cadence = [1, 3, 5];
+      await setup('other');
+      await openIt();
+
+      expect(value()).toBe('Seg, qua e sex');
+      expect(el().querySelector('[data-cadence], [data-day]')).toBeNull();
+    });
+
+    it('offline: cadência salva visível; edição indisponível, com aviso', async () => {
+      source.cadence = [1, 3];
+      await setup('doctor');
+      await openIt();
+      await click(mode('weekdays'));
+      TestBed.inject(ConnectivityService).online.set(false);
+      await settle();
+
+      expect(value()).toBe('Vigente: Seg e qua');
+      expect(mode('daily').disabled).toBe(true);
+      expect(day(1).disabled).toBe(true);
+      expect(text()).toContain(OFFLINE_HINT);
+      day(1).dispatchEvent(new Event('change'));
+      mode('daily').dispatchEvent(new Event('change'));
+      await settle();
+
+      expect(day(1).checked).toBe(true);
+      expect(mode('weekdays').checked).toBe(true);
+    });
+
+    it('falha ao gravar: mensagem e a marcação do médico é mantida', async () => {
+      await setup('doctor');
+      await openIt();
+      await click(mode('weekdays'));
+      await click(day(4));
+      source.cadenceSaveFails = true;
+      await save();
+
+      expect(text()).toContain(SAVE_FAILED_HINT);
+      expect(day(4).checked).toBe(true);
+    });
+
+    it('falha ao carregar: mensagem de erro', async () => {
+      source.cadenceLoadFails = true;
+      await setup('doctor');
+      await openIt();
+
+      expect(text()).toContain(LOAD_FAILED_HINT);
+    });
+
+    it('não-médico não altera a cadência por chamada direta', async () => {
+      await setup('other');
+      await openIt();
+      const cmp = fixture.componentInstance as unknown as {
+        chooseCadenceMode(m: string): void;
+        toggleDay(d: number): void;
+      };
+
+      cmp.chooseCadenceMode('weekdays');
+      cmp.toggleDay(1);
+      await settle();
+
+      expect(value()).toBe('Diária');
+    });
   });
 
   describe('risco de disfagia (apoio da avaliação de deglutição)', () => {

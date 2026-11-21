@@ -28,6 +28,15 @@ import {
 } from './plan.models';
 import { PlanSource } from './plan-source';
 import { RefeedingRisk, RefeedingRiskSource } from './refeeding-risk-source';
+import {
+  cadenceLabel,
+  DAILY_CADENCE,
+  isDailyCadence,
+  normalizeCadence,
+  ReviewCadence,
+  Weekday,
+  WEEKDAYS,
+} from './review-cadence';
 
 type LoadState = 'idle' | 'loading' | 'ready' | 'error';
 
@@ -37,6 +46,7 @@ export const RISK_FAILED_HINT = 'Não foi possível verificar o risco de síndro
 export const DYSPHAGIA_FAILED_HINT = 'Não foi possível ler o risco de disfagia da Avaliação agora.';
 export const DYSPHAGIA_MISSING_HINT = 'Risco de disfagia ainda não registrado na Avaliação nutricional.';
 export const OFFLINE_HINT = 'Sem conexão: não é possível salvar o plano agora.';
+export const EMPTY_CADENCE_HINT = 'Marque ao menos um dia da semana para a revisão ou escolha a cadência diária.';
 export const EMPTY_SELECTION_HINT = 'Selecione ao menos uma via de nutrição para salvar.';
 
 /** Formata ISO como dd/MM (ano omitido, como no Figma 4716-9503). */
@@ -70,6 +80,12 @@ export class PlanSectionComponent {
   protected readonly swallowingText = computed(
     () => swallowingLabel(this.savedSwallowing()) || 'Sem decisão registrada',
   );
+  protected readonly weekdays = WEEKDAYS;
+  /** Cadência salva (padrão diária) e a escolha em edição (só vira salva em "Salvar plano"). */
+  protected readonly savedCadence = signal<ReviewCadence>(DAILY_CADENCE);
+  protected readonly cadenceMode = signal<'daily' | 'weekdays'>('daily');
+  protected readonly pickedDays = signal<readonly Weekday[]>([]);
+  protected readonly cadenceText = computed(() => cadenceLabel(this.savedCadence()));
   protected readonly selection = signal<readonly NutritionRoute[]>([]);
   protected readonly state = signal<LoadState>('idle');
   protected readonly saving = signal(false);
@@ -159,6 +175,26 @@ export class PlanSectionComponent {
     this.swallowing.set(id);
   }
 
+  protected chooseCadenceMode(mode: 'daily' | 'weekdays'): void {
+    if (!this.isDoctor || !this.connectivity.online()) {
+      return;
+    }
+    this.hint.set(null);
+    this.cadenceMode.set(mode);
+  }
+
+  protected toggleDay(id: Weekday): void {
+    if (!this.isDoctor || !this.connectivity.online()) {
+      return;
+    }
+    this.hint.set(null);
+    this.pickedDays.update(list => normalizeCadence(list.includes(id) ? list.filter(d => d !== id) : [...list, id]));
+  }
+
+  protected isDayPicked(id: Weekday): boolean {
+    return this.pickedDays().includes(id);
+  }
+
   protected isSelected(id: NutritionRoute): boolean {
     return this.selection().includes(id);
   }
@@ -183,8 +219,16 @@ export class PlanSectionComponent {
     }
     const routeChanged = this.selection().length > 0 && this.routeDiffers();
     const swallowingChanged = this.swallowing() !== null && this.swallowing() !== this.savedSwallowing();
+    const days = this.cadenceMode() === 'daily' ? DAILY_CADENCE : normalizeCadence(this.pickedDays());
 
-    if (this.selection().length === 0 && !swallowingChanged) {
+    if (days.length === 0) {
+      this.hint.set(EMPTY_CADENCE_HINT);
+
+      return;
+    }
+    const cadenceChanged = days.join() !== normalizeCadence(this.savedCadence()).join();
+
+    if (this.selection().length === 0 && !swallowingChanged && !cadenceChanged) {
       this.hint.set(EMPTY_SELECTION_HINT);
 
       return;
@@ -206,11 +250,20 @@ export class PlanSectionComponent {
       if (swallowingChanged && decision !== null) {
         this.savedSwallowing.set(await this.source.saveSwallowing({ at, author, decision, patientId }));
       }
+      if (cadenceChanged) {
+        this.applyCadence(await this.source.saveCadence({ at, author, days, patientId }));
+      }
     } catch {
       this.hint.set(SAVE_FAILED_HINT);
     } finally {
       this.saving.set(false);
     }
+  }
+
+  private applyCadence(days: ReviewCadence): void {
+    this.savedCadence.set(days);
+    this.cadenceMode.set(isDailyCadence(days) ? 'daily' : 'weekdays');
+    this.pickedDays.set(isDailyCadence(days) ? [] : days);
   }
 
   /** Só regrava a via quando mudou (salvar a decisão sozinha não renova "desde quando" da via). */
@@ -227,6 +280,7 @@ export class PlanSectionComponent {
     this.selection.set([]);
     this.savedSwallowing.set(null);
     this.swallowing.set(null);
+    this.applyCadence(DAILY_CADENCE);
     this.hint.set(null);
     this.risk.set(null);
     this.riskFailed.set(false);
@@ -236,14 +290,16 @@ export class PlanSectionComponent {
     void this.loadRisk(token);
     void this.loadDysphagia(token);
     try {
-      const [latest, decision] = await Promise.all([
+      const [latest, decision, cadence] = await Promise.all([
         this.source.loadRoute(this.patientId()),
         this.source.loadSwallowing(this.patientId()),
+        this.source.loadCadence(this.patientId()),
       ]);
 
       if (token === this.token) {
         this.savedSwallowing.set(decision);
         this.swallowing.set(decision);
+        this.applyCadence(cadence ?? DAILY_CADENCE);
         this.current.set(latest);
         this.selection.set(latest?.routes ?? []);
         this.state.set('ready');

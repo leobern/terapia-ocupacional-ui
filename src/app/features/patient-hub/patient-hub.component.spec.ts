@@ -175,6 +175,7 @@ async function setup(
         useValue: {
           loadRoute: (): Promise<null> => Promise.resolve(null),
           loadSwallowing: (): Promise<null> => Promise.resolve(null),
+          loadCadence: (): Promise<null> => Promise.resolve(null),
         },
       },
       { provide: RefeedingRiskSource, useValue: { load: (): Promise<null> => Promise.resolve(null) } },

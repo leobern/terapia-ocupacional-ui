@@ -29,4 +29,14 @@ describe('ProvisionalPlanSource', () => {
 
     expect(await source.loadSwallowing('p1')).toBe('needed');
   });
+
+  it('cadência: começa vazia (vale a diária), grava normalizada e não mexe na via', async () => {
+    const source = new ProvisionalPlanSource();
+
+    expect(await source.loadCadence('p1')).toBeNull();
+    await source.saveCadence({ at: 'x', author: 'A', days: [5, 1], patientId: 'p1' });
+
+    expect(await source.loadCadence('p1')).toEqual([1, 5]);
+    expect((await source.loadRoute('p1'))?.routes).toEqual(['NE']);
+  });
 });

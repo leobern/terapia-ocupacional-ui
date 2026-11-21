@@ -136,6 +136,71 @@
             </p>
           }
         </fieldset>
+        <fieldset class="plan__card" data-testid="cadence">
+          <legend class="plan__label">Próxima revisão</legend>
+          @if (!isDoctor) {
+            <p class="plan__value" data-testid="cadence-value">
+              {{ cadenceText() }}
+            </p>
+          } @else {
+            <div class="plan__options">
+              <label class="plan__option">
+                <input
+                  type="radio"
+                  name="cadence"
+                  class="plan__checkbox"
+                  data-cadence="daily"
+                  [checked]="cadenceMode() === 'daily'"
+                  [disabled]="!connectivity.online()"
+                  (change)="chooseCadenceMode('daily')"
+                />
+                <span class="plan__option-text">Diária</span>
+              </label>
+              <label class="plan__option">
+                <input
+                  type="radio"
+                  name="cadence"
+                  class="plan__checkbox"
+                  data-cadence="weekdays"
+                  [checked]="cadenceMode() === 'weekdays'"
+                  [disabled]="!connectivity.online()"
+                  (change)="chooseCadenceMode('weekdays')"
+                />
+                <span class="plan__option-text"
+                  >Dias específicos da semana</span
+                >
+              </label>
+            </div>
+            @if (cadenceMode() === 'weekdays') {
+              <div
+                class="plan__options"
+                role="group"
+                aria-label="Dias da semana"
+              >
+                @for (day of weekdays; track day.id) {
+                  <label class="plan__option">
+                    <input
+                      type="checkbox"
+                      class="plan__checkbox"
+                      [checked]="isDayPicked(day.id)"
+                      [disabled]="!connectivity.online()"
+                      [attr.data-day]="day.id"
+                      (change)="toggleDay(day.id)"
+                    />
+                    <span class="plan__option-text">{{ day.full }}</span>
+                  </label>
+                }
+              </div>
+            }
+            <p class="plan__value" data-testid="cadence-value">
+              Vigente: {{ cadenceText() }}
+            </p>
+          }
+          <p class="plan__help">
+            Define em quais dias o paciente aparece como pendente de reavaliação
+            na Listagem do dia.
+          </p>
+        </fieldset>
       </section>
     }
     @if (hint(); as message) {
