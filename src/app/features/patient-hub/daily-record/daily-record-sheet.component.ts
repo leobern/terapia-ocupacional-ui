@@ -17,6 +17,7 @@ import { IconButtonComponent } from '../../../shared/components/icon-button/icon
 import { InputChatAudioError, InputChatComponent } from '../../../shared/components/input-chat/input-chat.component';
 import { ConnectivityService } from '../../../shared/services/connectivity.service';
 import { NOW, ProfessionalProfileReader } from '../../home/professional-profile';
+import { PrescriptionGuidanceComponent } from '../prescription/prescription-guidance.component';
 import { DailyEvolutionComponent } from './daily-evolution.component';
 import {
   CUSTOM_PARAMETER_PREFIX,
@@ -69,7 +70,13 @@ interface ExtraParameter {
  */
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ButtonComponent, DailyEvolutionComponent, IconButtonComponent, InputChatComponent],
+  imports: [
+    ButtonComponent,
+    DailyEvolutionComponent,
+    IconButtonComponent,
+    InputChatComponent,
+    PrescriptionGuidanceComponent,
+  ],
   selector: 'app-daily-record-sheet',
   styleUrl: './daily-record-sheet.component.scss',
   templateUrl: './daily-record-sheet.component.html',

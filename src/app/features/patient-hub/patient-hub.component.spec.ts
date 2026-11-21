@@ -1,5 +1,6 @@
 import { Location } from '@angular/common';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
 import { ActivatedRoute, convertToParamMap, provideRouter, Router } from '@angular/router';
 import { of } from 'rxjs';
 
@@ -20,6 +21,7 @@ import {
 import { NutritionValues } from '../patients/nutrition-panel/nutrition-panel.models';
 import { NutritionResultsSource } from '../patients/nutrition-panel/nutrition-results-source';
 import { ProvisionalNutritionCardStore } from '../patients/nutrition-panel/provisional-nutrition-card-store';
+import { FormulasApi } from '../pharmacy/formulas-api';
 import { AssessmentAiStructurer } from './assessment/assessment-ai-structurer';
 import { AssessmentSource } from './assessment/assessment-source';
 import { AssessmentWriter } from './assessment/assessment-writer';
@@ -42,8 +44,11 @@ import {
   PriorStaysSource,
   PriorStaysSynthesizer,
 } from './patient-hub-source';
+import { NutritionTargetsReader } from './plan/nutrition-targets-reader';
 import { PlanSource } from './plan/plan-source';
 import { RefeedingRiskSource } from './plan/refeeding-risk-source';
+import { Prescription } from './prescription/prescription.models';
+import { PrescriptionSheetComponent } from './prescription/prescription-sheet.component';
 import { PrescriptionSource } from './prescription/prescription-source';
 
 const PROFILE: PatientHubProfile = {
@@ -155,6 +160,20 @@ class FakeDiagnosis extends DiagnosisSource {
 const diagnosis = new FakeDiagnosis();
 const priorStays = new FakePriorStays();
 const priorSynth = new FakePriorSynth();
+const prescriptionStore: { fail: boolean; value: Prescription | null } = { fail: false, value: null };
+const PRESCRIPTION: Prescription = {
+  at: '2026-11-21T10:00:00Z',
+  author: 'Michelle',
+  formulaId: 'a',
+  formulaName: 'Fórmula Hub',
+  kcalPerMl: 1,
+  modality: 'continuous',
+  nursingNotes: '',
+  pauseTimes: [],
+  proteinPerMl: 0.04,
+  startTime: '08:00',
+  volumeMl: 900,
+};
 let store = new ProvisionalNutritionCardStore();
 const results = new FakeResults();
 const synth = new FakeSynth();
@@ -229,6 +248,8 @@ async function setup(
       { provide: AssessmentWriter, useValue: { save: (): Promise<void> => Promise.resolve() } },
       { provide: DailyRecordSource, useValue: { loadEntries: (): Promise<[]> => Promise.resolve([]) } },
       { provide: DailyRecordWriter, useValue: { record: (): Promise<[]> => Promise.resolve([]) } },
+      { provide: FormulasApi, useValue: { list: (): Promise<[]> => Promise.resolve([]) } },
+      { provide: NutritionTargetsReader, useValue: { current: (): Promise<null> => Promise.resolve(null) } },
       { provide: PriorStaysSource, useValue: priorStays },
       { provide: PriorStaysSynthesizer, useValue: priorSynth },
       {
@@ -238,6 +259,8 @@ async function setup(
       {
         provide: PrescriptionSource,
         useValue: {
+          load: (): Promise<Prescription | null> =>
+            prescriptionStore.fail ? Promise.reject(new Error('x')) : Promise.resolve(prescriptionStore.value),
           loadActive: (): Promise<null> => Promise.resolve(null),
           loadReview: (): Promise<null> => Promise.resolve(null),
         },
@@ -285,6 +308,8 @@ const cards = (f: ComponentFixture<unknown>): string[] =>
 
 describe('PatientHubComponent', () => {
   beforeEach(() => {
+    prescriptionStore.fail = false;
+    prescriptionStore.value = null;
     store = new ProvisionalNutritionCardStore();
     results.values = {};
     results.fail = false;
@@ -308,6 +333,40 @@ describe('PatientHubComponent', () => {
     expect(f.nativeElement.querySelector('.stays__header').getAttribute('aria-expanded')).toBe('false');
   });
 
+  describe('Prescrição ativa', () => {
+    it('mostra a prescrição vigente e passa a mostrar a nova depois de salva, sem recarregar', async () => {
+      prescriptionStore.value = PRESCRIPTION;
+      const f = await setup(new FakeSource());
+
+      expect(text(f)).toContain('Fórmula Hub');
+      prescriptionStore.value = { ...PRESCRIPTION, formulaName: 'Fórmula nova' };
+      (
+        f.debugElement.query(By.directive(PrescriptionSheetComponent)).componentInstance as PrescriptionSheetComponent
+      ).saved.emit();
+      await f.whenStable();
+      f.detectChanges();
+
+      expect(text(f)).toContain('Fórmula nova');
+      expect(text(f)).not.toContain('Fórmula Hub');
+    });
+
+    it('sem prescrição não mostra o resumo; falha ao recarregar mantém o exibido', async () => {
+      const f = await setup(new FakeSource());
+
+      expect(f.nativeElement.querySelector('app-prescription-summary [data-testid="rx-summary"]')).toBeNull();
+      prescriptionStore.value = PRESCRIPTION;
+      await (f.componentInstance as unknown as { reloadPrescription: () => Promise<void> }).reloadPrescription();
+      f.detectChanges();
+
+      expect(text(f)).toContain('Fórmula Hub');
+      prescriptionStore.fail = true;
+      await (f.componentInstance as unknown as { reloadPrescription: () => Promise<void> }).reloadPrescription();
+      f.detectChanges();
+
+      expect(text(f)).toContain('Fórmula Hub');
+    });
+  });
+
   describe('Registro diário', () => {
     it('registra a ação "Registro diário" nos atalhos e abre o registro ao escolhê-la', async () => {
       const f = await setup(new FakeSource());
@@ -315,7 +374,7 @@ describe('PatientHubComponent', () => {
       const dialog = (): HTMLDialogElement =>
         (f.nativeElement as HTMLElement).querySelector('app-daily-record-sheet dialog') as HTMLDialogElement;
 
-      expect(actions.map(a => a.label)).toEqual(['Registro diário', 'Revisão da prescrição']);
+      expect(actions.map(a => a.label)).toEqual(['Registro diário', 'Ajustar a prescrição', 'Revisão da prescrição']);
       expect(dialog().open).toBe(false);
       actions[0].navigate?.();
       f.detectChanges();
@@ -346,6 +405,26 @@ describe('PatientHubComponent', () => {
       const dialog = (): HTMLDialogElement =>
         (f.nativeElement as HTMLElement).querySelector('app-prescription-review dialog') as HTMLDialogElement;
 
+      action?.navigate?.();
+      f.detectChanges();
+      await f.whenStable();
+
+      expect(dialog().open).toBe(true);
+      dialog().dispatchEvent(new Event('cancel', { cancelable: true }));
+      f.detectChanges();
+
+      expect(dialog().open).toBe(false);
+    });
+
+    it('"Ajustar a prescrição" abre a revisão da prescrição e só existe para o médico', async () => {
+      const f = await setup(new FakeSource());
+      const dialog = (): HTMLDialogElement =>
+        (f.nativeElement as HTMLElement).querySelector('app-prescription-sheet dialog') as HTMLDialogElement;
+      const action = TestBed.inject(ScreenActionsService)
+        .actions()
+        .find(a => a.id === 'adjust-prescription');
+
+      expect(dialog().open).toBe(false);
       action?.navigate?.();
       f.detectChanges();
       await f.whenStable();

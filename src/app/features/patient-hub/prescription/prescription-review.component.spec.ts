@@ -8,8 +8,10 @@ import { NutritionTargets } from '../plan/plan-targets';
 import {
   ActivePrescription,
   formatOptional,
+  Prescription,
   PrescriptionReview,
   PrescriptionReviewRequest,
+  PrescriptionSaveRequest,
 } from './prescription.models';
 import {
   NO_PRESCRIPTION_TEXT,
@@ -46,6 +48,14 @@ class FakeSource extends PrescriptionSource {
   loadFails = false;
   keepFails = false;
   readonly kept: PrescriptionReviewRequest[] = [];
+
+  load(): Promise<Prescription | null> {
+    return Promise.resolve(null);
+  }
+
+  save(request: PrescriptionSaveRequest): Promise<Prescription> {
+    return Promise.resolve(request.prescription);
+  }
 
   loadActive(): Promise<ActivePrescription | null> {
     return this.loadFails ? Promise.reject(new Error('x')) : Promise.resolve(this.active);
