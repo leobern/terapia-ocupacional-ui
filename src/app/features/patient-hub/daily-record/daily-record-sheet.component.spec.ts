@@ -97,7 +97,7 @@ describe('DailyRecordSheetComponent', () => {
         { provide: DailyRecordSource, useValue: store },
         { provide: DailyRecordWriter, useValue: store },
         { provide: DailyEvolutionSource, useClass: EvolutionStub },
-        { provide: PrescriptionSource, useValue: { load: (): Promise<null> => Promise.resolve(null) } },
+        { provide: PrescriptionSource, useValue: { load: (): Promise<readonly never[]> => Promise.resolve([]) } },
         { provide: ParameterAiStructurer, useValue: ai },
         { provide: EvolutionAiStructurer, useValue: { suggest: (): Promise<string> => Promise.resolve('') } },
         { provide: ConnectivityService, useValue: { online } },

@@ -30,6 +30,7 @@ import { PrescriptionSource } from './prescription-source';
 import { RouteChangeComponent } from './route-change.component';
 
 const PRESCRIPTION: ActivePrescription = {
+  route: 'NE',
   at: '2026-11-20T13:33:00',
   author: 'Rafael Dutra',
   flowMlPerHour: 55,
@@ -60,16 +61,18 @@ class FakeSource extends PrescriptionSource {
   keepFails = false;
   readonly kept: PrescriptionReviewRequest[] = [];
 
-  load(): Promise<Prescription | null> {
-    return Promise.resolve(null);
+  load(): Promise<readonly Prescription[]> {
+    return Promise.resolve([]);
   }
 
-  save(request: PrescriptionSaveRequest): Promise<Prescription> {
-    return Promise.resolve(request.prescription);
+  save(request: PrescriptionSaveRequest): Promise<readonly Prescription[]> {
+    return Promise.resolve(request.prescriptions);
   }
 
-  loadActive(): Promise<ActivePrescription | null> {
-    return this.loadFails ? Promise.reject(new Error('x')) : Promise.resolve(this.active);
+  loadActive(): Promise<readonly ActivePrescription[]> {
+    const list = this.active === null ? [] : [this.active];
+
+    return this.loadFails ? Promise.reject(new Error('x')) : Promise.resolve(list);
   }
 
   loadReview(): Promise<PrescriptionReview | null> {

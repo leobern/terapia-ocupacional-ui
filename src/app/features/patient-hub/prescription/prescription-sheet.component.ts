@@ -22,6 +22,7 @@ import { NutritionTargetsReader } from '../plan/nutrition-targets-reader';
 import { formatNumber } from '../plan/plan-targets';
 import {
   AdministrationModality,
+  DEFAULT_PRESCRIPTION_ROUTES,
   evaluatePrescription,
   IntakeTargets,
   MODALITY_OPTIONS,
@@ -196,9 +197,11 @@ export class PrescriptionSheetComponent {
   protected async save(): Promise<void> {
     this.touched.set(true);
     this.saveFailed.set(false);
+    const route = DEFAULT_PRESCRIPTION_ROUTES[0];
     const prescription = toPrescription(this.draft(), {
       at: this.now().toISOString(),
       author: this.professional.read().name,
+      route,
     });
 
     if (!this.online() || prescription === null || this.saving()) {
@@ -206,7 +209,10 @@ export class PrescriptionSheetComponent {
     }
     this.saving.set(true);
     try {
-      await this.prescriptions.save({ patientId: this.patientId(), prescription });
+      // Substitui só a prescrição desta via; as demais vias ativas seguem como estavam.
+      const others = (await this.prescriptions.load(this.patientId())).filter(p => p.route !== route);
+
+      await this.prescriptions.save({ patientId: this.patientId(), prescriptions: [...others, prescription] });
       this.saved.emit();
       this.close();
     } catch {

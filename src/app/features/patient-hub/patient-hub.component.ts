@@ -159,7 +159,7 @@ export class PatientHubComponent implements OnInit {
   /** Revisão da prescrição (FT-004-8) aberta pela ação "Ajustar a prescrição" dos atalhos (só médico). */
   protected readonly prescriptionOpen = signal(false);
   /** Prescrição vigente exibida no Hub; `null` = sem prescrição (ou leitura falhou). */
-  protected readonly prescription = signal<Prescription | null>(null);
+  protected readonly prescription = signal<readonly Prescription[]>([]);
   /** Revisão diária da prescrição (FT-004-8), aberta pela ação dos atalhos; só para o médico. */
   protected readonly prescriptionReviewOpen = signal(false);
 

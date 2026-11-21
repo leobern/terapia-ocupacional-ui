@@ -162,6 +162,7 @@ const priorStays = new FakePriorStays();
 const priorSynth = new FakePriorSynth();
 const prescriptionStore: { fail: boolean; value: Prescription | null } = { fail: false, value: null };
 const PRESCRIPTION: Prescription = {
+  route: 'NE',
   at: '2026-11-21T10:00:00Z',
   author: 'Michelle',
   formulaId: 'a',
@@ -259,9 +260,12 @@ async function setup(
       {
         provide: PrescriptionSource,
         useValue: {
-          load: (): Promise<Prescription | null> =>
-            prescriptionStore.fail ? Promise.reject(new Error('x')) : Promise.resolve(prescriptionStore.value),
-          loadActive: (): Promise<null> => Promise.resolve(null),
+          load: (): Promise<readonly Prescription[]> => {
+            const list = prescriptionStore.value === null ? [] : [prescriptionStore.value];
+
+            return prescriptionStore.fail ? Promise.reject(new Error('x')) : Promise.resolve(list);
+          },
+          loadActive: (): Promise<readonly never[]> => Promise.resolve([]),
           loadReview: (): Promise<null> => Promise.resolve(null),
         },
       },

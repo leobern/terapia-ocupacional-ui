@@ -6,8 +6,10 @@ import {
   PAUSE_DUPLICATED_HINT,
   PAUSE_REQUIRED_HINT,
   PrescriptionDraft,
+  routeTitle,
   toActivePrescription,
   toPrescription,
+  totalIntake,
 } from './prescription.models';
 
 const formula = { id: 'f1', kcalPerMl: 1.5, name: 'Hiper', proteinPerMl: 0.06 };
@@ -109,7 +111,7 @@ describe('minutesOf', () => {
 });
 
 describe('toPrescription', () => {
-  const ctx = { at: '2026-11-21T10:00:00Z', author: 'Dra. Ana' };
+  const ctx = { at: '2026-11-21T10:00:00Z', author: 'Dra. Ana', route: 'NE' } as const;
 
   it('monta a prescrição com autor e data, aparando as orientações', () => {
     const p = toPrescription({ ...base, nursingNotes: '  não desconectar  ' }, ctx);
@@ -139,6 +141,7 @@ describe('toPrescription', () => {
 
 describe('toActivePrescription', () => {
   const prescription = {
+    route: 'NE',
     at: '2026-11-20T13:33:00',
     author: 'Rafael',
     formulaId: 'f1',
@@ -154,6 +157,7 @@ describe('toActivePrescription', () => {
 
   it('contínua: calcula kcal, proteína e vazão sobre 24 h', () => {
     expect(toActivePrescription(prescription)).toEqual({
+      route: 'NE',
       at: prescription.at,
       author: 'Rafael',
       flowMlPerHour: 50,
@@ -172,5 +176,25 @@ describe('toActivePrescription', () => {
 
     expect(active.hoursPerDay).toBeNull();
     expect(active.flowMlPerHour).toBeNull();
+  });
+});
+
+describe('totalIntake e routeTitle', () => {
+  const a = { hours: 24, kcal: 900, kcalPercent: 50, protein: 36, proteinPercent: 40, rateMlPerHour: 40 };
+  const b = { hours: 24, kcal: 600, kcalPercent: 33, protein: 24, proteinPercent: 27, rateMlPerHour: 30 };
+  const goals = { kcalPerDay: 1800, proteinPerDay: 90 };
+
+  it('soma o aporte das vias e compara com a meta', () => {
+    expect(totalIntake([a, b], goals)).toEqual({ kcal: 1500, kcalPercent: 83, protein: 60, proteinPercent: 67 });
+  });
+
+  it('sem meta, só soma; sem aporte confiável em alguma via, não há total', () => {
+    expect(totalIntake([a], null)).toEqual({ kcal: 900, kcalPercent: null, protein: 36, proteinPercent: null });
+    expect(totalIntake([a, null], goals)).toBeNull();
+    expect(totalIntake([], goals)).toBeNull();
+  });
+
+  it('rotula a via com a sigla e o nome', () => {
+    expect(routeTitle('NE')).toContain('NE ·');
   });
 });

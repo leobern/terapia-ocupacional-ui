@@ -278,7 +278,7 @@ export class PrescriptionReviewComponent {
       if (token !== this.token) {
         return;
       }
-      this.prescription.set(prescription);
+      this.prescription.set(prescription[0] ?? null);
       this.targets.set(targets);
       this.review.set(review);
       this.state.set('ready');
