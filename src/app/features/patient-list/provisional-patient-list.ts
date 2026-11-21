@@ -1,7 +1,6 @@
 import { inject, Injectable } from '@angular/core';
 
 import { FollowUpClosureSource } from '../follow-up-closure/follow-up-closure-source';
-
 import { CensusPatient } from './patient-list.models';
 import { PatientListSource } from './patient-list-source';
 

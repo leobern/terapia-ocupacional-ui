@@ -1,7 +1,8 @@
+import { FollowUpClosureRequest } from './follow-up-closure.models';
 import { ProvisionalFollowUpClosureSource } from './provisional-follow-up-closure';
 
 describe('ProvisionalFollowUpClosureSource', () => {
-  const request = (patientId: string, effectiveDate: string) => ({
+  const request = (patientId: string, effectiveDate: string): FollowUpClosureRequest => ({
     at: '2026-11-21T10:00:00.000Z',
     author: 'Michelle',
     effectiveDate,
@@ -13,6 +14,7 @@ describe('ProvisionalFollowUpClosureSource', () => {
     const source = new ProvisionalFollowUpClosureSource();
     const first = await source.close(request('p1', '2026-11-10'));
     const second = await source.close(request('p1', '2026-11-20'));
+
     await source.close(request('p2', '2026-11-20'));
 
     expect(first.id).not.toBe(second.id);

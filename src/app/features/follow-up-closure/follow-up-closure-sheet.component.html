@@ -69,10 +69,10 @@
         id="closure-date"
         class="closure__input"
         type="date"
+        aria-describedby="closure-date-help"
         [max]="maxDate()"
         [value]="date()"
         [attr.aria-invalid]="dateError() ? 'true' : null"
-        aria-describedby="closure-date-help"
         (input)="setDate($any($event.target).value)"
       />
       @if (dateError(); as error) {

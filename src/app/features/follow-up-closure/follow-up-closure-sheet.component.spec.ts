@@ -82,7 +82,7 @@ describe('FollowUpClosureSheetComponent', () => {
     expect(el().textContent).toContain('Ala 1 · Leito 31');
     expect(radios()).toHaveSize(4);
     expect(el().textContent).toContain('Alta da EMTN');
-    expect(el().textContent).toContain('segue internado');
+    expect(el().textContent).toContain('Segue internado');
     expect(dateInput().value).toBe('2026-11-21');
     expect(dateInput().max).toBe('2026-11-21');
   });
@@ -123,6 +123,7 @@ describe('FollowUpClosureSheetComponent', () => {
         reason: 'death',
       },
     ]);
+
     expect(saved).toHaveSize(1);
     expect(closed).toBe(1);
   });
@@ -167,7 +168,7 @@ describe('FollowUpClosureSheetComponent', () => {
     await settle();
 
     expect(buttonByLabel('Confirmar encerramento')?.disabled).toBeTrue();
-    await fixture.componentInstance['confirm']();
+    await (fixture.componentInstance as unknown as { confirm(): Promise<void> }).confirm();
 
     expect(writer.requests).toEqual([]);
   });
@@ -190,7 +191,8 @@ describe('FollowUpClosureSheetComponent', () => {
 
   it('fecha pelo X, pelo Esc e pelo scrim; reabrir começa limpo', async () => {
     await pick(3);
-    await click('Fechar');
+    el().querySelector<HTMLButtonElement>('button[aria-label="Fechar"]')?.click();
+    await settle();
     const dialog = el().querySelector('dialog') as HTMLDialogElement;
 
     dialog.dispatchEvent(new Event('cancel', { cancelable: true }));
@@ -203,6 +205,7 @@ describe('FollowUpClosureSheetComponent', () => {
 
     fixture.componentRef.setInput('open', false);
     await settle();
+
     expect(dialog.open).toBeFalse();
     fixture.componentRef.setInput('open', true);
     await settle();

@@ -1,6 +1,6 @@
-@use '../../../shared/styles/tokens';
-@use '../../../shared/styles/breakpoints';
-@use '../../../shared/styles/typography';
+@use '../../shared/styles/tokens';
+@use '../../shared/styles/breakpoints';
+@use '../../shared/styles/typography';
 
 :host {
   display: block;
@@ -75,6 +75,7 @@
   min-height: 0;
   overflow-y: auto;
 }
+
 .closure__patient {
   display: flex;
   flex-direction: column;

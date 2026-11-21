@@ -45,6 +45,7 @@ describe('ProvisionalPatientListSource', () => {
     expect(
       assemblePatientList(census, 'hospital-vila-nova-star', new Date(2026, 10, 20)).some(p => p.id === 'p1'),
     ).toBeTrue();
+
     expect(census.find(p => p.id === 'p2')?.followUpEndDate).toBeUndefined();
   });
 });

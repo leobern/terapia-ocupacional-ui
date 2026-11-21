@@ -567,7 +567,7 @@ export class PatientListComponent implements OnInit {
 
   /** Encerramento gravado: o paciente sai da lista a partir da data de efeito (FR-005). */
   closureSaved(): void {
-    this.refreshAfterClosure();
+    this.retry();
   }
 
   closeClosure(): void {
@@ -589,14 +589,6 @@ export class PatientListComponent implements OnInit {
     }
     this.offlineNotice.set('');
     void this.router.navigate(['/patients', id, 'change-bed']);
-  }
-
-  private refreshAfterClosure(): void {
-    const id = this.context.selected()?.id;
-
-    if (id !== undefined) {
-      void this.load(id);
-    }
   }
 
   openPatient(id: string): void {

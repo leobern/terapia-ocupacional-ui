@@ -17,6 +17,8 @@ import { DiagnosisDecisionSource } from './features/diagnosis/diagnosis-decision
 import { DiagnosisSource } from './features/diagnosis/diagnosis-source';
 import { ProvisionalDiagnosisDecisionSource } from './features/diagnosis/provisional-diagnosis-decision-source';
 import { ProvisionalDiagnosisSource } from './features/diagnosis/provisional-diagnosis-source';
+import { FollowUpClosureSource, FollowUpClosureWriter } from './features/follow-up-closure/follow-up-closure-source';
+import { ProvisionalFollowUpClosureSource } from './features/follow-up-closure/provisional-follow-up-closure';
 import { DailyPatientsSource } from './features/home/daily-patients';
 import { HomeApiService } from './features/home/data-access/home-api.service';
 import { HomeNotificationsSource } from './features/home/home-notifications-source';
@@ -78,8 +80,6 @@ import {
   ProvisionalPriorStaysSynthesizer,
 } from './features/patient-hub/provisional-patient-hub';
 import { PatientListAiCommandPort } from './features/patient-list/patient-list-ai-command';
-import { FollowUpClosureSource, FollowUpClosureWriter } from './features/follow-up-closure/follow-up-closure-source';
-import { ProvisionalFollowUpClosureSource } from './features/follow-up-closure/provisional-follow-up-closure';
 import { PatientListSource } from './features/patient-list/patient-list-source';
 import { ProvisionalPatientListSource } from './features/patient-list/provisional-patient-list';
 import { ProvisionalPatientListAiCommand } from './features/patient-list/provisional-patient-list-ai-command';

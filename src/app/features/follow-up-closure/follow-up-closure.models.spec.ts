@@ -1,7 +1,7 @@
 import {
   CLOSURE_REASONS,
-  FUTURE_DATE_HINT,
   formatIsoDate,
+  FUTURE_DATE_HINT,
   INVALID_DATE_HINT,
   reasonLabel,
   toIsoDate,
@@ -18,7 +18,8 @@ describe('follow-up-closure.models', () => {
       'Alta da EMTN',
       'Transferência externa',
     ]);
-    expect(CLOSURE_REASONS.find(r => r.id === 'emtn-discharge')?.help).toContain('segue internado');
+
+    expect(CLOSURE_REASONS.find(r => r.id === 'emtn-discharge')?.help).toContain('Segue internado');
   });
 
   it('rotula o motivo e cai no id quando desconhecido', () => {

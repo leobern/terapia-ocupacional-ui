@@ -8,12 +8,13 @@ import {
   ScreenActionsService,
   type ScreenCommand,
 } from '../../shared/services/screen-actions.service';
+import { FollowUpClosureWriter } from '../follow-up-closure/follow-up-closure-source';
 import { LinkedHospitalsReader } from '../home/linked-hospitals';
+import { ProfessionalProfileReader } from '../home/professional-profile';
 import { UnreadNotificationsReader } from '../home/unread-notifications-reader';
 import { PatientListComponent, refreshesOnVisibility } from './patient-list.component';
 import { CensusPatient } from './patient-list.models';
 import { PatientListAiCommandPort } from './patient-list-ai-command';
-import { FollowUpClosureWriter } from '../follow-up-closure/follow-up-closure-source';
 import { PatientListSource } from './patient-list-source';
 
 const census = (n: number, name = 'Paciente'): CensusPatient[] =>
@@ -76,6 +77,10 @@ describe('PatientListComponent', () => {
         provideRouter([]),
         { provide: PatientListSource, useValue: source },
         { provide: FollowUpClosureWriter, useValue: closureWriter },
+        {
+          provide: ProfessionalProfileReader,
+          useValue: { read: (): { name: string; role: string } => ({ name: 'Michelle', role: 'doctor' }) },
+        },
         { provide: PatientListAiCommandPort, useValue: ai },
         { provide: UnreadNotificationsReader, useValue: { countUnread: (): Promise<number> => Promise.resolve(2) } },
         {
@@ -1118,15 +1123,18 @@ describe('PatientListComponent', () => {
       source.result = Promise.resolve(census(1));
       await create();
       TestBed.inject(ConnectivityService).online.set(false);
-      swipe(0, 150);
+      fixture.componentInstance.endFollowUp('p0');
+      fixture.detectChanges();
+      await fixture.whenStable();
       fixture.detectChanges();
 
-      expect(dialog()?.open).toBeTrue();
+      expect(fixture.componentInstance.closureTarget()?.id).toBe('p0');
       expect(q('app-follow-up-closure-sheet')?.textContent).toContain('Conexão necessária');
-      expect(
-        (q('app-follow-up-closure-sheet')!.querySelector('.closure__body ~ app-button button') as HTMLButtonElement)
-          .disabled,
-      ).toBeTrue();
+      const saveButton = q('app-follow-up-closure-sheet')?.querySelector<HTMLButtonElement>(
+        '.closure__body ~ app-button button',
+      );
+
+      expect(saveButton?.disabled).toBeTrue();
     });
 
     it('endFollowUp com paciente inexistente na lista não abre nada', async () => {
