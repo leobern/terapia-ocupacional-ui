@@ -13,6 +13,7 @@ import { UnreadNotificationsReader } from '../home/unread-notifications-reader';
 import { PatientListComponent, refreshesOnVisibility } from './patient-list.component';
 import { CensusPatient } from './patient-list.models';
 import { PatientListAiCommandPort } from './patient-list-ai-command';
+import { FollowUpClosureWriter } from '../follow-up-closure/follow-up-closure-source';
 import { PatientListSource } from './patient-list-source';
 
 const census = (n: number, name = 'Paciente'): CensusPatient[] =>
@@ -53,6 +54,7 @@ describe('PatientListComponent', () => {
   let ai: FakeAi;
   let fixture: ComponentFixture<PatientListComponent>;
   let router: Router;
+  const closureWriter = { close: jasmine.createSpy('close') };
 
   const text = (): string => (fixture.nativeElement as HTMLElement).textContent ?? '';
   const q = (sel: string): HTMLElement | null => (fixture.nativeElement as HTMLElement).querySelector(sel);
@@ -73,6 +75,7 @@ describe('PatientListComponent', () => {
       providers: [
         provideRouter([]),
         { provide: PatientListSource, useValue: source },
+        { provide: FollowUpClosureWriter, useValue: closureWriter },
         { provide: PatientListAiCommandPort, useValue: ai },
         { provide: UnreadNotificationsReader, useValue: { countUnread: (): Promise<number> => Promise.resolve(2) } },
         {
@@ -1111,95 +1114,27 @@ describe('PatientListComponent', () => {
       expect(router.navigate).not.toHaveBeenCalledWith(bed);
     });
 
-    it('offline: não navega e avisa "conexão necessária"; online navega', async () => {
+    it('offline: o modal abre, mas a confirmação fica indisponível com "conexão necessária"', async () => {
       source.result = Promise.resolve(census(1));
       await create();
-      const connectivity = TestBed.inject(ConnectivityService);
-
-      connectivity.online.set(false);
-      swipeRight(0, 250);
-
-      expect(router.navigate).not.toHaveBeenCalledWith(bed);
-      expect(q('[role="status"]')?.textContent).toContain('Conexão necessária');
-      connectivity.online.set(true);
-      swipeRight(0, 250);
-
-      expect(router.navigate).toHaveBeenCalledWith(bed);
-      expect(q('[role="status"]')?.textContent?.trim()).toBe('');
-    });
-  });
-
-  describe('swipe à esquerda: encerramento (US-004-1-08)', () => {
-    const swipe = (row: number, to: number): void => {
-      const content = fixture.nativeElement.querySelectorAll('.swipe-row__content')[row] as HTMLElement;
-
-      content.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, clientX: 300 }));
-      content.dispatchEvent(new PointerEvent('pointermove', { bubbles: true, clientX: to }));
-      content.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, clientX: to }));
-      fixture.detectChanges();
-    };
-
-    it('completar o gesto navega ao fluxo de encerramento com o paciente do card', async () => {
-      source.result = Promise.resolve(census(2));
-      await create();
-      (router.navigate as jasmine.Spy).calls.reset();
-      swipe(0, 150);
-
-      expect(router.navigate).toHaveBeenCalledTimes(1);
-      expect(router.navigate).toHaveBeenCalledWith(['/patients', jasmine.stringMatching(/^p[01]$/), 'end-follow-up']);
-    });
-
-    it('acionar "Encerrar" pelo botão (teclado) navega e tem o nome do paciente', async () => {
-      source.result = Promise.resolve(census(1));
-      await create();
-      const action = q('.swipe-row__action:not(.swipe-row__action--start)') as HTMLElement;
-
-      expect(action.getAttribute('aria-label')).toBe('Encerrar acompanhamento de Paciente 0');
-      action.click();
-
-      expect(router.navigate).toHaveBeenCalledWith(['/patients', 'p0', 'end-follow-up']);
-    });
-
-    it('soltar antes do limite não navega', async () => {
-      source.result = Promise.resolve(census(1));
-      await create();
-      swipe(0, 280);
-
-      expect(router.navigate).not.toHaveBeenCalledWith(['/patients', 'p0', 'end-follow-up']);
-    });
-
-    it('em modo somente leitura não há swipe nem ação, e a lista não mostra modal', async () => {
-      source.result = Promise.resolve(census(1));
-      await create();
-      fixture.componentInstance.pendingDate.set(null);
-      fixture.componentInstance.selectedDate.set(new Date(2020, 0, 1));
-      fixture.detectChanges();
-      await fixture.whenStable();
-      fixture.detectChanges();
-
-      expect(q('.swipe-row__action')).toBeNull();
-      expect(q('[role="dialog"]')).toBeNull();
-      fixture.componentInstance.endFollowUp('p0');
-
-      expect(router.navigate).not.toHaveBeenCalledWith(['/patients', 'p0', 'end-follow-up']);
-    });
-
-    it('offline: não navega e avisa "conexão necessária"; ao voltar online navega', async () => {
-      source.result = Promise.resolve(census(1));
-      await create();
-      const connectivity = TestBed.inject(ConnectivityService);
-
-      connectivity.online.set(false);
-      swipe(0, 150);
-
-      expect(router.navigate).not.toHaveBeenCalledWith(['/patients', 'p0', 'end-follow-up']);
-      expect(q('[role="status"]')?.textContent).toContain('Conexão necessária');
-      connectivity.online.set(true);
+      TestBed.inject(ConnectivityService).online.set(false);
       swipe(0, 150);
       fixture.detectChanges();
 
-      expect(router.navigate).toHaveBeenCalledWith(['/patients', 'p0', 'end-follow-up']);
-      expect(q('[role="status"]')?.textContent?.trim()).toBe('');
+      expect(dialog()?.open).toBeTrue();
+      expect(q('app-follow-up-closure-sheet')?.textContent).toContain('Conexão necessária');
+      expect(
+        (q('app-follow-up-closure-sheet')!.querySelector('.closure__body ~ app-button button') as HTMLButtonElement)
+          .disabled,
+      ).toBeTrue();
+    });
+
+    it('endFollowUp com paciente inexistente na lista não abre nada', async () => {
+      source.result = Promise.resolve(census(1));
+      await create();
+      fixture.componentInstance.endFollowUp('inexistente');
+
+      expect(fixture.componentInstance.closureTarget()).toBeNull();
     });
 
     it('offline, a lista segue exibida e o toque no card ainda abre o Hub', async () => {

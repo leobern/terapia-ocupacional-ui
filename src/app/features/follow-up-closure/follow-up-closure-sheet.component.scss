@@ -1,0 +1,218 @@
+@use '../../../shared/styles/tokens';
+@use '../../../shared/styles/breakpoints';
+@use '../../../shared/styles/typography';
+
+:host {
+  display: block;
+}
+
+// Figma 4717-9855 (bottom-sheet · registro diário): fundo surface, padding 12/16/24/16, gap 16.
+.closure {
+  display: none;
+  flex-direction: column;
+  gap: tokens.$space-16;
+  box-sizing: border-box;
+  width: 100%;
+  max-width: none;
+  max-height: 93dvh;
+  margin: auto 0 0;
+  padding: tokens.$space-12 tokens.$space-16 tokens.$space-24;
+  overflow: hidden;
+  border: 0;
+  border-radius: tokens.$radius-md tokens.$radius-md 0 0;
+  background: tokens.c(surface);
+  color: tokens.c(content-1);
+
+  &[open] {
+    display: flex;
+  }
+
+  &::backdrop {
+    background: tokens.c(scrim);
+  }
+
+  // Desktop: sem desenho 1920; diálogo centralizado com a mesma estrutura.
+  @include breakpoints.md {
+    width: 480px;
+    margin: auto;
+    padding-block: tokens.$space-16 tokens.$space-24;
+    border-radius: tokens.$radius-md;
+  }
+}
+
+.closure__handle {
+  align-self: center;
+  width: 40px;
+  height: 4px;
+  border-radius: 2px;
+  background: tokens.c(border-2);
+
+  @include breakpoints.md {
+    display: none;
+  }
+}
+
+.closure__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: tokens.$space-8;
+  min-height: 44px;
+}
+
+.closure__title {
+  margin: 0;
+  color: tokens.c(content-1);
+
+  @include typography.title-lg;
+}
+
+// Formulário com rolagem própria; clusters por seção separados por space-16.
+.closure__body {
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$space-16;
+  min-height: 0;
+  overflow-y: auto;
+}
+.closure__patient {
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$space-4;
+  padding: tokens.$space-16;
+  border-radius: tokens.$radius-md;
+  background: tokens.c(surface-2);
+}
+
+.closure__location {
+  margin: 0;
+  color: tokens.c(content-4);
+
+  @include typography.label-md;
+}
+
+.closure__name {
+  margin: 0;
+  color: tokens.c(content-1);
+
+  @include typography.title-lg;
+}
+
+// Figma v2/Banner Type=info: ícone + texto (o ícone nunca é a única informação).
+.closure__banner {
+  display: flex;
+  align-items: flex-start;
+  gap: tokens.$space-8;
+  margin: 0;
+  padding: tokens.$space-12 tokens.$space-16;
+  border-radius: tokens.$radius-sm;
+  background: tokens.c(surface-2);
+  color: tokens.c(content-1);
+
+  @include typography.body-lg;
+}
+
+.closure__option {
+  display: flex;
+  align-items: flex-start;
+  gap: tokens.$space-12;
+  min-height: 44px;
+  padding: tokens.$space-8 0;
+  color: tokens.c(content-1);
+  cursor: pointer;
+
+  @include typography.body-lg;
+
+  input {
+    flex: none;
+    width: 24px;
+    height: 24px;
+    margin: 0;
+    accent-color: tokens.c(primary);
+  }
+}
+
+.closure__option-text {
+  display: flex;
+  flex-direction: column;
+}
+
+.closure__card {
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$space-8;
+  padding: tokens.$space-16;
+  border: 1px solid tokens.c(border);
+  border-radius: tokens.$radius-md;
+  background: tokens.c(surface);
+}
+
+.closure__label {
+  color: tokens.c(content-1);
+
+  @include typography.title-md;
+}
+
+.closure__input {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 48px;
+  padding: 0 tokens.$space-16;
+  border: 1px solid tokens.c(border-2);
+  border-radius: tokens.$radius-sm;
+  background: tokens.c(surface);
+  color: tokens.c(content-1);
+
+  @include typography.body-lg;
+
+  &:focus-visible {
+    outline: 2px solid tokens.c(input-focus-ring);
+    outline-offset: 2px;
+  }
+}
+
+.closure__help {
+  margin: 0;
+  color: tokens.c(content-4);
+
+  @include typography.caption;
+}
+
+// Histórico do dia dentro do card: um ponto por linha (valor + autor · hora), sem depender de cor.
+
+.closure__status {
+  margin: 0;
+  color: tokens.c(content-4);
+
+  @include typography.body-md;
+
+  &--warning {
+    color: tokens.c(content-1);
+  }
+
+  &--error {
+    color: tokens.c(comm-alert);
+  }
+}
+
+.closure__confirm {
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$space-8;
+  padding-top: tokens.$space-12;
+  border-top: 1px solid tokens.c(border);
+}
+
+.closure__confirm-title {
+  margin: 0;
+  color: tokens.c(content-1);
+
+  @include typography.title-md;
+}
+
+.closure__confirm-text {
+  margin: 0;
+  color: tokens.c(content-1);
+
+  @include typography.body-md;
+}

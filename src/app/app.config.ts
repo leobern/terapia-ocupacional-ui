@@ -78,6 +78,8 @@ import {
   ProvisionalPriorStaysSynthesizer,
 } from './features/patient-hub/provisional-patient-hub';
 import { PatientListAiCommandPort } from './features/patient-list/patient-list-ai-command';
+import { FollowUpClosureSource, FollowUpClosureWriter } from './features/follow-up-closure/follow-up-closure-source';
+import { ProvisionalFollowUpClosureSource } from './features/follow-up-closure/provisional-follow-up-closure';
 import { PatientListSource } from './features/patient-list/patient-list-source';
 import { ProvisionalPatientListSource } from './features/patient-list/provisional-patient-list';
 import { ProvisionalPatientListAiCommand } from './features/patient-list/provisional-patient-list-ai-command';
@@ -110,6 +112,9 @@ export const appConfig: ApplicationConfig = {
     { provide: UnreadNotificationsReader, useClass: LocalUnreadNotificationsReader },
     { provide: DailyPatientsSource, useClass: ProvisionalDailyPatientsSource },
     { provide: PatientListAiCommandPort, useClass: ProvisionalPatientListAiCommand },
+    ProvisionalFollowUpClosureSource,
+    { provide: FollowUpClosureSource, useExisting: ProvisionalFollowUpClosureSource },
+    { provide: FollowUpClosureWriter, useExisting: ProvisionalFollowUpClosureSource },
     { provide: PatientListSource, useClass: ProvisionalPatientListSource },
     { provide: PatientHubSource, useClass: ProvisionalPatientHubSource },
     { provide: HypothesisSynthesizer, useClass: ProvisionalHypothesisSynthesizer },
