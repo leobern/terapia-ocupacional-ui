@@ -23,3 +23,28 @@ describe('ProvisionalFollowUpClosureSource', () => {
     expect(await source.list('p9')).toEqual([]);
   });
 });
+
+describe('ProvisionalFollowUpClosureSource: reaberturas', () => {
+  it('grava só acrescentando e preserva o encerramento original', async () => {
+    const source = new ProvisionalFollowUpClosureSource();
+    const closure = await source.close({
+      at: '2026-11-21T10:00:00.000Z',
+      author: 'Ana',
+      effectiveDate: '2026-11-20',
+      patientId: 'p1',
+      reason: 'death',
+    });
+    const reopening = await source.reopen({
+      at: '2026-11-22T10:00:00.000Z',
+      author: 'Bia',
+      closureId: closure.id,
+      patientId: 'p1',
+    });
+
+    expect(reopening.closureId).toBe(closure.id);
+    expect(await source.listReopenings('p1')).toEqual([reopening]);
+    expect(await source.listReopenings('p2')).toEqual([]);
+    expect(await source.listAllReopenings()).toHaveSize(1);
+    expect(await source.list('p1')).toEqual([closure]);
+  });
+});

@@ -48,4 +48,22 @@ describe('ProvisionalPatientListSource', () => {
 
     expect(census.find(p => p.id === 'p2')?.followUpEndDate).toBeUndefined();
   });
+
+  it('reabrir revoga a data de efeito: o paciente volta à lista, e o encerramento segue no histórico', async () => {
+    const day = new Date(2026, 10, 21);
+    const closure = await closures.close({
+      at: day.toISOString(),
+      author: 'Michelle',
+      effectiveDate: '2026-11-21',
+      patientId: 'p1',
+      reason: 'death',
+    });
+
+    await closures.reopen({ at: day.toISOString(), author: 'Bia', closureId: closure.id, patientId: 'p1' });
+    const census = await source.loadCensus();
+
+    expect(census.find(p => p.id === 'p1')?.followUpEndDate).toBeUndefined();
+    expect(assemblePatientList(census, 'hospital-vila-nova-star', day).some(p => p.id === 'p1')).toBeTrue();
+    expect(await closures.list('p1')).toHaveSize(1);
+  });
 });

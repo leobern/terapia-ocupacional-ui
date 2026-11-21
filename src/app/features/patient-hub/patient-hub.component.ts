@@ -15,6 +15,7 @@ import { adequacyPanelValues, DailyAdequacy } from '../daily-evolution/adequacy/
 import { AdequacySummaryComponent } from '../daily-evolution/adequacy/adequacy-summary.component';
 import { DailyAdequacyService } from '../daily-evolution/adequacy/daily-adequacy.service';
 import { DiagnosisSource } from '../diagnosis/diagnosis-source';
+import { FollowUpStatusComponent } from '../follow-up-closure/follow-up-status.component';
 import { HospitalContextService } from '../home/hospital-context.service';
 import { NOW, ProfessionalProfileReader } from '../home/professional-profile';
 import {
@@ -84,6 +85,7 @@ export const DIAGNOSIS_FAILED_HINT =
     AssessmentSectionComponent,
     ButtonComponent,
     DailyRecordSheetComponent,
+    FollowUpStatusComponent,
     IconButtonComponent,
     NutritionAddCardSheetComponent,
     NutritionCardModalComponent,

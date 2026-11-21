@@ -1,5 +1,6 @@
 import { inject, Injectable } from '@angular/core';
 
+import { activeClosures } from '../follow-up-closure/follow-up-closure.models';
 import { FollowUpClosureSource } from '../follow-up-closure/follow-up-closure-source';
 import { CensusPatient } from './patient-list.models';
 import { PatientListSource } from './patient-list-source';
@@ -39,7 +40,9 @@ export class ProvisionalPatientListSource extends PatientListSource {
   async loadCensus(): Promise<readonly CensusPatient[]> {
     const census = this.seed();
     // O encerramento mais recente de cada paciente define a data de efeito (FR-005).
-    const latest = new Map((await this.closures.listAll()).map(c => [c.patientId, c.effectiveDate]));
+    // Encerramento revertido por reabertura deixa de valer (o registro segue no histórico).
+    const active = activeClosures(await this.closures.listAll(), await this.closures.listAllReopenings());
+    const latest = new Map(active.map(c => [c.patientId, c.effectiveDate]));
 
     return census.map(patient => {
       const effective = latest.get(patient.id);

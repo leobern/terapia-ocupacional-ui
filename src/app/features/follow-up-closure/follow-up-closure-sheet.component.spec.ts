@@ -3,7 +3,12 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { ConnectivityService } from '../../shared/services/connectivity.service';
 import { NOW, ProfessionalProfileReader } from '../home/professional-profile';
-import { FollowUpClosure, FollowUpClosureRequest } from './follow-up-closure.models';
+import {
+  FollowUpClosure,
+  FollowUpClosureRequest,
+  FollowUpReopening,
+  FollowUpReopeningRequest,
+} from './follow-up-closure.models';
 import { FollowUpClosureSheetComponent } from './follow-up-closure-sheet.component';
 import { FollowUpClosureWriter } from './follow-up-closure-source';
 
@@ -18,6 +23,10 @@ class FakeWriter extends FollowUpClosureWriter {
     this.requests.push(request);
 
     return Promise.resolve({ ...request, id: 'c1' });
+  }
+
+  reopen(request: FollowUpReopeningRequest): Promise<FollowUpReopening> {
+    return Promise.resolve({ ...request, id: 'r1' });
   }
 }
 
