@@ -1,0 +1,26 @@
+<section class="adequacy" aria-label="Adequação calórica e proteica do dia">
+  <h3 class="adequacy__title">Aporte do dia</h3>
+  @if (hint(); as message) {
+    <p class="adequacy__hint" role="status" data-testid="adequacy-unavailable">
+      {{ message }}
+    </p>
+  } @else {
+    @for (row of rows(); track row.label) {
+      <div class="adequacy__item" [attr.data-testid]="'adequacy-' + $index">
+        <span class="adequacy__label">{{ row.label }}</span>
+        <span class="adequacy__value">{{ row.intake }}</span>
+        <div
+          class="adequacy__track"
+          role="progressbar"
+          aria-valuemin="0"
+          aria-valuemax="100"
+          [attr.aria-label]="row.label"
+          [attr.aria-valuenow]="row.bar"
+        >
+          <span class="adequacy__bar" [style.inline-size.%]="row.bar"></span>
+        </div>
+        <span class="adequacy__text">{{ row.text }}</span>
+      </div>
+    }
+  }
+</section>

@@ -126,6 +126,7 @@ class FakeRisk extends RefeedingRiskSource {
 describe('PlanSectionComponent', () => {
   let assessment: FakeAssessment;
   let riskSource: FakeRisk;
+  let emitted = 0;
   let fixture: ComponentFixture<PlanSectionComponent>;
   let source: FakeSource;
 
@@ -167,6 +168,10 @@ describe('PlanSectionComponent', () => {
     });
     fixture = TestBed.createComponent(PlanSectionComponent);
     fixture.componentRef.setInput('patientId', 'p9');
+    emitted = 0;
+    fixture.componentInstance.targetsSaved.subscribe(() => {
+      emitted += 1;
+    });
     await settle();
   };
 
@@ -623,6 +628,7 @@ describe('PlanSectionComponent', () => {
       await save();
 
       expect(source.referenceSaves[0].weight).toEqual({ kg: 75, kind: 'current' });
+      expect(emitted).toBe(1);
       expect(source.targetSaves[0].targets).toEqual({
         calorimetry: null,
         formula: 'simplified',

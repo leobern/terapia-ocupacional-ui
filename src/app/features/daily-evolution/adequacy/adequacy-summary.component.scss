@@ -1,0 +1,73 @@
+@use '../../../shared/styles/tokens';
+@use '../../../shared/styles/typography';
+
+// Figma 4717-9855: v2/ProgressStat (336x100, raio 16, fundo surface-2). O componente não existe no
+// código: reproduzido aqui com tokens até haver um compartilhado.
+:host {
+  display: block;
+}
+
+.adequacy {
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$space-8;
+}
+
+.adequacy__title {
+  margin: 0;
+  padding-inline: tokens.$space-8;
+  color: tokens.c(content-1);
+
+  @include typography.title-md;
+}
+
+.adequacy__item {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: tokens.$space-8;
+  padding: tokens.$space-16;
+  border-radius: tokens.$radius-sm;
+  background: tokens.c(surface-2);
+  color: tokens.c(content-1);
+}
+
+.adequacy__label {
+  color: tokens.c(content-4);
+
+  @include typography.label-md;
+}
+
+.adequacy__value {
+  @include typography.title-md;
+}
+
+.adequacy__track {
+  grid-column: 1 / -1;
+  block-size: 8px;
+  overflow: hidden;
+  border-radius: tokens.$radius-sm;
+  background: tokens.c(border-2);
+}
+
+.adequacy__bar {
+  display: block;
+  block-size: 100%;
+  border-radius: inherit;
+  background: tokens.c(primary);
+}
+
+.adequacy__text {
+  grid-column: 1 / -1;
+
+  @include typography.body-md;
+}
+
+.adequacy__hint {
+  margin: 0;
+  padding: tokens.$space-16;
+  border-radius: tokens.$radius-sm;
+  background: tokens.c(surface-2);
+  color: tokens.c(content-1);
+
+  @include typography.body-md;
+}
