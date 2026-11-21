@@ -39,6 +39,10 @@ import {
   PriorStaysSource,
   PriorStaysSynthesizer,
 } from './features/patient-hub/patient-hub-source';
+import {
+  NutritionTargetsReader,
+  PlanNutritionTargetsReader,
+} from './features/patient-hub/plan/nutrition-targets-reader';
 import { PlanSource } from './features/patient-hub/plan/plan-source';
 import { ProvisionalPlanSource } from './features/patient-hub/plan/provisional-plan-source';
 import { ProvisionalRefeedingRiskSource } from './features/patient-hub/plan/provisional-refeeding-risk-source';
@@ -88,6 +92,7 @@ export const appConfig: ApplicationConfig = {
     { provide: DiagnosisSource, useClass: ProvisionalDiagnosisSource },
     { provide: DiagnosisDecisionSource, useClass: ProvisionalDiagnosisDecisionSource },
     { provide: PlanSource, useClass: ProvisionalPlanSource },
+    { provide: NutritionTargetsReader, useClass: PlanNutritionTargetsReader },
     { provide: RefeedingRiskSource, useClass: ProvisionalRefeedingRiskSource },
     { provide: PriorStaysSource, useClass: ProvisionalPriorStaysSource },
     { provide: PriorStaysSynthesizer, useClass: ProvisionalPriorStaysSynthesizer },

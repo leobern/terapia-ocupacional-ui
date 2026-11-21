@@ -1,4 +1,11 @@
 import { CurrentRoute, RouteSaveRequest, SwallowingDecision, SwallowingSaveRequest } from './plan.models';
+import {
+  CalculatedWeights,
+  NutritionTargets,
+  ReferenceWeight,
+  ReferenceWeightSaveRequest,
+  TargetsSaveRequest,
+} from './plan-targets';
 
 /**
  * Porta de leitura e gravação da via vigente do Plano de Intervenção (FT-004-6). Sem contrato de API: a
@@ -11,4 +18,12 @@ export abstract class PlanSource {
   /** Decisão vigente sobre avaliação de deglutição; `null` quando ainda não há. Independente da via. */
   abstract loadSwallowing(patientId: string): Promise<SwallowingDecision | null>;
   abstract saveSwallowing(request: SwallowingSaveRequest): Promise<SwallowingDecision>;
+  /** Pesos já calculados na Avaliação (somente leitura); objeto vazio quando não há nenhum. */
+  abstract loadCalculatedWeights(patientId: string): Promise<CalculatedWeights>;
+  /** Peso de referência vigente; `null` quando ainda não escolhido. */
+  abstract loadReferenceWeight(patientId: string): Promise<ReferenceWeight | null>;
+  abstract saveReferenceWeight(request: ReferenceWeightSaveRequest): Promise<ReferenceWeight>;
+  /** Metas vigentes; `null` quando ainda não definidas. */
+  abstract loadTargets(patientId: string): Promise<NutritionTargets | null>;
+  abstract saveTargets(request: TargetsSaveRequest): Promise<NutritionTargets>;
 }
