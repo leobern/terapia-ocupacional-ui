@@ -204,6 +204,155 @@
           }
         </fieldset>
       </section>
+      <section class="plan__section" aria-label="Metas">
+        <div class="plan__section-header">
+          <h3 class="plan__section-title">Metas</h3>
+        </div>
+        <fieldset class="plan__card" data-testid="reference-weight">
+          <legend class="plan__label">Peso de referência (kg)</legend>
+          @if (!isDoctor) {
+            <p class="plan__value" data-testid="reference-value">
+              {{ referenceText() }}
+            </p>
+          } @else if (weightOptions().length > 0) {
+            <div class="plan__options">
+              @for (option of weightOptions(); track option.id) {
+                <label class="plan__option">
+                  <input
+                    type="radio"
+                    name="reference-weight"
+                    class="plan__checkbox"
+                    [checked]="referenceKind() === option.id"
+                    [disabled]="!connectivity.online()"
+                    [attr.data-reference]="option.id"
+                    (change)="chooseReference(option.id)"
+                  />
+                  <span class="plan__option-text">{{ option.text }}</span>
+                </label>
+              }
+            </div>
+          } @else if (!weightsFailed()) {
+            <p class="plan__help" data-testid="weights-missing">
+              {{ weightsMissingHint }}
+            </p>
+          }
+          @if (weightsFailed()) {
+            <p class="plan__help" role="status" data-testid="weights-failed">
+              {{ weightsFailedHint }}
+            </p>
+          } @else {
+            <p class="plan__help">Usado nas metas por kg.</p>
+          }
+        </fieldset>
+        <fieldset class="plan__card" data-testid="targets">
+          <legend class="plan__label">Metas nutricionais</legend>
+          @if (isDoctor && reference() !== null) {
+            @if (calorimetry() !== null) {
+              <div class="plan__options" data-testid="formula-options">
+                @for (f of formulaOptions; track f) {
+                  <label class="plan__option">
+                    <input
+                      type="radio"
+                      name="formula"
+                      class="plan__checkbox"
+                      [checked]="formula() === f"
+                      [disabled]="!connectivity.online()"
+                      [attr.data-formula]="f"
+                      (change)="chooseFormula(f)"
+                    />
+                    <span class="plan__option-text">{{
+                      formulaLabels[f]
+                    }}</span>
+                  </label>
+                }
+              </div>
+            }
+            @if (calorimetryFailed()) {
+              <p
+                class="plan__help"
+                role="status"
+                data-testid="calorimetry-failed"
+              >
+                {{ calorimetryFailedHint }}
+              </p>
+            }
+            @if (
+              formula() === 'indirect-calorimetry' && calorimetry() !== null
+            ) {
+              <label class="plan__field">
+                <span class="plan__help">Percentual da calorimetria (%)</span>
+                <input
+                  class="plan__input"
+                  inputmode="decimal"
+                  data-input="percent"
+                  [value]="percent()"
+                  [disabled]="!connectivity.online()"
+                  (input)="setFactor('percent', $event)"
+                />
+              </label>
+            } @else {
+              <label class="plan__field">
+                <span class="plan__help">Calorias (kcal/kg)</span>
+                <input
+                  class="plan__input"
+                  inputmode="decimal"
+                  data-input="kcal"
+                  [value]="kcalFactor()"
+                  [disabled]="!connectivity.online()"
+                  (input)="setFactor('kcal', $event)"
+                />
+              </label>
+            }
+            <label class="plan__field">
+              <span class="plan__help">Proteína (g/kg)</span>
+              <input
+                class="plan__input"
+                inputmode="decimal"
+                data-input="protein"
+                [value]="proteinFactor()"
+                [disabled]="!connectivity.online()"
+                (input)="setFactor('protein', $event)"
+              />
+            </label>
+          }
+          @if (draft().error !== null && isDoctor) {
+            <p class="plan__help" role="alert" data-testid="targets-error">
+              {{ draft().error }}
+            </p>
+          }
+          @if (shownTargets(); as t) {
+            <p class="plan__value" data-testid="target-kcal">
+              Meta calórica: {{ formatNumber(t.kcalPerDay) }} kcal/dia ({{
+                formatNumber(t.kcalPerKg)
+              }}
+              kcal/kg)
+            </p>
+            <p class="plan__value" data-testid="target-protein">
+              Meta proteica: {{ formatNumber(t.proteinPerDay, 0, 1) }} g/dia ({{
+                formatNumber(t.proteinPerKg)
+              }}
+              g/kg)
+            </p>
+            <p class="plan__help" data-testid="target-basis">
+              Base: {{ referenceWeightLabel(t.referenceWeight) }}.
+              @if (t.calorimetry; as c) {
+                {{ formatNumber(c.percent) }}% de
+                {{ formatNumber(c.kcal) }} kcal/dia (calorimetria indireta).
+              } @else {
+                {{ formulaLabels[t.formula] }}.
+              }
+            </p>
+          } @else if (draft().error === null) {
+            <p class="plan__help" data-testid="targets-empty">
+              @if (isDoctor) {
+                {{ noReferenceHint }}
+              } @else {
+                Sem metas definidas.
+              }
+            </p>
+          }
+        </fieldset>
+      </section>
     }
     @if (hint(); as message) {
       <p class="plan__status plan__status--warning" role="alert">
