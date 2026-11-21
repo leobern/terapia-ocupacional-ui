@@ -1,0 +1,116 @@
+<app-page-container>
+  <div class="pharmacy">
+    <header class="pharmacy__header">
+      <div class="pharmacy__title-row">
+        <ph-icon class="pharmacy__title-icon" name="pill" [size]="24" />
+        <h1 class="pharmacy__title">Farmácia</h1>
+      </div>
+      <p class="pharmacy__subtitle">
+        {{ hospital()?.name }} · Fórmulas padronizadas ficam disponíveis na
+        prescrição deste hospital.
+      </p>
+    </header>
+
+    @if (!online()) {
+      <p class="pharmacy__notice" role="status">
+        Sem conexão: você pode consultar o catálogo, mas não pode padronizar ou
+        desmarcar fórmulas.
+      </p>
+    }
+    @if (saveError(); as message) {
+      <p class="pharmacy__notice pharmacy__notice--error" role="alert">
+        {{ message }}
+      </p>
+    }
+
+    @switch (status()) {
+      @case ('loading') {
+        <p class="pharmacy__state" role="status">
+          Carregando o catálogo de fórmulas…
+        </p>
+      }
+      @case ('error') {
+        <div class="pharmacy__state" role="alert">
+          <p>Erro ao carregar o catálogo de fórmulas.</p>
+          <button type="button" class="pharmacy__retry" (click)="load()">
+            Tentar novamente
+          </button>
+        </div>
+      }
+      @default {
+        @for (group of groups(); track group.key) {
+          <section
+            class="pharmacy__group"
+            [attr.aria-labelledby]="'group-' + group.key"
+          >
+            <h2 class="pharmacy__group-title" [id]="'group-' + group.key">
+              {{ group.label }}
+            </h2>
+            <ul class="pharmacy__list">
+              @for (formula of group.formulas; track formula.id) {
+                <li class="pharmacy__card">
+                  <div class="pharmacy__card-head">
+                    <h3 class="pharmacy__name">{{ formula.name }}</h3>
+                    <span
+                      class="pharmacy__status"
+                      [class.pharmacy__status--on]="formula.standardized"
+                    >
+                      {{
+                        formula.standardized ? 'Padronizada' : 'Não padronizada'
+                      }}
+                    </span>
+                  </div>
+                  <dl class="pharmacy__attrs">
+                    <div>
+                      <dt>kcal/ml</dt>
+                      <dd>{{ number(formula.kcalPerMl) }}</dd>
+                    </div>
+                    <div>
+                      <dt>Proteína/ml</dt>
+                      <dd>{{ number(formula.proteinPerMl) }}</dd>
+                    </div>
+                    <div>
+                      <dt>Fibra</dt>
+                      <dd>{{ yesNo(formula.fiber) }}</dd>
+                    </div>
+                    <div>
+                      <dt>Sacarose</dt>
+                      <dd>{{ yesNo(formula.sucrose) }}</dd>
+                    </div>
+                    <div>
+                      <dt>Lactose</dt>
+                      <dd>{{ yesNo(formula.lactose) }}</dd>
+                    </div>
+                    <div>
+                      <dt>Glúten</dt>
+                      <dd>{{ yesNo(formula.gluten) }}</dd>
+                    </div>
+                    <div>
+                      <dt>Vegetariano/vegano</dt>
+                      <dd>{{ suitability(formula) }}</dd>
+                    </div>
+                  </dl>
+                  <button
+                    type="button"
+                    class="pharmacy__toggle"
+                    [attr.aria-pressed]="formula.standardized"
+                    [disabled]="!online() || savingId() !== null"
+                    (click)="toggle(formula)"
+                  >
+                    {{
+                      formula.standardized
+                        ? 'Desmarcar padronização'
+                        : 'Padronizar'
+                    }}
+                  </button>
+                </li>
+              }
+            </ul>
+          </section>
+        } @empty {
+          <p class="pharmacy__state">Nenhuma fórmula cadastrada no catálogo.</p>
+        }
+      }
+    }
+  </div>
+</app-page-container>

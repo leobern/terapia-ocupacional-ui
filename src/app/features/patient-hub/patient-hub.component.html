@@ -205,8 +205,67 @@
           }
         </section>
 
+        @if (profile(); as p) {
+          @if (hospitalId(); as hospital) {
+            <app-prior-stays-box [patientId]="p.id" [hospitalId]="hospital" />
+          }
+        }
+
         <!-- Painel Nutricional (FT-004-3): paciente novo mostra todos os cards em "Sem dados". -->
-        <app-nutrition-panel [values]="values()" />
+        <app-nutrition-panel
+          [values]="values()"
+          [addedCards]="addedCards()"
+          [hiddenCards]="hiddenCards()"
+          (cardSelect)="openCardModal($event)"
+          (addRequest)="openAddSheet()"
+          (hiddenRequest)="openHiddenSheet()"
+        />
+        <app-nutrition-add-card-sheet
+          [open]="addSheetOpen()"
+          [present]="addedCards()"
+          [offline]="!connectivity.online()"
+          [error]="addError()"
+          (closed)="closeAddSheet()"
+          (picked)="addCard($event)"
+        />
+        <app-nutrition-hidden-cards-sheet
+          [open]="hiddenSheetOpen()"
+          [hidden]="hiddenCards()"
+          [offline]="!connectivity.online()"
+          [error]="showError()"
+          (closed)="closeHiddenSheet()"
+          (picked)="showCard($event)"
+        />
+        <app-nutrition-card-modal
+          [indicator]="openCard()"
+          [patientId]="patientIdValue()"
+          [current]="openCardCurrent()"
+          (closed)="closeCardModal()"
+          (saved)="onCardSaved($event)"
+          (hidden)="onCardHidden($event)"
+        />
+
+        @if (profile(); as p) {
+          <app-assessment-section
+            [patientId]="p.id"
+            (concluded)="onAssessmentConcluded()"
+          />
+          @if (diagnosisHint(); as message) {
+            <p class="hub__status hub__status--warning" role="alert">
+              {{ message }}
+            </p>
+          }
+          <!-- Acesso fixo ao Diagnóstico (FR-008): a tela trata o pré-requisito e o offline. -->
+          <button
+            type="button"
+            class="hub__diagnosis"
+            (click)="openDiagnosis()"
+          >
+            <span class="hub__diagnosis-title">Diagnóstico</span>
+            <ph-icon name="caret-right" [size]="16" />
+          </button>
+          <app-plan-section [patientId]="p.id" />
+        }
       }
       @case ('not-found') {
         <p class="hub__message" role="status">Paciente não encontrado.</p>

@@ -21,7 +21,7 @@ describe('SkeletonComponent', () => {
   });
 
   it('applies the modifier of each variant', () => {
-    for (const variant of ['select', 'card-patients', 'card-notify'] as const) {
+    for (const variant of ['select', 'card-patients', 'card-notify', 'block'] as const) {
       expect(render(variant).classList).toContain(`skeleton--${variant}`);
     }
   });

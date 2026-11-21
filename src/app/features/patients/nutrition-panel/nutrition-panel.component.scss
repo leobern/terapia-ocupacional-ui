@@ -12,7 +12,14 @@
   gap: tokens.$space-8;
 }
 
-// Figma v2/SectionHeader: 40px, padding lateral 8.
+// Figma v2/SectionHeader: 40px, padding lateral 8; "+" (variação desenhada pelo agente) à direita.
+.nutrition-panel__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 44px;
+}
+
 .nutrition-panel__title {
   display: flex;
   align-items: center;
@@ -41,15 +48,29 @@
   }
 }
 
-// Figma v2/StatTile: raio 16, padding 12, gap 2, fundo surface-2.
+.nutrition-panel__item {
+  display: flex;
+}
+
+// Figma v2/StatTile: raio 16, padding 12, gap 2, fundo surface-2. É um <button> (teclado/foco).
 .nutrition-panel__card {
   display: flex;
+  flex: 1;
+  border: 0;
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
   flex-direction: column;
   gap: 2px;
   min-height: 74px;
   padding: tokens.$space-12;
   border-radius: tokens.$radius-sm;
   background: tokens.c(surface-2);
+
+  &:focus-visible {
+    outline: 2px solid tokens.c(focus-ring);
+    outline-offset: 2px;
+  }
 }
 
 .nutrition-panel__label {
@@ -62,4 +83,24 @@
   color: tokens.c(content-1);
 
   @include typography.title-md;
+}
+
+// Acesso aos cards ocultos (desenhado pelo agente): link em texto, alvo de toque >= 44px.
+.nutrition-panel__hidden {
+  align-self: flex-start;
+  min-height: 44px;
+  padding: 0 tokens.$space-8;
+  border: 0;
+  background: none;
+  color: tokens.c(content-3);
+  font: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+
+  @include typography.label-md;
+
+  &:focus-visible {
+    outline: 2px solid tokens.c(focus-ring);
+    outline-offset: 2px;
+  }
 }

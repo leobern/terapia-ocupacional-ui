@@ -1,0 +1,102 @@
+@use '../../shared/styles/breakpoints';
+@use '../../shared/styles/tokens';
+@use '../../shared/styles/typography';
+
+:host {
+  display: contents;
+}
+
+// Sheet no padrão do plano (tela 14): fundo surface, padding 12/16/24/16, gap 16.
+.alter {
+  display: none;
+  flex-direction: column;
+  gap: tokens.$space-16;
+  box-sizing: border-box;
+  width: 100%;
+  max-width: none;
+  max-height: 93dvh;
+  margin: auto 0 0;
+  padding: tokens.$space-12 tokens.$space-16 tokens.$space-24;
+  overflow: hidden;
+  border: 0;
+  border-radius: tokens.$radius-md tokens.$radius-md 0 0;
+  background: tokens.c(surface);
+  color: tokens.c(content-1);
+
+  &[open] {
+    display: flex;
+  }
+
+  &::backdrop {
+    background: tokens.c(scrim);
+  }
+
+  @include breakpoints.md {
+    width: 480px;
+    margin: auto;
+    padding-block: tokens.$space-16 tokens.$space-24;
+    border-radius: tokens.$radius-md;
+  }
+}
+
+.alter__handle {
+  align-self: center;
+  width: 40px;
+  height: 4px;
+  border-radius: 2px;
+  background: tokens.c(border-2);
+
+  @include breakpoints.md {
+    display: none;
+  }
+}
+
+.alter__title {
+  margin: 0;
+
+  @include typography.title-md;
+}
+
+.alter__body {
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$space-12;
+  overflow-y: auto;
+}
+
+.alter__field {
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$space-4;
+}
+
+.alter__label {
+  color: tokens.c(content-4);
+
+  @include typography.label-md;
+}
+
+.alter__select {
+  box-sizing: border-box;
+  min-height: 44px;
+  padding: tokens.$space-8 tokens.$space-12;
+  border: 1px solid tokens.c(border-2);
+  border-radius: tokens.$radius-md;
+  background: tokens.c(surface);
+  color: tokens.c(content-1);
+
+  @include typography.body-md;
+}
+
+.alter__hint {
+  margin: 0;
+  color: tokens.c(content-4);
+
+  @include typography.body-md;
+}
+
+.alter__actions {
+  display: flex;
+  gap: tokens.$space-8;
+  justify-content: flex-end;
+}

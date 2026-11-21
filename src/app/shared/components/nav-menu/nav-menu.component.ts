@@ -76,6 +76,8 @@ export class NavMenuComponent {
   readonly activeItem = input<NavMenuItemKey | null>(null);
   /** O menu de atalhos está aberto: o item "Ações da tela" fica desabilitado e esmaecido. */
   readonly actionsOpen = input<boolean>(false);
+  /** Itens sem acesso para o perfil atual: ficam desabilitados (ex.: Farmácia só para o gestor). */
+  readonly disabledItems = input<readonly NavMenuItemKey[]>([]);
 
   /** Controlado pelo consumidor — só tem efeito visual abaixo de `md` (ver docblock). */
   readonly open = input<boolean>(false);

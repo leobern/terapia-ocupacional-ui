@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 
-export type SkeletonVariant = 'select' | 'card-patients' | 'card-notify';
+export type SkeletonVariant = 'select' | 'card-patients' | 'card-notify' | 'block';
 
 /**
  * Placeholder de carregamento com as mesmas dimensões do componente real
@@ -18,6 +18,7 @@ export type SkeletonVariant = 'select' | 'card-patients' | 'card-notify';
     [class.skeleton--select]="variant() === 'select'"
     [class.skeleton--card-patients]="variant() === 'card-patients'"
     [class.skeleton--card-notify]="variant() === 'card-notify'"
+    [class.skeleton--block]="variant() === 'block'"
   ></div>`,
 })
 export class SkeletonComponent {

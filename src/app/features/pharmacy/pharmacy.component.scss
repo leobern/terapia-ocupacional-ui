@@ -1,0 +1,158 @@
+@use '../../shared/styles/breakpoints';
+@use '../../shared/styles/tokens';
+@use '../../shared/styles/typography';
+
+:host {
+  --page-container-margin: var(--layout-page-margin, 16px);
+}
+
+.pharmacy {
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$space-16;
+  padding-top: tokens.$space-8;
+  padding-bottom: tokens.$space-24;
+
+  @include breakpoints.md {
+    padding: tokens.$space-24 var(--layout-page-margin, 32px);
+  }
+}
+
+.pharmacy__title-row {
+  display: flex;
+  align-items: center;
+  gap: tokens.$space-8;
+}
+
+.pharmacy__title-icon {
+  color: tokens.c(secondary);
+}
+
+.pharmacy__title {
+  margin: 0;
+  color: tokens.c(content-1);
+
+  @include typography.headline;
+}
+
+.pharmacy__subtitle {
+  margin: 0;
+  color: tokens.c(content-4);
+
+  @include typography.caption;
+}
+
+.pharmacy__notice,
+.pharmacy__state {
+  margin: 0;
+  color: tokens.c(content-2);
+
+  @include typography.body-md;
+}
+
+.pharmacy__notice--error {
+  color: tokens.c(content-1);
+}
+
+.pharmacy__group {
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$space-8;
+}
+
+.pharmacy__group-title {
+  margin: 0;
+  color: tokens.c(content-1);
+
+  @include typography.title-lg;
+}
+
+.pharmacy__list {
+  display: grid;
+  gap: tokens.$space-8;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+
+  @include breakpoints.md {
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  }
+}
+
+.pharmacy__card {
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$space-8;
+  padding: tokens.$space-16;
+  border-radius: tokens.$radius-sm;
+  background: tokens.c(surface);
+}
+
+.pharmacy__card-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: tokens.$space-8;
+}
+
+.pharmacy__name {
+  margin: 0;
+  color: tokens.c(content-1);
+
+  @include typography.title-md;
+}
+
+.pharmacy__status {
+  color: tokens.c(content-4);
+
+  @include typography.label-sm;
+}
+
+.pharmacy__status--on {
+  color: tokens.c(secondary);
+}
+
+.pharmacy__attrs {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: tokens.$space-4 tokens.$space-8;
+  margin: 0;
+
+  div {
+    display: flex;
+    flex-direction: column;
+  }
+
+  dt {
+    color: tokens.c(content-4);
+
+    @include typography.caption;
+  }
+
+  dd {
+    margin: 0;
+    color: tokens.c(content-1);
+
+    @include typography.body-md;
+  }
+}
+
+.pharmacy__toggle,
+.pharmacy__retry {
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0 tokens.$space-16;
+  border: 1px solid tokens.c(secondary);
+  border-radius: tokens.$radius-sm;
+  background: transparent;
+  color: tokens.c(secondary);
+  cursor: pointer;
+
+  @include typography.label-lg;
+
+  &:disabled {
+    border-color: tokens.c(content-4);
+    color: tokens.c(content-4);
+    cursor: not-allowed;
+  }
+}

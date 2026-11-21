@@ -25,6 +25,13 @@
       tokens.$radius-lg;
   }
 
+  // Bloco de card em largura total (telas com cartões de altura livre, ex.: Diagnóstico).
+  &--block {
+    width: 100%;
+    height: 120px;
+    border-radius: tokens.$radius-lg;
+  }
+
   // Mesmas dimensões e cantos de card-notify (180x180).
   &--card-notify {
     flex: 0 0 auto;

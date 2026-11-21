@@ -50,6 +50,10 @@ export const routes: Routes = [
     path: 'notifications',
     loadChildren: () => import('./features/notifications/notifications.routes').then(m => m.NOTIFICATIONS_ROUTES),
   },
+  {
+    path: 'pharmacy',
+    loadChildren: () => import('./features/pharmacy/pharmacy.routes').then(m => m.PHARMACY_ROUTES),
+  },
   // Caminho antigo em português, mantido como atalho para a tela real.
   { path: 'notificacoes', pathMatch: 'full', redirectTo: 'notifications' },
   // Fluxo de encerramento de acompanhamento (FT-004-9): placeholder até a feature existir.
@@ -77,6 +81,11 @@ export const routes: Routes = [
   {
     path: 'hospital-team',
     loadChildren: () => import('./features/hospital-team/hospital-team.routes').then(m => m.HOSPITAL_TEAM_ROUTES),
+  },
+  // Diagnóstico GLIM do paciente (FT-004-5).
+  {
+    path: 'patients/:id/diagnosis',
+    loadComponent: () => import('./features/diagnosis/diagnosis.component').then(m => m.DiagnosisComponent),
   },
   // Hub do paciente (FT-004-2): destino da lista de pacientes e das notificações.
   {
