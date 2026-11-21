@@ -1,4 +1,11 @@
-import { CurrentRoute, RouteSaveRequest, SwallowingDecision, SwallowingSaveRequest } from './plan.models';
+import {
+  ConductFlag,
+  ConductFlagRequest,
+  CurrentRoute,
+  RouteSaveRequest,
+  SwallowingDecision,
+  SwallowingSaveRequest,
+} from './plan.models';
 import {
   CalculatedWeights,
   NutritionTargets,
@@ -18,6 +25,10 @@ export abstract class PlanSource {
   /** Decisão vigente sobre avaliação de deglutição; `null` quando ainda não há. Independente da via. */
   abstract loadSwallowing(patientId: string): Promise<SwallowingDecision | null>;
   abstract saveSwallowing(request: SwallowingSaveRequest): Promise<SwallowingDecision>;
+  /** Sinalizações de mudança de conduta, da mais antiga para a mais recente; não expiram nem mudam a via. */
+  abstract loadConductFlags(patientId: string): Promise<readonly ConductFlag[]>;
+  /** Acrescenta a sinalização e grava autor e data/hora na trilha de auditoria imutável (só acréscimo). */
+  abstract addConductFlag(request: ConductFlagRequest): Promise<ConductFlag>;
   /** Pesos já calculados na Avaliação (somente leitura); objeto vazio quando não há nenhum. */
   abstract loadCalculatedWeights(patientId: string): Promise<CalculatedWeights>;
   /** Peso de referência vigente; `null` quando ainda não escolhido. */

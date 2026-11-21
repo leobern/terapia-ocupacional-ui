@@ -136,6 +136,73 @@
             </p>
           }
         </fieldset>
+        <fieldset class="plan__card" data-testid="conduct-flags">
+          <legend class="plan__label">Sinalizações de conduta</legend>
+          @if (flagsFailed()) {
+            <p class="plan__help" role="status" data-testid="flags-failed">
+              {{ flagsFailedHint }}
+            </p>
+          }
+          @for (flag of flags(); track flag.id) {
+            <div class="plan__flag" role="status" data-testid="conduct-flag">
+              <ph-icon name="flag" [size]="20" />
+              <div class="plan__flag-body">
+                <p class="plan__flag-text">
+                  <strong>Sugestão de mudança de conduta:</strong>
+                  {{ flag.text }}
+                </p>
+                <p class="plan__help">
+                  {{ flag.author }} · {{ formatFlagDate(flag.at) }}
+                </p>
+              </div>
+            </div>
+          } @empty {
+            @if (!flagsFailed()) {
+              <p class="plan__help" data-testid="flags-empty">
+                Nenhuma sinalização registrada.
+              </p>
+            }
+          }
+          <p class="plan__help">
+            É só um alerta para o médico: não altera a via vigente.
+          </p>
+          @if (!isDoctor) {
+            <label class="plan__label" for="flag-text">
+              Sinalizar mudança de conduta
+            </label>
+            <textarea
+              id="flag-text"
+              class="plan__textarea"
+              rows="2"
+              placeholder="Ex.: liberar dieta por via oral"
+              [value]="flagDraft()"
+              (input)="onFlagInput($event)"
+            ></textarea>
+            @if (flagHint(); as message) {
+              <p
+                class="plan__status plan__status--warning"
+                role="alert"
+                data-testid="flag-hint"
+              >
+                {{ message }}
+              </p>
+            }
+            @if (!connectivity.online()) {
+              <p
+                class="plan__status plan__status--warning"
+                role="status"
+                data-testid="flag-offline"
+              >
+                {{ flagOfflineHint }}
+              </p>
+            }
+            <app-button
+              label="Sinalizar"
+              [disabled]="flagSaving() || !connectivity.online()"
+              (click)="sendFlag()"
+            />
+          }
+        </fieldset>
       </section>
       <section class="plan__section" aria-label="Metas">
         <div class="plan__section-header">
