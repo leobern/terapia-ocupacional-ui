@@ -164,3 +164,9 @@
     color: tokens.c(comm-alert);
   }
 }
+
+.review__actions {
+  display: flex;
+  gap: tokens.$space-8;
+  justify-content: flex-end;
+}

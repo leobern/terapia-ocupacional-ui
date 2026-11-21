@@ -1,4 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
 
 import { ConnectivityService } from '../../../shared/services/connectivity.service';
 import { NOW, ProfessionalProfile, ProfessionalProfileReader } from '../../home/professional-profile';
@@ -197,6 +198,7 @@ class FakeRisk extends RefeedingRiskSource {
     return this.fails ? Promise.reject(new Error('x')) : Promise.resolve(this.risk);
   }
 }
+import { TargetsEditorComponent } from './targets-editor.component';
 
 describe('PlanSectionComponent', () => {
   let assessment: FakeAssessment;
@@ -211,7 +213,10 @@ describe('PlanSectionComponent', () => {
   const saveButton = (): HTMLButtonElement | null =>
     Array.from(el().querySelectorAll('button')).find(b => b.textContent.includes('Salvar plano')) ?? null;
   const text = (): string => el().textContent;
+  // Duas rodadas: o editor de metas filho só carrega depois de criado na primeira renderização.
   const settle = async (): Promise<void> => {
+    fixture.detectChanges();
+    await fixture.whenStable();
     fixture.detectChanges();
     await fixture.whenStable();
     fixture.detectChanges();
@@ -1301,7 +1306,9 @@ describe('PlanSectionComponent', () => {
       expect(ref('current').disabled).toBe(true);
       expect(ref('current').checked).toBe(true);
       expect(text()).toContain(OFFLINE_HINT);
-      const c = fixture.componentInstance as unknown as { chooseReference(k: string): void };
+      const c = fixture.debugElement.query(By.directive(TargetsEditorComponent)).componentInstance as unknown as {
+        chooseReference(k: string): void;
+      };
 
       c.chooseReference('ideal');
 
