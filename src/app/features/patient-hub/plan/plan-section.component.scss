@@ -226,3 +226,27 @@
 
   @include typography.body-md;
 }
+
+.plan__field {
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$space-4;
+}
+
+.plan__input {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 44px;
+  padding: 0 tokens.$space-16;
+  border: 1px solid tokens.c(border);
+  border-radius: tokens.$radius-12;
+  background: tokens.c(surface);
+  color: tokens.c(content-1);
+
+  @include typography.body-lg;
+
+  &:focus-visible {
+    outline: 2px solid tokens.c(input-focus-ring);
+    outline-offset: 2px;
+  }
+}

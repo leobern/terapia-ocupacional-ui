@@ -29,4 +29,28 @@ describe('ProvisionalPlanSource', () => {
 
     expect(await source.loadSwallowing('p1')).toBe('needed');
   });
+
+  it('pesos calculados, peso de referência e metas: leitura e última gravação', async () => {
+    const source = new ProvisionalPlanSource();
+    const weight = { kg: 68, kind: 'adjusted' } as const;
+    const targets = {
+      calorimetry: null,
+      formula: 'simplified',
+      kcalPerDay: 1700,
+      kcalPerKg: 25,
+      proteinPerDay: 102,
+      proteinPerKg: 1.5,
+      referenceWeight: weight,
+    } as const;
+
+    expect((await source.loadCalculatedWeights('p1')).adjusted).toBe(68);
+    expect(await source.loadCalculatedWeights('x')).toEqual({});
+    expect(await source.loadReferenceWeight('p1')).toBeNull();
+    expect(await source.loadTargets('p1')).toBeNull();
+    await source.saveReferenceWeight({ at: 'x', author: 'A', patientId: 'p1', weight });
+    await source.saveTargets({ at: 'x', author: 'A', patientId: 'p1', targets });
+
+    expect(await source.loadReferenceWeight('p1')).toEqual(weight);
+    expect(await source.loadTargets('p1')).toEqual(targets);
+  });
 });
