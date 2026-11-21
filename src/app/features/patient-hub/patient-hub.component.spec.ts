@@ -23,8 +23,10 @@ import { ProvisionalNutritionCardStore } from '../patients/nutrition-panel/provi
 import { AssessmentAiStructurer } from './assessment/assessment-ai-structurer';
 import { AssessmentSource } from './assessment/assessment-source';
 import { AssessmentWriter } from './assessment/assessment-writer';
+import { DailyEvolutionSource } from './daily-record/daily-evolution-source';
 import { DailyRecordSource } from './daily-record/daily-record-source';
 import { DailyRecordWriter } from './daily-record/daily-record-writer';
+import { EvolutionAiStructurer } from './daily-record/evolution-ai-structurer';
 import {
   DIAGNOSIS_FAILED_HINT,
   DIAGNOSIS_OFFLINE_HINT,
@@ -215,6 +217,8 @@ async function setup(
           loadResponsibleOptions: (): Promise<string[]> => Promise.resolve([]),
         },
       },
+      { provide: DailyEvolutionSource, useValue: { load: (): Promise<null> => Promise.resolve(null) } },
+      { provide: EvolutionAiStructurer, useValue: { suggest: (): Promise<string> => Promise.resolve('') } },
       { provide: RefeedingRiskSource, useValue: { load: (): Promise<null> => Promise.resolve(null) } },
       { provide: AssessmentSource, useValue: { loadLatest: (): Promise<null> => Promise.resolve(null) } },
       { provide: AssessmentAiStructurer, useValue: { structure: (): Promise<object> => Promise.resolve({}) } },

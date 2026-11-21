@@ -3,7 +3,8 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { ConnectivityService } from '../../../shared/services/connectivity.service';
 import { NOW, ProfessionalProfileReader } from '../../home/professional-profile';
-import { ParameterEntry } from './daily-record.models';
+import { DailyEvolutionSource } from './daily-evolution-source';
+import { DailyEvolution, ParameterEntry } from './daily-record.models';
 import {
   DailyRecordSheetComponent,
   LOAD_FAILED_HINT,
@@ -13,9 +14,22 @@ import {
 } from './daily-record-sheet.component';
 import { DailyRecordSource } from './daily-record-source';
 import { DailyRecordWriter } from './daily-record-writer';
+import { EvolutionAiStructurer } from './evolution-ai-structurer';
 import { ProvisionalDailyRecordSource } from './provisional-daily-record-source';
 
 const TODAY = new Date(2026, 4, 28, 12, 0);
+
+class EvolutionStub extends DailyEvolutionSource {
+  current: DailyEvolution | null = null;
+
+  load(): Promise<DailyEvolution | null> {
+    return Promise.resolve(this.current);
+  }
+
+  save(): Promise<DailyEvolution> {
+    return Promise.reject(new Error('não usado aqui'));
+  }
+}
 
 describe('DailyRecordSheetComponent', () => {
   let fixture: ComponentFixture<DailyRecordSheetComponent>;
@@ -58,6 +72,8 @@ describe('DailyRecordSheetComponent', () => {
       providers: [
         { provide: DailyRecordSource, useValue: store },
         { provide: DailyRecordWriter, useValue: store },
+        { provide: DailyEvolutionSource, useClass: EvolutionStub },
+        { provide: EvolutionAiStructurer, useValue: { suggest: (): Promise<string> => Promise.resolve('') } },
         { provide: ConnectivityService, useValue: { online } },
         { provide: ProfessionalProfileReader, useValue: { read: (): object => ({ name: 'Michelle', role: 'other' }) } },
         { provide: NOW, useValue: (): Date => nowValue },
@@ -89,6 +105,14 @@ describe('DailyRecordSheetComponent', () => {
     expect(input('glycemia').placeholder).toBe('Ex.: 132');
     expect(saveButton().textContent).toContain('Salvar registro');
     expect(loadSpy).toHaveBeenCalledWith('p1');
+  });
+
+  it('traz a seção Evolução médica dentro do sheet, lida ao abrir (perfil que não é médico só consulta)', async () => {
+    await openIt();
+
+    expect(el().querySelector('app-daily-evolution h3')?.textContent).toContain('Evolução médica');
+    expect(el().querySelector('app-daily-evolution textarea')).toBeNull();
+    expect(el().querySelector('[data-testid="evolution-empty"]')).not.toBeNull();
   });
 
   it('fecha pelo botão, pelo Esc e pelo scrim, e o dialog fecha junto', async () => {

@@ -80,6 +80,7 @@
         </div>
       }
     </section>
+    <app-daily-evolution [open]="open()" [patientId]="patientId()" />
   </div>
 
   @if (emptyHint(); as hint) {

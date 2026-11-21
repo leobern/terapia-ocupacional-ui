@@ -44,9 +44,13 @@ import { AssessmentSource } from './features/patient-hub/assessment/assessment-s
 import { AssessmentWriter } from './features/patient-hub/assessment/assessment-writer';
 import { ProvisionalAssessmentAiStructurer } from './features/patient-hub/assessment/provisional-assessment-ai-structurer';
 import { ProvisionalAssessmentSource } from './features/patient-hub/assessment/provisional-assessment-source';
+import { DailyEvolutionSource } from './features/patient-hub/daily-record/daily-evolution-source';
 import { DailyRecordSource } from './features/patient-hub/daily-record/daily-record-source';
 import { DailyRecordWriter } from './features/patient-hub/daily-record/daily-record-writer';
+import { EvolutionAiStructurer } from './features/patient-hub/daily-record/evolution-ai-structurer';
+import { ProvisionalDailyEvolutionSource } from './features/patient-hub/daily-record/provisional-daily-evolution-source';
 import { ProvisionalDailyRecordSource } from './features/patient-hub/daily-record/provisional-daily-record-source';
+import { ProvisionalEvolutionAiStructurer } from './features/patient-hub/daily-record/provisional-evolution-ai-structurer';
 import {
   HypothesisSynthesizer,
   HypothesisWriter,
@@ -115,6 +119,8 @@ export const appConfig: ApplicationConfig = {
     { provide: DailyRecordWriter, useExisting: ProvisionalDailyRecordSource },
     { provide: DiagnosisSource, useClass: ProvisionalDiagnosisSource },
     { provide: DiagnosisDecisionSource, useClass: ProvisionalDiagnosisDecisionSource },
+    { provide: DailyEvolutionSource, useClass: ProvisionalDailyEvolutionSource },
+    { provide: EvolutionAiStructurer, useClass: ProvisionalEvolutionAiStructurer },
     { provide: PlanSource, useClass: ProvisionalPlanSource },
     { provide: NutritionTargetsReader, useClass: PlanNutritionTargetsReader },
     { provide: RefeedingRiskSource, useClass: ProvisionalRefeedingRiskSource },
