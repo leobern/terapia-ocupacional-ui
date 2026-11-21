@@ -92,7 +92,7 @@ describe('assemblePatientList', () => {
   it('marca finalizado só quando não há pendências abertas na data', () => {
     const [done, open, unknown] = assemblePatientList(
       [
-        { ...base, bed: '1', id: 'a', pendingTasks: 0 },
+        { ...base, bed: '1', id: 'a', pendingTasks: 0, reassessmentDone: true },
         { ...base, bed: '2', id: 'b', pendingTasks: 2 },
         { ...base, bed: '3', id: 'c' },
       ],
@@ -101,5 +101,57 @@ describe('assemblePatientList', () => {
     );
 
     expect([done.finished, open.finished, unknown.finished]).toEqual([true, false, false]);
+  });
+
+  describe('pendência de reavaliação conforme a cadência do Plano (FT-004-6)', () => {
+    // 2026-11-16 é segunda-feira; getDay: seg=1 … dom=0.
+    const week = Array.from({ length: 7 }, (_, i) => new Date(2026, 10, 16 + i));
+    const due = (patient: Partial<CensusPatient>, d: Date): boolean =>
+      assemblePatientList([{ ...base, ...patient }], 'h1', d)[0].reassessmentDue;
+
+    it('diária: pendente em todos os dias da semana', () => {
+      expect(week.map(d => due({ reviewCadence: [0, 1, 2, 3, 4, 5, 6] }, d))).toEqual(Array(7).fill(true));
+    });
+
+    it('sem cadência gravada: tratado como diário', () => {
+      expect(week.map(d => due({}, d))).toEqual(Array(7).fill(true));
+    });
+
+    it('dias específicos: pendente só nesses dias', () => {
+      // seg, qua, sex marcados.
+      expect(week.map(d => due({ reviewCadence: [1, 3, 5] }, d))).toEqual([
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        false,
+      ]);
+    });
+
+    it('domingo conta como dia 0 da cadência', () => {
+      expect(week.map(d => due({ reviewCadence: [0] }, d))).toEqual([false, false, false, false, false, false, true]);
+    });
+
+    it('trocar de diária para dias específicos muda a listagem do dia seguinte', () => {
+      const tuesday = new Date(2026, 10, 17);
+
+      expect(due({ reviewCadence: [0, 1, 2, 3, 4, 5, 6] }, tuesday)).toBe(true);
+      expect(due({ reviewCadence: [1, 5] }, tuesday)).toBe(false);
+    });
+
+    it('reavaliação concluída no dia não é mais pendência', () => {
+      expect(due({ reassessmentDone: true }, week[0])).toBe(false);
+    });
+
+    it('finalizado exige também não haver reavaliação prevista aberta', () => {
+      const finished = (patient: Partial<CensusPatient>, d: Date): boolean =>
+        assemblePatientList([{ ...base, pendingTasks: 0, ...patient }], 'h1', d)[0].finished;
+
+      expect(finished({ reviewCadence: [1] }, week[0])).toBe(false);
+      expect(finished({ reviewCadence: [1] }, week[1])).toBe(true);
+      expect(finished({ reassessmentDone: true }, week[0])).toBe(true);
+    });
   });
 });

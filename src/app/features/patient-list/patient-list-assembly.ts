@@ -1,3 +1,4 @@
+import { isReviewDay } from '../patient-hub/plan/review-cadence';
 import { CensusPatient, PatientCard } from './patient-list.models';
 
 function ageOn(birthDate: string, day: Date): number {
@@ -45,14 +46,21 @@ export function assemblePatientList(
         p.admissionStatus === 'ADMITTED_BY_EMTN' &&
         isFollowedOn(p, day),
     )
-    .map(p => ({
+    .map(p => {
+      // A cadência do Plano decide se a reavaliação conta como pendência naquela data (FR-014).
+      const reassessmentDue = isReviewDay(p.reviewCadence, day) && p.reassessmentDone !== true;
+
+      return { p, reassessmentDue };
+    })
+    .map(({ p, reassessmentDue }) => ({
       adequacy: p.adequacy,
       age: ageOn(p.birthDate, day),
       bed: p.bed,
-      finished: p.pendingTasks === 0,
+      finished: p.pendingTasks === 0 && !reassessmentDue,
       firstEvaluation: p.completedCycles === 0,
       id: p.id,
       name: p.name,
+      reassessmentDue,
       therapy: p.therapy,
       therapyDays: daysBetween(p.therapyStartDate, day),
       ward: p.ward,

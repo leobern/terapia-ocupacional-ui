@@ -1,11 +1,18 @@
-import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { ApplicationConfig, provideZoneChangeDetection } from '@angular/core';
 import { provideRouter } from '@angular/router';
+import { environment } from '@environments/environment';
 import { provideEffects } from '@ngrx/effects';
 import { provideRouterStore } from '@ngrx/router-store';
 import { provideStore } from '@ngrx/store';
 
 import { routes } from './app.routing';
+import {
+  FoodRecallSource,
+  InfusedIntakeSource,
+  ProvisionalFoodRecallSource,
+  ProvisionalInfusedIntakeSource,
+} from './features/daily-evolution/adequacy/intake-sources';
 import { DiagnosisDecisionSource } from './features/diagnosis/diagnosis-decision-source';
 import { DiagnosisSource } from './features/diagnosis/diagnosis-source';
 import { ProvisionalDiagnosisDecisionSource } from './features/diagnosis/provisional-diagnosis-decision-source';
@@ -21,6 +28,11 @@ import { ProfessionalProfileReader } from './features/home/professional-profile'
 import { ProvisionalDailyPatientsSource } from './features/home/provisional-daily-patients';
 import { ProvisionalHomeNotificationsSource } from './features/home/provisional-home-notifications';
 import { UnreadNotificationsReader } from './features/home/unread-notifications-reader';
+import { HospitalInvitePort, ManagerAccessReader } from './features/hospital-team/hospital-invite-port';
+import {
+  ProvisionalHospitalInvite,
+  ProvisionalManagerAccess,
+} from './features/hospital-team/provisional-hospital-invite';
 import { PendingNotificationsQueryResolver } from './features/notifications/assistant/pending-notifications-query.resolver';
 import { NotificationsApiService } from './features/notifications/data-access/notifications-api.service';
 import {
@@ -70,8 +82,14 @@ import {
 import { NutritionResultsSource } from './features/patients/nutrition-panel/nutrition-results-source';
 import { ProvisionalNutritionCardStore } from './features/patients/nutrition-panel/provisional-nutrition-card-store';
 import { ProvisionalNutritionResultsSource } from './features/patients/nutrition-panel/provisional-nutrition-results';
+import { FormulasApi } from './features/pharmacy/formulas-api';
+import { ProvisionalFormulasApi } from './features/pharmacy/provisional-formulas-api';
 import { LocalStartupStateReader } from './features/splash/local-startup-state-reader';
 import { StartupStateReader } from './features/splash/startup-state';
+import { ProvisionalSessionRoleReader } from './shared/auth/provisional-session-role-reader';
+import { SessionRoleReader } from './shared/auth/session-role';
+import { DEV_BACKEND_PROVIDERS } from './shared/dev-backend/dev-backend.providers';
+import { devTokenInterceptor } from './shared/dev-backend/dev-token.interceptor';
 import { ASSISTANT_QUERY_RESOLVERS } from './shared/services/assistant-query-resolver';
 import { ProvisionalUserDirectory } from './shared/services/provisional-user-directory';
 import { UserDirectory } from './shared/services/user-directory';
@@ -100,6 +118,8 @@ export const appConfig: ApplicationConfig = {
     { provide: PlanSource, useClass: ProvisionalPlanSource },
     { provide: NutritionTargetsReader, useClass: PlanNutritionTargetsReader },
     { provide: RefeedingRiskSource, useClass: ProvisionalRefeedingRiskSource },
+    { provide: InfusedIntakeSource, useClass: ProvisionalInfusedIntakeSource },
+    { provide: FoodRecallSource, useClass: ProvisionalFoodRecallSource },
     { provide: PriorStaysSource, useClass: ProvisionalPriorStaysSource },
     { provide: PriorStaysSynthesizer, useClass: ProvisionalPriorStaysSynthesizer },
     { provide: NutritionResultsSource, useClass: ProvisionalNutritionResultsSource },
@@ -112,14 +132,20 @@ export const appConfig: ApplicationConfig = {
     // Provisórios (sem backend ainda): notificações em memória, hospital único e usuários de exemplo.
     { provide: NotificationsApiService, useClass: ProvisionalNotificationsApiService },
     { provide: HomeApiService, useClass: ProvisionalHomeApiService },
+    { provide: HospitalInvitePort, useClass: ProvisionalHospitalInvite },
+    { provide: ManagerAccessReader, useClass: ProvisionalManagerAccess },
     { provide: UserDirectory, useClass: ProvisionalUserDirectory },
+    { provide: SessionRoleReader, useClass: ProvisionalSessionRoleReader },
+    { provide: FormulasApi, useClass: ProvisionalFormulasApi },
     // Consultas de leitura do assistente (um resolvedor por intenção).
     { multi: true, provide: ASSISTANT_QUERY_RESOLVERS, useClass: PendingNotificationsQueryResolver },
     provideZoneChangeDetection({ eventCoalescing: true }),
     provideRouter(routes),
-    provideHttpClient(),
+    provideHttpClient(withInterceptors(environment.devBackend ? [devTokenInterceptor] : [])),
     provideStore(),
     provideEffects(),
     provideRouterStore(),
+    // Backend real do EP-009 com token de teste: só em `ng serve --configuration local`.
+    ...(environment.devBackend ? DEV_BACKEND_PROVIDERS : []),
   ],
 };

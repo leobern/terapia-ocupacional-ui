@@ -11,6 +11,9 @@ import { TherapyTagComponent } from '../../shared/components/therapy-tag/therapy
 import { PhIconComponent } from '../../shared/icons/ph-icon/ph-icon.component';
 import { ConnectivityService } from '../../shared/services/connectivity.service';
 import { ScreenActionsService } from '../../shared/services/screen-actions.service';
+import { adequacyPanelValues, DailyAdequacy } from '../daily-evolution/adequacy/adequacy.models';
+import { AdequacySummaryComponent } from '../daily-evolution/adequacy/adequacy-summary.component';
+import { DailyAdequacyService } from '../daily-evolution/adequacy/daily-adequacy.service';
 import { DiagnosisSource } from '../diagnosis/diagnosis-source';
 import { HospitalContextService } from '../home/hospital-context.service';
 import { NOW, ProfessionalProfileReader } from '../home/professional-profile';
@@ -84,6 +87,7 @@ export const DIAGNOSIS_FAILED_HINT =
     PageContainerComponent,
     PhIconComponent,
     PlanSectionComponent,
+    AdequacySummaryComponent,
     PriorStaysBoxComponent,
     TherapyTagComponent,
   ],
@@ -183,6 +187,8 @@ export class PatientHubComponent implements OnInit {
   });
 
   protected readonly patientIdValue = computed(() => this.patientId());
+  /** % de adequação do dia (cálculo único, FT-004-7); `null` até a primeira leitura. */
+  protected readonly adequacy = signal<DailyAdequacy | null>(null);
   private readonly resultValues = signal<NutritionValues>({});
   /** Valores informados manualmente; prevalecem sobre o resultado de outra feature até um novo resultado. */
   private readonly manual = signal<NutritionManualValues>({});
@@ -195,6 +201,7 @@ export class PatientHubComponent implements OnInit {
   private readonly screenActions = inject(ScreenActionsService);
   private readonly source = inject(PatientHubSource);
   private readonly results = inject(NutritionResultsSource);
+  private readonly adequacyService = inject(DailyAdequacyService);
   private pullFrom: number | null = null;
   private readonly context = inject(HospitalContextService);
   private readonly location = inject(Location);
@@ -236,13 +243,15 @@ export class PatientHubComponent implements OnInit {
       return;
     }
     try {
-      const loaded = await this.results.load(id);
+      const [fromResults, adequacy] = await Promise.all([this.results.load(id), this.adequacyService.calculate(id)]);
+      const loaded = { ...fromResults, ...adequacyPanelValues(adequacy) };
 
       this.manual.set(await this.cardStore.loadManual(id));
       this.addedCards.set(await this.addedStore.loadAdded(id));
       this.hiddenCards.set(await this.hiddenStore.loadHidden(id));
       await this.supersedeManual(id, loaded);
       this.resultValues.set(loaded);
+      this.adequacy.set(adequacy);
       this.resultsLoaded = true;
     } catch {
       // mantém os valores atuais
