@@ -37,6 +37,7 @@ export const OFFLINE_SAVE_HINT =
   'Sem conexão: salvar fica indisponível. Você pode continuar preenchendo; os valores serão mantidos.';
 export const LOAD_FAILED_HINT = 'Não foi possível carregar os lançamentos de hoje. Você ainda pode registrar valores.';
 export const SAVED_HINT = 'Registro salvo.';
+export const EMPTY_HISTORY_TEXT = 'Nenhum lançamento hoje.';
 
 /**
  * Registro diário (FT-004-7, US-004-7-01; Figma 4717-9855, desenhado pelo agente): seção "Parâmetros
@@ -68,14 +69,21 @@ export class DailyRecordSheetComponent {
   protected readonly saveFailedHint = SAVE_FAILED_HINT;
   protected readonly loadFailedHint = LOAD_FAILED_HINT;
   protected readonly savedHint = SAVED_HINT;
+  protected readonly emptyHistoryText = EMPTY_HISTORY_TEXT;
 
-  /** Lançamentos de hoje, do mais antigo ao mais recente. */
-  protected readonly today = computed(() => {
+  /** Histórico de hoje por parâmetro, do mais antigo ao mais recente (empate mantém a ordem de gravação). */
+  protected readonly history = computed(() => {
     const reference = this.now();
-
-    return this.entries()
+    const byParameter = new Map<string, ParameterEntry[]>();
+    const today = this.entries()
       .filter(entry => isSameDay(entry.at, reference))
-      .sort((a, b) => a.at.localeCompare(b.at));
+      .sort((a, b) => new Date(a.at).getTime() - new Date(b.at).getTime());
+
+    for (const entry of today) {
+      byParameter.set(entry.parameterId, [...(byParameter.get(entry.parameterId) ?? []), entry]);
+    }
+
+    return byParameter;
   });
 
   private readonly entries = signal<readonly ParameterEntry[]>([]);
@@ -124,13 +132,23 @@ export class DailyRecordSheetComponent {
 
   /** Texto do último lançamento de hoje do parâmetro, ou a ajuda padrão quando ainda não há. */
   protected helpOf(parameter: ParameterDefinition): string {
-    const last = this.today()
-      .filter(entry => entry.parameterId === parameter.id)
-      .at(-1);
+    const last = this.historyOf(parameter.id).at(-1);
 
     return last
       ? `Último lançamento: ${formatParameterValue(last.value)} às ${formatEntryTime(last.at)}. Cada lançamento vira um ponto novo.`
       : parameter.help;
+  }
+
+  protected historyOf(parameterId: string): readonly ParameterEntry[] {
+    return this.history().get(parameterId) ?? [];
+  }
+
+  protected valueText(entry: ParameterEntry): string {
+    return formatParameterValue(entry.value);
+  }
+
+  protected timeText(entry: ParameterEntry): string {
+    return formatEntryTime(entry.at);
   }
 
   protected labelOf(parameter: ParameterDefinition): string {

@@ -205,6 +205,59 @@ describe('DailyRecordSheetComponent', () => {
     expect(help('diuresis')).not.toContain('Último');
   });
 
+  describe('histórico do dia (múltiplos lançamentos)', () => {
+    const points = (id: string): string[] =>
+      Array.from(el().querySelectorAll(`[aria-label="Histórico de hoje: ${id}"] li`)).map(li =>
+        li.children.length === 0
+          ? (li.textContent ?? '').trim()
+          : Array.from(li.children)
+              .map(c => (c.textContent ?? '').trim())
+              .join(' '),
+      );
+
+    it('um segundo lançamento do mesmo parâmetro é acrescentado e o primeiro permanece', async () => {
+      await store.record('p1', [{ at: at(8, 10), author: 'Ana', parameterId: 'glycemia', value: 118 }]);
+      await openIt();
+      type('glycemia', '132');
+      await save();
+
+      expect(points('Glicemia')).toEqual(['118 mg/dL Ana · 08:10', '132 mg/dL Michelle · 12:00']);
+      expect((await store.loadEntries('p1')).length).toBe(2);
+      expect(help('glycemia')).toContain('Último lançamento: 132 às 12:00.');
+    });
+
+    it('lista do mais antigo ao mais recente, mesmo com a gravação fora de ordem, e o último é o mais recente', async () => {
+      await store.record('p1', [
+        { at: at(11, 0), author: 'Ana', parameterId: 'glycemia', value: 150 },
+        { at: at(7, 30), author: 'Bia', parameterId: 'glycemia', value: 100 },
+        { at: at(9, 0), author: 'Caio', parameterId: 'glycemia', value: 120 },
+      ]);
+      await openIt();
+
+      expect(points('Glicemia').map(p => p.split(' ')[0])).toEqual(['100', '120', '150']);
+      expect(help('glycemia')).toContain('Último lançamento: 150 às 11:00.');
+    });
+
+    it('autores diferentes em instantes próximos aparecem como pontos separados', async () => {
+      await store.record('p1', [
+        { at: at(10, 0), author: 'Ana', parameterId: 'diuresis', value: 300 },
+        { at: at(10, 0), author: 'Bia', parameterId: 'diuresis', value: 320 },
+      ]);
+      await openIt();
+
+      expect(points('Diurese')).toEqual(['300 mL Ana · 10:00', '320 mL Bia · 10:00']);
+    });
+
+    it('parâmetro sem lançamentos hoje mostra o estado vazio próprio; outro dia não conta', async () => {
+      await store.record('p1', [
+        { at: new Date(2026, 4, 27, 20).toISOString(), author: 'Ana', parameterId: 'lab', value: 4 },
+      ]);
+      await openIt();
+
+      expect(points('Resultado laboratorial')).toEqual(['Nenhum lançamento hoje.']);
+    });
+  });
+
   it('falha ao carregar os lançamentos avisa, mas o registro manual segue possível', async () => {
     loadSpy.and.callFake(() => Promise.reject(new Error('x')));
     await openIt();

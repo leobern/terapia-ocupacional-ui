@@ -57,6 +57,26 @@
           <p class="daily__help" [id]="'daily-help-' + parameter.id">
             {{ helpOf(parameter) }}
           </p>
+          <!-- Histórico do dia, do mais antigo ao mais recente. -->
+          <ul
+            class="daily__history"
+            [attr.aria-label]="'Histórico de hoje: ' + parameter.label"
+          >
+            @for (entry of historyOf(parameter.id); track entry.id) {
+              <li class="daily__point">
+                <span class="daily__point-value"
+                  >{{ valueText(entry) }} {{ parameter.unit }}</span
+                >
+                <span class="daily__point-meta"
+                  >{{ entry.author }} · {{ timeText(entry) }}</span
+                >
+              </li>
+            } @empty {
+              <li class="daily__point daily__point--empty">
+                {{ emptyHistoryText }}
+              </li>
+            }
+          </ul>
         </div>
       }
     </section>

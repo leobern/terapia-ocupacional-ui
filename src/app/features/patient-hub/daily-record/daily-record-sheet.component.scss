@@ -144,6 +144,37 @@
   @include typography.caption;
 }
 
+// Histórico do dia dentro do card: um ponto por linha (valor + autor · hora), sem depender de cor.
+.daily__history {
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$space-4;
+  margin: 0;
+  padding: tokens.$space-8 0 0;
+  border-top: 1px solid tokens.c(border);
+  list-style: none;
+}
+
+.daily__point {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: tokens.$space-8;
+  color: tokens.c(content-1);
+
+  @include typography.body-md;
+
+  &--empty {
+    color: tokens.c(content-4);
+  }
+}
+
+.daily__point-meta {
+  color: tokens.c(content-4);
+
+  @include typography.caption;
+}
+
 .daily__status {
   margin: 0;
   color: tokens.c(content-4);
