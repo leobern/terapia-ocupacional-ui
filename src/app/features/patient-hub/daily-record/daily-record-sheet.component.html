@@ -1,0 +1,96 @@
+<!-- Figma 4717-9855 (bottom-sheet · registro diário, desenhado pelo agente). O clique no <dialog> é o scrim; Esc fecha. -->
+<!-- eslint-disable-next-line @angular-eslint/template/click-events-have-key-events, @angular-eslint/template/interactive-supports-focus -->
+<dialog
+  #dialogEl
+  class="daily"
+  aria-labelledby="daily-title"
+  (click)="onDialogClick($event)"
+  (cancel)="onCancel($event)"
+>
+  <span class="daily__handle" aria-hidden="true"></span>
+  <div class="daily__header">
+    <h2 id="daily-title" class="daily__title">Registro diário</h2>
+    <app-icon-button
+      kind="secondary"
+      appearance="icon"
+      icon="x"
+      ariaLabel="Fechar"
+      (click)="close()"
+    />
+  </div>
+
+  <div class="daily__body">
+    @if (loadFailed()) {
+      <p class="daily__status daily__status--warning" role="alert">
+        {{ loadFailedHint }}
+      </p>
+    }
+    <section class="daily__section" aria-labelledby="daily-params-title">
+      <div class="daily__section-header">
+        <h3 id="daily-params-title" class="daily__section-title">
+          Parâmetros assistenciais
+        </h3>
+        <span class="daily__count">{{ parameters().length }}</span>
+      </div>
+      @for (parameter of parameters(); track parameter.id) {
+        <div class="daily__card">
+          <label class="daily__label" [for]="'daily-' + parameter.id">{{
+            labelOf(parameter)
+          }}</label>
+          <input
+            class="daily__input"
+            type="text"
+            inputmode="decimal"
+            autocomplete="off"
+            [id]="'daily-' + parameter.id"
+            [placeholder]="parameter.placeholder"
+            [value]="valueOf(parameter.id)"
+            [attr.aria-invalid]="errors()[parameter.id] ? 'true' : null"
+            [attr.aria-describedby]="'daily-help-' + parameter.id"
+            (input)="edit(parameter.id, $any($event.target).value)"
+          />
+          @if (errors()[parameter.id]; as error) {
+            <p class="daily__status daily__status--error" role="alert">
+              {{ error }}
+            </p>
+          }
+          <p class="daily__help" [id]="'daily-help-' + parameter.id">
+            {{ helpOf(parameter) }}
+          </p>
+        </div>
+      }
+    </section>
+  </div>
+
+  @if (emptyHint(); as hint) {
+    <p class="daily__status daily__status--error" role="alert">{{ hint }}</p>
+  }
+  @if (saved()) {
+    <p class="daily__status" role="status">{{ savedHint }}</p>
+  }
+  @if (!online()) {
+    <p class="daily__status daily__status--warning" role="status">
+      {{ offlineSaveHint }}
+    </p>
+  }
+  @if (saveFailed()) {
+    <div class="daily__failure" role="alert">
+      <p class="daily__status daily__status--warning">{{ saveFailedHint }}</p>
+      <app-button
+        size="md"
+        kind="primary"
+        appearance="outlined"
+        label="Tentar de novo"
+        [disabled]="saving() || !online()"
+        (click)="save()"
+      />
+    </div>
+  }
+  <app-button
+    class="daily__save"
+    label="Salvar registro"
+    [fullWidth]="true"
+    [disabled]="saving() || !online()"
+    (click)="save()"
+  />
+</dialog>
