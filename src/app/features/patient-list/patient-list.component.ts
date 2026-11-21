@@ -25,6 +25,7 @@ import { PhIconComponent } from '../../shared/icons/ph-icon/ph-icon.component';
 import { AiAssistantService } from '../../shared/services/ai-assistant.service';
 import { ConnectivityService } from '../../shared/services/connectivity.service';
 import { type ScreenAction, ScreenActionsService } from '../../shared/services/screen-actions.service';
+import { ClosurePatient, FollowUpClosureSheetComponent } from '../follow-up-closure/follow-up-closure-sheet.component';
 import { HospitalContextService } from '../home/hospital-context.service';
 import { UnreadNotificationsReader } from '../home/unread-notifications-reader';
 import { adequacyLabel, goalLabel, hasAdequacy, therapyStartLabel } from './patient-card-labels';
@@ -146,6 +147,7 @@ const PULL_THRESHOLD = 80;
     ButtonComponent,
     ConfirmDialogComponent,
     DateStripComponent,
+    FollowUpClosureSheetComponent,
     GraphMetaComponent,
     IconButtonComponent,
     PageContainerComponent,
@@ -178,6 +180,8 @@ export class PatientListComponent implements OnInit {
   readonly unreadCount = signal(0);
   /** Aviso (texto, não só cor) quando o encerramento é tentado sem conexão (Offline da US-004-1-08). */
   readonly offlineNotice = signal('');
+  /** Paciente do modal de encerramento aberto pelo swipe (FT-004-9); `null` = fechado. */
+  readonly closureTarget = signal<ClosurePatient | null>(null);
   /** Larguras das colunas (V1: só nesta sessão; a persistência por usuário fica para a V2 com o perfil). */
   readonly widths = signal<Readonly<Record<ColumnKey, number>>>(DEFAULT_WIDTHS);
   readonly resizing = signal<ColumnKey | null>(null);
@@ -548,20 +552,26 @@ export class PatientListComponent implements OnInit {
   }
 
   /**
-   * Swipe à esquerda (FR-029): só navega ao fluxo de encerramento da FT-004-9 (rota provisória), com o
-   * paciente em contexto. Não altera estado (FR-037). Sem conexão, não navega (a confirmação exige servidor).
+   * Swipe à esquerda (FR-029): abre o modal de encerramento da FT-004-9 (o mesmo do Hub) com o paciente em
+   * contexto. Só lê: a gravação e a exigência de conexão ficam no modal (FR-001a).
    */
   endFollowUp(id: string): void {
-    if (this.readOnly()) {
-      return;
-    }
-    if (!this.connectivity.online()) {
-      this.offlineNotice.set('Conexão necessária para encerrar o acompanhamento.');
+    const patient = this.patients().find(p => p.id === id);
 
+    if (this.readOnly() || patient === undefined) {
       return;
     }
     this.offlineNotice.set('');
-    void this.router.navigate(['/patients', id, 'end-follow-up']);
+    this.closureTarget.set({ bed: patient.bed, id: patient.id, name: patient.name, ward: patient.ward });
+  }
+
+  /** Encerramento gravado: o paciente sai da lista a partir da data de efeito (FR-005). */
+  closureSaved(): void {
+    this.retry();
+  }
+
+  closeClosure(): void {
+    this.closureTarget.set(null);
   }
 
   /**

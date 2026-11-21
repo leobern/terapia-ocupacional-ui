@@ -1,5 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 
+import { FollowUpClosureSource } from '../follow-up-closure/follow-up-closure-source';
+import { ProvisionalFollowUpClosureSource } from '../follow-up-closure/provisional-follow-up-closure';
 import { PatientListSource } from '../patient-list/patient-list-source';
 import { ProvisionalPatientListSource } from '../patient-list/provisional-patient-list';
 import {
@@ -14,7 +16,11 @@ describe('Provisional do Hub do paciente', () => {
   beforeEach(() => {
     localStorage.clear();
     TestBed.configureTestingModule({
-      providers: [ProvisionalPatientHubSource, { provide: PatientListSource, useClass: ProvisionalPatientListSource }],
+      providers: [
+        ProvisionalPatientHubSource,
+        { provide: PatientListSource, useClass: ProvisionalPatientListSource },
+        { provide: FollowUpClosureSource, useClass: ProvisionalFollowUpClosureSource },
+      ],
     });
   });
 
