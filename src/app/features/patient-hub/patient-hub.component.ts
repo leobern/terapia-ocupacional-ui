@@ -48,6 +48,10 @@ import { DailyRecordSheetComponent } from './daily-record/daily-record-sheet.com
 import { HypothesisOrigin, PatientHubProfile } from './patient-hub.models';
 import { HypothesisSynthesizer, HypothesisWriter, PatientHubSource } from './patient-hub-source';
 import { PlanSectionComponent } from './plan/plan-section.component';
+import { Prescription } from './prescription/prescription.models';
+import { PrescriptionSheetComponent } from './prescription/prescription-sheet.component';
+import { PrescriptionSource } from './prescription/prescription-source';
+import { PrescriptionSummaryComponent } from './prescription/prescription-summary.component';
 import { PriorStaysBoxComponent } from './prior-stays-box/prior-stays-box.component';
 
 type HubStatus = 'loading' | 'ready' | 'not-found' | 'error';
@@ -87,6 +91,8 @@ export const DIAGNOSIS_FAILED_HINT =
     PageContainerComponent,
     PhIconComponent,
     PlanSectionComponent,
+    PrescriptionSheetComponent,
+    PrescriptionSummaryComponent,
     AdequacySummaryComponent,
     PriorStaysBoxComponent,
     TherapyTagComponent,
@@ -148,6 +154,10 @@ export class PatientHubComponent implements OnInit {
 
   /** Registro diário (FT-004-7) aberto pela ação "Registro diário" dos atalhos. */
   protected readonly dailyRecordOpen = signal(false);
+  /** Revisão da prescrição (FT-004-8) aberta pela ação "Ajustar a prescrição" dos atalhos (só médico). */
+  protected readonly prescriptionOpen = signal(false);
+  /** Prescrição vigente exibida no Hub; `null` = sem prescrição (ou leitura falhou). */
+  protected readonly prescription = signal<Prescription | null>(null);
 
   protected readonly phase = signal<FillPhase>('input');
   /** Texto colado do prontuário (permanece disponível se a síntese falhar). */
@@ -200,6 +210,7 @@ export class PatientHubComponent implements OnInit {
   private readonly editing = signal<'paste' | 'edit' | null>(null);
   private readonly screenActions = inject(ScreenActionsService);
   private readonly source = inject(PatientHubSource);
+  private readonly prescriptions = inject(PrescriptionSource);
   private readonly results = inject(NutritionResultsSource);
   private readonly adequacyService = inject(DailyAdequacyService);
   private pullFrom: number | null = null;
@@ -224,6 +235,15 @@ export class PatientHubComponent implements OnInit {
         onCleanup(
           this.screenActions.register([
             { id: 'daily-record', label: 'Registro diário', navigate: (): void => this.dailyRecordOpen.set(true) },
+            ...(this.professional.read().role === 'doctor'
+              ? [
+                  {
+                    id: 'adjust-prescription',
+                    label: 'Ajustar a prescrição',
+                    navigate: (): void => this.prescriptionOpen.set(true),
+                  },
+                ]
+              : []),
           ]),
         );
       }
@@ -232,6 +252,7 @@ export class PatientHubComponent implements OnInit {
 
   ngOnInit(): void {
     void this.load();
+    void this.reloadPrescription();
     void this.reloadResults();
   }
 
@@ -255,6 +276,20 @@ export class PatientHubComponent implements OnInit {
       this.resultsLoaded = true;
     } catch {
       // mantém os valores atuais
+    }
+  }
+
+  /** A prescrição ajustada virou a vigente: o Hub passa a mostrá-la sem recarregar a página. */
+  protected async reloadPrescription(): Promise<void> {
+    const id = this.patientId();
+
+    if (id === null) {
+      return;
+    }
+    try {
+      this.prescription.set(await this.prescriptions.load(id));
+    } catch {
+      // mantém a prescrição já exibida
     }
   }
 

@@ -3,6 +3,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { ConnectivityService } from '../../../shared/services/connectivity.service';
 import { NOW, ProfessionalProfileReader } from '../../home/professional-profile';
+import { PrescriptionSource } from '../prescription/prescription-source';
 import { DailyEvolutionSource } from './daily-evolution-source';
 import { DailyEvolution, ParameterEntry } from './daily-record.models';
 import {
@@ -73,6 +74,7 @@ describe('DailyRecordSheetComponent', () => {
         { provide: DailyRecordSource, useValue: store },
         { provide: DailyRecordWriter, useValue: store },
         { provide: DailyEvolutionSource, useClass: EvolutionStub },
+        { provide: PrescriptionSource, useValue: { load: (): Promise<null> => Promise.resolve(null) } },
         { provide: EvolutionAiStructurer, useValue: { suggest: (): Promise<string> => Promise.resolve('') } },
         { provide: ConnectivityService, useValue: { online } },
         { provide: ProfessionalProfileReader, useValue: { read: (): object => ({ name: 'Michelle', role: 'other' }) } },

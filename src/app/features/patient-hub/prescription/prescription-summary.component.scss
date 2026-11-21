@@ -1,0 +1,49 @@
+@use '../../../shared/styles/tokens';
+@use '../../../shared/styles/typography';
+
+:host {
+  display: block;
+}
+
+.rx-summary {
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$space-8;
+}
+
+.rx-summary__title {
+  margin: 0;
+  padding-inline: tokens.$space-8;
+  color: tokens.c(content-1);
+
+  @include typography.title-md;
+}
+
+.rx-summary__list {
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$space-8;
+  margin: 0;
+  padding: tokens.$space-16;
+  border-radius: tokens.$radius-sm;
+  background: tokens.c(surface-2);
+}
+
+.rx-summary__item {
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$space-4;
+
+  dt {
+    color: tokens.c(content-4);
+
+    @include typography.label-md;
+  }
+
+  dd {
+    margin: 0;
+    color: tokens.c(content-1);
+
+    @include typography.body-lg;
+  }
+}

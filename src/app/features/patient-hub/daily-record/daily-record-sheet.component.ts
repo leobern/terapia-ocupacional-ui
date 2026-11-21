@@ -16,6 +16,7 @@ import { ButtonComponent } from '../../../shared/components/button/button.compon
 import { IconButtonComponent } from '../../../shared/components/icon-button/icon-button.component';
 import { ConnectivityService } from '../../../shared/services/connectivity.service';
 import { NOW, ProfessionalProfileReader } from '../../home/professional-profile';
+import { PrescriptionGuidanceComponent } from '../prescription/prescription-guidance.component';
 import { DailyEvolutionComponent } from './daily-evolution.component';
 import {
   formatEntryTime,
@@ -46,7 +47,7 @@ export const EMPTY_HISTORY_TEXT = 'Nenhum lançamento hoje.';
  */
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ButtonComponent, DailyEvolutionComponent, IconButtonComponent],
+  imports: [ButtonComponent, DailyEvolutionComponent, IconButtonComponent, PrescriptionGuidanceComponent],
   selector: 'app-daily-record-sheet',
   styleUrl: './daily-record-sheet.component.scss',
   templateUrl: './daily-record-sheet.component.html',

@@ -80,6 +80,8 @@
         </div>
       }
     </section>
+    <!-- Horários previstos e orientações de enfermagem da prescrição vigente (FT-004-8, FR-009). -->
+    <app-prescription-guidance [open]="open()" [patientId]="patientId()" />
     <app-daily-evolution [open]="open()" [patientId]="patientId()" />
   </div>
 

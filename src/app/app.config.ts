@@ -66,6 +66,8 @@ import { PlanSource } from './features/patient-hub/plan/plan-source';
 import { ProvisionalPlanSource } from './features/patient-hub/plan/provisional-plan-source';
 import { ProvisionalRefeedingRiskSource } from './features/patient-hub/plan/provisional-refeeding-risk-source';
 import { RefeedingRiskSource } from './features/patient-hub/plan/refeeding-risk-source';
+import { PrescriptionSource } from './features/patient-hub/prescription/prescription-source';
+import { ProvisionalPrescriptionSource } from './features/patient-hub/prescription/provisional-prescription-source';
 import {
   ProvisionalHypothesisSynthesizer,
   ProvisionalHypothesisWriter,
@@ -122,6 +124,7 @@ export const appConfig: ApplicationConfig = {
     { provide: DailyEvolutionSource, useClass: ProvisionalDailyEvolutionSource },
     { provide: EvolutionAiStructurer, useClass: ProvisionalEvolutionAiStructurer },
     { provide: PlanSource, useClass: ProvisionalPlanSource },
+    { provide: PrescriptionSource, useClass: ProvisionalPrescriptionSource },
     { provide: NutritionTargetsReader, useClass: PlanNutritionTargetsReader },
     { provide: RefeedingRiskSource, useClass: ProvisionalRefeedingRiskSource },
     { provide: InfusedIntakeSource, useClass: ProvisionalInfusedIntakeSource },
