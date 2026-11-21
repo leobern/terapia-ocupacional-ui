@@ -61,6 +61,8 @@ const CATALOG: readonly CatalogItem[] = [
 /** Provisório: catálogo fixo; a padronização fica em memória, separada por hospital. */
 @Injectable()
 export class ProvisionalFormulasApi extends FormulasApi {
+  /** Pedidos registrados nesta sessão (provisório; a API real guarda hospital, solicitante e data/hora). */
+  readonly requests: { readonly description: string; readonly hospitalId: string }[] = [];
   private readonly standardizedByHospital = new Map<string, Set<string>>();
 
   list(hospitalId: string): Promise<readonly Formula[]> {
@@ -78,6 +80,12 @@ export class ProvisionalFormulasApi extends FormulasApi {
       ids.delete(formulaId);
     }
     this.standardizedByHospital.set(hospitalId, ids);
+
+    return Promise.resolve();
+  }
+
+  requestFormula(hospitalId: string, description: string): Promise<void> {
+    this.requests.push({ description, hospitalId });
 
     return Promise.resolve();
   }
