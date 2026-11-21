@@ -14,10 +14,14 @@ import {
 
 import { ButtonComponent } from '../../../shared/components/button/button.component';
 import { IconButtonComponent } from '../../../shared/components/icon-button/icon-button.component';
+import { InputChatAudioError, InputChatComponent } from '../../../shared/components/input-chat/input-chat.component';
 import { ConnectivityService } from '../../../shared/services/connectivity.service';
 import { NOW, ProfessionalProfileReader } from '../../home/professional-profile';
 import { DailyEvolutionComponent } from './daily-evolution.component';
 import {
+  CUSTOM_PARAMETER_PREFIX,
+  customParameterId,
+  findParameter,
   formatEntryTime,
   formatParameterValue,
   INITIAL_PARAMETERS,
@@ -28,9 +32,11 @@ import {
   ParameterDefinition,
   ParameterEntry,
   parseParameterValue,
+  SuggestedParameter,
 } from './daily-record.models';
 import { DailyRecordSource } from './daily-record-source';
 import { DailyRecordWriter } from './daily-record-writer';
+import { ParameterAiStructurer } from './parameter-ai-structurer';
 
 export const SAVE_FAILED_HINT =
   'Não foi possível salvar o registro. Os valores digitados foram mantidos; tente novamente.';
@@ -39,6 +45,23 @@ export const OFFLINE_SAVE_HINT =
 export const LOAD_FAILED_HINT = 'Não foi possível carregar os lançamentos de hoje. Você ainda pode registrar valores.';
 export const SAVED_HINT = 'Registro salvo.';
 export const EMPTY_HISTORY_TEXT = 'Nenhum lançamento hoje.';
+export const AI_SUGGESTED_NOTE = 'Sugerido pela IA, confirme antes de salvar.';
+export const AI_PROCESSING_HINT = 'Processando o áudio…';
+export const AI_UNAVAILABLE_HINT = 'Registro por IA indisponível sem conexão. Preencha os valores manualmente.';
+export const AI_FAILED_HINT = 'Não foi possível estruturar o áudio por IA. Preencha manualmente ou tente de novo.';
+export const AI_EMPTY_HINT = 'A IA não identificou parâmetros no áudio. Preencha manualmente ou grave de novo.';
+export const AI_MIC_DENIED_HINT =
+  'Sem acesso ao microfone. Preencha manualmente ou permita o microfone e tente de novo.';
+export const AI_MIC_FAILED_HINT = 'Não foi possível gravar o áudio. Preencha manualmente ou tente de novo.';
+export const EXTRA_NAME_REQUIRED_HINT = 'Informe o nome do parâmetro para salvar.';
+export const AI_PLACEHOLDER = 'Grave um áudio com os valores do dia';
+
+/** Parâmetro narrado que não está no catálogo: card extra, com nome e unidade editáveis, gravado só ao confirmar. */
+interface ExtraParameter {
+  readonly id: string;
+  readonly label: string;
+  readonly unit: string;
+}
 
 /**
  * Registro diário (FT-004-7, US-004-7-01; Figma 4717-9855, desenhado pelo agente): seção "Parâmetros
@@ -46,7 +69,7 @@ export const EMPTY_HISTORY_TEXT = 'Nenhum lançamento hoje.';
  */
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ButtonComponent, DailyEvolutionComponent, IconButtonComponent],
+  imports: [ButtonComponent, DailyEvolutionComponent, IconButtonComponent, InputChatComponent],
   selector: 'app-daily-record-sheet',
   styleUrl: './daily-record-sheet.component.scss',
   templateUrl: './daily-record-sheet.component.html',
@@ -71,6 +94,16 @@ export class DailyRecordSheetComponent {
   protected readonly loadFailedHint = LOAD_FAILED_HINT;
   protected readonly savedHint = SAVED_HINT;
   protected readonly emptyHistoryText = EMPTY_HISTORY_TEXT;
+  protected readonly aiPlaceholder = AI_PLACEHOLDER;
+  protected readonly aiProcessingHint = AI_PROCESSING_HINT;
+  protected readonly aiUnavailableHint = AI_UNAVAILABLE_HINT;
+  protected readonly aiProcessing = signal(false);
+  protected readonly aiNotice = signal<string | null>(null);
+  /** Cards fora do catálogo vindos da IA, ainda não gravados. */
+  protected readonly extras = signal<readonly ExtraParameter[]>([]);
+  /** Nota em texto por card preenchido pela IA (some quando o profissional edita o campo). */
+  protected readonly aiNotes = signal<Readonly<Record<string, string>>>({});
+  protected readonly aiSuggestedNote = AI_SUGGESTED_NOTE;
 
   /** Histórico de hoje por parâmetro, do mais antigo ao mais recente (empate mantém a ordem de gravação). */
   protected readonly history = computed(() => {
@@ -93,6 +126,8 @@ export class DailyRecordSheetComponent {
   private readonly writer = inject(DailyRecordWriter);
   private readonly professional = inject(ProfessionalProfileReader);
   private readonly now = inject(NOW);
+  private readonly structurer = inject(ParameterAiStructurer);
+  private extraSequence = 0;
   /** Descarta respostas de uma abertura anterior (fechar e reabrir rápido, ou troca de paciente). */
   private token = 0;
   private readonly dialogRef = viewChild<ElementRef<HTMLDialogElement>>('dialogEl');
@@ -129,6 +164,54 @@ export class DailyRecordSheetComponent {
     this.errors.update(e => ({ ...e, [id]: '' }));
     this.emptyHint.set(null);
     this.saved.set(false);
+    this.aiNotes.update(({ [id]: _dropped, ...rest }) => rest);
+  }
+
+  protected editExtra(id: string, field: 'label' | 'unit', value: string): void {
+    this.extras.update(list => list.map(x => (x.id === id ? { ...x, [field]: value } : x)));
+    this.errors.update(e => ({ ...e, [id]: '' }));
+    this.emptyHint.set(null);
+    this.saved.set(false);
+  }
+
+  /** Áudio gravado: a IA estrutura os valores nos cards, ainda sem salvar; nada vale até "Salvar registro". */
+  protected async onAudio(audio: Blob): Promise<void> {
+    if (!this.online() || this.aiProcessing()) {
+      return;
+    }
+    const token = this.token;
+
+    this.aiNotice.set(null);
+    this.aiProcessing.set(true);
+    try {
+      const suggestions = await this.structurer.suggest(audio);
+
+      if (token !== this.token || !this.online()) {
+        if (token === this.token) {
+          this.aiNotice.set(AI_FAILED_HINT);
+        }
+
+        return;
+      }
+      if (suggestions.length === 0) {
+        this.aiNotice.set(AI_EMPTY_HINT);
+
+        return;
+      }
+      this.applySuggestions(suggestions);
+    } catch {
+      if (token === this.token) {
+        this.aiNotice.set(AI_FAILED_HINT);
+      }
+    } finally {
+      if (token === this.token) {
+        this.aiProcessing.set(false);
+      }
+    }
+  }
+
+  protected onAudioError(reason: InputChatAudioError): void {
+    this.aiNotice.set(reason === 'permission-denied' ? AI_MIC_DENIED_HINT : AI_MIC_FAILED_HINT);
   }
 
   /** Texto do último lançamento de hoje do parâmetro, ou a ajuda padrão quando ainda não há. */
@@ -174,7 +257,8 @@ export class DailyRecordSheetComponent {
 
   /** Grava só os parâmetros preenchidos; nada é gravado se algum valor for inválido ou se nada foi preenchido. */
   protected async save(): Promise<void> {
-    const filled = this.parameters().filter(p => this.valueOf(p.id).trim() !== '');
+    const filledExtras = this.extras().filter(x => this.valueOf(x.id).trim() !== '');
+    const filled = [...this.parameters().filter(p => this.valueOf(p.id).trim() !== ''), ...filledExtras];
 
     this.saved.set(false);
     this.saveFailed.set(false);
@@ -190,9 +274,23 @@ export class DailyRecordSheetComponent {
 
     for (const parameter of filled) {
       const value = parseParameterValue(this.valueOf(parameter.id));
+      const extra = filledExtras.find(x => x.id === parameter.id);
 
-      if (value === null) {
+      if (extra && extra.label.trim() === '') {
+        errors[parameter.id] = EXTRA_NAME_REQUIRED_HINT;
+      } else if (value === null) {
         errors[parameter.id] = INVALID_VALUE_HINT;
+      } else if (extra) {
+        const label = extra.label.trim();
+
+        entries.push({
+          at,
+          author,
+          parameterId: customParameterId(label),
+          parameterLabel: label,
+          unit: extra.unit.trim(),
+          value,
+        });
       } else {
         entries.push({ at, author, parameterId: parameter.id, value });
       }
@@ -206,7 +304,10 @@ export class DailyRecordSheetComponent {
       const created = await this.writer.record(this.patientId(), entries);
 
       this.entries.update(list => [...list, ...created]);
+      this.adoptCustomParameters(created);
       this.drafts.set({});
+      this.extras.set([]);
+      this.aiNotes.set({});
       this.saved.set(true);
     } catch {
       this.saveFailed.set(true);
@@ -220,6 +321,11 @@ export class DailyRecordSheetComponent {
 
     this.drafts.set({});
     this.errors.set({});
+    this.extras.set([]);
+    this.aiNotes.set({});
+    this.aiNotice.set(null);
+    this.aiProcessing.set(false);
+    this.parameters.set(INITIAL_PARAMETERS);
     this.emptyHint.set(null);
     this.saveFailed.set(false);
     this.saved.set(false);
@@ -229,6 +335,7 @@ export class DailyRecordSheetComponent {
 
       if (token === this.token) {
         this.entries.set(loaded);
+        this.adoptCustomParameters(loaded);
       }
     } catch {
       if (token === this.token) {
@@ -236,5 +343,69 @@ export class DailyRecordSheetComponent {
         this.loadFailed.set(true);
       }
     }
+  }
+
+  /** Parâmetros fora do catálogo já gravados passam a ter card próprio (a lista é aberta, FR-004). */
+  private adoptCustomParameters(entries: readonly ParameterEntry[]): void {
+    const known = new Set(this.parameters().map(p => p.id));
+    const added: ParameterDefinition[] = [];
+
+    for (const entry of entries) {
+      if (entry.parameterId.startsWith(CUSTOM_PARAMETER_PREFIX) && !known.has(entry.parameterId)) {
+        known.add(entry.parameterId);
+        added.push({
+          help: 'Cada lançamento vira um ponto novo.',
+          id: entry.parameterId,
+          label: entry.parameterLabel ?? entry.parameterId.slice(CUSTOM_PARAMETER_PREFIX.length),
+          placeholder: 'Ex.: 10',
+          unit: entry.unit ?? '',
+        });
+      }
+    }
+    if (added.length > 0) {
+      this.parameters.update(list => [...list, ...added]);
+    }
+  }
+
+  /** Preenche os cards (do catálogo ou extras) com o que a IA estruturou; avisa quando substitui o que foi digitado. */
+  private applySuggestions(suggestions: readonly SuggestedParameter[]): void {
+    const drafts = { ...this.drafts() };
+    const notes = { ...this.aiNotes() };
+    const errors = { ...this.errors() };
+    let extras = [...this.extras()];
+
+    for (const suggestion of suggestions) {
+      const value = suggestion.value.trim();
+      let id: string;
+      const known = findParameter(this.parameters(), suggestion);
+
+      if (known) {
+        id = known.id;
+      } else {
+        const label = (suggestion.label ?? '').trim();
+        const existing = extras.find(x => label !== '' && customParameterId(x.label) === customParameterId(label));
+
+        if (existing) {
+          id = existing.id;
+        } else {
+          id = `extra-${++this.extraSequence}`;
+          extras = [...extras, { id, label, unit: (suggestion.unit ?? '').trim() }];
+        }
+      }
+      const previous = (drafts[id] ?? '').trim();
+
+      notes[id] =
+        previous !== '' && previous !== value
+          ? `${AI_SUGGESTED_NOTE} Substituiu o valor digitado (${previous}).`
+          : AI_SUGGESTED_NOTE;
+      drafts[id] = value;
+      errors[id] = parseParameterValue(value) === null ? INVALID_VALUE_HINT : '';
+    }
+    this.extras.set(extras);
+    this.drafts.set(drafts);
+    this.aiNotes.set(notes);
+    this.errors.set(errors);
+    this.emptyHint.set(null);
+    this.saved.set(false);
   }
 }
