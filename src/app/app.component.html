@@ -13,6 +13,7 @@
       (closed)="menuOpen.set(false)"
       (logoClick)="aiAssistant.openPanel()"
       (homeClick)="onHomeClick()"
+      (pacientesClick)="onPacientesClick()"
       (acoesTelaClick)="menuOpen.set(false); aiAssistant.openShortcuts()"
       (farmaciaClick)="onFarmaciaClick()"
       (notificacoesClick)="onNotificacoesClick()"
@@ -60,6 +61,7 @@
             [(value)]="aiChatValue"
             [(mode)]="aiChatMode"
             (send)="onAiSend($event)"
+            (audioSend)="onAiAudio($event)"
           />
         }
       </app-bottom-sheet>
@@ -86,6 +88,7 @@
             [(value)]="aiChatValue"
             [(mode)]="aiChatMode"
             (send)="onAiSend($event)"
+            (audioSend)="onAiAudio($event)"
           />
         }
       </app-drawer>

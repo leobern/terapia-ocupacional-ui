@@ -2,8 +2,9 @@ import { ChangeDetectionStrategy, Component, computed, inject, input } from '@an
 
 import { ThemeService } from '../../services/theme.service';
 
-/** `blobs`: 3 círculos com blur; `gradient`: gradiente de fundo (Figma, tokens bg-gradient). */
-export type BackgroundMeshVariant = 'blobs' | 'gradient';
+/** `blobs`: 3 círculos com blur; `gradient`: gradiente de fundo (Figma, tokens bg-gradient);
+ * `patients`: gradiente exclusivo da tela de Pacientes (tokens bg-gradient-patients). */
+export type BackgroundMeshVariant = 'blobs' | 'gradient' | 'patients';
 
 /**
  * Fundo decorativo puramente visual (DS-component-background-mesh): 3 círculos de cor
@@ -43,5 +44,8 @@ export class BackgroundMeshComponent {
   protected readonly themeService = inject(ThemeService);
 
   /** Figma: a segunda parada do gradiente fica em 23,8% no claro e em 45% no escuro. */
+  /** Pacientes: a 2ª parada fica em 18,5% no claro e em 51,4% no escuro (Figma). */
+  protected readonly patientsStop2Offset = computed(() => (this.themeService.theme() === 'dark' ? 0.514 : 0.185));
+
   protected readonly stop2Offset = computed(() => (this.themeService.theme() === 'dark' ? 0.4503 : 0.2377));
 }

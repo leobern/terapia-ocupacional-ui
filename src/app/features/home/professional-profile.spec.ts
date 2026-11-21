@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 
-import { NOW, ProfessionalProfileReader } from './professional-profile';
+import { NOW, ProfessionalProfile, ProfessionalProfileReader } from './professional-profile';
 
 describe('professional-profile', () => {
   it('NOW devolve, por padrão, a data atual', () => {
@@ -13,8 +13,8 @@ describe('professional-profile', () => {
 
   it('o leitor de perfil é uma fronteira abstrata, substituível', () => {
     class Fixed extends ProfessionalProfileReader {
-      read(): { name: string } {
-        return { name: 'Fulana' };
+      read(): ProfessionalProfile {
+        return { name: 'Fulana', role: 'other' };
       }
     }
 

@@ -1,0 +1,49 @@
+@use '../../styles/tokens';
+@use '../../styles/typography';
+
+:host {
+  position: relative;
+  display: block;
+  overflow: hidden;
+}
+
+.swipe-row__action {
+  @include typography.label-md;
+
+  position: absolute;
+  inset-block: 0;
+  inset-inline-end: 0;
+  width: 110px;
+  min-height: 44px;
+  border: 0;
+  background: tokens.c(comm-alert);
+  color: tokens.c(content-6);
+  cursor: pointer;
+  visibility: hidden;
+}
+
+.swipe-row__action--start {
+  inset-inline: 0 auto;
+  background: tokens.c(primary);
+}
+
+.swipe-row__action--revealed {
+  visibility: visible;
+}
+
+.swipe-row__content {
+  position: relative;
+  background: tokens.c(surface);
+  touch-action: pan-y;
+  transition: transform 160ms ease-out;
+}
+
+.swipe-row__content--dragging {
+  transition: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .swipe-row__content {
+    transition: none;
+  }
+}

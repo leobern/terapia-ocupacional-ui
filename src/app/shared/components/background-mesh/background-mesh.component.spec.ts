@@ -115,6 +115,29 @@ describe('BackgroundMeshComponent', () => {
     expect(gradient.querySelectorAll('stop')[1].getAttribute('offset')).toBe('0.2377');
   });
 
+  it('variant=patients usa o gradiente exclusivo de Pacientes (2 paradas, mesmo vetor)', async () => {
+    await create();
+    fixture.componentRef.setInput('variant', 'patients');
+    fixture.detectChanges();
+    const el = fixture.nativeElement as HTMLElement;
+    const stops = el.querySelectorAll('linearGradient stop');
+
+    expect(el.querySelector('.background-mesh__blobs')).toBeNull();
+    expect(stops.length).toBe(2);
+    expect(stops[1].getAttribute('offset')).toBe('0.185');
+    expect(el.querySelector('linearGradient')?.getAttribute('y2')).toBe('1.15655');
+  });
+
+  it('variant=patients no escuro move a 2ª parada para 51,4% (Figma, Pacientes Dark)', async () => {
+    await create({ theme: 'dark' });
+    fixture.componentRef.setInput('variant', 'patients');
+    fixture.detectChanges();
+    const stop = (fixture.nativeElement as HTMLElement).querySelectorAll('linearGradient stop')[1];
+
+    expect(stop.getAttribute('offset')).toBe('0.514');
+    TestBed.inject(ThemeService).set('light');
+  });
+
   it('variant=gradient no escuro move a 2ª parada para 45% (Figma, Dark v2)', async () => {
     await create({ theme: 'dark' });
     fixture.componentRef.setInput('variant', 'gradient');

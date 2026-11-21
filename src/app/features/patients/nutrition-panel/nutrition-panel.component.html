@@ -1,0 +1,41 @@
+<!-- Figma Hub (4608-4371), seção "Diagnóstico": título + card de superfície com tiles. -->
+<section class="nutrition-panel" aria-labelledby="nutrition-panel-title">
+  <div class="nutrition-panel__header">
+    <h2 id="nutrition-panel-title" class="nutrition-panel__title">
+      Diagnóstico
+    </h2>
+    <app-icon-button
+      kind="secondary"
+      appearance="icon"
+      icon="plus"
+      ariaLabel="Adicionar card ao painel"
+      (click)="addRequest.emit()"
+    />
+  </div>
+  <ul class="nutrition-panel__grid">
+    @for (card of cards(); track card.id) {
+      <li class="nutrition-panel__item">
+        <button
+          type="button"
+          class="nutrition-panel__card"
+          [attr.aria-label]="
+            card.label + ': ' + card.value + '. Abrir histórico e edição'
+          "
+          (click)="cardSelect.emit(card.id)"
+        >
+          <span class="nutrition-panel__label">{{ card.label }}</span>
+          <span class="nutrition-panel__value">{{ card.value }}</span>
+        </button>
+      </li>
+    }
+  </ul>
+  @if (hiddenCards().length > 0) {
+    <button
+      type="button"
+      class="nutrition-panel__hidden"
+      (click)="hiddenRequest.emit()"
+    >
+      Cards ocultos ({{ hiddenCards().length }})
+    </button>
+  }
+</section>

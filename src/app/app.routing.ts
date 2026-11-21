@@ -30,6 +30,11 @@ export const routes: Routes = [
     loadChildren: () => import('./features/home/home.routes').then(m => m.HOME_ROUTES),
   },
   {
+    path: 'patients',
+    pathMatch: 'full',
+    loadChildren: () => import('./features/patient-list/patient-list.routes').then(m => m.PATIENT_LIST_ROUTES),
+  },
+  {
     path: 'splash',
     data: { hideShell: true },
     loadChildren: () => import('./features/splash/splash.routes').then(m => m.SPLASH_ROUTES),
@@ -51,12 +56,36 @@ export const routes: Routes = [
   },
   // Caminho antigo em português, mantido como atalho para a tela real.
   { path: 'notificacoes', pathMatch: 'full', redirectTo: 'notifications' },
-  // TODO (specs/004-notificacoes research.md §8): placeholder até a feature
-  // "Detalhe do Paciente" existir — destino real de FR-006 (US2).
+  // Fluxo de encerramento de acompanhamento (FT-004-9): placeholder até a feature existir.
+  {
+    path: 'patients/:id/end-follow-up',
+    data: { screen: 'end-follow-up' },
+    loadComponent: () =>
+      import('./features/pending-screen/pending-screen.component').then(m => m.PendingScreenComponent),
+  },
+  // Fluxo de alteração de leito (FT-002-2): placeholder até a feature existir.
+  {
+    path: 'patients/:id/change-bed',
+    data: { screen: 'change-bed' },
+    loadComponent: () =>
+      import('./features/pending-screen/pending-screen.component').then(m => m.PendingScreenComponent),
+  },
+  // Atalhos da lista (US-004-1-07): fluxos de cadastro e edição de paciente da FT-002-1, placeholders até existir.
+  ...(['register', 'edit'] as const).map(path => ({
+    path: `patients/${path}`,
+    data: { screen: `${path}-patient` },
+    loadComponent: () =>
+      import('./features/pending-screen/pending-screen.component').then(m => m.PendingScreenComponent),
+  })),
+  // Diagnóstico GLIM do paciente (FT-004-5).
+  {
+    path: 'patients/:id/diagnosis',
+    loadComponent: () => import('./features/diagnosis/diagnosis.component').then(m => m.DiagnosisComponent),
+  },
+  // Hub do paciente (FT-004-2): destino da lista de pacientes e das notificações.
   {
     path: 'patients/:id',
-    loadComponent: () =>
-      import('./features/patients/patient-detail-placeholder.component').then(m => m.PatientDetailPlaceholderComponent),
+    loadComponent: () => import('./features/patient-hub/patient-hub.component').then(m => m.PatientHubComponent),
   },
   // Placeholders das telas de outras stories (ver PendingScreenComponent).
   ...(['login', 'lock', 'hospital-links'] as const).map(path => ({

@@ -1,0 +1,48 @@
+@if (visible()) {
+  <section class="stays" aria-label="Internações anteriores">
+    <button
+      type="button"
+      class="stays__header"
+      aria-controls="stays-content"
+      [attr.aria-expanded]="expanded()"
+      (click)="toggle()"
+    >
+      <span class="stays__title">Internações anteriores neste hospital</span>
+      <ph-icon
+        name="caret-down"
+        [size]="16"
+        [class.stays__caret--open]="expanded()"
+      />
+    </button>
+    <div id="stays-content" class="stays__content" [hidden]="!expanded()">
+      @if (!connectivity.online()) {
+        <p class="stays__status stays__status--warning" role="status">
+          Conexão necessária para ver o histórico de internações.
+        </p>
+      } @else {
+        @switch (state()) {
+          @case ('loading') {
+            <p class="stays__status" role="status">
+              Carregando a síntese do histórico…
+            </p>
+          }
+          @case ('error') {
+            <p class="stays__status stays__status--warning" role="alert">
+              Não foi possível carregar o histórico de internações.
+            </p>
+            <button type="button" class="stays__retry" (click)="retry()">
+              Tentar novamente
+            </button>
+          }
+          @case ('ready') {
+            <span class="stays__ai-tag">
+              <ph-icon name="sparkle" [size]="16" />
+              Gerado por IA
+            </span>
+            <p class="stays__text">{{ summary() }}</p>
+          }
+        }
+      }
+    </div>
+  </section>
+}

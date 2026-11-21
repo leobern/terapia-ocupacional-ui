@@ -1,7 +1,8 @@
 import { TestBed } from '@angular/core/testing';
 
-import { AiAssistantService } from './ai-assistant.service';
+import { AiAssistantService, COMMAND_TIMEOUT_MS } from './ai-assistant.service';
 import { ASSISTANT_QUERY_RESOLVERS, type AssistantQueryResolver } from './assistant-query-resolver';
+import { ConnectivityService } from './connectivity.service';
 import { type ScreenAction, ScreenActionsService } from './screen-actions.service';
 
 describe('AiAssistantService', () => {
@@ -40,6 +41,16 @@ describe('AiAssistantService', () => {
     service.openAction(withoutForm);
 
     expect([service.view(), service.activeAction()]).toEqual(['unavailable', withoutForm]);
+  });
+
+  it('openAction de navegação fecha o painel e navega, sem formulário', () => {
+    const navigate = jasmine.createSpy('navigate');
+
+    service.openShortcuts();
+    service.openAction({ id: 'go', label: 'Ir', navigate });
+
+    expect([service.isOpen(), service.view(), service.activeAction()]).toEqual([false, 'chat', null]);
+    expect(navigate).toHaveBeenCalledTimes(1);
   });
 
   it('back returns to the shortcuts and clears the active action', () => {
@@ -195,6 +206,124 @@ describe('AiAssistantService', () => {
       await flush();
 
       expect([service.conversation(), service.lastQuestion()]).toEqual([null, null]);
+    });
+  });
+
+  describe('comando encaminhado pela tela', () => {
+    const flush = (): Promise<void> => new Promise(resolve => setTimeout(resolve));
+
+    it('sem handler, áudio é ignorado e a pergunta segue os resolvedores', () => {
+      service.askAudio(new Blob(['x']));
+      service.ask('qualquer coisa');
+
+      expect(service.conversation()?.question).toBe('qualquer coisa');
+    });
+
+    it('com handler: não usa resolvedores nem "não reconhecido"; mostra enviado', async () => {
+      const handler = jasmine.createSpy('handler').and.resolveTo();
+
+      TestBed.inject(ScreenActionsService).registerCommandHandler(handler);
+      service.ask('apenas NP');
+
+      expect(service.conversation()?.status).toBe('loading');
+      await flush();
+
+      expect(handler).toHaveBeenCalledWith({ kind: 'text', text: 'apenas NP' });
+      expect(service.conversation()).toEqual({
+        answer: { summary: 'Comando enviado à IA.' },
+        question: 'apenas NP',
+        status: 'answered',
+      });
+    });
+
+    it('pedido de ação conhecido ("cadastrar paciente") segue o fluxo de ações, não o comando de IA', () => {
+      const handler = jasmine.createSpy('handler').and.resolveTo();
+
+      TestBed.inject(ScreenActionsService).registerCommandHandler(handler);
+      service.ask('cadastrar paciente');
+
+      expect(handler).not.toHaveBeenCalled();
+    });
+
+    it('áudio enviado como gravado, com rótulo de texto', async () => {
+      const handler = jasmine.createSpy('handler').and.resolveTo();
+      const audio = new Blob(['x']);
+
+      TestBed.inject(ScreenActionsService).registerCommandHandler(handler);
+      service.askAudio(audio);
+      await flush();
+
+      expect(handler).toHaveBeenCalledWith({ audio, kind: 'audio' });
+      expect(service.conversation()?.question).toBe('Comando de áudio');
+    });
+
+    it('offline: não envia e pede conexão; ao voltar, o retry envia', async () => {
+      const handler = jasmine.createSpy('handler').and.resolveTo();
+      const online = TestBed.inject(ConnectivityService).online;
+
+      TestBed.inject(ScreenActionsService).registerCommandHandler(handler);
+      online.set(false);
+      service.ask('apenas NP');
+
+      expect(handler).not.toHaveBeenCalled();
+      expect(service.conversation()?.answer?.summary).toBe('Conexão necessária para enviar comandos à IA.');
+      online.set(true);
+      service.retry('apenas NP');
+      await flush();
+
+      expect(handler).toHaveBeenCalledTimes(1);
+      expect(service.conversation()?.status).toBe('answered');
+    });
+
+    it('falha (rejeição ou exceção síncrona) vira aviso e retry reenvia o mesmo comando', async () => {
+      const handler = jasmine.createSpy('handler').and.throwError('boom');
+
+      TestBed.inject(ScreenActionsService).registerCommandHandler(handler);
+      service.ask('x');
+      await flush();
+
+      expect(service.conversation()?.status).toBe('failed');
+      expect(service.conversation()?.answer?.summary).toBe('IA indisponível no momento.');
+      handler.and.rejectWith(new Error('r'));
+      service.retry('x');
+      await flush();
+
+      expect(service.conversation()?.status).toBe('failed');
+      handler.and.resolveTo();
+      service.retry('x');
+      await flush();
+
+      expect(service.conversation()?.status).toBe('answered');
+      expect(handler).toHaveBeenCalledTimes(3);
+    });
+
+    it('tempo esgotado conta como indisponível', async () => {
+      jasmine.clock().install();
+      try {
+        TestBed.inject(ScreenActionsService).registerCommandHandler(() => new Promise<void>(() => undefined));
+        service.ask('x');
+        await Promise.resolve();
+        jasmine.clock().tick(COMMAND_TIMEOUT_MS);
+      } finally {
+        jasmine.clock().uninstall();
+      }
+      await flush();
+
+      expect(service.conversation()?.status).toBe('failed');
+    });
+
+    it('handler removido antes do retry: indisponível; retry de outra pergunta usa o fluxo comum', async () => {
+      const cleanup = TestBed.inject(ScreenActionsService).registerCommandHandler(() => Promise.resolve());
+
+      service.ask('x');
+      await flush();
+      cleanup();
+      service.retry('x');
+
+      expect(service.conversation()?.status).toBe('failed');
+      service.retry('outra');
+
+      expect(service.conversation()?.question).toBe('outra');
     });
   });
 });

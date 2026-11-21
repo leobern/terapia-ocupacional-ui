@@ -1,4 +1,14 @@
-import { ChangeDetectionStrategy, Component, computed, inject, input, output, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  DestroyRef,
+  ElementRef,
+  inject,
+  input,
+  output,
+  signal,
+} from '@angular/core';
 
 import { PhIconComponent } from '../../icons/ph-icon/ph-icon.component';
 import { KeyboardFocusService } from '../../services/keyboard-focus.service';
@@ -55,6 +65,7 @@ interface NavMenuItem {
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     '[class.nav-menu--open]': 'open()',
+    '[class.nav-menu--suppressed]': 'suppressed()',
   },
   imports: [AvatarComponent, IconButtonComponent, IconLogoButtonComponent, PhIconComponent],
   selector: 'app-nav-menu',
@@ -112,10 +123,19 @@ export class NavMenuComponent {
   // `.keyboard-focus` só entra em efeito combinada com `:focus` nativo (ver
   // shared/styles/_mixins.scss, mesmo padrão do Button/IconButton).
   protected readonly keyboardFocused = signal(false);
+  /** Desktop: após clicar num item o menu recolhe até o mouse sair do trilho. */
+  protected readonly suppressed = signal(false);
 
   private readonly keyboardFocusService = inject(KeyboardFocusService);
+  private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
+  private releaseListener: ((event: MouseEvent) => void) | null = null;
+
+  constructor() {
+    inject(DestroyRef).onDestroy(() => this.stopListening());
+  }
 
   protected onItemClick(key: NavMenuItemKey): void {
+    this.collapseAfterClick();
     switch (key) {
       case 'home':
         this.homeClick.emit();
@@ -148,5 +168,29 @@ export class NavMenuComponent {
 
   protected onCloseClick(): void {
     this.closed.emit();
+  }
+
+  /** Recolhe o menu após a navegação: tira o foco do item e ignora o hover até o mouse sair do trilho. */
+  private collapseAfterClick(): void {
+    if (!this.viewportBreakpoint.isDesktop()) {
+      return;
+    }
+    (document.activeElement as HTMLElement | null)?.blur();
+    this.suppressed.set(true);
+    this.stopListening();
+    this.releaseListener = (event: MouseEvent): void => {
+      if (event.clientX > this.host.nativeElement.getBoundingClientRect().right) {
+        this.suppressed.set(false);
+        this.stopListening();
+      }
+    };
+    document.addEventListener('mousemove', this.releaseListener);
+  }
+
+  private stopListening(): void {
+    if (this.releaseListener !== null) {
+      document.removeEventListener('mousemove', this.releaseListener);
+      this.releaseListener = null;
+    }
   }
 }

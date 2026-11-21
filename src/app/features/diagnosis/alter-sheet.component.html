@@ -1,0 +1,79 @@
+<!-- Sem desenho no Figma (desenhado pelo agente): padrão do sheet do plano. O clique no <dialog> é o scrim. -->
+<!-- eslint-disable-next-line @angular-eslint/template/click-events-have-key-events, @angular-eslint/template/interactive-supports-focus -->
+<dialog
+  #dialogEl
+  class="alter"
+  aria-labelledby="alter-title"
+  (click)="onClick($event)"
+  (cancel)="onCancel($event)"
+>
+  <span class="alter__handle" aria-hidden="true"></span>
+  <h2 id="alter-title" class="alter__title">Alterar resultado</h2>
+
+  <div class="alter__body">
+    @for (criterion of criteria; track criterion.id) {
+      <label class="alter__field">
+        <span class="alter__label">{{ criterion.label }}</span>
+        <select
+          class="alter__select"
+          [attr.data-criterion]="criterion.id"
+          (change)="setState(criterion.id, $any($event.target).value)"
+        >
+          @for (state of states; track state[0]) {
+            <option
+              [value]="state[0]"
+              [selected]="stateOf(criterion.id) === state[0]"
+            >
+              {{ state[1] }}
+            </option>
+          }
+        </select>
+      </label>
+    }
+    <label class="alter__field">
+      <span class="alter__label">Resultado final</span>
+      <select
+        class="alter__select"
+        data-field="outcome"
+        (change)="setOutcome($any($event.target).value)"
+      >
+        @for (option of outcomes; track option.id) {
+          <option [value]="option.id" [selected]="draftOutcome() === option.id">
+            {{ option.label }}
+          </option>
+        }
+      </select>
+    </label>
+    <label class="alter__field">
+      <span class="alter__label">Estadiamento</span>
+      <select
+        class="alter__select"
+        data-field="staging"
+        [disabled]="draftOutcome() !== 'confirmed'"
+        (change)="setStaging($any($event.target).value)"
+      >
+        <option value="" [selected]="draftStaging() === null">
+          Não calculado
+        </option>
+        @for (option of stagings; track option.id) {
+          <option [value]="option.id" [selected]="draftStaging() === option.id">
+            {{ option.label }}
+          </option>
+        }
+      </select>
+    </label>
+    @if (hint(); as message) {
+      <p class="alter__hint" role="status">{{ message }}</p>
+    }
+  </div>
+
+  <div class="alter__actions">
+    <app-button
+      label="Cancelar"
+      kind="secondary"
+      size="md"
+      (click)="cancelled.emit()"
+    />
+    <app-button label="Salvar alteração" size="md" (click)="save()" />
+  </div>
+</dialog>

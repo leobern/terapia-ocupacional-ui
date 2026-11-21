@@ -276,6 +276,15 @@ describe('AppComponent', () => {
     expect(fixture.componentInstance.aiAssistant.lastQuestion()).toBe('mensagem livre');
   });
 
+  it('onAiAudio encaminha a gravação ao assistente', () => {
+    spyOn(fixture.componentInstance.aiAssistant, 'askAudio');
+    const audio = new Blob(['x']);
+
+    fixture.componentInstance.onAiAudio(audio);
+
+    expect(fixture.componentInstance.aiAssistant.askAudio).toHaveBeenCalledWith(audio);
+  });
+
   it('hides the navigation shell and the AI surface on routes flagged hideShell', async () => {
     const el = fixture.nativeElement as HTMLElement;
 

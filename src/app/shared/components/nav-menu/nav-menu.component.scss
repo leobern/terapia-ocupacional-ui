@@ -41,6 +41,12 @@ $duration-collapse: 90ms;
   display: contents;
 }
 
+// Depois de clicar num item o menu recolhe mesmo com o mouse em cima: sem eventos de ponteiro o
+// :hover/:focus-within saem; ele volta a abrir quando o mouse sair do trilho e entrar de novo.
+:host(.nav-menu--suppressed) {
+  pointer-events: none;
+}
+
 .nav-menu__panel {
   box-sizing: border-box;
   display: flex;
@@ -118,17 +124,19 @@ $duration-collapse: 90ms;
     bottom: 0;
     width: 100%;
     // Figma v2/NavRail: trilho de 72px com superfície glass e borda à direita.
-    background: color-mix(
-      in srgb,
-      #{tokens.c(surface-glass-1)} 80%,
-      transparent
+    // Figma (2026-11-19): o fundo é um gradiente vertical — transparente no topo, cor cheia embaixo.
+    background: linear-gradient(
+      to bottom,
+      transparent,
+      #{tokens.c(surface-glass-1)}
     );
-    border-top-right-radius: 0;
+    // Figma (2026-11-19): raio só no topo à direita, sem borda lateral, logo a 40px do topo.
+    border-top-right-radius: tokens.$radius-md;
     border-bottom-right-radius: 0;
+    padding-top: 40px;
     box-shadow: none;
     z-index: auto;
     translate: 0 0;
-    border-right: 1px solid #{tokens.c(border)};
     // Sem `right: 0` de propósito — a largura é controlada só por `width`
     // (100% colapsado, `--space-280` expandido). Combinar `left`/`right`/
     // `width` ao mesmo tempo deixaria o cálculo sobre-restringido.
@@ -148,7 +156,6 @@ $duration-collapse: 90ms;
       width: var(--space-280);
       background: #{tokens.c(surface)};
       box-shadow: 0 4px 16px rgb(0 0 0 / 16%);
-      border-right: 1px solid #{tokens.c(border)};
       // Acima do conteúdo da rota — o painel flutua por cima em vez de
       // compartilhar espaço com ele (feedback do usuário: comportamento de
       // sobreposição, não de "arrastar" os elementos da tela).
@@ -290,6 +297,7 @@ $duration-collapse: 90ms;
 }
 
 .nav-menu__link {
+  position: relative;
   display: flex;
   align-items: center;
   // Colapsado: SEM gap e largura `fit-content` — o rótulo tem `max-width: 0`
@@ -303,7 +311,7 @@ $duration-collapse: 90ms;
   min-height: tokens.$control-height-lg;
   padding: 0 tokens.$space-12;
   border: 0;
-  border-radius: tokens.$radius-12;
+  border-radius: tokens.$radius-pill;
   background: transparent;
   color: #{tokens.c(content-1)};
   cursor: pointer;
@@ -335,7 +343,26 @@ $duration-collapse: 90ms;
 
   // Figma v2: item ativo = fundo surface-2, ícone secondary, rótulo Label/Lg.
   &--active {
-    background: #{tokens.c(surface-2)};
+    // O fundo do ativo é uma camada atrás do conteúdo com `multiply` (fica mais escuro que o fundo
+    // do menu, claro e escuro) sem afetar a cor do ícone e do rótulo.
+    background: transparent;
+
+    &::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      z-index: 0;
+      border-radius: inherit;
+      background: var(--color-nav-active);
+      mix-blend-mode: multiply;
+      pointer-events: none;
+    }
+
+    .nav-menu__icon,
+    .nav-menu__label {
+      position: relative;
+      z-index: 1;
+    }
 
     .nav-menu__icon {
       color: #{tokens.c(secondary)};
@@ -481,9 +508,9 @@ $duration-collapse: 90ms;
   display: flex;
   align-items: center;
   flex-shrink: 0;
+  // Alinhado com a foto do perfil e fixo: o toggle não anda quando o menu abre.
   margin-left: -4px;
   padding: tokens.$space-8;
-  transition: margin-left $duration-collapse $ease-standard;
 }
 
 .nav-menu__theme-button {
@@ -523,7 +550,6 @@ $duration-collapse: 90ms;
 :host(:focus-within),
 :host(.nav-menu--open) {
   .nav-menu__theme {
-    margin-left: 0;
     transition-duration: $duration-expand;
   }
 

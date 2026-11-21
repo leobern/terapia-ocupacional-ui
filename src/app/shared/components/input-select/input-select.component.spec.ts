@@ -434,7 +434,7 @@ describe('InputSelectComponent', () => {
       (fieldEl() as HTMLInputElement).focus();
       fixture.detectChanges();
 
-      expect(getComputedStyle(clearEl() as HTMLElement).color).toBe('rgb(71, 195, 195)'); // content-3 #47C3C3
+      expect(getComputedStyle(clearEl() as HTMLElement).color).toBe('rgb(0, 105, 105)'); // content-3 #006969
     });
   });
 

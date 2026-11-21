@@ -5,6 +5,29 @@
       <p class="assistant-content__body">
         Qual ação você deseja executar nessa tela:
       </p>
+      @if (screenActions.sort(); as sort) {
+        <!-- Figma "3 · Atalhos da tela": chips de ordenação (v2/Chip, 40px); ✓ no rótulo = selecionado. -->
+        <h3 class="assistant-content__section">Ordenação</h3>
+        <div class="assistant-content__chips">
+          @for (option of sort.options; track option.id) {
+            <button
+              type="button"
+              class="assistant-content__chip"
+              [class.assistant-content__chip--selected]="
+                sort.active() === option.id
+              "
+              [attr.aria-pressed]="sort.active() === option.id"
+              (click)="sort.select(option.id)"
+            >
+              @if (sort.active() === option.id) {
+                <ph-icon name="check" weight="bold" [size]="16" />
+              }
+              {{ option.label }}
+            </button>
+          }
+        </div>
+        <h3 class="assistant-content__section">Ações</h3>
+      }
       <!-- Figma 4506:10097: os botões das ações ficam logo abaixo do texto. -->
       <div class="assistant-content__actions">
         @for (action of screenActions.actions(); track action.id) {
@@ -21,6 +44,7 @@
           </p>
         }
       </div>
+      <ng-container [ngTemplateOutlet]="conversationTpl" />
     </div>
   }
   @case ('form') {
@@ -46,91 +70,95 @@
           Você pode conversar comigo via texto ou áudio.
         </p>
       }
-      @if (assistant.conversation(); as conversation) {
-        <div class="assistant-content__conversation" aria-live="polite">
-          <p class="assistant-content__question">{{ conversation.question }}</p>
-          <!-- Figma v2/ChatMessage: logo + "Assistente", resposta em Lora, itens em cards. -->
-          <div
-            class="assistant-content__answer"
-            [class.assistant-content__answer--failed]="
-              conversation.status === 'failed'
-            "
-          >
-            <div
-              class="assistant-content__answer-head"
-              [attr.role]="conversation.status === 'loading' ? 'status' : null"
-            >
-              <app-icon-logo
-                class="assistant-content__answer-logo"
-                [state]="conversation.status === 'loading' ? 'anim' : 'default'"
-              />
-              <span>{{
-                conversation.status === 'loading'
-                  ? 'Buscando a resposta…'
-                  : 'Assistente'
-              }}</span>
-            </div>
-            @if (conversation.status === 'loading') {
-              <div class="assistant-content__skeleton" aria-hidden="true">
-                <span></span>
-                <span></span>
-              </div>
-            } @else if (conversation.answer; as answer) {
-              @if (conversation.status === 'failed') {
-                <div class="assistant-content__error" role="alert">
-                  <ph-icon name="warning-diamond" [size]="20" />
-                  <p>{{ answer.summary }}</p>
-                </div>
-                <div>
-                  <app-button
-                    kind="primary"
-                    appearance="outlined"
-                    size="sm"
-                    label="Tentar novamente"
-                    (click)="retry(conversation.question)"
-                  />
-                </div>
-              } @else {
-                <p class="assistant-content__body">{{ answer.summary }}</p>
-              }
-              @if (answer.items?.length) {
-                <ul class="assistant-content__answer-items">
-                  @for (item of answer.items; track $index) {
-                    <li class="assistant-content__answer-item">
-                      <span class="assistant-content__answer-text">
-                        @if (itemTitle(item); as title) {
-                          <strong>{{ title }}</strong
-                          >:
-                        }
-                        {{ itemText(item) }}
-                      </span>
-                      @if (itemRoute(item); as route) {
-                        <app-icon-button
-                          kind="primary"
-                          appearance="icon"
-                          size="small"
-                          icon="caret-right"
-                          ariaLabel="Abrir"
-                          (click)="openRoute(route)"
-                        />
-                      }
-                    </li>
-                  }
-                </ul>
-              }
-              @if (answer.link; as link) {
-                <button
-                  type="button"
-                  class="assistant-content__link"
-                  (click)="openRoute(link.route)"
-                >
-                  {{ link.label }}
-                </button>
-              }
-            }
-          </div>
-        </div>
-      }
+      <ng-container [ngTemplateOutlet]="conversationTpl" />
     </div>
   }
 }
+
+<ng-template #conversationTpl>
+  @if (assistant.conversation(); as conversation) {
+    <div class="assistant-content__conversation" aria-live="polite">
+      <p class="assistant-content__question">{{ conversation.question }}</p>
+      <!-- Figma v2/ChatMessage: logo + "Assistente", resposta em Lora, itens em cards. -->
+      <div
+        class="assistant-content__answer"
+        [class.assistant-content__answer--failed]="
+          conversation.status === 'failed'
+        "
+      >
+        <div
+          class="assistant-content__answer-head"
+          [attr.role]="conversation.status === 'loading' ? 'status' : null"
+        >
+          <app-icon-logo
+            class="assistant-content__answer-logo"
+            [state]="conversation.status === 'loading' ? 'anim' : 'default'"
+          />
+          <span>{{
+            conversation.status === 'loading'
+              ? 'Buscando a resposta…'
+              : 'Assistente'
+          }}</span>
+        </div>
+        @if (conversation.status === 'loading') {
+          <div class="assistant-content__skeleton" aria-hidden="true">
+            <span></span>
+            <span></span>
+          </div>
+        } @else if (conversation.answer; as answer) {
+          @if (conversation.status === 'failed') {
+            <div class="assistant-content__error" role="alert">
+              <ph-icon name="warning-diamond" [size]="20" />
+              <p>{{ answer.summary }}</p>
+            </div>
+            <div>
+              <app-button
+                kind="primary"
+                appearance="outlined"
+                size="sm"
+                label="Tentar novamente"
+                (click)="retry(conversation.question)"
+              />
+            </div>
+          } @else {
+            <p class="assistant-content__body">{{ answer.summary }}</p>
+          }
+          @if (answer.items?.length) {
+            <ul class="assistant-content__answer-items">
+              @for (item of answer.items; track $index) {
+                <li class="assistant-content__answer-item">
+                  <span class="assistant-content__answer-text">
+                    @if (itemTitle(item); as title) {
+                      <strong>{{ title }}</strong
+                      >:
+                    }
+                    {{ itemText(item) }}
+                  </span>
+                  @if (itemRoute(item); as route) {
+                    <app-icon-button
+                      kind="primary"
+                      appearance="icon"
+                      size="small"
+                      icon="caret-right"
+                      ariaLabel="Abrir"
+                      (click)="openRoute(route)"
+                    />
+                  }
+                </li>
+              }
+            </ul>
+          }
+          @if (answer.link; as link) {
+            <button
+              type="button"
+              class="assistant-content__link"
+              (click)="openRoute(link.route)"
+            >
+              {{ link.label }}
+            </button>
+          }
+        }
+      </div>
+    </div>
+  }
+</ng-template>

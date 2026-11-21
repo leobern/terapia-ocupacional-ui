@@ -7,7 +7,10 @@ import { Role, SessionRoleReader } from './shared/auth/session-role';
 import { AssistantContentComponent } from './shared/components/assistant-content/assistant-content.component';
 import { AssistantHeadingComponent } from './shared/components/assistant-header/assistant-heading.component';
 import { AssistantSubmitComponent } from './shared/components/assistant-submit/assistant-submit.component';
-import { BackgroundMeshComponent } from './shared/components/background-mesh/background-mesh.component';
+import {
+  BackgroundMeshComponent,
+  type BackgroundMeshVariant,
+} from './shared/components/background-mesh/background-mesh.component';
 import { BottomNavBarComponent } from './shared/components/bottom-nav-bar/bottom-nav-bar.component';
 import {
   BottomSheetComponent,
@@ -76,11 +79,23 @@ export class AppComponent {
       return 'farmacia';
     }
 
+    if (url.startsWith('/patients')) {
+      return 'pacientes';
+    }
+
     return url.startsWith('/notifications') ? 'notificacoes' : null;
   });
 
   // Home usa o gradiente de fundo do Figma; as demais telas seguem com os círculos por enquanto.
-  protected readonly backgroundVariant = computed(() => (this.currentUrl().startsWith('/home') ? 'gradient' : 'blobs'));
+  protected readonly backgroundVariant = computed<BackgroundMeshVariant>(() => {
+    const url = this.currentUrl();
+
+    if (url.startsWith('/patients')) {
+      return 'patients';
+    }
+
+    return url.startsWith('/home') ? 'gradient' : 'blobs';
+  });
   protected readonly isNotificationsRoute = computed(() => this.currentUrl().startsWith('/notifications'));
   protected readonly aiSheetSnap = signal<BottomSheetSnap>('default');
   protected readonly aiDrawerSnap = signal<DrawerSnap>('default');
@@ -154,6 +169,10 @@ export class AppComponent {
     this.aiAssistant.ask(shortcut.label);
   }
 
+  onAiAudio(audio: Blob): void {
+    this.aiAssistant.askAudio(audio);
+  }
+
   onAiSend(question: string): void {
     this.aiAssistant.ask(question);
   }
@@ -165,6 +184,11 @@ export class AppComponent {
   protected onHomeClick(): void {
     this.menuOpen.set(false);
     void this.router.navigate(['/home']);
+  }
+
+  protected onPacientesClick(): void {
+    this.menuOpen.set(false);
+    void this.router.navigate(['/patients']);
   }
 
   protected onNotificacoesClick(): void {

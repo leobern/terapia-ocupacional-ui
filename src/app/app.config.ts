@@ -6,6 +6,10 @@ import { provideRouterStore } from '@ngrx/router-store';
 import { provideStore } from '@ngrx/store';
 
 import { routes } from './app.routing';
+import { DiagnosisDecisionSource } from './features/diagnosis/diagnosis-decision-source';
+import { DiagnosisSource } from './features/diagnosis/diagnosis-source';
+import { ProvisionalDiagnosisDecisionSource } from './features/diagnosis/provisional-diagnosis-decision-source';
+import { ProvisionalDiagnosisSource } from './features/diagnosis/provisional-diagnosis-source';
 import { DailyPatientsSource } from './features/home/daily-patients';
 import { HomeApiService } from './features/home/data-access/home-api.service';
 import { HomeNotificationsSource } from './features/home/home-notifications-source';
@@ -25,6 +29,42 @@ import {
 } from './features/notifications/data-access/provisional-notifications-api.service';
 import { FormulasApi } from './features/pharmacy/formulas-api';
 import { ProvisionalFormulasApi } from './features/pharmacy/provisional-formulas-api';
+import { AssessmentAiStructurer } from './features/patient-hub/assessment/assessment-ai-structurer';
+import { AssessmentSource } from './features/patient-hub/assessment/assessment-source';
+import { AssessmentWriter } from './features/patient-hub/assessment/assessment-writer';
+import { ProvisionalAssessmentAiStructurer } from './features/patient-hub/assessment/provisional-assessment-ai-structurer';
+import { ProvisionalAssessmentSource } from './features/patient-hub/assessment/provisional-assessment-source';
+import {
+  HypothesisSynthesizer,
+  HypothesisWriter,
+  PatientHubSource,
+  PriorStaysSource,
+  PriorStaysSynthesizer,
+} from './features/patient-hub/patient-hub-source';
+import { PlanSource } from './features/patient-hub/plan/plan-source';
+import { ProvisionalPlanSource } from './features/patient-hub/plan/provisional-plan-source';
+import { ProvisionalRefeedingRiskSource } from './features/patient-hub/plan/provisional-refeeding-risk-source';
+import { RefeedingRiskSource } from './features/patient-hub/plan/refeeding-risk-source';
+import {
+  ProvisionalHypothesisSynthesizer,
+  ProvisionalHypothesisWriter,
+  ProvisionalPatientHubSource,
+  ProvisionalPriorStaysSource,
+  ProvisionalPriorStaysSynthesizer,
+} from './features/patient-hub/provisional-patient-hub';
+import { PatientListAiCommandPort } from './features/patient-list/patient-list-ai-command';
+import { PatientListSource } from './features/patient-list/patient-list-source';
+import { ProvisionalPatientListSource } from './features/patient-list/provisional-patient-list';
+import { ProvisionalPatientListAiCommand } from './features/patient-list/provisional-patient-list-ai-command';
+import {
+  NutritionAddedCards,
+  NutritionHiddenCards,
+  NutritionHistorySource,
+  NutritionValueWriter,
+} from './features/patients/nutrition-panel/nutrition-card-ports';
+import { NutritionResultsSource } from './features/patients/nutrition-panel/nutrition-results-source';
+import { ProvisionalNutritionCardStore } from './features/patients/nutrition-panel/provisional-nutrition-card-store';
+import { ProvisionalNutritionResultsSource } from './features/patients/nutrition-panel/provisional-nutrition-results';
 import { LocalStartupStateReader } from './features/splash/local-startup-state-reader';
 import { StartupStateReader } from './features/splash/startup-state';
 import { ProvisionalSessionRoleReader } from './shared/auth/provisional-session-role-reader';
@@ -40,6 +80,27 @@ export const appConfig: ApplicationConfig = {
     { provide: LinkedHospitalsReader, useClass: MockLinkedHospitalsReader },
     { provide: UnreadNotificationsReader, useClass: LocalUnreadNotificationsReader },
     { provide: DailyPatientsSource, useClass: ProvisionalDailyPatientsSource },
+    { provide: PatientListAiCommandPort, useClass: ProvisionalPatientListAiCommand },
+    { provide: PatientListSource, useClass: ProvisionalPatientListSource },
+    { provide: PatientHubSource, useClass: ProvisionalPatientHubSource },
+    { provide: HypothesisSynthesizer, useClass: ProvisionalHypothesisSynthesizer },
+    { provide: HypothesisWriter, useClass: ProvisionalHypothesisWriter },
+    ProvisionalAssessmentSource,
+    { provide: AssessmentAiStructurer, useClass: ProvisionalAssessmentAiStructurer },
+    { provide: AssessmentSource, useExisting: ProvisionalAssessmentSource },
+    { provide: AssessmentWriter, useExisting: ProvisionalAssessmentSource },
+    { provide: DiagnosisSource, useClass: ProvisionalDiagnosisSource },
+    { provide: DiagnosisDecisionSource, useClass: ProvisionalDiagnosisDecisionSource },
+    { provide: PlanSource, useClass: ProvisionalPlanSource },
+    { provide: RefeedingRiskSource, useClass: ProvisionalRefeedingRiskSource },
+    { provide: PriorStaysSource, useClass: ProvisionalPriorStaysSource },
+    { provide: PriorStaysSynthesizer, useClass: ProvisionalPriorStaysSynthesizer },
+    { provide: NutritionResultsSource, useClass: ProvisionalNutritionResultsSource },
+    ProvisionalNutritionCardStore,
+    { provide: NutritionHistorySource, useExisting: ProvisionalNutritionCardStore },
+    { provide: NutritionValueWriter, useExisting: ProvisionalNutritionCardStore },
+    { provide: NutritionAddedCards, useExisting: ProvisionalNutritionCardStore },
+    { provide: NutritionHiddenCards, useExisting: ProvisionalNutritionCardStore },
     { provide: HomeNotificationsSource, useClass: ProvisionalHomeNotificationsSource },
     // Provisórios (sem backend ainda): notificações em memória, hospital único e usuários de exemplo.
     { provide: NotificationsApiService, useClass: ProvisionalNotificationsApiService },

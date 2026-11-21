@@ -41,7 +41,7 @@ $color-tertiary: #85e0e0;
 // não a numeração histórica deste arquivo.
 $color-content-1: #002233;
 $color-content-2: #006190;
-$color-content-3: #47c3c3;
+$color-content-3: #006969; // teal/700 — contraste ~6:1 sobre branco (antes teal/400 #47c3c3, ~2,2:1)
 $color-content-4: #4e5e65;
 $color-content-5: #83969e;
 $color-content-6: #ffffff;
@@ -118,6 +118,18 @@ $color-bg-gradient-1: #dcfdf3;
 $color-bg-gradient-2: #dbfcff;
 $color-bg-gradient-3: #f0f3f5;
 
+// fixed/* — iguais no claro e no escuro (docs/artefatos/uso-de-cores.md §2).
+$color-data-tag: #85e0e0; // fixed/data-tag — fundo da tag de hospital
+$color-on-data-tag: #002233; // fixed/on-data-tag — texto/ícone sobre ela
+
+// surface/nav-active — fundo do item ativo do menu lateral (no escuro é mais escuro que o menu).
+$color-nav-active: #dce2e5; // claro: slate/150 — com `multiply` sobre o menu claro continua visível
+
+// fundo-gradiente-pacientes/* — gradiente EXCLUSIVO da tela de Pacientes (2 paradas; ver
+// docs/artefatos/uso-de-cores.md §3). Claro: azul muito claro → superfície; escuro: azul-marinho → superfície.
+$color-bg-gradient-patients-1: #e9f5fb;
+$color-bg-gradient-patients-2: #f0f3f5;
+
 // decorative/* — usados só no background animado das telas (não são Color
 // Style nomeado no Figma, só um fill solto nos blobs de fundo).
 $color-decorative-forest: #0d7742;
@@ -163,7 +175,12 @@ $color-map: (
   'bg-gradient-1': $color-bg-gradient-1,
   'bg-gradient-2': $color-bg-gradient-2,
   'bg-gradient-3': $color-bg-gradient-3,
+  'bg-gradient-patients-1': $color-bg-gradient-patients-1,
+  'bg-gradient-patients-2': $color-bg-gradient-patients-2,
   'decorative-forest': $color-decorative-forest,
+  'data-tag': $color-data-tag,
+  'on-data-tag': $color-on-data-tag,
+  'nav-active': $color-nav-active,
 );
 
 @function c($name) {
@@ -408,8 +425,13 @@ $shadow-elevation-bottomsheet: 0 -4px 24px rgba($color-primary, 0.08);
   --color-bg-gradient-1: #{$color-bg-gradient-1};
   --color-bg-gradient-2: #{$color-bg-gradient-2};
   --color-bg-gradient-3: #{$color-bg-gradient-3};
+  --color-bg-gradient-patients-1: #{$color-bg-gradient-patients-1};
+  --color-bg-gradient-patients-2: #{$color-bg-gradient-patients-2};
   --color-logo-4: #{$color-logo-4};
   --color-decorative-forest: #{$color-decorative-forest};
+  --color-data-tag: #{$color-data-tag};
+  --color-on-data-tag: #{$color-on-data-tag};
+  --color-nav-active: #{$color-nav-active};
   --font-family-base: #{$font-family-base};
 
   // Compatibilidade com código existente que ainda referencia os nomes
@@ -501,9 +523,12 @@ $shadow-elevation-bottomsheet: 0 -4px 24px rgba($color-primary, 0.08);
 // `tokens.$color-*` (valor fixo em tempo de compilação) migram para var() na
 // realinhação componente a componente.
 :root[data-theme='dark'] {
-  --color-bg-gradient-1: #304a48;
+  --color-bg-gradient-1: #273237; // Figma Dark v2 (ajustado pelo Thiago em 2026-11-19; antes #304a48)
+  --color-nav-active: #182125;
   --color-bg-gradient-2: #182c35;
   --color-bg-gradient-3: #182125;
+  --color-bg-gradient-patients-1: #102f41;
+  --color-bg-gradient-patients-2: #182125;
   --color-primary: #8cd0ff;
   --color-secondary: #43b9ff;
   --color-tertiary: #005050;
