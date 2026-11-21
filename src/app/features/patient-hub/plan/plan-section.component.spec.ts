@@ -2,8 +2,12 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { ConnectivityService } from '../../../shared/services/connectivity.service';
 import { NOW, ProfessionalProfile, ProfessionalProfileReader } from '../../home/professional-profile';
-import { CurrentRoute, RouteSaveRequest } from './plan.models';
+import { NutritionFunctionalAssessment } from '../assessment/assessment.models';
+import { AssessmentSource } from '../assessment/assessment-source';
+import { CurrentRoute, RouteSaveRequest, SwallowingDecision, SwallowingSaveRequest } from './plan.models';
 import {
+  DYSPHAGIA_FAILED_HINT,
+  DYSPHAGIA_MISSING_HINT,
   EMPTY_SELECTION_HINT,
   LOAD_FAILED_HINT,
   OFFLINE_HINT,
@@ -19,6 +23,10 @@ class FakeSource extends PlanSource {
   loadFails = false;
   saveFails = false;
   readonly saves: RouteSaveRequest[] = [];
+  readonly swallowSaves: SwallowingSaveRequest[] = [];
+  swallowing: SwallowingDecision | null = null;
+  swallowLoadFails = false;
+  swallowSaveFails = false;
 
   loadRoute(): Promise<CurrentRoute | null> {
     return this.loadFails ? Promise.reject(new Error('x')) : Promise.resolve(this.current);
@@ -33,6 +41,29 @@ class FakeSource extends PlanSource {
 
     return Promise.resolve(this.current);
   }
+
+  loadSwallowing(): Promise<SwallowingDecision | null> {
+    return this.swallowLoadFails ? Promise.reject(new Error('x')) : Promise.resolve(this.swallowing);
+  }
+
+  saveSwallowing(request: SwallowingSaveRequest): Promise<SwallowingDecision> {
+    if (this.swallowSaveFails) {
+      return Promise.reject(new Error('x'));
+    }
+    this.swallowSaves.push(request);
+    this.swallowing = request.decision;
+
+    return Promise.resolve(request.decision);
+  }
+}
+
+class FakeAssessment extends AssessmentSource {
+  fails = false;
+  latest: NutritionFunctionalAssessment | null = null;
+
+  loadLatest(): Promise<NutritionFunctionalAssessment | null> {
+    return this.fails ? Promise.reject(new Error('x')) : Promise.resolve(this.latest);
+  }
 }
 
 class FakeRisk extends RefeedingRiskSource {
@@ -45,6 +76,7 @@ class FakeRisk extends RefeedingRiskSource {
 }
 
 describe('PlanSectionComponent', () => {
+  let assessment: FakeAssessment;
   let riskSource: FakeRisk;
   let fixture: ComponentFixture<PlanSectionComponent>;
   let source: FakeSource;
@@ -77,6 +109,7 @@ describe('PlanSectionComponent', () => {
       providers: [
         { provide: PlanSource, useValue: source },
         { provide: RefeedingRiskSource, useValue: riskSource },
+        { provide: AssessmentSource, useValue: assessment },
         {
           provide: ProfessionalProfileReader,
           useValue: { read: (): ProfessionalProfile => ({ name: 'Dra. Ana', role }) },
@@ -92,6 +125,60 @@ describe('PlanSectionComponent', () => {
   beforeEach(() => {
     source = new FakeSource();
     riskSource = new FakeRisk();
+    assessment = new FakeAssessment();
+  });
+
+  describe('risco de disfagia (apoio da avaliação de deglutição)', () => {
+    const support = (): string =>
+      (el().querySelector('[data-testid="swallowing"]') as HTMLElement).textContent.replace(/\s+/gu, ' ');
+
+    for (const role of ['doctor', 'other'] as const) {
+      it(`${role}: mostra o risco registrado na Avaliação, sem campo para digitá-lo`, async () => {
+        assessment.latest = { previous: {}, values: { dysphagia: 'Risco moderado' } };
+        await setup(role);
+        await openIt();
+
+        expect(support()).toContain('Risco de disfagia: moderado (Avaliação nutricional).');
+        expect(
+          el().querySelector('[data-testid="swallowing"] input[type="text"], [data-testid="swallowing"] textarea'),
+        ).toBeNull();
+      });
+    }
+
+    it('sem avaliação: informa que o risco ainda não foi registrado', async () => {
+      await setup('doctor');
+      await openIt();
+
+      expect(support()).toContain(DYSPHAGIA_MISSING_HINT);
+    });
+
+    it('avaliação sem risco de disfagia preenchido: mesmo aviso, sem erro', async () => {
+      assessment.latest = { previous: {}, values: { weight: '51,0' } };
+      await setup('doctor');
+      await openIt();
+
+      expect(support()).toContain(DYSPHAGIA_MISSING_HINT);
+    });
+
+    it('"Sem risco" é um valor registrado', async () => {
+      assessment.latest = { previous: {}, values: { dysphagia: 'Sem risco' } };
+      await setup('doctor');
+      await openIt();
+
+      expect(support()).toContain('Risco de disfagia: sem risco (Avaliação nutricional).');
+    });
+
+    it('falha de leitura: aviso no campo e o resto do plano segue utilizável', async () => {
+      assessment.fails = true;
+      await setup('doctor');
+      await openIt();
+
+      expect(support()).toContain(DYSPHAGIA_FAILED_HINT);
+      await toggle('NE');
+      await save();
+
+      expect(source.saves.length).toBe(1);
+    });
   });
 
   describe('alerta de síndrome de realimentação', () => {
@@ -138,6 +225,133 @@ describe('PlanSectionComponent', () => {
       await save();
 
       expect(source.saves.length).toBe(1);
+    });
+  });
+
+  describe('decisão sobre avaliação de deglutição', () => {
+    const radio = (id: string): HTMLInputElement | null => el().querySelector(`[data-swallowing="${id}"]`);
+    const choose = async (id: string): Promise<void> => {
+      radio(id)?.click();
+      await settle();
+    };
+
+    it('médico: começa vazio, escolhe "Necessária", salva e reaparece ao reabrir', async () => {
+      await setup('doctor');
+      await openIt();
+
+      expect(radio('needed')?.checked).toBe(false);
+      expect(radio('not-needed')?.checked).toBe(false);
+      await choose('needed');
+      await save();
+
+      expect(source.swallowSaves[0]).toEqual({
+        at: '2026-11-20T15:00:00.000Z',
+        author: 'Dra. Ana',
+        decision: 'needed',
+        patientId: 'p9',
+      });
+
+      expect(source.saves).toEqual([]);
+      (el().querySelector('app-icon-button') as HTMLElement).click();
+      await settle();
+      await openIt();
+
+      expect(radio('needed')?.checked).toBe(true);
+    });
+
+    it('altera para "Não necessária" depois', async () => {
+      source.swallowing = 'needed';
+      await setup('doctor');
+      await openIt();
+      await choose('not-needed');
+      await save();
+
+      expect(source.swallowing).toBe('not-needed');
+    });
+
+    it('salvar a decisão não muda a via; salvar a via mantém a decisão', async () => {
+      source.current = { routes: ['NE'], since: '2026-11-12T12:00:00' };
+      source.swallowing = 'needed';
+      await setup('doctor');
+      await openIt();
+      await choose('not-needed');
+      await save();
+
+      expect(source.saves).toEqual([]);
+      expect(source.current.since).toBe('2026-11-12T12:00:00');
+      await toggle('VO');
+      await save();
+
+      expect(source.saves[0].routes).toEqual(['VO', 'NE']);
+      expect(source.swallowing).toBe('not-needed');
+    });
+
+    it('via e decisão alteradas juntas são gravadas juntas', async () => {
+      await setup('doctor');
+      await openIt();
+      await toggle('NE');
+      await choose('needed');
+      await save();
+
+      expect(source.saves.length).toBe(1);
+      expect(source.swallowSaves.length).toBe(1);
+    });
+
+    it('não médico vê a decisão salva, sem opções para editar', async () => {
+      source.swallowing = 'needed';
+      await setup('other');
+      await openIt();
+
+      expect(el().querySelector('[data-testid="swallowing-value"]')?.textContent.trim()).toBe('Necessária');
+      expect(radio('needed')).toBeNull();
+    });
+
+    it('não médico sem decisão vê texto de vazio', async () => {
+      await setup('other');
+      await openIt();
+
+      expect(el().querySelector('[data-testid="swallowing-value"]')?.textContent.trim()).toBe('Sem decisão registrada');
+    });
+
+    it('não médico não escolhe por chamada direta', async () => {
+      await setup('other');
+      await openIt();
+      (fixture.componentInstance as unknown as { chooseSwallowing(id: string): void }).chooseSwallowing('needed');
+
+      expect(source.swallowSaves).toEqual([]);
+    });
+
+    it('offline: decisão salva visível, edição desabilitada e aviso em texto', async () => {
+      source.swallowing = 'needed';
+      await setup('doctor');
+      TestBed.inject(ConnectivityService).online.set(false);
+      await openIt();
+
+      expect(radio('needed')?.checked).toBe(true);
+      expect(radio('needed')?.disabled).toBe(true);
+      expect(text()).toContain(OFFLINE_HINT);
+      (fixture.componentInstance as unknown as { chooseSwallowing(id: string): void }).chooseSwallowing('not-needed');
+
+      expect(radio('not-needed')?.checked).toBe(false);
+    });
+
+    it('falha ao salvar: aviso e seleção mantida', async () => {
+      source.swallowSaveFails = true;
+      await setup('doctor');
+      await openIt();
+      await choose('needed');
+      await save();
+
+      expect(text()).toContain(SAVE_FAILED_HINT);
+      expect(radio('needed')?.checked).toBe(true);
+    });
+
+    it('falha ao ler a decisão mostra o aviso de carga', async () => {
+      source.swallowLoadFails = true;
+      await setup('doctor');
+      await openIt();
+
+      expect(text()).toContain(LOAD_FAILED_HINT);
     });
   });
 

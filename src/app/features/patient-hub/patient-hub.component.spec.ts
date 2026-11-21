@@ -170,7 +170,13 @@ async function setup(
       { provide: HypothesisSynthesizer, useValue: synth },
       { provide: HypothesisWriter, useValue: writer },
       { provide: DiagnosisSource, useValue: diagnosis },
-      { provide: PlanSource, useValue: { loadRoute: (): Promise<null> => Promise.resolve(null) } },
+      {
+        provide: PlanSource,
+        useValue: {
+          loadRoute: (): Promise<null> => Promise.resolve(null),
+          loadSwallowing: (): Promise<null> => Promise.resolve(null),
+        },
+      },
       { provide: RefeedingRiskSource, useValue: { load: (): Promise<null> => Promise.resolve(null) } },
       { provide: AssessmentSource, useValue: { loadLatest: (): Promise<null> => Promise.resolve(null) } },
       { provide: AssessmentAiStructurer, useValue: { structure: (): Promise<object> => Promise.resolve({}) } },
