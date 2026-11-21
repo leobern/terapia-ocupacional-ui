@@ -271,6 +271,11 @@
             [patientId]="p.id"
             (targetsSaved)="reloadResults()"
           />
+          <app-daily-record-sheet
+            [open]="dailyRecordOpen()"
+            [patientId]="p.id"
+            (closed)="dailyRecordOpen.set(false)"
+          />
         }
       }
       @case ('not-found') {

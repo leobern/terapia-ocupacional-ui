@@ -1,5 +1,5 @@
 import { Location } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, inject, OnInit, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, OnInit, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
 import { map } from 'rxjs';
@@ -10,6 +10,7 @@ import { PageContainerComponent } from '../../shared/components/page-container/p
 import { TherapyTagComponent } from '../../shared/components/therapy-tag/therapy-tag.component';
 import { PhIconComponent } from '../../shared/icons/ph-icon/ph-icon.component';
 import { ConnectivityService } from '../../shared/services/connectivity.service';
+import { ScreenActionsService } from '../../shared/services/screen-actions.service';
 import { adequacyPanelValues, DailyAdequacy } from '../daily-evolution/adequacy/adequacy.models';
 import { AdequacySummaryComponent } from '../daily-evolution/adequacy/adequacy-summary.component';
 import { DailyAdequacyService } from '../daily-evolution/adequacy/daily-adequacy.service';
@@ -43,6 +44,7 @@ import {
 } from '../patients/nutrition-panel/nutrition-panel.models';
 import { NutritionResultsSource } from '../patients/nutrition-panel/nutrition-results-source';
 import { AssessmentSectionComponent } from './assessment/assessment-section.component';
+import { DailyRecordSheetComponent } from './daily-record/daily-record-sheet.component';
 import { HypothesisOrigin, PatientHubProfile } from './patient-hub.models';
 import { HypothesisSynthesizer, HypothesisWriter, PatientHubSource } from './patient-hub-source';
 import { PlanSectionComponent } from './plan/plan-section.component';
@@ -76,6 +78,7 @@ export const DIAGNOSIS_FAILED_HINT =
   imports: [
     AssessmentSectionComponent,
     ButtonComponent,
+    DailyRecordSheetComponent,
     IconButtonComponent,
     NutritionAddCardSheetComponent,
     NutritionCardModalComponent,
@@ -143,6 +146,9 @@ export class PatientHubComponent implements OnInit {
     this.hypothesis() === null ? 'paste' : (this.editing() ?? 'view'),
   );
 
+  /** Registro diário (FT-004-7) aberto pela ação "Registro diário" dos atalhos. */
+  protected readonly dailyRecordOpen = signal(false);
+
   protected readonly phase = signal<FillPhase>('input');
   /** Texto colado do prontuário (permanece disponível se a síntese falhar). */
   protected readonly pasted = signal('');
@@ -192,6 +198,7 @@ export class PatientHubComponent implements OnInit {
   private readonly hiddenStore = inject(NutritionHiddenCards);
   private readonly cardWriter = inject(NutritionValueWriter);
   private readonly editing = signal<'paste' | 'edit' | null>(null);
+  private readonly screenActions = inject(ScreenActionsService);
   private readonly source = inject(PatientHubSource);
   private readonly results = inject(NutritionResultsSource);
   private readonly adequacyService = inject(DailyAdequacyService);
@@ -209,6 +216,19 @@ export class PatientHubComponent implements OnInit {
   private readonly patientId = toSignal(inject(ActivatedRoute).paramMap.pipe(map(params => params.get('id'))), {
     initialValue: null,
   });
+
+  constructor() {
+    // A ação só existe com o paciente carregado e hospital com vínculo aprovado em contexto.
+    effect(onCleanup => {
+      if (this.status() === 'ready' && this.hospitalId() !== null) {
+        onCleanup(
+          this.screenActions.register([
+            { id: 'daily-record', label: 'Registro diário', navigate: (): void => this.dailyRecordOpen.set(true) },
+          ]),
+        );
+      }
+    });
+  }
 
   ngOnInit(): void {
     void this.load();

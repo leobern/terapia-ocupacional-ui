@@ -44,6 +44,9 @@ import { AssessmentSource } from './features/patient-hub/assessment/assessment-s
 import { AssessmentWriter } from './features/patient-hub/assessment/assessment-writer';
 import { ProvisionalAssessmentAiStructurer } from './features/patient-hub/assessment/provisional-assessment-ai-structurer';
 import { ProvisionalAssessmentSource } from './features/patient-hub/assessment/provisional-assessment-source';
+import { DailyRecordSource } from './features/patient-hub/daily-record/daily-record-source';
+import { DailyRecordWriter } from './features/patient-hub/daily-record/daily-record-writer';
+import { ProvisionalDailyRecordSource } from './features/patient-hub/daily-record/provisional-daily-record-source';
 import {
   HypothesisSynthesizer,
   HypothesisWriter,
@@ -107,6 +110,9 @@ export const appConfig: ApplicationConfig = {
     { provide: AssessmentAiStructurer, useClass: ProvisionalAssessmentAiStructurer },
     { provide: AssessmentSource, useExisting: ProvisionalAssessmentSource },
     { provide: AssessmentWriter, useExisting: ProvisionalAssessmentSource },
+    ProvisionalDailyRecordSource,
+    { provide: DailyRecordSource, useExisting: ProvisionalDailyRecordSource },
+    { provide: DailyRecordWriter, useExisting: ProvisionalDailyRecordSource },
     { provide: DiagnosisSource, useClass: ProvisionalDiagnosisSource },
     { provide: DiagnosisDecisionSource, useClass: ProvisionalDiagnosisDecisionSource },
     { provide: PlanSource, useClass: ProvisionalPlanSource },

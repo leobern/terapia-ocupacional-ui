@@ -4,6 +4,7 @@ import { ActivatedRoute, convertToParamMap, provideRouter, Router } from '@angul
 import { of } from 'rxjs';
 
 import { ConnectivityService } from '../../shared/services/connectivity.service';
+import { ScreenActionsService } from '../../shared/services/screen-actions.service';
 import { DailyAdequacy } from '../daily-evolution/adequacy/adequacy.models';
 import { DailyAdequacyService } from '../daily-evolution/adequacy/daily-adequacy.service';
 import { GlimReading } from '../diagnosis/diagnosis.models';
@@ -22,6 +23,8 @@ import { ProvisionalNutritionCardStore } from '../patients/nutrition-panel/provi
 import { AssessmentAiStructurer } from './assessment/assessment-ai-structurer';
 import { AssessmentSource } from './assessment/assessment-source';
 import { AssessmentWriter } from './assessment/assessment-writer';
+import { DailyRecordSource } from './daily-record/daily-record-source';
+import { DailyRecordWriter } from './daily-record/daily-record-writer';
 import {
   DIAGNOSIS_FAILED_HINT,
   DIAGNOSIS_OFFLINE_HINT,
@@ -216,6 +219,8 @@ async function setup(
       { provide: AssessmentSource, useValue: { loadLatest: (): Promise<null> => Promise.resolve(null) } },
       { provide: AssessmentAiStructurer, useValue: { structure: (): Promise<object> => Promise.resolve({}) } },
       { provide: AssessmentWriter, useValue: { save: (): Promise<void> => Promise.resolve() } },
+      { provide: DailyRecordSource, useValue: { loadEntries: (): Promise<[]> => Promise.resolve([]) } },
+      { provide: DailyRecordWriter, useValue: { record: (): Promise<[]> => Promise.resolve([]) } },
       { provide: PriorStaysSource, useValue: priorStays },
       { provide: PriorStaysSynthesizer, useValue: priorSynth },
       {
@@ -286,6 +291,41 @@ describe('PatientHubComponent', () => {
     expect(priorStays.calls).toEqual(['h:p1']);
     expect(text(f)).toContain('Internações anteriores');
     expect(f.nativeElement.querySelector('.stays__header').getAttribute('aria-expanded')).toBe('false');
+  });
+
+  describe('Registro diário', () => {
+    it('registra a ação "Registro diário" nos atalhos e abre o registro ao escolhê-la', async () => {
+      const f = await setup(new FakeSource());
+      const actions = TestBed.inject(ScreenActionsService).actions();
+      const dialog = (): HTMLDialogElement =>
+        (f.nativeElement as HTMLElement).querySelector('app-daily-record-sheet dialog') as HTMLDialogElement;
+
+      expect(actions.map(a => a.label)).toEqual(['Registro diário']);
+      expect(dialog().open).toBe(false);
+      actions[0].navigate?.();
+      f.detectChanges();
+      await f.whenStable();
+
+      expect(dialog().open).toBe(true);
+      dialog().dispatchEvent(new Event('cancel', { cancelable: true }));
+      f.detectChanges();
+
+      expect(dialog().open).toBe(false);
+    });
+
+    it('sem hospital com vínculo em contexto, a ação não é oferecida', async () => {
+      await setup(new FakeSource(), 'p1', []);
+
+      expect(TestBed.inject(ScreenActionsService).actions()).toEqual([]);
+    });
+
+    it('a ação sai dos atalhos quando o Hub é destruído', async () => {
+      const f = await setup(new FakeSource());
+
+      f.destroy();
+
+      expect(TestBed.inject(ScreenActionsService).actions()).toEqual([]);
+    });
   });
 
   it('sem histórico (ou sem hospital em contexto), a caixa não aparece', async () => {
