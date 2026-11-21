@@ -200,3 +200,15 @@
   align-items: flex-start;
   gap: tokens.$space-8;
 }
+
+// Texto que identifica o valor vindo da IA (nunca só cor).
+.daily__ai-note {
+  margin: 0;
+  color: tokens.c(content-1);
+
+  @include typography.caption;
+}
+
+.daily__chat {
+  display: block;
+}
