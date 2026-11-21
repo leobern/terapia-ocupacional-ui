@@ -173,6 +173,7 @@ describe('PharmacyComponent', () => {
 
       expect(TestBed.inject(ScreenActionsService).actions().length).toBe(0);
       await expectAsync(Promise.resolve(submit?.({ description: 'Z' }))).toBeRejected();
+
       expect(api.requests).toEqual([]);
 
       window.dispatchEvent(new Event('online'));
