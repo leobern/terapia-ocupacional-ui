@@ -50,6 +50,10 @@ export const routes: Routes = [
     path: 'notifications',
     loadChildren: () => import('./features/notifications/notifications.routes').then(m => m.NOTIFICATIONS_ROUTES),
   },
+  {
+    path: 'pharmacy',
+    loadChildren: () => import('./features/pharmacy/pharmacy.routes').then(m => m.PHARMACY_ROUTES),
+  },
   // Caminho antigo em português, mantido como atalho para a tela real.
   { path: 'notificacoes', pathMatch: 'full', redirectTo: 'notifications' },
   // Fluxo de encerramento de acompanhamento (FT-004-9): placeholder até a feature existir.

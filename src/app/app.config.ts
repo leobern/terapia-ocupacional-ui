@@ -67,8 +67,12 @@ import {
 import { NutritionResultsSource } from './features/patients/nutrition-panel/nutrition-results-source';
 import { ProvisionalNutritionCardStore } from './features/patients/nutrition-panel/provisional-nutrition-card-store';
 import { ProvisionalNutritionResultsSource } from './features/patients/nutrition-panel/provisional-nutrition-results';
+import { FormulasApi } from './features/pharmacy/formulas-api';
+import { ProvisionalFormulasApi } from './features/pharmacy/provisional-formulas-api';
 import { LocalStartupStateReader } from './features/splash/local-startup-state-reader';
 import { StartupStateReader } from './features/splash/startup-state';
+import { ProvisionalSessionRoleReader } from './shared/auth/provisional-session-role-reader';
+import { SessionRoleReader } from './shared/auth/session-role';
 import { ASSISTANT_QUERY_RESOLVERS } from './shared/services/assistant-query-resolver';
 import { ProvisionalUserDirectory } from './shared/services/provisional-user-directory';
 import { UserDirectory } from './shared/services/user-directory';
@@ -107,6 +111,8 @@ export const appConfig: ApplicationConfig = {
     { provide: NotificationsApiService, useClass: ProvisionalNotificationsApiService },
     { provide: HomeApiService, useClass: ProvisionalHomeApiService },
     { provide: UserDirectory, useClass: ProvisionalUserDirectory },
+    { provide: SessionRoleReader, useClass: ProvisionalSessionRoleReader },
+    { provide: FormulasApi, useClass: ProvisionalFormulasApi },
     // Consultas de leitura do assistente (um resolvedor por intenção).
     { multi: true, provide: ASSISTANT_QUERY_RESOLVERS, useClass: PendingNotificationsQueryResolver },
     provideZoneChangeDetection({ eventCoalescing: true }),
