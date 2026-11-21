@@ -10,7 +10,6 @@ import {
   SwallowingSaveRequest,
 } from './plan.models';
 import { PlanSource, ResponsibleSaveRequest } from './plan-source';
-import { CadenceSaveRequest, normalizeCadence, ReviewCadence } from './review-cadence';
 import {
   CalculatedWeights,
   NutritionTargets,
@@ -18,6 +17,7 @@ import {
   ReferenceWeightSaveRequest,
   TargetsSaveRequest,
 } from './plan-targets';
+import { CadenceSaveRequest, normalizeCadence, ReviewCadence } from './review-cadence';
 
 /** Provisório, em memória: só o paciente `p1` começa com via vigente (permite exercitar os dois casos). */
 @Injectable()

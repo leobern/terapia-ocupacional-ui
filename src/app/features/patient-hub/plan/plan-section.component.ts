@@ -488,27 +488,44 @@ export class PlanSectionComponent {
       if (swallowingChanged && decision !== null) {
         this.savedSwallowing.set(await this.source.saveSwallowing({ at, author, decision, patientId }));
       }
-      if (reference !== null) {
-        this.savedReference.set(await this.source.saveReferenceWeight({ at, author, patientId, weight: reference }));
-      }
-      if (targets !== null) {
-        this.savedTargets.set(await this.source.saveTargets({ at, author, patientId, targets }));
-        this.targetsTouched.set(false);
-      }
-      if (cadenceChanged) {
-        this.applyCadence(await this.source.saveCadence({ at, author, days, patientId }));
-      }
-      // Sem responsável salvo, quem define o plano passa a ser o responsável inicial.
-      const name = explicit ?? (this.savedResponsible() === null ? author : null);
-
-      if (name !== null && name !== this.savedResponsible()) {
-        this.savedResponsible.set(await this.source.saveResponsible({ at, author, name, patientId }));
-        this.pickedResponsible.set(null);
-      }
+      await this.saveTargetsAndSchedule(
+        { at, author, patientId },
+        { reference, targets },
+        cadenceChanged ? days : null,
+      );
     } catch {
       this.hint.set(SAVE_FAILED_HINT);
     } finally {
       this.saving.set(false);
+    }
+  }
+
+  /** Grava peso, metas, cadência e responsável (nesta ordem); `days` é `null` quando a cadência não mudou. */
+  private async saveTargetsAndSchedule(
+    meta: { at: string; author: string; patientId: string },
+    pending: { reference: ReferenceWeight | null; targets: NutritionTargets | null },
+    days: ReviewCadence | null,
+  ): Promise<void> {
+    const { at, author, patientId } = meta;
+
+    if (pending.reference !== null) {
+      this.savedReference.set(
+        await this.source.saveReferenceWeight({ at, author, patientId, weight: pending.reference }),
+      );
+    }
+    if (pending.targets !== null) {
+      this.savedTargets.set(await this.source.saveTargets({ at, author, patientId, targets: pending.targets }));
+      this.targetsTouched.set(false);
+    }
+    if (days !== null) {
+      this.applyCadence(await this.source.saveCadence({ at, author, days, patientId }));
+    }
+    // Sem responsável salvo, quem define o plano passa a ser o responsável inicial.
+    const name = this.pickedResponsible() ?? (this.savedResponsible() === null ? author : null);
+
+    if (name !== null && name !== this.savedResponsible()) {
+      this.savedResponsible.set(await this.source.saveResponsible({ at, author, name, patientId }));
+      this.pickedResponsible.set(null);
     }
   }
 

@@ -26,8 +26,8 @@ import {
   INVALID_PERCENT_HINT,
   LOAD_FAILED_HINT,
   OFFLINE_HINT,
-  RESPONSIBLE_OPTIONS_FAILED_HINT,
   PlanSectionComponent,
+  RESPONSIBLE_OPTIONS_FAILED_HINT,
   RISK_FAILED_HINT,
   SAVE_FAILED_HINT,
   WEIGHTS_FAILED_HINT,
@@ -252,8 +252,10 @@ describe('PlanSectionComponent', () => {
   });
 
   describe('responsável pelo plano', () => {
-    const select = (): HTMLSelectElement => el().querySelector('[data-testid="responsible-select"]') as HTMLSelectElement;
-    const shown = (): string => (el().querySelector('[data-testid="responsible-value"]') as HTMLElement).textContent.trim();
+    const select = (): HTMLSelectElement =>
+      el().querySelector('[data-testid="responsible-select"]') as HTMLSelectElement;
+    const shown = (): string =>
+      (el().querySelector('[data-testid="responsible-value"]') as HTMLElement).textContent.trim();
     const pick = async (name: string): Promise<void> => {
       select().value = name;
       select().dispatchEvent(new Event('change'));
@@ -324,7 +326,7 @@ describe('PlanSectionComponent', () => {
       select().dispatchEvent(new Event('change'));
       await settle();
 
-      expect(select().value).toBe('Dr. Bruno');
+      expect(shown()).toBe('Vigente: Dr. Bruno');
       expect(text()).toContain(OFFLINE_HINT);
     });
 
