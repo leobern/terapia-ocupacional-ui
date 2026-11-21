@@ -226,3 +226,21 @@
 
   @include typography.body-md;
 }
+
+.plan__select {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 44px;
+  padding: tokens.$space-8 tokens.$space-12;
+  border: 1px solid tokens.c(border-2);
+  border-radius: tokens.$radius-md;
+  background: tokens.c(surface);
+  color: tokens.c(content-1);
+
+  @include typography.label-md;
+
+  &:focus-visible {
+    outline: var(--focus-ring-width) solid tokens.c(focus-ring);
+    outline-offset: var(--focus-ring-offset);
+  }
+}

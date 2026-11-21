@@ -39,4 +39,14 @@ describe('ProvisionalPlanSource', () => {
     expect(await source.loadCadence('p1')).toEqual([1, 5]);
     expect((await source.loadRoute('p1'))?.routes).toEqual(['NE']);
   });
+
+  it('responsável: começa vazio, grava e lista médicos', async () => {
+    const source = new ProvisionalPlanSource();
+
+    expect(await source.loadResponsible('p1')).toBeNull();
+    await source.saveResponsible({ at: 'x', author: 'A', name: 'Dra. Ana', patientId: 'p1' });
+
+    expect(await source.loadResponsible('p1')).toBe('Dra. Ana');
+    expect(await source.loadResponsibleOptions()).toContain('Dra. Ana');
+  });
 });

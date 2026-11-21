@@ -46,6 +46,8 @@ export const RISK_FAILED_HINT = 'Não foi possível verificar o risco de síndro
 export const DYSPHAGIA_FAILED_HINT = 'Não foi possível ler o risco de disfagia da Avaliação agora.';
 export const DYSPHAGIA_MISSING_HINT = 'Risco de disfagia ainda não registrado na Avaliação nutricional.';
 export const OFFLINE_HINT = 'Sem conexão: não é possível salvar o plano agora.';
+export const RESPONSIBLE_OPTIONS_FAILED_HINT =
+  'Não foi possível carregar a lista de médicos. O responsável atual foi mantido.';
 export const EMPTY_CADENCE_HINT = 'Marque ao menos um dia da semana para a revisão ou escolha a cadência diária.';
 export const EMPTY_SELECTION_HINT = 'Selecione ao menos uma via de nutrição para salvar.';
 
@@ -86,6 +88,23 @@ export class PlanSectionComponent {
   protected readonly cadenceMode = signal<'daily' | 'weekdays'>('daily');
   protected readonly pickedDays = signal<readonly Weekday[]>([]);
   protected readonly cadenceText = computed(() => cadenceLabel(this.savedCadence()));
+  /** Responsável salvo e a escolha explícita em edição (`null` = não mexeu). */
+  protected readonly savedResponsible = signal<string | null>(null);
+  protected readonly pickedResponsible = signal<string | null>(null);
+  protected readonly responsibleOptionList = signal<readonly string[]>([]);
+  protected readonly responsibleOptionsFailed = signal(false);
+  protected readonly responsibleOptionsFailedHint = RESPONSIBLE_OPTIONS_FAILED_HINT;
+  /** Exibido ao médico: escolha > salvo > ele mesmo (responsável inicial). */
+  protected readonly responsibleShown = computed(
+    () => this.pickedResponsible() ?? this.savedResponsible() ?? this.profile.read().name,
+  );
+  protected readonly responsibleChoices = computed(() => {
+    const shown = this.responsibleShown();
+    const list = this.responsibleOptionList();
+
+    return list.includes(shown) ? list : [shown, ...list];
+  });
+  protected readonly responsibleText = computed(() => this.savedResponsible() ?? 'Sem responsável definido');
   protected readonly selection = signal<readonly NutritionRoute[]>([]);
   protected readonly state = signal<LoadState>('idle');
   protected readonly saving = signal(false);
@@ -175,6 +194,14 @@ export class PlanSectionComponent {
     this.swallowing.set(id);
   }
 
+  protected chooseResponsible(name: string): void {
+    if (!this.isDoctor || !this.connectivity.online()) {
+      return;
+    }
+    this.hint.set(null);
+    this.pickedResponsible.set(name);
+  }
+
   protected chooseCadenceMode(mode: 'daily' | 'weekdays'): void {
     if (!this.isDoctor || !this.connectivity.online()) {
       return;
@@ -228,7 +255,10 @@ export class PlanSectionComponent {
     }
     const cadenceChanged = days.join() !== normalizeCadence(this.savedCadence()).join();
 
-    if (this.selection().length === 0 && !swallowingChanged && !cadenceChanged) {
+    const explicit = this.pickedResponsible();
+    const explicitResponsible = explicit !== null && explicit !== this.savedResponsible();
+
+    if (this.selection().length === 0 && !swallowingChanged && !cadenceChanged && !explicitResponsible) {
       this.hint.set(EMPTY_SELECTION_HINT);
 
       return;
@@ -252,6 +282,13 @@ export class PlanSectionComponent {
       }
       if (cadenceChanged) {
         this.applyCadence(await this.source.saveCadence({ at, author, days, patientId }));
+      }
+      // Sem responsável salvo, quem define o plano passa a ser o responsável inicial.
+      const name = explicit ?? (this.savedResponsible() === null ? author : null);
+
+      if (name !== null && name !== this.savedResponsible()) {
+        this.savedResponsible.set(await this.source.saveResponsible({ at, author, name, patientId }));
+        this.pickedResponsible.set(null);
       }
     } catch {
       this.hint.set(SAVE_FAILED_HINT);
@@ -281,6 +318,10 @@ export class PlanSectionComponent {
     this.savedSwallowing.set(null);
     this.swallowing.set(null);
     this.applyCadence(DAILY_CADENCE);
+    this.savedResponsible.set(null);
+    this.pickedResponsible.set(null);
+    this.responsibleOptionList.set([]);
+    this.responsibleOptionsFailed.set(false);
     this.hint.set(null);
     this.risk.set(null);
     this.riskFailed.set(false);
@@ -289,17 +330,20 @@ export class PlanSectionComponent {
     this.state.set('loading');
     void this.loadRisk(token);
     void this.loadDysphagia(token);
+    void this.loadResponsibleOptions(token);
     try {
-      const [latest, decision, cadence] = await Promise.all([
+      const [latest, decision, cadence, responsible] = await Promise.all([
         this.source.loadRoute(this.patientId()),
         this.source.loadSwallowing(this.patientId()),
         this.source.loadCadence(this.patientId()),
+        this.source.loadResponsible(this.patientId()),
       ]);
 
       if (token === this.token) {
         this.savedSwallowing.set(decision);
         this.swallowing.set(decision);
         this.applyCadence(cadence ?? DAILY_CADENCE);
+        this.savedResponsible.set(responsible);
         this.current.set(latest);
         this.selection.set(latest?.routes ?? []);
         this.state.set('ready');
@@ -307,6 +351,21 @@ export class PlanSectionComponent {
     } catch {
       if (token === this.token) {
         this.state.set('error');
+      }
+    }
+  }
+
+  /** Lista de médicos: falha degrada só este campo, sem perder a escolha. */
+  private async loadResponsibleOptions(token: number): Promise<void> {
+    try {
+      const list = await this.source.loadResponsibleOptions(this.patientId());
+
+      if (token === this.token) {
+        this.responsibleOptionList.set(list);
+      }
+    } catch {
+      if (token === this.token) {
+        this.responsibleOptionsFailed.set(true);
       }
     }
   }

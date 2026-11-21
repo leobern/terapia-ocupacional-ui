@@ -7,7 +7,7 @@ import {
   SwallowingDecision,
   SwallowingSaveRequest,
 } from './plan.models';
-import { PlanSource } from './plan-source';
+import { PlanSource, ResponsibleSaveRequest } from './plan-source';
 import { CadenceSaveRequest, normalizeCadence, ReviewCadence } from './review-cadence';
 
 /** Provisório, em memória: só o paciente `p1` começa com via vigente (permite exercitar os dois casos). */
@@ -16,6 +16,7 @@ export class ProvisionalPlanSource extends PlanSource {
   private readonly store = new Map<string, CurrentRoute>([['p1', { routes: ['NE'], since: '2026-11-12T12:00:00' }]]);
   private readonly swallowing = new Map<string, SwallowingDecision>();
   private readonly cadence = new Map<string, ReviewCadence>();
+  private readonly responsible = new Map<string, string>();
 
   loadRoute(patientId: string): Promise<CurrentRoute | null> {
     return Promise.resolve(this.store.get(patientId) ?? null);
@@ -49,5 +50,19 @@ export class ProvisionalPlanSource extends PlanSource {
     this.cadence.set(request.patientId, saved);
 
     return Promise.resolve(saved);
+  }
+
+  loadResponsible(patientId: string): Promise<string | null> {
+    return Promise.resolve(this.responsible.get(patientId) ?? null);
+  }
+
+  saveResponsible(request: ResponsibleSaveRequest): Promise<string> {
+    this.responsible.set(request.patientId, request.name);
+
+    return Promise.resolve(request.name);
+  }
+
+  loadResponsibleOptions(): Promise<readonly string[]> {
+    return Promise.resolve(['Dr. Bruno', 'Dra. Ana', 'Dra. Michelle']);
   }
 }

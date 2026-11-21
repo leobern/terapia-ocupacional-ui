@@ -12,11 +12,12 @@ import {
   EMPTY_SELECTION_HINT,
   LOAD_FAILED_HINT,
   OFFLINE_HINT,
+  RESPONSIBLE_OPTIONS_FAILED_HINT,
   PlanSectionComponent,
   RISK_FAILED_HINT,
   SAVE_FAILED_HINT,
 } from './plan-section.component';
-import { PlanSource } from './plan-source';
+import { PlanSource, ResponsibleSaveRequest } from './plan-source';
 import { RefeedingRisk, RefeedingRiskSource } from './refeeding-risk-source';
 import { CadenceSaveRequest, ReviewCadence } from './review-cadence';
 
@@ -33,6 +34,29 @@ class FakeSource extends PlanSource {
   cadenceLoadFails = false;
   cadenceSaveFails = false;
   readonly cadenceSaves: CadenceSaveRequest[] = [];
+  responsible: string | null = null;
+  options: string[] = ['Dr. Bruno', 'Dra. Ana'];
+  optionsFail = false;
+  responsibleSaveFails = false;
+  readonly responsibleSaves: ResponsibleSaveRequest[] = [];
+
+  loadResponsible(): Promise<string | null> {
+    return Promise.resolve(this.responsible);
+  }
+
+  loadResponsibleOptions(): Promise<readonly string[]> {
+    return this.optionsFail ? Promise.reject(new Error('x')) : Promise.resolve(this.options);
+  }
+
+  saveResponsible(request: ResponsibleSaveRequest): Promise<string> {
+    if (this.responsibleSaveFails) {
+      return Promise.reject(new Error('x'));
+    }
+    this.responsibleSaves.push(request);
+    this.responsible = request.name;
+
+    return Promise.resolve(request.name);
+  }
 
   loadCadence(): Promise<ReviewCadence | null> {
     return this.cadenceLoadFails ? Promise.reject(new Error('x')) : Promise.resolve(this.cadence);
@@ -146,6 +170,105 @@ describe('PlanSectionComponent', () => {
     source = new FakeSource();
     riskSource = new FakeRisk();
     assessment = new FakeAssessment();
+  });
+
+  describe('responsável pelo plano', () => {
+    const select = (): HTMLSelectElement => el().querySelector('[data-testid="responsible-select"]') as HTMLSelectElement;
+    const shown = (): string => (el().querySelector('[data-testid="responsible-value"]') as HTMLElement).textContent.trim();
+    const pick = async (name: string): Promise<void> => {
+      select().value = name;
+      select().dispatchEvent(new Event('change'));
+      await settle();
+    };
+
+    it('sem responsável: o médico que define o plano é o inicial e é gravado ao salvar', async () => {
+      await setup('doctor');
+      await openIt();
+
+      expect(select().value).toBe('Dra. Ana');
+      await toggle('VO');
+      await save();
+
+      expect(source.responsibleSaves.map(r => r.name)).toEqual(['Dra. Ana']);
+    });
+
+    it('médico escolhe outro responsável, salva e persiste ao reabrir', async () => {
+      await setup('doctor');
+      await openIt();
+      await pick('Dr. Bruno');
+      await save();
+
+      expect(source.responsible).toBe('Dr. Bruno');
+      expect(shown()).toBe('Vigente: Dr. Bruno');
+      (el().querySelector('.plan__header app-icon-button button') as HTMLButtonElement).click();
+      await settle();
+      await openIt();
+
+      expect(select().value).toBe('Dr. Bruno');
+    });
+
+    it('responsável salvo igual ao escolhido não é regravado', async () => {
+      source.responsible = 'Dr. Bruno';
+      await setup('doctor');
+      await openIt();
+      await toggle('VO');
+      await save();
+
+      expect(source.responsibleSaves.length).toBe(0);
+    });
+
+    it('não-médico vê o responsável sem controles', async () => {
+      source.responsible = 'Dr. Bruno';
+      await setup('other');
+      await openIt();
+
+      expect(shown()).toBe('Dr. Bruno');
+      expect(select()).toBeNull();
+    });
+
+    it('não-médico sem responsável vê aviso de texto', async () => {
+      await setup('other');
+      await openIt();
+
+      expect(shown()).toBe('Sem responsável definido');
+    });
+
+    it('offline: responsável visível, edição desabilitada e ignorada', async () => {
+      source.responsible = 'Dr. Bruno';
+      await setup('doctor');
+      await openIt();
+      TestBed.inject(ConnectivityService).online.set(false);
+      await settle();
+
+      expect(select().disabled).toBe(true);
+      select().value = 'Dra. Ana';
+      select().dispatchEvent(new Event('change'));
+      await settle();
+
+      expect(select().value).toBe('Dr. Bruno');
+      expect(text()).toContain(OFFLINE_HINT);
+    });
+
+    it('falha ao listar médicos: aviso e o responsável atual continua selecionável', async () => {
+      source.optionsFail = true;
+      source.responsible = 'Dr. Bruno';
+      await setup('doctor');
+      await openIt();
+
+      expect(text()).toContain(RESPONSIBLE_OPTIONS_FAILED_HINT);
+      expect(select().value).toBe('Dr. Bruno');
+    });
+
+    it('falha ao gravar: mensagem e a escolha é mantida', async () => {
+      source.responsibleSaveFails = true;
+      await setup('doctor');
+      await openIt();
+      await pick('Dr. Bruno');
+      await save();
+
+      expect(text()).toContain(SAVE_FAILED_HINT);
+      expect(select().value).toBe('Dr. Bruno');
+    });
   });
 
   describe('cadência da próxima revisão', () => {

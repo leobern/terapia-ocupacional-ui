@@ -201,6 +201,36 @@
             na Listagem do dia.
           </p>
         </fieldset>
+        <fieldset class="plan__card" data-testid="responsible">
+          <legend class="plan__label">Responsável pelo plano</legend>
+          @if (!isDoctor) {
+            <p class="plan__value" data-testid="responsible-value">
+              {{ responsibleText() }}
+            </p>
+          } @else {
+            <select
+              class="plan__select"
+              aria-label="Responsável pelo plano"
+              data-testid="responsible-select"
+              [disabled]="!connectivity.online()"
+              (change)="chooseResponsible($any($event.target).value)"
+            >
+              @for (name of responsibleChoices(); track name) {
+                <option [value]="name" [selected]="name === responsibleShown()">
+                  {{ name }}
+                </option>
+              }
+            </select>
+            <p class="plan__value" data-testid="responsible-value">
+              Vigente: {{ responsibleText() }}
+            </p>
+          }
+          @if (responsibleOptionsFailed()) {
+            <p class="plan__help" role="status">
+              {{ responsibleOptionsFailedHint }}
+            </p>
+          }
+        </fieldset>
       </section>
     }
     @if (hint(); as message) {

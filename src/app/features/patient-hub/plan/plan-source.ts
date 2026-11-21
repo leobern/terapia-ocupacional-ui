@@ -15,4 +15,16 @@ export abstract class PlanSource {
   /** Cadência da próxima revisão (FR-012/013); `null` quando não há gravada (vale a diária). */
   abstract loadCadence(patientId: string): Promise<ReviewCadence | null>;
   abstract saveCadence(request: CadenceSaveRequest): Promise<ReviewCadence>;
+  /** Responsável pelo plano (nome do médico); `null` quando ainda não escolhido. */
+  abstract loadResponsible(patientId: string): Promise<string | null>;
+  abstract saveResponsible(request: ResponsibleSaveRequest): Promise<string>;
+  /** Médicos vinculados ao hospital do paciente que podem ser responsáveis. */
+  abstract loadResponsibleOptions(patientId: string): Promise<readonly string[]>;
+}
+
+export interface ResponsibleSaveRequest {
+  readonly at: string;
+  readonly author: string;
+  readonly name: string;
+  readonly patientId: string;
 }
