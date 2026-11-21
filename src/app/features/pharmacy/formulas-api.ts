@@ -9,4 +9,6 @@ export abstract class FormulasApi {
   abstract list(hospitalId: string): Promise<readonly Formula[]>;
   /** Padroniza/desmarca a fórmula só no hospital informado; rejeita em caso de falha. */
   abstract setStandardized(hospitalId: string, formulaId: string, standardized: boolean): Promise<void>;
+  /** Registra o pedido de inclusão de fórmula nova (hospital, descrição); tratado manualmente pela equipe, sem fluxo de aprovação (FR-009). */
+  abstract requestFormula(hospitalId: string, description: string): Promise<void>;
 }

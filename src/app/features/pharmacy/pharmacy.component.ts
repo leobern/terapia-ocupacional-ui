@@ -2,6 +2,11 @@ import { ChangeDetectionStrategy, Component, computed, DestroyRef, effect, injec
 
 import { PageContainerComponent } from '../../shared/components/page-container/page-container.component';
 import { PhIconComponent } from '../../shared/icons/ph-icon/ph-icon.component';
+import {
+  type FormValues,
+  type ScreenAction,
+  ScreenActionsService,
+} from '../../shared/services/screen-actions.service';
 import { HospitalContextService } from '../home/hospital-context.service';
 import { Formula, FORMULA_CATEGORIES } from './formulas.models';
 import { FormulasApi } from './formulas-api';
@@ -36,6 +41,7 @@ export class PharmacyComponent {
   );
 
   private readonly api = inject(FormulasApi);
+  private readonly screenActions = inject(ScreenActionsService);
 
   constructor() {
     const onOnline = (): void => this.online.set(true);
@@ -46,6 +52,35 @@ export class PharmacyComponent {
     inject(DestroyRef).onDestroy(() => {
       window.removeEventListener('online', onOnline);
       window.removeEventListener('offline', onOffline);
+    });
+
+    // Atalhos da tela (padrão de cadastro): "Solicitar fórmula" abre o formulário em cards.
+    // Offline a ação sai dos atalhos (US-009-2-02, cenário 4).
+    effect(onCleanup => {
+      const actions: readonly ScreenAction[] = this.online()
+        ? [
+            {
+              form: {
+                fields: [
+                  {
+                    id: 'description',
+                    kind: 'text',
+                    label: 'Qual fórmula você quer solicitar?',
+                    placeholder: 'Nome, fabricante e características da fórmula',
+                    required: true,
+                  },
+                ],
+                submit: (values): Promise<void> => this.requestFormula(values),
+                submitLabel: 'Solicitar fórmula',
+                title: 'Solicitar fórmula',
+              },
+              id: 'request-formula',
+              label: 'Solicitar fórmula',
+            },
+          ]
+        : [];
+
+      onCleanup(this.screenActions.register(actions));
     });
 
     effect(() => {
@@ -88,6 +123,17 @@ export class PharmacyComponent {
     } finally {
       this.savingId.set(null);
     }
+  }
+
+  /** Envia o pedido pelo formulário dos atalhos; lançar erro mantém o formulário aberto com as respostas. */
+  private async requestFormula(values: FormValues): Promise<void> {
+    const hospitalId = this.hospital()?.id;
+    const description = typeof values['description'] === 'string' ? values['description'].trim() : '';
+
+    if (!hospitalId || !this.online() || !description) {
+      throw new Error('Solicitação indisponível');
+    }
+    await this.api.requestFormula(hospitalId, description);
   }
 
   protected yesNo(value: boolean): string {

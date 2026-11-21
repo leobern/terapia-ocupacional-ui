@@ -1,5 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
+import { ScreenActionsService } from '../../shared/services/screen-actions.service';
 import { LinkedHospitalsReader } from '../home/linked-hospitals';
 import { FormulasApi } from './formulas-api';
 import { PharmacyComponent } from './pharmacy.component';
@@ -129,6 +130,62 @@ describe('PharmacyComponent', () => {
     fixture.detectChanges();
 
     expect(text()).toContain('Nenhuma fórmula cadastrada');
+  });
+
+  describe('Solicitar fórmula (US-009-2-02)', () => {
+    const action = (): { form?: { submit(values: Record<string, string>): Promise<void> | void } } | undefined =>
+      TestBed.inject(ScreenActionsService)
+        .actions()
+        .find(a => a.id === 'request-formula') as never;
+
+    it('oferece a ação nos atalhos com um formulário de descrição obrigatória', () => {
+      const registered = TestBed.inject(ScreenActionsService)
+        .actions()
+        .find(a => a.id === 'request-formula');
+
+      expect(registered?.label).toBe('Solicitar fórmula');
+      expect(registered?.form?.fields.map(f => [f.id, f.required])).toEqual([['description', true]]);
+    });
+
+    it('registra o pedido para o hospital atual, sem aprovação automática', async () => {
+      await action()?.form?.submit({ description: '  Fórmula hipercalórica Z  ' });
+
+      expect(api.requests).toEqual([{ description: 'Fórmula hipercalórica Z', hospitalId: 'a' }]);
+    });
+
+    it('rejeita descrição vazia e mantém o formulário aberto', async () => {
+      await expectAsync(Promise.resolve(action()?.form?.submit({ description: '   ' }))).toBeRejected();
+
+      expect(api.requests).toEqual([]);
+    });
+
+    it('rejeita quando a API falha, para o formulário manter as respostas', async () => {
+      spyOn(api, 'requestFormula').and.rejectWith(new Error('x'));
+
+      await expectAsync(Promise.resolve(action()?.form?.submit({ description: 'Z' }))).toBeRejected();
+    });
+
+    it('offline: a ação sai dos atalhos e o envio é recusado', async () => {
+      const submit = action()?.form?.submit;
+
+      window.dispatchEvent(new Event('offline'));
+      await settle();
+
+      expect(TestBed.inject(ScreenActionsService).actions().length).toBe(0);
+      await expectAsync(Promise.resolve(submit?.({ description: 'Z' }))).toBeRejected();
+      expect(api.requests).toEqual([]);
+
+      window.dispatchEvent(new Event('online'));
+      await settle();
+
+      expect(TestBed.inject(ScreenActionsService).actions().length).toBe(1);
+    });
+
+    it('remove a ação ao sair da tela', () => {
+      fixture.destroy();
+
+      expect(TestBed.inject(ScreenActionsService).actions().length).toBe(0);
+    });
   });
 
   it('mostra carregando enquanto busca', () => {
