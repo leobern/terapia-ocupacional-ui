@@ -96,6 +96,9 @@ export interface ParameterEntry {
   readonly author: string;
   /** Data/hora do lançamento (ISO). */
   readonly at: string;
+  /** Nome e unidade, só nos parâmetros fora do catálogo (lista aberta, FR-004), para reconstruir o card. */
+  readonly parameterLabel?: string;
+  readonly unit?: string;
 }
 
 /** Lançamento ainda não gravado; a gravação atribui o `id`. */
@@ -135,4 +138,40 @@ export function isSameDay(iso: string, reference: Date): boolean {
     d.getMonth() === reference.getMonth() &&
     d.getDate() === reference.getDate()
   );
+}
+
+/** Valor narrado e estruturado pela IA; `value` chega como texto e passa pela mesma validação da digitação. */
+export interface SuggestedParameter {
+  /** Id de um parâmetro do catálogo, quando a IA o reconhece. */
+  readonly parameterId?: string;
+  /** Nome narrado (usado quando não há `parameterId` ou ele não está no catálogo). */
+  readonly label?: string;
+  readonly unit?: string;
+  readonly value: string;
+}
+
+/** Prefixo do id de parâmetros fora do catálogo; o resto é o nome normalizado. */
+export const CUSTOM_PARAMETER_PREFIX = 'custom:';
+
+function normalize(text: string): string {
+  return text
+    .normalize('NFD')
+    .replace(/\p{Diacritic}/gu, '')
+    .trim()
+    .toLowerCase();
+}
+
+/** Id estável de um parâmetro fora do catálogo a partir do nome. */
+export function customParameterId(label: string): string {
+  return `${CUSTOM_PARAMETER_PREFIX}${normalize(label).replace(/\s+/gu, '-')}`;
+}
+
+/** Procura no catálogo pelo id informado pela IA ou, na falta, pelo nome (sem acento/caixa). */
+export function findParameter(
+  catalog: readonly ParameterDefinition[],
+  suggestion: SuggestedParameter,
+): ParameterDefinition | undefined {
+  const label = normalize(suggestion.label ?? '');
+
+  return catalog.find(p => p.id === suggestion.parameterId || (label !== '' && normalize(p.label) === label));
 }
