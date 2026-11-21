@@ -267,10 +267,21 @@
           @if (adequacy(); as a) {
             <app-adequacy-summary [adequacy]="a" />
           }
+          <app-prescription-summary [prescription]="prescription()" />
           <app-plan-section
             [patientId]="p.id"
             (targetsSaved)="reloadResults()"
           />
+          @if (hospitalId(); as hospital) {
+            <app-prescription-sheet
+              [open]="prescriptionOpen()"
+              [patientId]="p.id"
+              [hospitalId]="hospital"
+              [adequacy]="adequacy()"
+              (closed)="prescriptionOpen.set(false)"
+              (saved)="reloadPrescription()"
+            />
+          }
           <app-daily-record-sheet
             [open]="dailyRecordOpen()"
             [patientId]="p.id"

@@ -1,13 +1,24 @@
-import { ActivePrescription, PrescriptionReview, PrescriptionReviewRequest } from './prescription.models';
+import {
+  ActivePrescription,
+  Prescription,
+  PrescriptionReview,
+  PrescriptionReviewRequest,
+  PrescriptionSaveRequest,
+} from './prescription.models';
 
 /**
- * Porta da revisão diária da prescrição (FT-004-8, US-004-8-01). Sem contrato de API: a implementação real
- * substitui a provisória em `app.config.ts`; offline, `loadActive` e `loadReview` devolvem o último cache.
- * `loadActive` devolve `null` sem prescrição ativa; `loadReview` devolve `null` se o dia ainda não foi
- * revisado. `keep` só registra a revisão (autor e data/hora) e NUNCA altera a prescrição; a implementação
- * real recusa quem não for médico. Todos rejeitam em caso de falha. Última confirmação prevalece (sem lock).
+ * Porta da prescrição e da revisão diária (FT-004-8). Sem contrato de API: a implementação real substitui a
+ * provisória em `app.config.ts`. Todos os métodos rejeitam em caso de falha.
+ *
+ * - `load`/`save`: prescrição vigente completa (US-004-8-02). `load` devolve `null` sem prescrição; `save`
+ *   substitui a anterior (última gravação prevalece, sem lock); autor e data/hora seguem na requisição.
+ * - `loadActive`: projeção somente leitura da mesma prescrição para o resumo da revisão (US-004-8-01).
+ * - `loadReview`/`keep`: registro da revisão do dia. `keep` só registra (autor e data/hora) e NUNCA altera a
+ *   prescrição; a implementação real recusa quem não for médico. Offline, as leituras devolvem o último cache.
  */
 export abstract class PrescriptionSource {
+  abstract load(patientId: string): Promise<Prescription | null>;
+  abstract save(request: PrescriptionSaveRequest): Promise<Prescription>;
   abstract loadActive(patientId: string): Promise<ActivePrescription | null>;
   abstract loadReview(patientId: string, day: string): Promise<PrescriptionReview | null>;
   abstract keep(request: PrescriptionReviewRequest): Promise<PrescriptionReview>;

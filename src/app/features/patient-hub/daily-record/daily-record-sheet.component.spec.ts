@@ -5,6 +5,7 @@ import { By } from '@angular/platform-browser';
 import { InputChatComponent } from '../../../shared/components/input-chat/input-chat.component';
 import { ConnectivityService } from '../../../shared/services/connectivity.service';
 import { NOW, ProfessionalProfileReader } from '../../home/professional-profile';
+import { PrescriptionSource } from '../prescription/prescription-source';
 import { DailyEvolutionSource } from './daily-evolution-source';
 import { DailyEvolution, ParameterEntry, SuggestedParameter } from './daily-record.models';
 import {
@@ -96,6 +97,7 @@ describe('DailyRecordSheetComponent', () => {
         { provide: DailyRecordSource, useValue: store },
         { provide: DailyRecordWriter, useValue: store },
         { provide: DailyEvolutionSource, useClass: EvolutionStub },
+        { provide: PrescriptionSource, useValue: { load: (): Promise<null> => Promise.resolve(null) } },
         { provide: ParameterAiStructurer, useValue: ai },
         { provide: EvolutionAiStructurer, useValue: { suggest: (): Promise<string> => Promise.resolve('') } },
         { provide: ConnectivityService, useValue: { online } },

@@ -128,6 +128,7 @@ export const appConfig: ApplicationConfig = {
     { provide: PrescriptionSource, useClass: ProvisionalPrescriptionSource },
     { provide: ParameterAiStructurer, useClass: ProvisionalParameterAiStructurer },
     { provide: PlanSource, useClass: ProvisionalPlanSource },
+    { provide: PrescriptionSource, useClass: ProvisionalPrescriptionSource },
     { provide: NutritionTargetsReader, useClass: PlanNutritionTargetsReader },
     { provide: RefeedingRiskSource, useClass: ProvisionalRefeedingRiskSource },
     { provide: InfusedIntakeSource, useClass: ProvisionalInfusedIntakeSource },

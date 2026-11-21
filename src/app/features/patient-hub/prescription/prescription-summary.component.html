@@ -1,0 +1,33 @@
+@if (lines(); as l) {
+  <section
+    class="rx-summary"
+    aria-label="Prescrição vigente"
+    data-testid="rx-summary"
+  >
+    <h3 class="rx-summary__title">{{ title() }}</h3>
+    <dl class="rx-summary__list">
+      <div class="rx-summary__item">
+        <dt>Fórmula</dt>
+        <dd>{{ l.formula }}</dd>
+      </div>
+      <div class="rx-summary__item">
+        <dt>Volume</dt>
+        <dd>{{ l.volume }}</dd>
+      </div>
+      <div class="rx-summary__item">
+        <dt>Modalidade</dt>
+        <dd>{{ l.modality }}</dd>
+      </div>
+      <div class="rx-summary__item">
+        <dt>Horários previstos</dt>
+        <dd>{{ l.schedule }}</dd>
+      </div>
+      @if (l.notes) {
+        <div class="rx-summary__item">
+          <dt>Orientações de enfermagem</dt>
+          <dd data-testid="rx-summary-notes">{{ l.notes }}</dd>
+        </div>
+      }
+    </dl>
+  </section>
+}
