@@ -151,6 +151,8 @@ describe('AppComponent', () => {
     TestBed.inject(Router).resetConfig([
       { children: [], path: 'home' },
       { children: [], path: 'notifications' },
+      { children: [], path: 'pharmacy' },
+      { children: [], path: 'patients' },
       { children: [], path: 'login' },
     ]);
     await TestBed.inject(Router).navigateByUrl('/home');
@@ -160,6 +162,14 @@ describe('AppComponent', () => {
     await TestBed.inject(Router).navigateByUrl('/notifications');
 
     expect(component.activeNavItem()).toBe('notificacoes');
+
+    await TestBed.inject(Router).navigateByUrl('/pharmacy');
+
+    expect(component.activeNavItem()).toBe('farmacia');
+
+    await TestBed.inject(Router).navigateByUrl('/patients');
+
+    expect(component.activeNavItem()).toBe('pacientes');
 
     await TestBed.inject(Router).navigateByUrl('/login');
 

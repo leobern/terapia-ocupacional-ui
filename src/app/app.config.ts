@@ -27,8 +27,6 @@ import {
   ProvisionalHomeApiService,
   ProvisionalNotificationsApiService,
 } from './features/notifications/data-access/provisional-notifications-api.service';
-import { FormulasApi } from './features/pharmacy/formulas-api';
-import { ProvisionalFormulasApi } from './features/pharmacy/provisional-formulas-api';
 import { AssessmentAiStructurer } from './features/patient-hub/assessment/assessment-ai-structurer';
 import { AssessmentSource } from './features/patient-hub/assessment/assessment-source';
 import { AssessmentWriter } from './features/patient-hub/assessment/assessment-writer';
@@ -65,6 +63,8 @@ import {
 import { NutritionResultsSource } from './features/patients/nutrition-panel/nutrition-results-source';
 import { ProvisionalNutritionCardStore } from './features/patients/nutrition-panel/provisional-nutrition-card-store';
 import { ProvisionalNutritionResultsSource } from './features/patients/nutrition-panel/provisional-nutrition-results';
+import { FormulasApi } from './features/pharmacy/formulas-api';
+import { ProvisionalFormulasApi } from './features/pharmacy/provisional-formulas-api';
 import { LocalStartupStateReader } from './features/splash/local-startup-state-reader';
 import { StartupStateReader } from './features/splash/startup-state';
 import { ProvisionalSessionRoleReader } from './shared/auth/provisional-session-role-reader';
