@@ -93,7 +93,9 @@
         </p>
       }
       <app-button
-        [label]="suggestion() === null ? 'Salvar evolução' : 'Confirmar evolução'"
+        [label]="
+          suggestion() === null ? 'Salvar evolução' : 'Confirmar evolução'
+        "
         [fullWidth]="true"
         [disabled]="!canSave()"
         (click)="save()"
