@@ -1,8 +1,6 @@
 import { inject, Injectable } from '@angular/core';
 import { forkJoin, from, map, Observable, of } from 'rxjs';
 
-import { HomeApiService } from '../../home/data-access/home-api.service';
-import { type Hospital } from '../../home/home.models';
 import { ProfessionalProfileReader } from '../../home/professional-profile';
 import { PatientMessagesSource } from '../../patient-messages/patient-messages-source';
 import { sentThreadToNotification } from '../../patient-messages/sent-thread-notification';
