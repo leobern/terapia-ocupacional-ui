@@ -55,11 +55,3 @@ export class ProvisionalNotificationsApiService extends NotificationsApiService 
     return of(undefined);
   }
 }
-
-/** Provisório: um único hospital, o mesmo da Home (`MockLinkedHospitalsReader`). */
-@Injectable()
-export class ProvisionalHomeApiService extends HomeApiService {
-  override getHospitals(): Observable<Hospital[]> {
-    return of([{ id: 1, name: 'Hospital Vila Nova Star' }]);
-  }
-}

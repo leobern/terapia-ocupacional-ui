@@ -5,5 +5,5 @@ import { CensusPatient } from './patient-list.models';
  * (EP-002) substitui a provisória em `app.config.ts`. Offline, a implementação real devolve o último cache.
  */
 export abstract class PatientListSource {
-  abstract loadCensus(hospitalId: string, day: Date): Promise<readonly CensusPatient[]>;
+  abstract loadCensus(hospitalId: number, day: Date): Promise<readonly CensusPatient[]>;
 }

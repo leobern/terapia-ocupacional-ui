@@ -35,7 +35,7 @@ function isFollowedOn(p: CensusPatient, day: Date): boolean {
  */
 export function assemblePatientList(
   census: readonly CensusPatient[],
-  hospitalId: string,
+  hospitalId: number,
   day: Date,
 ): readonly PatientCard[] {
   return census

@@ -31,7 +31,7 @@ export abstract class HypothesisWriter {
  * implementação real só responde se a informação estiver local. Rejeita quando não consegue consultar.
  */
 export abstract class PriorStaysSource {
-  abstract hasPriorStays(patientId: string, hospitalId: string): Promise<boolean>;
+  abstract hasPriorStays(patientId: string, hospitalId: number): Promise<boolean>;
 }
 
 /**
@@ -39,5 +39,5 @@ export abstract class PriorStaysSource {
  * anteriores (fora de escopo: só entrada/saída). Texto livre; rejeita se falhar ou estiver indisponível.
  */
 export abstract class PriorStaysSynthesizer {
-  abstract synthesize(patientId: string, hospitalId: string): Promise<string>;
+  abstract synthesize(patientId: string, hospitalId: number): Promise<string>;
 }

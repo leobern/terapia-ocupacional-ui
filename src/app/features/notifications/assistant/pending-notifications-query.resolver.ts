@@ -29,7 +29,11 @@ export class PendingNotificationsQueryResolver implements AssistantQueryResolver
   }
 
   async resolve(): Promise<AssistantAnswer> {
-    const hospitalId = Number(this.hospitalContext.selected()?.id);
+    const hospitalId = this.hospitalContext.selected()?.id;
+
+    if (hospitalId === undefined) {
+      return { summary: 'Nenhum hospital em contexto para consultar as pendências.' };
+    }
     const notifications: Notification[] = [];
     let cursor: string | null = null;
 

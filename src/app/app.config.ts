@@ -7,6 +7,8 @@ import { provideRouterStore } from '@ngrx/router-store';
 import { provideStore } from '@ngrx/store';
 
 import { routes } from './app.routing';
+import { NoopSessionRevoker } from './features/auth/noop-session-revoker';
+import { SessionRevoker } from './features/auth/session-revoker';
 import {
   FoodRecallSource,
   InfusedIntakeSource,
@@ -20,15 +22,14 @@ import { ProvisionalDiagnosisSource } from './features/diagnosis/provisional-dia
 import { FollowUpClosureSource, FollowUpClosureWriter } from './features/follow-up-closure/follow-up-closure-source';
 import { ProvisionalFollowUpClosureSource } from './features/follow-up-closure/provisional-follow-up-closure';
 import { DailyPatientsSource } from './features/home/daily-patients';
-import { HomeApiService } from './features/home/data-access/home-api.service';
+import { HomeHospitalsApiService } from './features/home/data-access/home-hospitals-api.service';
+import { HomeNotificationsApiService } from './features/home/data-access/home-notifications-api.service';
 import { HomeNotificationsSource } from './features/home/home-notifications-source';
 import { LinkedHospitalsReader } from './features/home/linked-hospitals';
 import { LocalProfessionalProfileReader } from './features/home/local-professional-profile-reader';
 import { LocalUnreadNotificationsReader } from './features/home/local-unread-notifications-reader';
-import { MockLinkedHospitalsReader } from './features/home/mock-linked-hospitals-reader';
 import { ProfessionalProfileReader } from './features/home/professional-profile';
 import { ProvisionalDailyPatientsSource } from './features/home/provisional-daily-patients';
-import { ProvisionalHomeNotificationsSource } from './features/home/provisional-home-notifications';
 import { UnreadNotificationsReader } from './features/home/unread-notifications-reader';
 import { HospitalInvitePort, ManagerAccessReader } from './features/hospital-team/hospital-invite-port';
 import {
@@ -37,10 +38,9 @@ import {
 } from './features/hospital-team/provisional-hospital-invite';
 import { PendingNotificationsQueryResolver } from './features/notifications/assistant/pending-notifications-query.resolver';
 import { NotificationsApiService } from './features/notifications/data-access/notifications-api.service';
-import {
-  ProvisionalHomeApiService,
-  ProvisionalNotificationsApiService,
-} from './features/notifications/data-access/provisional-notifications-api.service';
+import { ProvisionalNotificationsApiService } from './features/notifications/data-access/provisional-notifications-api.service';
+import { HttpPasswordResetGateway } from './features/password-recovery/http-password-reset-gateway';
+import { PasswordResetGateway } from './features/password-recovery/password-reset-gateway';
 import { AssessmentAiStructurer } from './features/patient-hub/assessment/assessment-ai-structurer';
 import { AssessmentSource } from './features/patient-hub/assessment/assessment-source';
 import { AssessmentWriter } from './features/patient-hub/assessment/assessment-writer';
@@ -55,6 +55,16 @@ import { ProvisionalDailyEvolutionSource } from './features/patient-hub/daily-re
 import { ProvisionalDailyRecordSource } from './features/patient-hub/daily-record/provisional-daily-record-source';
 import { ProvisionalEvolutionAiStructurer } from './features/patient-hub/daily-record/provisional-evolution-ai-structurer';
 import { ProvisionalParameterAiStructurer } from './features/patient-hub/daily-record/provisional-parameter-ai-structurer';
+import {
+  MessageAiAssistant,
+  PatientMessageSource,
+  PatientTeamSource,
+} from './features/patient-hub/messages/patient-message-source';
+import {
+  ProvisionalMessageAiAssistant,
+  ProvisionalPatientMessageSource,
+  ProvisionalPatientTeamSource,
+} from './features/patient-hub/messages/provisional-patient-message';
 import {
   HypothesisSynthesizer,
   HypothesisWriter,
@@ -116,8 +126,10 @@ import { UserDirectory } from './shared/services/user-directory';
 export const appConfig: ApplicationConfig = {
   providers: [
     { provide: ProfessionalProfileReader, useClass: LocalProfessionalProfileReader },
+    { provide: PasswordResetGateway, useClass: HttpPasswordResetGateway },
+    { provide: SessionRevoker, useClass: NoopSessionRevoker },
     { provide: StartupStateReader, useClass: LocalStartupStateReader },
-    { provide: LinkedHospitalsReader, useClass: MockLinkedHospitalsReader },
+    { provide: LinkedHospitalsReader, useClass: HomeHospitalsApiService },
     { provide: UnreadNotificationsReader, useClass: LocalUnreadNotificationsReader },
     { provide: DailyPatientsSource, useClass: ProvisionalDailyPatientsSource },
     { provide: PatientListAiCommandPort, useClass: ProvisionalPatientListAiCommand },
@@ -145,6 +157,9 @@ export const appConfig: ApplicationConfig = {
     { provide: EvolutionAiStructurer, useClass: ProvisionalEvolutionAiStructurer },
     { provide: PrescriptionSource, useClass: ProvisionalPrescriptionSource },
     { provide: ParameterAiStructurer, useClass: ProvisionalParameterAiStructurer },
+    { provide: PatientMessageSource, useClass: ProvisionalPatientMessageSource },
+    { provide: PatientTeamSource, useClass: ProvisionalPatientTeamSource },
+    { provide: MessageAiAssistant, useClass: ProvisionalMessageAiAssistant },
     { provide: PlanSource, useClass: ProvisionalPlanSource },
     { provide: PrescriptionSource, useClass: ProvisionalPrescriptionSource },
     { provide: NutritionTargetsReader, useClass: PlanNutritionTargetsReader },
@@ -159,10 +174,9 @@ export const appConfig: ApplicationConfig = {
     { provide: NutritionValueWriter, useExisting: ProvisionalNutritionCardStore },
     { provide: NutritionAddedCards, useExisting: ProvisionalNutritionCardStore },
     { provide: NutritionHiddenCards, useExisting: ProvisionalNutritionCardStore },
-    { provide: HomeNotificationsSource, useClass: ProvisionalHomeNotificationsSource },
-    // Provisórios (sem backend ainda): notificações em memória, hospital único e usuários de exemplo.
+    { provide: HomeNotificationsSource, useClass: HomeNotificationsApiService },
+    // Provisórios (sem backend ainda): notificações em memória e usuários de exemplo.
     { provide: NotificationsApiService, useClass: ProvisionalNotificationsApiService },
-    { provide: HomeApiService, useClass: ProvisionalHomeApiService },
     { provide: HospitalInvitePort, useClass: ProvisionalHospitalInvite },
     { provide: ManagerAccessReader, useClass: ProvisionalManagerAccess },
     { provide: UserDirectory, useClass: ProvisionalUserDirectory },

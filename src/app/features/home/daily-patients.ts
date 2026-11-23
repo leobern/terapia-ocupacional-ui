@@ -10,5 +10,5 @@ export interface DailyPatientsSummary {
  * Sem contrato de API documentado: a implementação real substitui a provisória em `app.config.ts`.
  */
 export abstract class DailyPatientsSource {
-  abstract loadForDay(hospitalId: string, day: Date): Promise<DailyPatientsSummary>;
+  abstract loadForDay(hospitalId: number, day: Date): Promise<DailyPatientsSummary>;
 }

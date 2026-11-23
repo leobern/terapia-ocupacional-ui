@@ -10,6 +10,49 @@
     },
     "stale": "Data may be out of date. No connection right now."
   },
+  "logout": {
+    "cancel": "Cancel",
+    "confirm": "Sign out",
+    "dialogLabel": "Confirm sign out",
+    "menuLabel": "Menu",
+    "message": "Your session on this device will end and data saved on it will be removed.",
+    "signOut": "Sign out",
+    "title": "Sign out of your account?"
+  },
+  "passwordRecovery": {
+    "backToLogin": "Back to login",
+    "forgot": {
+      "description": "Enter your registered e-mail to receive the reset link.",
+      "emailInvalid": "Enter a valid e-mail.",
+      "emailLabel": "E-mail",
+      "emailRequired": "Enter your e-mail.",
+      "retry": "Try again",
+      "sentMessage": "If the e-mail address is registered, we will send you a link to reset your password. Also check your spam folder: the link expires shortly.",
+      "sentTitle": "Check your e-mail",
+      "serviceError": "We could not complete the request. Try again.",
+      "submit": "Send link",
+      "title": "Recover password"
+    },
+    "reset": {
+      "confirmationLabel": "Confirm new password",
+      "expiredMessage": "The reset link has expired. Request a new link.",
+      "expiredTitle": "Link expired",
+      "mismatch": "Passwords do not match.",
+      "passwordHint": "Use 10 to 128 characters, with at least one letter and one number.",
+      "passwordLabel": "New password",
+      "policy": {
+        "digit": "Include at least one number.",
+        "letter": "Include at least one letter.",
+        "max-length": "Use at most 128 characters.",
+        "min-length": "Use at least 10 characters."
+      },
+      "requestNew": "Request new link",
+      "retry": "Try again",
+      "serviceError": "We could not reset the password. Try again.",
+      "submit": "Reset password",
+      "title": "Set new password"
+    }
+  },
   "splash": {
     "logoLabel": "Conductia",
     "noConnection": "No connection",

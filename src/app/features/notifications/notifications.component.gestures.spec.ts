@@ -7,6 +7,7 @@ import { MockStore, provideMockStore } from '@ngrx/store/testing';
 import { Subject } from 'rxjs';
 
 import { ViewportBreakpointService } from '../../shared/services/viewport-breakpoint.service';
+import { HospitalContextService } from '../home/hospital-context.service';
 import { LinkedHospitalsReader } from '../home/linked-hospitals';
 import { NotificationsComponent } from './notifications.component';
 import { Notification } from './notifications.models';
@@ -64,11 +65,15 @@ describe('NotificationsComponent — rolagem, rascunho e gestos', () => {
         { provide: ActivatedRoute, useValue: { snapshot: { queryParamMap: { get: (): null => null } } } },
         {
           provide: LinkedHospitalsReader,
-          useValue: { read: (): { id: string; name: string }[] => [{ id: '1', name: 'Hospital Vila Nova Star' }] },
+          useValue: {
+            read: (): Promise<{ id: number; name: string }[]> =>
+              Promise.resolve([{ id: 1, name: 'Hospital Vila Nova Star' }]),
+          },
         },
       ],
     }).compileComponents();
     store = TestBed.inject(MockStore);
+    await TestBed.inject(HospitalContextService).load();
     fixture = TestBed.createComponent(NotificationsComponent);
     fixture.detectChanges();
     // Helper de teste: o espião vale só para o teste que chamou create().

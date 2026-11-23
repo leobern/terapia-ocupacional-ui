@@ -1,0 +1,225 @@
+@use '../../../shared/styles/tokens';
+@use '../../../shared/styles/breakpoints';
+@use '../../../shared/styles/typography';
+
+:host {
+  display: block;
+}
+
+// Figma 4717-9855 (bottom-sheet · registro diário): fundo surface, padding 12/16/24/16, gap 16.
+.msg {
+  display: none;
+  flex-direction: column;
+  gap: tokens.$space-16;
+  box-sizing: border-box;
+  width: 100%;
+  max-width: none;
+  max-height: 93dvh;
+  margin: auto 0 0;
+  padding: tokens.$space-12 tokens.$space-16 tokens.$space-24;
+  overflow: hidden;
+  border: 0;
+  border-radius: tokens.$radius-md tokens.$radius-md 0 0;
+  background: tokens.c(surface);
+  color: tokens.c(content-1);
+
+  &[open] {
+    display: flex;
+  }
+
+  &::backdrop {
+    background: tokens.c(scrim);
+  }
+
+  // Desktop: sem desenho 1920; diálogo centralizado com a mesma estrutura.
+  @include breakpoints.md {
+    width: 480px;
+    margin: auto;
+    padding-block: tokens.$space-16 tokens.$space-24;
+    border-radius: tokens.$radius-md;
+  }
+}
+
+.msg__handle {
+  align-self: center;
+  width: 40px;
+  height: 4px;
+  border-radius: 2px;
+  background: tokens.c(border-2);
+
+  @include breakpoints.md {
+    display: none;
+  }
+}
+
+.msg__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: tokens.$space-8;
+  min-height: 44px;
+}
+
+.msg__title {
+  margin: 0;
+  color: tokens.c(content-1);
+
+  @include typography.title-lg;
+}
+
+// Formulário com rolagem própria; clusters por seção separados por space-16.
+.msg__body {
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$space-16;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.msg__card {
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$space-8;
+  padding: tokens.$space-16;
+  border: 1px solid tokens.c(border);
+  border-radius: tokens.$radius-md;
+  background: tokens.c(surface);
+}
+
+.msg__label {
+  color: tokens.c(content-1);
+
+  @include typography.title-md;
+}
+
+.msg__help {
+  margin: 0;
+  color: tokens.c(content-4);
+
+  @include typography.caption;
+}
+
+.msg__status {
+  margin: 0;
+  color: tokens.c(content-4);
+
+  @include typography.body-md;
+
+  &--warning {
+    color: tokens.c(content-1);
+  }
+
+  &--error {
+    color: tokens.c(comm-alert);
+  }
+}
+
+// Texto que identifica o valor vindo da IA (nunca só cor).
+.msg__ai-note {
+  margin: 0;
+  color: tokens.c(content-1);
+
+  @include typography.caption;
+}
+
+.msg__chat {
+  display: block;
+}
+
+.msg__textarea {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 96px;
+  padding: tokens.$space-12;
+  border: 1px solid tokens.c(border);
+  border-radius: tokens.$radius-12;
+  background: tokens.c(surface);
+  color: tokens.c(content-1);
+  resize: vertical;
+
+  @include typography.body-lg;
+
+  &:focus-visible {
+    outline: 2px solid tokens.c(input-focus-ring);
+    outline-offset: 2px;
+  }
+}
+
+.msg__select {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 44px;
+  padding: 0 tokens.$space-12;
+  border: 1px solid tokens.c(border-2);
+  border-radius: tokens.$radius-sm;
+  background: tokens.c(surface);
+  color: tokens.c(content-1);
+
+  @include typography.body-lg;
+
+  &:focus-visible {
+    outline: 2px solid tokens.c(input-focus-ring);
+    outline-offset: 2px;
+  }
+}
+
+.msg__content {
+  margin: 0;
+  color: tokens.c(content-1);
+  white-space: pre-wrap;
+
+  @include typography.body-lg;
+}
+
+.msg__entries {
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$space-8;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.msg__entry {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: tokens.$space-8;
+  padding: tokens.$space-8 tokens.$space-12;
+  border: 1px solid tokens.c(border);
+  border-radius: tokens.$radius-sm;
+
+  // Bloqueado: o aviso em texto acompanha a borda de alerta (cor nunca é a única pista).
+  &--blocked {
+    border-color: tokens.c(comm-alert);
+  }
+}
+
+.msg__entry-text {
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$space-4;
+  min-width: 0;
+}
+
+.msg__entry-label {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: tokens.$space-8;
+  color: tokens.c(content-1);
+
+  @include typography.title-md;
+}
+
+.msg__tag {
+  display: inline-flex;
+  align-items: center;
+  height: 24px;
+  padding-inline: tokens.$space-8;
+  border-radius: tokens.$radius-pill;
+  background: tokens.c(surface-2);
+  color: tokens.c(secondary);
+
+  @include typography.label-sm;
+}

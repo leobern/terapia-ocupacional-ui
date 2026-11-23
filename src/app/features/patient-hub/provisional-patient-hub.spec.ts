@@ -63,10 +63,9 @@ describe('Provisório de internações anteriores', () => {
     const source = new ProvisionalPriorStaysSource();
     const synth = new ProvisionalPriorStaysSynthesizer();
 
-    expect(await source.hasPriorStays('p1', 'hospital-vila-nova-star')).toBeTrue();
-    expect(await source.hasPriorStays('p1', 'outro-hospital')).toBeFalse();
-    expect(await source.hasPriorStays('p2', 'hospital-vila-nova-star')).toBeFalse();
-    expect(await synth.synthesize('p1', 'hospital-vila-nova-star')).toContain('Internação anterior');
-    await expectAsync(synth.synthesize('p2', 'hospital-vila-nova-star')).toBeRejected();
+    expect(await source.hasPriorStays('p1')).toBeTrue();
+    expect(await source.hasPriorStays('p2')).toBeFalse();
+    expect(await synth.synthesize('p1')).toContain('Internação anterior');
+    await expectAsync(synth.synthesize('p2')).toBeRejected();
   });
 });
