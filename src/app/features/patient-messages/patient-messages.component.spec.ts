@@ -314,6 +314,7 @@ describe('PatientThreadsComponent', () => {
       expect(resolveButton(0)).not.toBeNull();
       profileName = 'Ana';
       await create();
+
       expect(resolveButton(0)).toBeNull();
     });
 
@@ -327,6 +328,7 @@ describe('PatientThreadsComponent', () => {
       expect(threads()[mine].querySelector('[data-testid="status-change"]')?.textContent).toContain(
         'Resolvida por Michelle Franklin',
       );
+
       expect(resolveButton(mine)).toBeNull();
     });
 
@@ -365,8 +367,10 @@ describe('PatientThreadsComponent', () => {
       const thread = (await TestBed.inject(PatientMessagesSource).list('p1')).find(t => t.id === 'thread-2');
 
       component.onResolveClick(thread as MessageThread);
+
       expect(component.resolveConfirmId()).toBeNull();
       await component.onConfirmResolve();
+
       expect(threads()[mine].querySelector('[data-testid="thread-status"]')?.textContent).toContain('Ativa');
     });
 

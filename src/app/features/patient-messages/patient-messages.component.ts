@@ -7,8 +7,8 @@ import { ConnectivityService } from '../../shared/services/connectivity.service'
 import { NOW, ProfessionalProfileReader } from '../home/professional-profile';
 import {
   formatDateTime,
-  isThreadParticipant,
   isOverdue,
+  isThreadParticipant,
   MessageThread,
   REPLY_AUDIO_EMPTY_HINT,
   REPLY_AUDIO_FAILED_HINT,
@@ -16,9 +16,9 @@ import {
   REPLY_MIC_DENIED_HINT,
   REPLY_MIC_FAILED_HINT,
   REPLY_OFFLINE_HINT,
+  ReplyOrigin,
   RESOLVE_FAILED_HINT,
   RESOLVE_OFFLINE_HINT,
-  ReplyOrigin,
   THREADS_EMPTY_TEXT,
   THREADS_LOAD_FAILED_HINT,
 } from './patient-messages.models';
