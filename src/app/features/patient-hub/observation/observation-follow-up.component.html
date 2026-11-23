@@ -1,0 +1,177 @@
+<!-- Sem desenho no Figma: montado com os componentes v2/* existentes (aviso ao PR). Esc fecha. -->
+<dialog
+  #dialogEl
+  class="followup"
+  aria-labelledby="followup-title"
+  (cancel)="onCancel($event)"
+>
+  <span class="followup__handle" aria-hidden="true"></span>
+  <div class="followup__header">
+    <h2 id="followup-title" class="followup__title">Observação registrada</h2>
+    <app-icon-button
+      kind="secondary"
+      appearance="icon"
+      icon="x"
+      ariaLabel="Fechar"
+      (click)="close()"
+    />
+  </div>
+
+  <div class="followup__body">
+    <p class="followup__text">{{ observation()?.text }}</p>
+
+    @if (reevaluation(); as suggestion) {
+      <section class="followup__card" aria-labelledby="followup-reev">
+        <h3 id="followup-reev" class="followup__label">
+          Criar pendência de reavaliação?
+        </h3>
+        @switch (reevaluationOutcome()) {
+          @case ('pending') {
+            <p class="followup__text">
+              Prazo sugerido: <strong>{{ dueLabel() }}</strong
+              >. Destinatário padrão: {{ reevaluationSummary() }}.
+            </p>
+            <app-recipients-editor
+              idPrefix="followup-reev-rcp"
+              [team]="team()"
+              [value]="reevaluationRecipients()"
+              [disabled]="saving()"
+              (changed)="setReevaluationRecipients($event)"
+            />
+            <app-button
+              label="Criar pendência"
+              [fullWidth]="true"
+              [disabled]="!canCreate()"
+              (click)="createReevaluation()"
+            />
+          }
+          @case ('done') {
+            <p class="followup__status" role="status">
+              Pendência criada para {{ dueLabel() }} ·
+              {{ reevaluationSummary() }}.
+            </p>
+          }
+          @default {
+            <p class="followup__status" role="status">
+              Sugestão recusada: nenhuma pendência foi criada.
+            </p>
+          }
+        }
+      </section>
+    }
+
+    @if (communication()) {
+      <section class="followup__card" aria-labelledby="followup-comm">
+        <h3 id="followup-comm" class="followup__label">Comunicar a equipe?</h3>
+        @switch (communicationOutcome()) {
+          @case ('pending') {
+            <label class="followup__label" for="followup-draft"
+              >Rascunho da mensagem (editável)</label
+            >
+            <textarea
+              id="followup-draft"
+              class="followup__input"
+              rows="4"
+              [value]="draft()"
+              (input)="setDraft($any($event.target).value)"
+            ></textarea>
+            <app-recipients-editor
+              idPrefix="followup-comm-rcp"
+              [team]="team()"
+              [value]="communicationRecipients()"
+              [disabled]="saving()"
+              (changed)="setCommunicationRecipients($event)"
+            />
+            <app-button
+              label="Enviar mensagem"
+              [fullWidth]="true"
+              [disabled]="!canSendMessage()"
+              (click)="sendMessage()"
+            />
+          }
+          @case ('done') {
+            <p class="followup__status" role="status">Mensagem enviada.</p>
+          }
+          @default {
+            <p class="followup__status" role="status">
+              Sugestão recusada: nenhuma mensagem foi enviada.
+            </p>
+          }
+        }
+      </section>
+    }
+  </div>
+
+  @if (!online()) {
+    <p class="followup__status" role="status">{{ offlineHint }}</p>
+  }
+  @if (failed()) {
+    <p class="followup__status followup__status--error" role="alert">
+      Não foi possível salvar. Tente novamente.
+    </p>
+  }
+
+  @if (declining(); as which) {
+    <section class="followup__confirm" aria-labelledby="followup-decline">
+      <h3 id="followup-decline" class="followup__label">Confirmar a recusa?</h3>
+      <p class="followup__text">
+        A observação continua registrada, sem
+        {{
+          which === 'both'
+            ? 'pendência nem mensagem'
+            : which === 'reevaluation'
+              ? 'pendência'
+              : 'mensagem'
+        }}
+        adicional.
+      </p>
+      <app-button
+        label="Confirmar recusa"
+        [fullWidth]="true"
+        (click)="confirmDecline()"
+      />
+      <app-button
+        kind="primary"
+        appearance="outlined"
+        label="Voltar"
+        [fullWidth]="true"
+        (click)="cancelDecline()"
+      />
+    </section>
+  } @else if (allResolved()) {
+    <app-button label="Concluir" [fullWidth]="true" (click)="close()" />
+  } @else {
+    @if (reevaluation() && reevaluationOutcome() === 'pending') {
+      <app-button
+        kind="primary"
+        appearance="outlined"
+        label="Recusar pendência"
+        [fullWidth]="true"
+        (click)="askDecline('reevaluation')"
+      />
+    }
+    @if (communication() && communicationOutcome() === 'pending') {
+      <app-button
+        kind="primary"
+        appearance="outlined"
+        label="Recusar comunicação"
+        [fullWidth]="true"
+        (click)="askDecline('communication')"
+      />
+    }
+    @if (
+      reevaluation() &&
+      communication() &&
+      reevaluationOutcome() === 'pending' &&
+      communicationOutcome() === 'pending'
+    ) {
+      <app-button
+        kind="primary"
+        appearance="outlined"
+        label="Recusar as duas sugestões"
+        [fullWidth]="true"
+        (click)="askDecline('both')"
+      />
+    }
+  }
+</dialog>

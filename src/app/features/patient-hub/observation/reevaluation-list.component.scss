@@ -1,0 +1,70 @@
+@use '../../../shared/styles/tokens';
+@use '../../../shared/styles/typography';
+
+:host {
+  display: block;
+}
+
+.reev {
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$space-12;
+}
+
+.reev__title {
+  margin: 0;
+  color: tokens.c(content-1);
+
+  @include typography.title-lg;
+}
+
+.reev__card {
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$space-8;
+  padding: tokens.$space-16;
+  border: 1px solid tokens.c(border);
+  border-radius: tokens.$radius-md;
+  background: tokens.c(surface);
+}
+
+.reev__reason {
+  margin: 0;
+  color: tokens.c(content-1);
+
+  @include typography.body-lg;
+}
+
+.reev__meta {
+  margin: 0;
+  color: tokens.c(content-4);
+
+  @include typography.body-md;
+}
+
+// Selo com texto: a cor nunca é a única forma de transmitir o status.
+.reev__badge {
+  align-self: flex-start;
+  margin: 0;
+  padding: tokens.$space-4 tokens.$space-12;
+  border-radius: tokens.$radius-sm;
+
+  @include typography.label-md;
+
+  &--overdue {
+    background: tokens.c(comm-alert);
+    color: tokens.c(surface);
+  }
+
+  &--done {
+    background: tokens.c(surface-2);
+    color: tokens.c(content-1);
+  }
+}
+
+.reev__error {
+  margin: 0;
+  color: tokens.c(comm-alert);
+
+  @include typography.body-md;
+}

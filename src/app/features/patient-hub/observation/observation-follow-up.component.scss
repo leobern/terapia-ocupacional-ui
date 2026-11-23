@@ -1,0 +1,138 @@
+@use '../../../shared/styles/tokens';
+@use '../../../shared/styles/breakpoints';
+@use '../../../shared/styles/typography';
+
+:host {
+  display: block;
+}
+
+// Figma 4717-9855 (bottom-sheet · registro diário): fundo surface, padding 12/16/24/16, gap 16.
+.followup {
+  display: none;
+  flex-direction: column;
+  gap: tokens.$space-16;
+  box-sizing: border-box;
+  width: 100%;
+  max-width: none;
+  max-height: 93dvh;
+  margin: auto 0 0;
+  padding: tokens.$space-12 tokens.$space-16 tokens.$space-24;
+  overflow: hidden;
+  border: 0;
+  border-radius: tokens.$radius-md tokens.$radius-md 0 0;
+  background: tokens.c(surface);
+  color: tokens.c(content-1);
+
+  &[open] {
+    display: flex;
+  }
+
+  &::backdrop {
+    background: tokens.c(scrim);
+  }
+
+  // Desktop: sem desenho 1920; diálogo centralizado com a mesma estrutura.
+  @include breakpoints.md {
+    width: 480px;
+    margin: auto;
+    padding-block: tokens.$space-16 tokens.$space-24;
+    border-radius: tokens.$radius-md;
+  }
+}
+
+.followup__handle {
+  align-self: center;
+  width: 40px;
+  height: 4px;
+  border-radius: 2px;
+  background: tokens.c(border-2);
+
+  @include breakpoints.md {
+    display: none;
+  }
+}
+
+.followup__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: tokens.$space-8;
+  min-height: 44px;
+}
+
+.followup__title {
+  margin: 0;
+  color: tokens.c(content-1);
+
+  @include typography.title-lg;
+}
+
+// Conteúdo com rolagem própria; cartões separados por space-16.
+.followup__body {
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$space-16;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.followup__card {
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$space-8;
+  padding: tokens.$space-16;
+  border: 1px solid tokens.c(border);
+  border-radius: tokens.$radius-md;
+  background: tokens.c(surface);
+}
+
+.followup__label {
+  margin: 0;
+  color: tokens.c(content-1);
+
+  @include typography.title-md;
+}
+
+.followup__input {
+  box-sizing: border-box;
+  width: 100%;
+  padding: tokens.$space-12 tokens.$space-16;
+  border: 1px solid tokens.c(border-2);
+  resize: vertical;
+  border-radius: tokens.$radius-sm;
+  background: tokens.c(surface);
+  color: tokens.c(content-1);
+
+  @include typography.body-lg;
+
+  &:focus-visible {
+    outline: 2px solid tokens.c(input-focus-ring);
+    outline-offset: 2px;
+  }
+}
+
+.followup__status {
+  margin: 0;
+  color: tokens.c(content-4);
+
+  @include typography.body-md;
+
+  &--error {
+    color: tokens.c(comm-alert);
+  }
+}
+
+.followup__confirm {
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$space-8;
+  padding-top: tokens.$space-12;
+  border-top: 1px solid tokens.c(border);
+}
+
+.followup__text {
+  margin: 0;
+  color: tokens.c(content-1);
+
+  @include typography.body-lg;
+}
