@@ -18,7 +18,6 @@ import { Actions, ofType } from '@ngrx/effects';
 import { Store } from '@ngrx/store';
 import { take } from 'rxjs';
 
-import { BottomSheetComponent } from '../../shared/components/bottom-sheet/bottom-sheet.component';
 import {
   CardNotifyComponent,
   CardNotifyReply,
@@ -26,10 +25,10 @@ import {
 } from '../../shared/components/card-notify/card-notify.component';
 import { ConfirmDialogComponent } from '../../shared/components/confirm-dialog/confirm-dialog.component';
 import { IconButtonComponent } from '../../shared/components/icon-button/icon-button.component';
-import { InputChatComponent } from '../../shared/components/input-chat/input-chat.component';
 import { PageContainerComponent } from '../../shared/components/page-container/page-container.component';
 import { PageHeaderComponent } from '../../shared/components/page-header/page-header.component';
 import { PhIconComponent } from '../../shared/icons/ph-icon/ph-icon.component';
+import { AudioTranscriber } from '../../shared/services/audio-transcriber';
 import { type ScreenAction, ScreenActionsService } from '../../shared/services/screen-actions.service';
 import { type DirectoryUser } from '../../shared/services/user-directory';
 import { formatRelativeTime } from '../../shared/utils/relative-time';
@@ -42,6 +41,7 @@ import {
   selectAnswerErrorMessage,
   selectAnsweringId,
   selectDiscardConfirmPending,
+  selectDrafts,
   selectDraftText,
   selectHasMore,
   selectHospitalId,
@@ -79,15 +79,15 @@ const PULL_TO_REFRESH_THRESHOLD = 80;
  * `home.component.ts`) — os dados do profissional autenticado no bloco de
  * rascunho (`draftAuthorName` etc.) usam o mesmo valor de exemplo da Home.
  */
+const NO_DRAFTS: Readonly<Record<number, string>> = {};
+
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
-    BottomSheetComponent,
     CardNotifyComponent,
     ConfirmDialogComponent,
     IconButtonComponent,
     PageHeaderComponent,
-    InputChatComponent,
     NotificationSectionTitleComponent,
     PageContainerComponent,
     PhIconComponent,
@@ -112,6 +112,9 @@ export class NotificationsComponent implements OnDestroy {
 
   protected readonly answeringId = toSignal(this.store.select(selectAnsweringId), { initialValue: null });
   protected readonly draftText = toSignal(this.store.select(selectDraftText), { initialValue: '' });
+  protected readonly drafts = toSignal(this.store.select(selectDrafts), { initialValue: NO_DRAFTS });
+  protected readonly transcribing = signal(false);
+  protected readonly transcribeError = signal<string | null>(null);
   protected readonly submitting = toSignal(this.store.select(selectSubmitting), { initialValue: false });
   protected readonly answerErrorMessage = toSignal(this.store.select(selectAnswerErrorMessage), {
     initialValue: null,
@@ -170,6 +173,7 @@ export class NotificationsComponent implements OnDestroy {
   // histórico expandido (US4, `type="answer-open"`) — alternado por
   // viewRepliesClick/collapseClick, local ao componente porque não sobrevive
   // navegação nem precisa ser compartilhado.
+  private readonly transcriber = inject(AudioTranscriber);
   private readonly expandedIds = signal<ReadonlySet<number>>(new Set());
 
   // Um sentinel por coluna: no desktop cada coluna tem o próprio scroll.
@@ -230,7 +234,7 @@ export class NotificationsComponent implements OnDestroy {
   isExpanded(id: number): boolean {
     // Um card em modo "answering" também mostra o histórico expandido, se
     // houver (Acceptance Scenario 2 de US3) — nunca colapsado enquanto respondendo.
-    return this.expandedIds().has(id) || this.answeringId() === id;
+    return this.expandedIds().has(id) || this.answeringId() === id || !!this.drafts()[id];
   }
 
   /** `type` a passar para `app-card-notify` — usado no template para as 2 seções. */
@@ -239,7 +243,16 @@ export class NotificationsComponent implements OnDestroy {
       return 'answering';
     }
 
+    if (this.drafts()[id]) {
+      return 'draft';
+    }
+
     return this.isExpanded(id) ? 'answer-open' : 'detail';
+  }
+
+  /** Texto mostrado no card: o campo em edição, ou o rascunho guardado (State=draft). */
+  cardDraftText(id: number): string {
+    return this.answeringId() === id ? this.draftText() : (this.drafts()[id] ?? '');
   }
 
   /** FR-006 (US2) — navega para o paciente relacionado; `app-card-notify` já suprime
@@ -306,11 +319,39 @@ export class NotificationsComponent implements OnDestroy {
     }
   }
 
-  /** Bottom sheet fechado sem confirmar o envio (FR-010) — descarta direto, sem diálogo. */
-  onBottomSheetClosed(): void {
-    if (this.answeringId() != null) {
-      this.store.dispatch(NotificationsActions.answerDiscarded());
+  /** "Cancelar" no card: fecha o campo de resposta; o texto digitado fica como rascunho da notificação. */
+  onCancelAnswer(): void {
+    this.transcribeError.set(null);
+    this.store.dispatch(NotificationsActions.answerCancelled());
+  }
+
+  /** Áudio do campo de resposta → texto no campo, para revisar e enviar (nunca envia o áudio). */
+  async onAudio(audio: Blob): Promise<void> {
+    const id = this.answeringId();
+
+    if (id === null) {
+      return;
     }
+    this.transcribing.set(true);
+    this.transcribeError.set(null);
+    try {
+      const text = (await this.transcriber.transcribe(audio)).trim();
+
+      if (text !== '' && this.answeringId() === id) {
+        const current = this.draftText().trim();
+
+        this.onDraftInput(current === '' ? text : current + ' ' + text);
+      }
+    } catch {
+      this.transcribeError.set('Não foi possível transcrever o áudio agora. Escreva a mensagem.');
+    } finally {
+      this.transcribing.set(false);
+    }
+  }
+
+  /** Erro mostrado no campo em edição: envio com falha ou transcrição indisponível. */
+  cardAnswerError(id: number): string | null {
+    return this.answeringId() === id ? (this.answerErrorMessage() ?? this.transcribeError()) : null;
   }
 
   protected onRetry(): void {

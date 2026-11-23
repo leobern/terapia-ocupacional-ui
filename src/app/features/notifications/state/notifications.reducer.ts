@@ -29,6 +29,8 @@ export interface NotificationsState {
   answeringId: number | null;
   /** Rascunho refletido ao vivo a partir do bottom sheet (FR-008). */
   draftText: string;
+  /** Rascunhos guardados por notificação (resposta escrita e não enviada); sobrevivem ao "Cancelar". */
+  drafts: Readonly<Record<number, string>>;
   /** Envio em andamento — mantém `answeringId`, mas bloqueia um novo envio. */
   submitting: boolean;
   /** Erro do último envio, se houver — exibido no bottom sheet (não a tela cheia). */
@@ -53,6 +55,7 @@ export const initialNotificationsState: NotificationsState = {
   errorMessage: null,
   answeringId: null,
   draftText: '',
+  drafts: {},
   submitting: false,
   answerErrorMessage: null,
   discardConfirmPending: false,
@@ -220,7 +223,8 @@ export const notificationsFeature = createFeature({
       // anterior — trocar `answeringId` já cobre isso, sem lógica extra.
       ...state,
       answeringId: notificationId,
-      draftText: '',
+      // Retoma o rascunho guardado desta notificação, se houver.
+      draftText: state.drafts[notificationId] ?? '',
       submitting: false,
       answerErrorMessage: null,
     })),
@@ -239,6 +243,7 @@ export const notificationsFeature = createFeature({
       ...moveToResolved(state, notificationId),
       answeringId: null,
       draftText: '',
+      drafts: Object.fromEntries(Object.entries(state.drafts).filter(([id]) => Number(id) !== notificationId)),
       submitting: false,
     })),
 
@@ -263,6 +268,25 @@ export const notificationsFeature = createFeature({
     on(NotificationsActions.resolveSuccess, (state, { notificationId }): NotificationsState =>
       resolveNotification(state, notificationId),
     ),
+    on(NotificationsActions.answerCancelled, (state): NotificationsState => {
+      const id = state.answeringId;
+      const text = state.draftText.trim();
+      const rest = Object.entries(state.drafts).filter(([key]) => Number(key) !== id);
+
+      return {
+        ...state,
+        answeringId: null,
+        draftText: '',
+        drafts:
+          id !== null && text !== ''
+            ? { ...Object.fromEntries(rest), [id]: state.draftText }
+            : Object.fromEntries(rest),
+        submitting: false,
+        answerErrorMessage: null,
+        discardConfirmPending: false,
+      };
+    }),
+
     on(NotificationsActions.discardConfirmationRequested, (state): NotificationsState => ({
       ...state,
       discardConfirmPending: hasUnsavedDraft(state),
@@ -291,6 +315,7 @@ export const {
   selectErrorMessage,
   selectAnsweringId,
   selectDraftText,
+  selectDrafts,
   selectSubmitting,
   selectAnswerErrorMessage,
   selectDiscardConfirmPending,

@@ -43,6 +43,10 @@ export const NotificationsActions = createActionGroup({
     // "Descartar resposta não enviada?").
     'Answer Discarded': emptyProps(),
 
+    // "Cancelar" no card (Figma v2/NotificationThread, State=write): fecha o campo de resposta; se havia texto,
+    // ele fica guardado como rascunho daquela notificação ("Rascunho · não enviado").
+    'Answer Cancelled': emptyProps(),
+
     // Diálogo de confirmação (FR-010a/FR-004b) — dispara antes de concluir uma
     // navegação/refresh que descartaria um rascunho não enviado; `onConfirm` é
     // executado pelo componente ao confirmar (não modelado como estado NgRx

@@ -67,9 +67,15 @@
                 [description]="notification.description"
                 [time]="formatTime(notification.createdAt)"
                 [replies]="toReplies(notification)"
-                [draftText]="draftText()"
+                [draftText]="cardDraftText(notification.id)"
                 [draftAuthorName]="professionalName"
                 [draftAuthorSpecialty]="professionalSpecialty"
+                [answerBusy]="submitting() || transcribing()"
+                [answerError]="cardAnswerError(notification.id)"
+                (draftChange)="onDraftInput($event)"
+                (sendClick)="onSendDraft()"
+                (cancelClick)="onCancelAnswer()"
+                (audioSend)="onAudio($event)"
                 (cardClick)="onCardClick(notification.patient?.id)"
                 (answerClick)="onAnswerClick(notification.id)"
                 (viewRepliesClick)="onViewRepliesClick(notification.id)"
@@ -126,27 +132,6 @@
     }
   </div>
 </app-page-container>
-
-<app-bottom-sheet
-  ariaLabel="Responder notificação"
-  snap="default"
-  [open]="answeringId() !== null"
-  (closed)="onBottomSheetClosed()"
->
-  <div bottomSheetContent class="notifications__answer-sheet">
-    @if (answerErrorMessage(); as message) {
-      <p class="notifications__answer-error">{{ message }}</p>
-    }
-  </div>
-  <app-input-chat
-    bottomSheetFooter
-    placeholder="Escreva a sua resposta"
-    [value]="draftText()"
-    [disabled]="submitting()"
-    (valueChange)="onDraftInput($event)"
-    (send)="onSendDraft()"
-  />
-</app-bottom-sheet>
 
 <app-confirm-dialog
   title="Resolver notificação?"

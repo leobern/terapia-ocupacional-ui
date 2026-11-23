@@ -3,8 +3,14 @@ import { ChangeDetectionStrategy, Component, computed, input, output } from '@an
 import { PhIconComponent } from '../../icons/ph-icon/ph-icon.component';
 import { AvatarComponent, AvatarType } from '../avatar/avatar.component';
 import { IconButtonComponent } from '../icon-button/icon-button.component';
+import { InputChatComponent } from '../input-chat/input-chat.component';
 
-export type CardNotifyType = 'resume' | 'detail' | 'answer-open' | 'answering';
+/**
+ * `detail` (recolhido), `answer-open` (respostas abertas), `draft` (respostas abertas + resposta escrita e
+ * não enviada) e `answering` (campo de resposta aberto, com texto/áudio e "Cancelar") — Figma
+ * v2/NotificationThread, States default / expanded / draft / write.
+ */
+export type CardNotifyType = 'resume' | 'detail' | 'answer-open' | 'draft' | 'answering';
 
 /** Um item do histórico de respostas (specs/ds/DS-component-card-notify, 2026-08-17). */
 export interface CardNotifyReply {
@@ -28,7 +34,7 @@ export interface CardNotifyReply {
  */
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [AvatarComponent, IconButtonComponent, PhIconComponent],
+  imports: [AvatarComponent, IconButtonComponent, InputChatComponent, PhIconComponent],
   selector: 'app-card-notify',
   styleUrl: './card-notify.component.scss',
   templateUrl: './card-notify.component.html',
@@ -58,6 +64,12 @@ export class CardNotifyComponent {
   readonly draftAuthorName = input<string>('');
   readonly draftAuthorSpecialty = input<string>('');
   readonly draftAuthorPhotoUrl = input<string | null>(null);
+  /** Placeholder do campo de resposta (State=write). */
+  readonly answerPlaceholder = input<string>('Escreva a sua mensagem');
+  /** Bloqueia o campo enquanto a resposta é enviada ou o áudio é transcrito. */
+  readonly answerBusy = input<boolean>(false);
+  /** Erro do último envio/transcrição, mostrado dentro do bloco de resposta. */
+  readonly answerError = input<string | null>(null);
 
   // `cardClick`: em `resume`, área de toque estendida do card inteiro
   // (2026-07-26). Em `detail`/`answer-open` (2026-08-17, specs/004-notificacoes
@@ -72,11 +84,20 @@ export class CardNotifyComponent {
   readonly collapseClick = output();
   /** Botão ✓ (Figma v2/NotificationThread): marcar como resolvida. */
   readonly resolveClick = output();
+  /** Texto do campo de resposta (State=write) a cada alteração. */
+  readonly draftChange = output<string>();
+  /** Enviar a resposta escrita. */
+  readonly sendClick = output();
+  /** "Cancelar": fecha o campo de resposta (o texto vira rascunho). */
+  readonly cancelClick = output();
+  /** Áudio gravado no campo de resposta: o consumidor transcreve e devolve o texto em `draftText`. */
+  readonly audioSend = output<Blob>();
 
   protected readonly isResume = computed(() => this.type() === 'resume');
   protected readonly isDetail = computed(() => this.type() === 'detail');
   protected readonly isAnswerOpen = computed(() => this.type() === 'answer-open');
   protected readonly isAnswering = computed(() => this.type() === 'answering');
+  protected readonly isDraft = computed(() => this.type() === 'draft');
   protected readonly showPatientHeader = computed(() => !this.isResume() && this.patientName() !== '');
   protected readonly showReplyTag = computed(() => this.isDetail() && this.replies().length > 0);
   // Figma 4506:9462: só o card pendente tem a coluna do balão (responder). Aberto com as respostas
@@ -85,13 +106,15 @@ export class CardNotifyComponent {
   // respostas abertas; resolvida não tem ações.
   // Figma v2/NotificationThread: o Resolver fica no cabeçalho de todo card pendente (não-Home).
   protected readonly showResolveButton = computed(() => !this.isResume() && !this.resolved());
-  protected readonly showActionButton = computed(() => (this.isDetail() || this.isAnswerOpen()) && !this.resolved());
+  protected readonly showActionButton = computed(
+    () => (this.isDetail() || this.isAnswerOpen() || this.isDraft()) && !this.resolved(),
+  );
   protected readonly repliesLabel = computed(() => {
     const total = this.replies().length;
 
     return `${total} ${total === 1 ? 'resposta' : 'respostas'}`;
   });
-  protected readonly showReplyBlocks = computed(() => this.isAnswerOpen() || this.isAnswering());
+  protected readonly showReplyBlocks = computed(() => this.isAnswerOpen() || this.isDraft() || this.isAnswering());
 
   protected readonly avatarType = computed<AvatarType>(() => (this.authorPhotoUrl() ? 'photo' : 'user'));
   protected readonly draftAvatarType = computed<AvatarType>(() => (this.draftAuthorPhotoUrl() ? 'photo' : 'user'));
@@ -119,6 +142,11 @@ export class CardNotifyComponent {
   protected onResolveClick(event: Event): void {
     event.stopPropagation();
     this.resolveClick.emit();
+  }
+
+  protected onCancelClick(event: Event): void {
+    event.stopPropagation();
+    this.cancelClick.emit();
   }
 
   protected onCollapseClick(event: Event): void {

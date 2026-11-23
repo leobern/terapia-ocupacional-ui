@@ -8,6 +8,7 @@ import { MockStore, provideMockStore } from '@ngrx/store/testing';
 import { Subject } from 'rxjs';
 
 import { AiAssistantService } from '../../shared/services/ai-assistant.service';
+import { AudioTranscriber } from '../../shared/services/audio-transcriber';
 import { ScreenActionsService } from '../../shared/services/screen-actions.service';
 import { ViewportBreakpointService } from '../../shared/services/viewport-breakpoint.service';
 import { HospitalContextService } from '../home/hospital-context.service';
@@ -56,6 +57,7 @@ describe('NotificationsComponent', () => {
           },
         },
         provideMockStore({ initialState: { notifications: { ...initialNotificationsState, ...overrides } } }),
+        { provide: AudioTranscriber, useValue: { transcribe: (): Promise<string> => Promise.resolve('') } },
         { provide: Actions, useValue: actionsSubject },
         {
           provide: ActivatedRoute,
@@ -346,13 +348,13 @@ describe('NotificationsComponent', () => {
     expect(store.dispatch).toHaveBeenCalledWith(NotificationsActions.answerSubmitted({ notificationId: 5 }));
   });
 
-  it('onBottomSheetClosed descarta o rascunho sem diálogo (FR-010)', async () => {
+  it('onCancelAnswer fecha o campo de resposta e guarda o texto como rascunho', async () => {
     await configureStore({ status: 'success', answeringId: 5 });
     createComponent();
     spyOn(store, 'dispatch');
 
-    fixture.componentInstance.onBottomSheetClosed();
+    fixture.componentInstance.onCancelAnswer();
 
-    expect(store.dispatch).toHaveBeenCalledWith(NotificationsActions.answerDiscarded());
+    expect(store.dispatch).toHaveBeenCalledWith(NotificationsActions.answerCancelled());
   });
 });

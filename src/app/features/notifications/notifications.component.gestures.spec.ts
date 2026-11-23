@@ -6,6 +6,7 @@ import { Actions } from '@ngrx/effects';
 import { MockStore, provideMockStore } from '@ngrx/store/testing';
 import { Subject } from 'rxjs';
 
+import { AudioTranscriber } from '../../shared/services/audio-transcriber';
 import { ViewportBreakpointService } from '../../shared/services/viewport-breakpoint.service';
 import { HospitalContextService } from '../home/hospital-context.service';
 import { LinkedHospitalsReader } from '../home/linked-hospitals';
@@ -16,6 +17,9 @@ import { initialNotificationsState, NotificationsState } from './state/notificat
 
 /** Métodos protegidos que a tela expõe ao template e que os testes acionam diretamente. */
 interface Internals {
+  onAudio(audio: Blob): Promise<void>;
+  transcribeError(): string | null;
+  cardAnswerError(id: number): string | null;
   onRetry(): void;
   onDraftInput(text: string): void;
   onConfirmDiscard(): void;
@@ -23,6 +27,15 @@ interface Internals {
   onTouchStart(event: TouchEvent, container: HTMLElement): void;
   onTouchEnd(event: TouchEvent): void;
   toReplies(notification: Notification): { authorName: string; text: string; time: string }[];
+}
+
+/** Transcritor controlável: devolve o texto de `result` ou falha quando `result` é `null`. */
+class FakeTranscriber extends AudioTranscriber {
+  result: string | null = 'texto falado';
+
+  transcribe(): Promise<string> {
+    return this.result === null ? Promise.reject(new Error('x')) : Promise.resolve(this.result);
+  }
 }
 
 const notification = (id: number): Notification => ({
@@ -48,17 +61,26 @@ describe('NotificationsComponent — rolagem, rascunho e gestos', () => {
   let store: MockStore;
   let actions: Subject<{ type: string }>;
   let dispatch: jasmine.Spy;
+  let transcriber: FakeTranscriber;
   const touch = (y: number): TouchEvent =>
     ({ changedTouches: [{ clientY: y }], touches: [{ clientY: y }] }) as unknown as TouchEvent;
+  /** Houve `draftChanged` depois de `before` chamadas (o campo do card despacha um vazio ao abrir). */
+  const draftedSince = (before: number): boolean =>
+    dispatch.calls
+      .allArgs()
+      .slice(before)
+      .some(([a]) => a.type === NotificationsActions.draftChanged.type);
   const internals = (): Internals => fixture.componentInstance as unknown as Internals;
   const container = (scrollTop: number): HTMLElement => ({ scrollTop }) as HTMLElement;
 
   async function create(overrides: Partial<NotificationsState> = {}): Promise<void> {
     actions = new Subject();
+    transcriber = new FakeTranscriber();
     await TestBed.configureTestingModule({
       imports: [NotificationsComponent],
       providers: [
         provideHttpClient(),
+        { provide: AudioTranscriber, useValue: transcriber },
         provideMockStore({ initialState: { notifications: { ...initialNotificationsState, ...overrides } } }),
         { provide: Actions, useValue: actions },
         { provide: ViewportBreakpointService, useValue: { isDesktop: signal(true).asReadonly() } },
@@ -157,17 +179,57 @@ describe('NotificationsComponent — rolagem, rascunho e gestos', () => {
       expect(dispatch).toHaveBeenCalledWith(NotificationsActions.discardConfirmationCancelled());
     });
 
-    it('fechar o bottom sheet descarta o rascunho só se havia resposta em andamento', async () => {
+    it('Cancelar fecha o campo de resposta e despacha o cancelamento', async () => {
       await create({ answeringId: 5, pendingItems: [notification(5)], status: 'success' });
-      fixture.componentInstance.onBottomSheetClosed();
+      fixture.componentInstance.onCancelAnswer();
 
-      expect(dispatch).toHaveBeenCalledWith(NotificationsActions.answerDiscarded());
+      expect(dispatch).toHaveBeenCalledWith(NotificationsActions.answerCancelled());
+    });
 
-      dispatch.calls.reset();
-      store.setState({ notifications: { ...initialNotificationsState, answeringId: null, status: 'success' } });
-      fixture.componentInstance.onBottomSheetClosed();
+    it('áudio gravado vira texto no campo (revisar antes de enviar); acrescenta ao que já foi digitado', async () => {
+      await create({ answeringId: 5, draftText: 'Oi', pendingItems: [notification(5)], status: 'success' });
+      await internals().onAudio(new Blob(['a']));
 
-      expect(dispatch).not.toHaveBeenCalled();
+      expect(dispatch).toHaveBeenCalledWith(
+        NotificationsActions.draftChanged({ notificationId: 5, text: 'Oi texto falado' }),
+      );
+    });
+
+    it('áudio sem texto devolvido não altera o campo', async () => {
+      await create({ answeringId: 5, pendingItems: [notification(5)], status: 'success' });
+      transcriber.result = '';
+      const before = dispatch.calls.count();
+
+      await internals().onAudio(new Blob(['a']));
+
+      expect(draftedSince(before)).toBeFalse();
+    });
+
+    it('sem transcrição disponível: aviso no campo em edição, e o usuário segue digitando', async () => {
+      await create({ answeringId: 5, pendingItems: [notification(5)], status: 'success' });
+      transcriber.result = null;
+      await internals().onAudio(new Blob(['a']));
+
+      expect(internals().cardAnswerError(5)).toContain('Não foi possível transcrever');
+      expect(internals().cardAnswerError(6)).toBeNull();
+    });
+
+    it('áudio sem resposta em andamento é ignorado', async () => {
+      await create({ pendingItems: [notification(5)], status: 'success' });
+      const before = dispatch.calls.count();
+
+      await internals().onAudio(new Blob(['a']));
+
+      expect(draftedSince(before)).toBeFalse();
+    });
+
+    it('notificação com rascunho guardado aparece como "draft" com o texto, mesmo fora da edição', async () => {
+      await create({ drafts: { 5: 'Alinhado' }, pendingItems: [notification(5)], status: 'success' });
+      const card = fixture.nativeElement.querySelector('app-card-notify') as HTMLElement;
+
+      expect(card.querySelector('.card-notify--draft')).not.toBeNull();
+      expect(card.textContent).toContain('Alinhado');
+      expect(card.textContent).toContain('Rascunho · não enviado');
     });
 
     it('converte as respostas para o card com autor e horário', async () => {
