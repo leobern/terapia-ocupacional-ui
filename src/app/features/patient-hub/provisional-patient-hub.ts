@@ -25,7 +25,7 @@ export class ProvisionalPatientHubSource extends PatientHubSource {
   private readonly census = inject(PatientListSource);
 
   async loadProfile(patientId: string): Promise<PatientHubProfile | null> {
-    const census = await this.census.loadCensus('', new Date());
+    const census = await this.census.loadCensus(0, new Date());
     const found = census.find(p => p.id === patientId);
 
     return found === undefined
@@ -68,22 +68,21 @@ export class ProvisionalHypothesisSynthesizer extends HypothesisSynthesizer {
 
 /** Provisório: só o paciente `p1` tem internação anterior (no hospital de exemplo). */
 const PRIOR_STAYS: Readonly<Record<string, string | undefined>> = {
-  'hospital-vila-nova-star:p1':
-    'Internação anterior (2025): NE por sonda com boa tolerância; intercorrência de broncoaspiração tratada, com ajuste de velocidade da dieta.',
+  p1: 'Internação anterior (2025): NE por sonda com boa tolerância; intercorrência de broncoaspiração tratada, com ajuste de velocidade da dieta.',
 };
 
 @Injectable()
 export class ProvisionalPriorStaysSource extends PriorStaysSource {
-  hasPriorStays(patientId: string, hospitalId: string): Promise<boolean> {
-    return Promise.resolve(`${hospitalId}:${patientId}` in PRIOR_STAYS);
+  hasPriorStays(patientId: string): Promise<boolean> {
+    return Promise.resolve(patientId in PRIOR_STAYS);
   }
 }
 
 /** Provisório: devolve o texto de exemplo (a IA real é dependência externa). */
 @Injectable()
 export class ProvisionalPriorStaysSynthesizer extends PriorStaysSynthesizer {
-  synthesize(patientId: string, hospitalId: string): Promise<string> {
-    const text = PRIOR_STAYS[`${hospitalId}:${patientId}`];
+  synthesize(patientId: string): Promise<string> {
+    const text = PRIOR_STAYS[patientId];
 
     return text === undefined ? Promise.reject(new Error('sem internação anterior')) : Promise.resolve(text);
   }

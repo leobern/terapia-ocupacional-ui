@@ -8,7 +8,7 @@ export const NOTIFICATIONS_BATCH_SIZE = 10;
  * da mais recente para a mais antiga. A implementação real substitui a provisória em `app.config.ts`.
  */
 export abstract class HomeNotificationsSource {
-  abstract loadPage(hospitalId: string, cursor: string | null, limit: number): Promise<NotificationPage>;
+  abstract loadPage(hospitalId: number, cursor: string | null, limit: number): Promise<NotificationPage>;
 }
 
 /**

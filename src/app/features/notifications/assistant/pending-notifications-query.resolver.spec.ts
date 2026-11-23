@@ -24,7 +24,7 @@ describe('PendingNotificationsQueryResolver', () => {
   let failing: boolean;
   let resolver: PendingNotificationsQueryResolver;
 
-  beforeEach(() => {
+  beforeEach(async () => {
     pages = [];
     calls = [];
     failing = false;
@@ -34,10 +34,11 @@ describe('PendingNotificationsQueryResolver', () => {
         {
           provide: LinkedHospitalsReader,
           useValue: {
-            read: (): { id: string; name: string }[] => [
-              { id: '7', name: 'A' },
-              { id: '8', name: 'B' },
-            ],
+            read: (): Promise<{ id: number; name: string }[]> =>
+              Promise.resolve([
+                { id: 7, name: 'A' },
+                { id: 8, name: 'B' },
+              ]),
           },
         },
         {
@@ -53,6 +54,7 @@ describe('PendingNotificationsQueryResolver', () => {
       ],
     });
     resolver = TestBed.inject(PendingNotificationsQueryResolver);
+    await TestBed.inject(HospitalContextService).load();
   });
 
   it('matches the pending-tasks question (with or without accents) and nothing else', () => {
@@ -102,11 +104,28 @@ describe('PendingNotificationsQueryResolver', () => {
 
   it('reflects the hospital selected at question time', async () => {
     pages = [{ items: [], nextCursor: null, totalCount: 0 }];
-    TestBed.inject(HospitalContextService).select('8');
+    TestBed.inject(HospitalContextService).select(8);
 
     await resolver.resolve();
 
     expect(calls[0].hospitalId).toBe(8);
+  });
+
+  it('does not call the API without a hospital in context (no NaN)', async () => {
+    TestBed.resetTestingModule();
+    TestBed.configureTestingModule({
+      providers: [
+        PendingNotificationsQueryResolver,
+        { provide: LinkedHospitalsReader, useValue: { read: (): Promise<never[]> => Promise.resolve([]) } },
+        { provide: NotificationsApiService, useValue: { getNotifications: jasmine.createSpy('getNotifications') } },
+      ],
+    });
+    await TestBed.inject(HospitalContextService).load();
+
+    const answer = await TestBed.inject(PendingNotificationsQueryResolver).resolve();
+
+    expect(answer.summary).toContain('Nenhum hospital');
+    expect(TestBed.inject(NotificationsApiService).getNotifications).not.toHaveBeenCalled();
   });
 
   it('rejects when fetching fails, so the assistant shows the generic error', async () => {

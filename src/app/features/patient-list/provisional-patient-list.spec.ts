@@ -22,8 +22,8 @@ describe('ProvisionalPatientListSource', () => {
   });
 
   it('inclui pacientes do censo geral que a montagem deixa de fora', async () => {
-    const census = await source.loadCensus();
-    const list = assemblePatientList(census, 'hospital-vila-nova-star', new Date());
+    const census = await source.loadCensus(1);
+    const list = assemblePatientList(census, 1, new Date());
 
     expect(census.length).toBeGreaterThan(list.length);
     expect(list.some(p => p.id.startsWith('x'))).toBe(false);
@@ -39,12 +39,10 @@ describe('ProvisionalPatientListSource', () => {
       patientId: 'p1',
       reason: 'death',
     });
-    const census = await source.loadCensus();
+    const census = await source.loadCensus(1);
 
-    expect(assemblePatientList(census, 'hospital-vila-nova-star', day).some(p => p.id === 'p1')).toBeFalse();
-    expect(
-      assemblePatientList(census, 'hospital-vila-nova-star', new Date(2026, 10, 20)).some(p => p.id === 'p1'),
-    ).toBeTrue();
+    expect(assemblePatientList(census, 1, day).some(p => p.id === 'p1')).toBeFalse();
+    expect(assemblePatientList(census, 1, new Date(2026, 10, 20)).some(p => p.id === 'p1')).toBeTrue();
 
     expect(census.find(p => p.id === 'p2')?.followUpEndDate).toBeUndefined();
   });
@@ -60,10 +58,10 @@ describe('ProvisionalPatientListSource', () => {
     });
 
     await closures.reopen({ at: day.toISOString(), author: 'Bia', closureId: closure.id, patientId: 'p1' });
-    const census = await source.loadCensus();
+    const census = await source.loadCensus(1);
 
     expect(census.find(p => p.id === 'p1')?.followUpEndDate).toBeUndefined();
-    expect(assemblePatientList(census, 'hospital-vila-nova-star', day).some(p => p.id === 'p1')).toBeTrue();
+    expect(assemblePatientList(census, 1, day).some(p => p.id === 'p1')).toBeTrue();
     expect(await closures.list('p1')).toHaveSize(1);
   });
 });

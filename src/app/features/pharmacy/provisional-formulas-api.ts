@@ -62,16 +62,16 @@ const CATALOG: readonly CatalogItem[] = [
 @Injectable()
 export class ProvisionalFormulasApi extends FormulasApi {
   /** Pedidos registrados nesta sessão (provisório; a API real guarda hospital, solicitante e data/hora). */
-  readonly requests: { readonly description: string; readonly hospitalId: string }[] = [];
-  private readonly standardizedByHospital = new Map<string, Set<string>>();
+  readonly requests: { readonly description: string; readonly hospitalId: number }[] = [];
+  private readonly standardizedByHospital = new Map<number, Set<string>>();
 
-  list(hospitalId: string): Promise<readonly Formula[]> {
+  list(hospitalId: number): Promise<readonly Formula[]> {
     const ids = this.standardizedByHospital.get(hospitalId);
 
     return Promise.resolve(CATALOG.map(item => ({ ...item, standardized: ids?.has(item.id) ?? false })));
   }
 
-  setStandardized(hospitalId: string, formulaId: string, standardized: boolean): Promise<void> {
+  setStandardized(hospitalId: number, formulaId: string, standardized: boolean): Promise<void> {
     const ids = this.standardizedByHospital.get(hospitalId) ?? new Set<string>();
 
     if (standardized) {
@@ -84,7 +84,7 @@ export class ProvisionalFormulasApi extends FormulasApi {
     return Promise.resolve();
   }
 
-  requestFormula(hospitalId: string, description: string): Promise<void> {
+  requestFormula(hospitalId: number, description: string): Promise<void> {
     this.requests.push({ description, hospitalId });
 
     return Promise.resolve();

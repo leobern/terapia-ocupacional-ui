@@ -19,7 +19,7 @@ describe('HttpFormulasApi', () => {
   afterEach(() => controller.verify());
 
   it('lista o catálogo do hospital convertendo categorias e atributos nulos', async () => {
-    const promise = api.list('1');
+    const promise = api.list(1);
 
     controller.expectOne('/api/v1/hospitais/1/formulas').flush([
       {
@@ -57,7 +57,7 @@ describe('HttpFormulasApi', () => {
   });
 
   it('padroniza com PUT no hospital informado', async () => {
-    const promise = api.setStandardized('2', '7', true);
+    const promise = api.setStandardized(2, '7', true);
     const request = controller.expectOne('/api/v1/hospitais/2/formulas/7/padronizacao');
 
     expect(request.request.method).toBe('PUT');
@@ -67,7 +67,7 @@ describe('HttpFormulasApi', () => {
   });
 
   it('solicita fórmula nova com POST', async () => {
-    const promise = api.requestFormula('1', 'Fórmula Z');
+    const promise = api.requestFormula(1, 'Fórmula Z');
     const request = controller.expectOne('/api/v1/hospitais/1/solicitacoes-formula');
 
     expect(request.request.method).toBe('POST');
@@ -77,6 +77,6 @@ describe('HttpFormulasApi', () => {
   });
 
   it('rejeita hospital que não é numérico, sem chamar a API', async () => {
-    await expectAsync(api.list('hospital-vila-nova-star')).toBeRejected();
+    await expectAsync(api.list(Number.NaN)).toBeRejected();
   });
 });

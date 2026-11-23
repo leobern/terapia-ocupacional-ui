@@ -8,9 +8,9 @@ import { InviteLookup, InviteResult } from './hospital-invite.models';
  */
 export abstract class HospitalInvitePort {
   /** Busca a conta por e-mail e informa a relação dela com o hospital. Rejeita em falha de rede. */
-  abstract lookup(hospitalId: string, email: string): Promise<InviteLookup>;
+  abstract lookup(hospitalId: number, email: string): Promise<InviteLookup>;
   /** Cria o vínculo direto como "Aprovado" (ou aprova a solicitação pendente). Rejeita em falha. */
-  abstract confirm(hospitalId: string, email: string): Promise<InviteResult>;
+  abstract confirm(hospitalId: number, email: string): Promise<InviteResult>;
 }
 
 /** O perfil atual é gestor? Provisório até existir sessão/perfil real (ADR-002). */

@@ -5,7 +5,8 @@ import { FollowUpClosureSource } from '../follow-up-closure/follow-up-closure-so
 import { CensusPatient } from './patient-list.models';
 import { PatientListSource } from './patient-list-source';
 
-const H = 'hospital-vila-nova-star';
+/** O censo de exemplo vale para qualquer hospital: `loadCensus` carimba o hospital pedido. */
+const H = 0;
 const p = (
   id: string,
   name: string,
@@ -37,7 +38,7 @@ const p = (
 export class ProvisionalPatientListSource extends PatientListSource {
   private readonly closures = inject(FollowUpClosureSource);
 
-  async loadCensus(): Promise<readonly CensusPatient[]> {
+  async loadCensus(hospitalId: number): Promise<readonly CensusPatient[]> {
     const census = this.seed();
     // O encerramento mais recente de cada paciente define a data de efeito (FR-005).
     // Encerramento revertido por reabertura deixa de valer (o registro segue no histórico).
@@ -46,8 +47,9 @@ export class ProvisionalPatientListSource extends PatientListSource {
 
     return census.map(patient => {
       const effective = latest.get(patient.id);
+      const inHospital = { ...patient, hospitalId };
 
-      return effective === undefined ? patient : { ...patient, followUpEndDate: effective };
+      return effective === undefined ? inHospital : { ...inHospital, followUpEndDate: effective };
     });
   }
 

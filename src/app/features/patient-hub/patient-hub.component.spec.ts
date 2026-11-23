@@ -12,6 +12,7 @@ import { GlimReading } from '../diagnosis/diagnosis.models';
 import { DiagnosisSource } from '../diagnosis/diagnosis-source';
 import { FollowUpClosureSource, FollowUpClosureWriter } from '../follow-up-closure/follow-up-closure-source';
 import { ProvisionalFollowUpClosureSource } from '../follow-up-closure/provisional-follow-up-closure';
+import { HospitalContextService } from '../home/hospital-context.service';
 import { LinkedHospitalsReader } from '../home/linked-hospitals';
 import { NOW, ProfessionalProfileReader } from '../home/professional-profile';
 import {
@@ -121,7 +122,7 @@ class FakePriorStays extends PriorStaysSource {
   fail = false;
   readonly calls: string[] = [];
 
-  hasPriorStays(patientId: string, hospitalId: string): Promise<boolean> {
+  hasPriorStays(patientId: string, hospitalId: number): Promise<boolean> {
     this.calls.push(`${hospitalId}:${patientId}`);
 
     return this.fail ? Promise.reject(new Error('x')) : Promise.resolve(this.has);
@@ -214,7 +215,7 @@ const AVAILABLE: DailyAdequacy = {
 async function setup(
   source: FakeSource,
   id: string | null = 'p1',
-  hospitals: unknown[] = [{ id: 'h', name: 'Hospital Vila Nova Star' }],
+  hospitals: unknown[] = [{ id: 1, name: 'Hospital Vila Nova Star' }],
   role = 'doctor',
 ): Promise<ComponentFixture<PatientHubComponent>> {
   TestBed.configureTestingModule({
@@ -277,10 +278,11 @@ async function setup(
       { provide: NOW, useValue: (): Date => new Date(2026, 4, 28, 12) },
       {
         provide: LinkedHospitalsReader,
-        useValue: { read: (): unknown[] => hospitals },
+        useValue: { read: (): Promise<unknown[]> => Promise.resolve(hospitals) },
       },
     ],
   });
+  await TestBed.inject(HospitalContextService).load();
   const fixture = TestBed.createComponent(PatientHubComponent);
 
   fixture.detectChanges();
@@ -337,7 +339,7 @@ describe('PatientHubComponent', () => {
     await f.whenStable();
     f.detectChanges();
 
-    expect(priorStays.calls).toEqual(['h:p1']);
+    expect(priorStays.calls).toEqual(['1:p1']);
     expect(text(f)).toContain('Internações anteriores');
     expect(f.nativeElement.querySelector('.stays__header').getAttribute('aria-expanded')).toBe('false');
   });
@@ -397,7 +399,7 @@ describe('PatientHubComponent', () => {
     });
 
     it('perfil não médico não recebe a ação "Revisão da prescrição"', async () => {
-      await setup(new FakeSource(), 'p1', [{ id: 'h', name: 'Hospital Vila Nova Star' }], 'other');
+      await setup(new FakeSource(), 'p1', [{ id: 1, name: 'Hospital Vila Nova Star' }], 'other');
 
       expect(
         TestBed.inject(ScreenActionsService)
