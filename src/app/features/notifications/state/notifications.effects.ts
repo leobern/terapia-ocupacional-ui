@@ -2,7 +2,7 @@ import { inject } from '@angular/core';
 import { Actions, createEffect, ofType } from '@ngrx/effects';
 import { concatLatestFrom } from '@ngrx/operators';
 import { Store } from '@ngrx/store';
-import { catchError, concatMap, filter, map, mergeMap, of, switchMap } from 'rxjs';
+import { catchError, concatMap, EMPTY, filter, from, map, mergeMap, of, switchMap } from 'rxjs';
 
 import { HomeApiService } from '../../home/data-access/home-api.service';
 import { NotificationsApiService } from '../data-access/notifications-api.service';
@@ -172,6 +172,23 @@ export const resolveNotification$ = createEffect(
     );
   },
   { functional: true },
+);
+
+/**
+ * Marca como lida cada notificação exibida (FR-005). Sem conexão (ou qualquer falha) a
+ * marcação é ignorada sem erro visível: a lista já carregada continua na tela e a próxima
+ * carga, vinda do servidor, tenta de novo.
+ */
+export const markAsRead$ = createEffect(
+  (actions$ = inject(Actions), api = inject(NotificationsApiService)) => {
+    return actions$.pipe(
+      ofType(NotificationsActions.markAsReadRequested),
+      mergeMap(({ notificationIds }) =>
+        from(notificationIds).pipe(mergeMap(id => api.markAsRead(id).pipe(catchError(() => EMPTY)))),
+      ),
+    );
+  },
+  { functional: true, dispatch: false },
 );
 
 /** Pull-to-refresh (FR-004b) — reinicia as duas seções do zero. */

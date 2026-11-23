@@ -213,6 +213,17 @@ export class NotificationsComponent implements OnDestroy {
       }
     });
 
+    // FR-005: toda notificação não lida exibida na lista passa a lida (já lidas não disparam nada).
+    effect(() => {
+      const unreadIds = this.visibleItems()
+        .filter(item => !item.read)
+        .map(item => item.id);
+
+      if (unreadIds.length > 0) {
+        this.store.dispatch(NotificationsActions.markAsReadRequested({ notificationIds: unreadIds }));
+      }
+    });
+
     // Observa o sentinel de fim de lista (FR-004a), mesmo padrão de home.component.ts.
     effect(
       () => {

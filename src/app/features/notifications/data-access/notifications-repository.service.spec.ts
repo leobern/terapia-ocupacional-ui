@@ -58,4 +58,20 @@ describe('NotificationsRepository', () => {
     expect(repository.list('resolved', null, 50).items.some(n => n.id === target.id)).toBeTrue();
     expect(repository.version()).toBe(version + 1);
   });
+
+  it('countUnread soma as não lidas de ativas e resolvidas; markAsRead diminui o total sem mudar a versão', () => {
+    const total = repository.list('pending', null, 50).totalCount + repository.list('resolved', null, 50).totalCount;
+    const version = repository.version();
+    const [pending] = repository.list('pending', null, 1).items;
+    const [resolved] = repository.list('resolved', null, 1).items;
+
+    expect(repository.countUnread()).toBe(total);
+
+    repository.markAsRead([pending.id, resolved.id]);
+    repository.markAsRead([pending.id]);
+
+    expect(repository.countUnread()).toBe(total - 2);
+    expect(repository.list('pending', null, 50).items.find(n => n.id === pending.id)?.read).toBeTrue();
+    expect(repository.version()).toBe(version);
+  });
 });

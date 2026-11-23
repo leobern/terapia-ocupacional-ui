@@ -104,7 +104,7 @@
                 [authorName]="notification.author.name"
                 [authorSpecialty]="notification.author.specialty"
                 [authorPhotoUrl]="notification.author.photoUrl"
-                [unread]="activeTab() === 'pending' && !notification.read"
+                [unread]="!notification.read"
                 [patientName]="notification.patient?.name ?? ''"
                 [description]="notification.description"
                 [time]="formatTime(notification.createdAt)"

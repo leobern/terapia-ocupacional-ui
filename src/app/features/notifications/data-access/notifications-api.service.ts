@@ -38,6 +38,11 @@ export class NotificationsApiService {
     return this.http.post<NotificationReply>(`${this.baseUrl}/${notificationId}/replies`, { text });
   }
 
+  /** Marca a notificação como lida (ao ser exibida na lista — FR-005). */
+  markAsRead(notificationId: number): Observable<void> {
+    return this.http.post<undefined>(`${this.baseUrl}/${notificationId}/read`, {}).pipe(map(() => undefined));
+  }
+
   /** Marca a notificação como resolvida (botão ✓ do card — Figma v2/NotificationThread). */
   resolve(notificationId: number): Observable<void> {
     return this.http.post<undefined>(`${this.baseUrl}/${notificationId}/resolve`, {}).pipe(map(() => undefined));

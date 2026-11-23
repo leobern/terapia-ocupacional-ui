@@ -11,6 +11,7 @@ import {
   loadNextBatch$,
   loadPendingPage$,
   loadResolvedOnTabSelected$,
+  markAsRead$,
   refresh$,
   resolveHospitalContext$,
   resolveNotification$,
@@ -29,7 +30,7 @@ describe('notifications.effects (abas)', () => {
   function setup(state: Partial<NotificationsState>): void {
     TestBed.resetTestingModule();
     actions$ = new ReplaySubject(1);
-    api = jasmine.createSpyObj('NotificationsApiService', ['getNotifications', 'createReply', 'resolve']);
+    api = jasmine.createSpyObj('NotificationsApiService', ['getNotifications', 'createReply', 'markAsRead', 'resolve']);
     api.getNotifications.and.returnValue(of(page));
     homeApi = jasmine.createSpyObj('HomeApiService', ['getHospitals']);
     TestBed.configureTestingModule({
@@ -221,6 +222,17 @@ describe('notifications.effects (abas)', () => {
       const out = run(resolveNotification$(), NotificationsActions.resolveRequested({ notificationId: 5 }));
 
       expect(out[0].type).toBe(NotificationsActions.resolveFailure({ notificationId: 5, message: '' }).type);
+    });
+  });
+
+  it('marca como lida cada notificação; falha (ex.: offline) é ignorada sem erro', () => {
+    setup({});
+    api.markAsRead.and.returnValues(of(undefined), failing());
+    TestBed.runInInjectionContext(() => {
+      const out = run(markAsRead$(), NotificationsActions.markAsReadRequested({ notificationIds: [1, 2] }));
+
+      expect(api.markAsRead.calls.allArgs()).toEqual([[1], [2]]);
+      expect(out.length).toBe(1);
     });
   });
 });

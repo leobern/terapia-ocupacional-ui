@@ -47,4 +47,15 @@ describe('Provisional notification APIs', () => {
     expect(repository.list('resolved', null, 50).totalCount).toBe(resolvedBefore + 1);
     expect(repository.list('pending', null, 50).items.some(n => n.id === target.id)).toBeFalse();
   });
+
+  it('markAsRead marca a notificação como lida no repositório', async () => {
+    TestBed.configureTestingModule({ providers: [provideHttpClient(), ProvisionalNotificationsApiService] });
+    const api = TestBed.inject(ProvisionalNotificationsApiService);
+    const repository = TestBed.inject(NotificationsRepository);
+    const target = repository.list('pending', null, 1).items[0];
+
+    await firstValueFrom(api.markAsRead(target.id));
+
+    expect(repository.list('pending', null, 50).items.find(n => n.id === target.id)?.read).toBeTrue();
+  });
 });

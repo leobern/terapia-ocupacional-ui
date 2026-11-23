@@ -209,6 +209,13 @@ export const notificationsFeature = createFeature({
       status: state.activeTab === 'pending' ? 'loading-more-pending' : 'loading-more-resolved',
     })),
 
+    on(NotificationsActions.markAsReadRequested, (state, { notificationIds }): NotificationsState => {
+      const markRead = (items: Notification[]): Notification[] =>
+        items.map(item => (notificationIds.includes(item.id) && !item.read ? { ...item, read: true } : item));
+
+      return { ...state, pendingItems: markRead(state.pendingItems), resolvedItems: markRead(state.resolvedItems) };
+    }),
+
     on(NotificationsActions.tabSelected, (state, { tab }): NotificationsState => ({ ...state, activeTab: tab })),
 
     on(NotificationsActions.refreshRequested, (state): NotificationsState => ({

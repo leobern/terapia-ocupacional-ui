@@ -336,4 +336,18 @@ describe('notificationsFeature reducer', () => {
   it('selectTotalCount soma pendentes e resolvidas', () => {
     expect(selectTotalCount.projector(3, 4)).toBe(7);
   });
+
+  it('markAsReadRequested marca como lidas as notificações informadas, em ambas as abas', () => {
+    const state = reducer(
+      {
+        ...initialNotificationsState,
+        pendingItems: [notification(1), notification(2)],
+        resolvedItems: [notification(3)],
+      },
+      NotificationsActions.markAsReadRequested({ notificationIds: [1, 3] }),
+    );
+
+    expect(state.pendingItems.map(n => n.read)).toEqual([true, false]);
+    expect(state.resolvedItems[0].read).toBeTrue();
+  });
 });

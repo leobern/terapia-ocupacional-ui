@@ -30,6 +30,9 @@ export const NotificationsActions = createActionGroup({
     // Pull-to-refresh (FR-004b) — reinicia os dois cursores
     'Refresh Requested': emptyProps(),
 
+    // Notificações não lidas exibidas na lista passam a lidas (FR-005); a falha é silenciosa.
+    'Mark As Read Requested': props<{ notificationIds: number[] }>(),
+
     // Retry do erro genérico (FR-016), sem dados em cache
     'Retry Requested': props<{ hospitalId: number }>(),
 

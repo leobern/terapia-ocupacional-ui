@@ -198,6 +198,29 @@ describe('NotificationsComponent', () => {
       expect(dispatch).toHaveBeenCalledWith(NotificationsActions.tabSelected({ tab: 'resolved' }));
     });
 
+    it('notificações não lidas exibidas são marcadas como lidas; já lidas não disparam marcação', async () => {
+      await configureStore({
+        pendingItems: [notification(1), notification(2, { read: true }), notification(3)],
+        status: 'success',
+      });
+      const dispatch = jasmine.createSpy('dispatch');
+
+      store.dispatch = dispatch;
+      createComponent();
+
+      expect(dispatch).toHaveBeenCalledWith(NotificationsActions.markAsReadRequested({ notificationIds: [1, 3] }));
+    });
+
+    it('com tudo lido não dispara nenhuma marcação', async () => {
+      await configureStore({ pendingItems: [notification(1, { read: true })], status: 'success' });
+      const dispatch = jasmine.createSpy('dispatch');
+
+      store.dispatch = dispatch;
+      createComponent();
+
+      expect(dispatch).not.toHaveBeenCalledWith(jasmine.objectContaining({ notificationIds: jasmine.anything() }));
+    });
+
     it('sem notificações ativas, indica que não há notificações pendentes no momento', async () => {
       await configureStore({ status: 'success' });
       createComponent();

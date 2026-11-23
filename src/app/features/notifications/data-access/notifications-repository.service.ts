@@ -142,6 +142,23 @@ export class NotificationsRepository {
     };
   }
 
+  /** Total de notificações não lidas (ativas e resolvidas) — o selo do sino da Home. */
+  countUnread(): number {
+    return this.items.filter(item => !item.notification.read).length;
+  }
+
+  /**
+   * Marca como lidas as notificações informadas. Não altera `version`: ler não muda o que a
+   * lista mostra (o estado local já reflete) e recarregar a cada leitura geraria laço.
+   */
+  markAsRead(notificationIds: readonly number[]): void {
+    this.items = this.items.map(item =>
+      notificationIds.includes(item.notification.id) && !item.notification.read
+        ? { ...item, notification: { ...item.notification, read: true } }
+        : item,
+    );
+  }
+
   /** Cria uma notificação PENDENTE do profissional autenticado. */
   create(input: NewNotification): Notification {
     const notification: Notification = {

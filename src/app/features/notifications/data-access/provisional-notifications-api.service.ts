@@ -27,6 +27,12 @@ export class ProvisionalNotificationsApiService extends NotificationsApiService 
     return of(this.repository.addReply(notificationId, text));
   }
 
+  override markAsRead(notificationId: number): Observable<void> {
+    this.repository.markAsRead([notificationId]);
+
+    return of(undefined);
+  }
+
   override resolve(notificationId: number): Observable<void> {
     this.repository.resolve(notificationId);
 

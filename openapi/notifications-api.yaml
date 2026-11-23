@@ -26,7 +26,7 @@ paths:
           in: query
           required: true
           schema:
-            $ref: "#/components/schemas/NotificationStatus"
+            $ref: '#/components/schemas/NotificationStatus'
         - name: cursor
           in: query
           required: false
@@ -41,17 +41,17 @@ paths:
             default: 10
             maximum: 10
       responses:
-        "200":
+        '200':
           description: >
             Lote de até 10 notificações daquele status, ordenadas da mais recente para a
             mais antiga (FR-004a).
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/NotificationPage"
-        "401":
+                $ref: '#/components/schemas/NotificationPage'
+        '401':
           description: Não autenticado
-        "403":
+        '403':
           description: Profissional sem vínculo com o hospital informado
 
   /api/v1/notifications/{notificationId}/replies:
@@ -72,24 +72,49 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/CreateReplyRequest"
+              $ref: '#/components/schemas/CreateReplyRequest'
       responses:
-        "201":
+        '201':
           description: Resposta registrada com sucesso
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/NotificationReply"
-        "401":
+                $ref: '#/components/schemas/NotificationReply'
+        '401':
           description: Não autenticado
-        "403":
+        '403':
           description: >
             Profissional sem vínculo com o hospital da notificação, ou notificação não
             direcionada a este profissional (destinatarioId ≠ subject do JWT)
-        "404":
+        '404':
           description: Notificação não encontrada
-        "422":
-          description: "Corpo inválido (ex.: texto vazio)"
+        '422':
+          description: 'Corpo inválido (ex.: texto vazio)'
+
+  /api/v1/notifications/{notificationId}/read:
+    post:
+      operationId: markNotificationAsRead
+      summary: >
+        Marca a notificação como lida para o profissional autenticado (FR-005). Chamada quando
+        o card é exibido na lista, nas abas Ativas e Resolvidas, sem exigir resposta nem
+        resolução. Idempotente: marcar uma notificação já lida não altera nada. O contador do
+        sino da Home (unreadNotificationCount) passa a refletir a marcação.
+      parameters:
+        - name: notificationId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '204':
+          description: Notificação marcada como lida (ou já estava lida)
+        '401':
+          description: Não autenticado
+        '403':
+          description: Notificação não direcionada a este profissional
+        '404':
+          description: Notificação não encontrada
 
 components:
   schemas:
@@ -107,7 +132,7 @@ components:
         items:
           type: array
           items:
-            $ref: "#/components/schemas/Notification"
+            $ref: '#/components/schemas/Notification'
         nextCursor:
           type: string
           nullable: true
@@ -129,9 +154,9 @@ components:
           type: integer
           format: int64
         author:
-          $ref: "#/components/schemas/ProfessionalRef"
+          $ref: '#/components/schemas/ProfessionalRef'
         patient:
-          $ref: "#/components/schemas/PatientRef"
+          $ref: '#/components/schemas/PatientRef'
         description:
           type: string
         createdAt:
@@ -154,7 +179,7 @@ components:
             listagem paginada, simplificando o estado do NgRx (sem fetch adicional ao
             expandir).
           items:
-            $ref: "#/components/schemas/NotificationReply"
+            $ref: '#/components/schemas/NotificationReply'
 
     NotificationReply:
       type: object
@@ -164,7 +189,7 @@ components:
           type: integer
           format: int64
         author:
-          $ref: "#/components/schemas/ProfessionalRef"
+          $ref: '#/components/schemas/ProfessionalRef'
         text:
           type: string
         createdAt:
