@@ -305,6 +305,13 @@ describe('CardNotifyComponent', () => {
       expect(el().querySelector('.card-notify__actions')).not.toBeNull();
     });
 
+    it('draft sem nenhuma resposta anterior não mostra "0 respostas" para recolher', async () => {
+      await create('draft', { draftText: 'Oi', replies: [] });
+
+      expect(el().querySelector('.card-notify__collapse')).toBeNull();
+      expect(el().querySelector('.card-notify__actions')).not.toBeNull();
+    });
+
     it('draft sem texto não mostra o bloco do rascunho', async () => {
       await create('draft');
 

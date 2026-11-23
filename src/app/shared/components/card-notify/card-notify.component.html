@@ -170,7 +170,7 @@
       </button>
     }
 
-    @if (isAnswerOpen() || isDraft()) {
+    @if ((isAnswerOpen() || isDraft()) && replies().length > 0) {
       <button
         type="button"
         class="card-notify__collapse"
