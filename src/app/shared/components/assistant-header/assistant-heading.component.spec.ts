@@ -34,15 +34,10 @@ describe('AssistantHeadingComponent', () => {
     expect(title()).toBe('Editar notificação');
   });
 
-  it('is empty without an action, and the back arrow returns to the shortcuts', () => {
+  it('is empty without an action and has no back arrow (the header is logo + title + close)', () => {
     fixture.detectChanges();
 
     expect(title()).toBe('');
-
-    assistant.openAction(plain);
-    fixture.detectChanges();
-    fixture.nativeElement.querySelector('button[aria-label="Voltar para os atalhos"]').click();
-
-    expect(assistant.view()).toBe('shortcuts');
+    expect(fixture.nativeElement.querySelector('button')).toBeNull();
   });
 });

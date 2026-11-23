@@ -197,15 +197,16 @@ describe('BottomSheetComponent', () => {
     expect(closed).not.toHaveBeenCalled();
   });
 
-  it('oculta o logo do cabeçalho quando showLogo=false', () => {
+  it('com showLogo=false (cadastro) o logo continua no cabeçalho, compacto, junto com o fechar', () => {
     openSheet();
 
-    expect(fixture.nativeElement.querySelector('.bottom-sheet__logo')).not.toBeNull();
+    expect(fixture.nativeElement.querySelector('.bottom-sheet__logo--compact')).toBeNull();
 
     fixture.componentRef.setInput('showLogo', false);
     fixture.detectChanges();
 
-    expect(fixture.nativeElement.querySelector('.bottom-sheet__logo')).toBeNull();
+    expect(fixture.nativeElement.querySelector('.bottom-sheet__logo--compact')).not.toBeNull();
+    expect(fixture.nativeElement.querySelector('.bottom-sheet__close')).not.toBeNull();
   });
 
   it('mantém a alça de arraste fora da árvore de acessibilidade', () => {

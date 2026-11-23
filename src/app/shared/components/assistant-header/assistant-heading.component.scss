@@ -5,14 +5,6 @@
   min-width: 0;
 }
 
-// "← Título" na linha do cabeçalho do painel, centralizado na vertical com os botões de
-// expandir e fechar.
-.assistant-heading {
-  display: flex;
-  align-items: center;
-  gap: tokens.$space-8;
-  min-width: 0;
-}
 
 .assistant-heading__title {
   margin: 0;

@@ -205,6 +205,14 @@ $ease-sheet: cubic-bezier(0.32, 0.72, 0, 1);
   width: 84px;
 }
 
+// Cadastro (Figma 4722:10998): logo de 40px (caixa de 70px com o brilho) ao lado do título.
+.bottom-sheet__logo--compact {
+  --icon-logo-size: 40px;
+
+  height: 70px;
+  width: 70px;
+}
+
 .bottom-sheet__handle {
   background: var(--color-state-disabled);
   border-radius: var(--radius-pill);
