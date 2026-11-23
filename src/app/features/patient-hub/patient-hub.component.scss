@@ -23,33 +23,6 @@
   }
 }
 
-.hub__header {
-  display: flex;
-  align-items: center;
-  gap: tokens.$space-8;
-}
-
-.hub__heading {
-  display: flex;
-  flex: 1 0 0;
-  flex-direction: column;
-  min-width: 0;
-}
-
-.hub__title {
-  margin: 0;
-  color: tokens.c(content-1);
-
-  @include typography.headline;
-}
-
-.hub__subtitle {
-  margin: 0;
-  color: tokens.c(content-4);
-
-  @include typography.caption;
-}
-
 .hub__identity {
   display: flex;
   flex-direction: column;

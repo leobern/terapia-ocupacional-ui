@@ -2,8 +2,8 @@ import { Location } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 
 import { ButtonComponent } from '../../shared/components/button/button.component';
-import { IconButtonComponent } from '../../shared/components/icon-button/icon-button.component';
 import { PageContainerComponent } from '../../shared/components/page-container/page-container.component';
+import { PageHeaderComponent } from '../../shared/components/page-header/page-header.component';
 import { ConnectivityService } from '../../shared/services/connectivity.service';
 import { HospitalContextService } from '../home/hospital-context.service';
 import { InviteLookup } from './hospital-invite.models';
@@ -17,7 +17,7 @@ type Phase = 'idle' | 'searching' | 'result' | 'confirming' | 'done';
  */
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ButtonComponent, IconButtonComponent, PageContainerComponent],
+  imports: [ButtonComponent, PageContainerComponent, PageHeaderComponent],
   selector: 'app-hospital-invite',
   styleUrl: './hospital-invite.component.scss',
   templateUrl: './hospital-invite.component.html',

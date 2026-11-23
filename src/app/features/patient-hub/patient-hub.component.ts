@@ -5,8 +5,8 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { map } from 'rxjs';
 
 import { ButtonComponent } from '../../shared/components/button/button.component';
-import { IconButtonComponent } from '../../shared/components/icon-button/icon-button.component';
 import { PageContainerComponent } from '../../shared/components/page-container/page-container.component';
+import { PageHeaderComponent } from '../../shared/components/page-header/page-header.component';
 import { TherapyTagComponent } from '../../shared/components/therapy-tag/therapy-tag.component';
 import { PhIconComponent } from '../../shared/icons/ph-icon/ph-icon.component';
 import { ConnectivityService } from '../../shared/services/connectivity.service';
@@ -82,11 +82,11 @@ export const DIAGNOSIS_FAILED_HINT =
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
+    PageHeaderComponent,
     AssessmentSectionComponent,
     ButtonComponent,
     DailyRecordSheetComponent,
     FollowUpStatusComponent,
-    IconButtonComponent,
     NutritionAddCardSheetComponent,
     NutritionCardModalComponent,
     NutritionHiddenCardsSheetComponent,

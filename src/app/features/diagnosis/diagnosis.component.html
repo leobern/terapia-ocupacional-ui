@@ -1,19 +1,12 @@
 <!-- Figma 4685-9425 (desenhado pelo agente): cabeçalho, "Resultado do GLIM" e "Critérios do GLIM". -->
 <app-page-container>
   <div class="diagnosis">
-    <header class="diagnosis__header">
-      <app-icon-button
-        kind="primary"
-        appearance="icon"
-        icon="arrow-left"
-        ariaLabel="Voltar"
-        (click)="back()"
-      />
-      <div class="diagnosis__heading">
-        <h1 class="diagnosis__title">Diagnóstico</h1>
-        <p class="diagnosis__subtitle">{{ subtitle() }}</p>
-      </div>
-    </header>
+    <app-page-header
+      title="Diagnóstico"
+      [subtitle]="subtitle()"
+      [back]="true"
+      (backClick)="back()"
+    />
 
     @switch (status()) {
       @case ('loading') {

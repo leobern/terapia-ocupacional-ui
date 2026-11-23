@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, DestroyRef, effect, inject, signal } from '@angular/core';
 
 import { PageContainerComponent } from '../../shared/components/page-container/page-container.component';
-import { PhIconComponent } from '../../shared/icons/ph-icon/ph-icon.component';
+import { PageHeaderComponent } from '../../shared/components/page-header/page-header.component';
 import { type FormValues, type ScreenAction, ScreenActionsService } from '../../shared/services/screen-actions.service';
 import { HospitalContextService } from '../home/hospital-context.service';
 import { Formula, FORMULA_CATEGORIES } from './formulas.models';
@@ -16,7 +16,7 @@ type LoadStatus = 'loading' | 'ready' | 'error';
  */
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [PageContainerComponent, PhIconComponent],
+  imports: [PageContainerComponent, PageHeaderComponent],
   selector: 'app-pharmacy',
   styleUrl: './pharmacy.component.scss',
   templateUrl: './pharmacy.component.html',

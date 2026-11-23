@@ -121,7 +121,7 @@ describe('DiagnosisComponent', () => {
     const el = await render();
     const text = el.textContent ?? '';
 
-    expect(el.querySelector('.diagnosis__subtitle')?.textContent).toContain(
+    expect(el.querySelector('.page-header__subtitle')?.textContent).toContain(
       'José Raimundo Soares Neto · Ala 2 · Leito 35',
     );
 

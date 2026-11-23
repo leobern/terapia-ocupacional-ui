@@ -18,30 +18,6 @@
   }
 }
 
-.pharmacy__title-row {
-  display: flex;
-  align-items: center;
-  gap: tokens.$space-8;
-}
-
-.pharmacy__title-icon {
-  color: tokens.c(secondary);
-}
-
-.pharmacy__title {
-  margin: 0;
-  color: tokens.c(content-1);
-
-  @include typography.headline;
-}
-
-.pharmacy__subtitle {
-  margin: 0;
-  color: tokens.c(content-4);
-
-  @include typography.caption;
-}
-
 .pharmacy__notice,
 .pharmacy__state {
   margin: 0;

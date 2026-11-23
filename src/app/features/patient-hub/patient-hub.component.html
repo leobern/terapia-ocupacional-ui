@@ -1,19 +1,12 @@
 <app-page-container>
   <div class="hub">
     <!-- Figma v2/PageHeader (Subtitle=true): voltar + título + hospital · data. -->
-    <header class="hub__header">
-      <app-icon-button
-        kind="primary"
-        appearance="icon"
-        icon="arrow-left"
-        ariaLabel="Voltar"
-        (click)="back()"
-      />
-      <div class="hub__heading">
-        <h1 class="hub__title">Paciente</h1>
-        <p class="hub__subtitle">{{ hospitalName() }} · {{ todayLabel() }}</p>
-      </div>
-    </header>
+    <app-page-header
+      title="Paciente"
+      [subtitle]="hospitalName() + ' · ' + todayLabel()"
+      [back]="true"
+      (backClick)="back()"
+    />
 
     @switch (status()) {
       @case ('ready') {
