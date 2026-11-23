@@ -8,6 +8,15 @@ class FakeRevoker extends SessionRevoker {
   revokeCurrentDevice!: jasmine.Spy<() => Promise<void>>;
 }
 
+const SENSITIVE_KEYS = ['jwt', 'auth_token', 'clinical.notes', 'hospital', 'user', 'token', 'session.x', 'cache.y'];
+
+function expectSensitiveKeysGone(): void {
+  SENSITIVE_KEYS.forEach(key => {
+    expect(localStorage.getItem(key)).withContext(`localStorage ${key}`).toBeNull();
+    expect(sessionStorage.getItem(key)).withContext(`sessionStorage ${key}`).toBeNull();
+  });
+}
+
 describe('LogoutService', () => {
   let revoker: FakeRevoker;
   let service: LogoutService;
@@ -17,11 +26,11 @@ describe('LogoutService', () => {
     revoker.revokeCurrentDevice = jasmine.createSpy('revokeCurrentDevice').and.resolveTo();
     TestBed.configureTestingModule({ providers: [{ provide: SessionRevoker, useValue: revoker }] });
     service = TestBed.inject(LogoutService);
-    localStorage.setItem('token', 'x');
-    localStorage.setItem('session.refresh', 'r');
+    SENSITIVE_KEYS.forEach(key => {
+      localStorage.setItem(key, 'x');
+      sessionStorage.setItem(key, 'x');
+    });
     localStorage.setItem('lang', 'pt-BR');
-    sessionStorage.setItem('patients', 'y');
-    sessionStorage.setItem('cache.beds', 'z');
     sessionStorage.setItem('ui.sidebar', 'open');
   });
 
@@ -34,10 +43,8 @@ describe('LogoutService', () => {
     await service.logout();
 
     expect(revoker.revokeCurrentDevice).toHaveBeenCalledTimes(1);
-    expect(localStorage.getItem('token')).toBeNull();
-    expect(localStorage.getItem('session.refresh')).toBeNull();
-    expect(sessionStorage.getItem('patients')).toBeNull();
-    expect(sessionStorage.getItem('cache.beds')).toBeNull();
+    expectSensitiveKeysGone();
+
     expect(localStorage.getItem('lang')).toBe('pt-BR');
     expect(sessionStorage.getItem('ui.sidebar')).toBe('open');
     expect(TestBed.inject(LocalSessionStore).isValid()).toBeFalse();
@@ -58,9 +65,10 @@ describe('LogoutService', () => {
 
     await expectAsync(service.logout()).toBeResolved();
 
-    expect(localStorage.getItem('token')).toBeNull();
-    expect(sessionStorage.getItem('cache.beds')).toBeNull();
+    expectSensitiveKeysGone();
+
     expect(localStorage.getItem('lang')).toBe('pt-BR');
+    expect(sessionStorage.getItem('ui.sidebar')).toBe('open');
     expect(TestBed.inject(LocalSessionStore).isValid()).toBeFalse();
   });
 });

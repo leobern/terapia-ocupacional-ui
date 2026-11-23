@@ -1,19 +1,23 @@
 import { Injectable, signal } from '@angular/core';
 
-/** Chaves exatas de sessão/cache sensível removidas no logout (único lugar a manter). */
-export const SESSION_STORAGE_KEYS: readonly string[] = ['token', 'profile', 'patients'];
+/**
+ * Allowlist de preferências NÃO sensíveis que sobrevivem ao logout (único lugar a manter).
+ * Falha fechada: toda chave nova de localStorage/sessionStorage é apagada por padrão. Só
+ * entra aqui preferência de interface sem nenhum dado pessoal ou clínico (ex.: idioma).
+ */
+export const PRESERVED_PREFERENCE_KEYS: readonly string[] = ['lang'];
 
-/** Prefixos de chaves de sessão/cache sensível (ex.: `session.token`, `cache.patients`). */
-export const SESSION_STORAGE_PREFIXES: readonly string[] = ['session.', 'cache.'];
+/** Prefixos de preferências não sensíveis preservadas (ex.: `ui.sidebar`). Mesma regra da allowlist. */
+export const PRESERVED_PREFERENCE_PREFIXES: readonly string[] = ['ui.'];
 
-function isSessionKey(key: string): boolean {
-  return SESSION_STORAGE_KEYS.includes(key) || SESSION_STORAGE_PREFIXES.some(p => key.startsWith(p));
+function isPreserved(key: string): boolean {
+  return PRESERVED_PREFERENCE_KEYS.includes(key) || PRESERVED_PREFERENCE_PREFIXES.some(p => key.startsWith(p));
 }
 
-function removeSessionKeys(storage: Storage): void {
+function removeAllExceptPreserved(storage: Storage): void {
   const keys = Array.from({ length: storage.length }, (_, i) => storage.key(i) as string);
 
-  keys.filter(isSessionKey).forEach(key => storage.removeItem(key));
+  keys.filter(key => !isPreserved(key)).forEach(key => storage.removeItem(key));
 }
 
 /**
@@ -30,13 +34,13 @@ export class LocalSessionStore {
   }
 
   /**
-   * Remove token e cache local sensível (RN03). Só apaga chaves de sessão
-   * (`SESSION_STORAGE_KEYS`/`SESSION_STORAGE_PREFIXES`); preferências não sensíveis
-   * (ex.: idioma) são preservadas.
+   * Remove token e cache local (RN03) falhando fechado: apaga TODAS as chaves de
+   * localStorage e sessionStorage, exceto a allowlist de preferências não sensíveis
+   * (`PRESERVED_PREFERENCE_KEYS`/`PRESERVED_PREFERENCE_PREFIXES`).
    */
   clear(): void {
     this.valid.set(false);
-    removeSessionKeys(localStorage);
-    removeSessionKeys(sessionStorage);
+    removeAllExceptPreserved(localStorage);
+    removeAllExceptPreserved(sessionStorage);
   }
 }
