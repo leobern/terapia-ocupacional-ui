@@ -257,7 +257,7 @@ export class NotificationsComponent implements OnDestroy {
 
   /** FR-006 (US2) — navega para o paciente relacionado; `app-card-notify` já suprime
    *  `cardClick` sozinho quando `type="answering"` (Acceptance Scenario 2). */
-  onCardClick(patientId: number | undefined): void {
+  onCardClick(patientId: number | string | undefined): void {
     if (patientId !== undefined) {
       void this.router.navigate(['/patients', patientId]);
     }

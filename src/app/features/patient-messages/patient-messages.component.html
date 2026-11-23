@@ -1,0 +1,124 @@
+<section class="messages" aria-labelledby="messages-title">
+  <h2 id="messages-title" class="messages__title">Mensagens</h2>
+
+  @switch (state()) {
+    @case ('loading') {
+      <p class="messages__status" role="status">Carregando as mensagens…</p>
+    }
+    @case ('error') {
+      <p class="messages__status messages__status--warning" role="alert">
+        {{ loadFailedHint }}
+      </p>
+      <app-button
+        size="md"
+        kind="primary"
+        appearance="outlined"
+        iconLeft="arrow-counter-clockwise"
+        label="Tentar novamente"
+        (click)="load()"
+      />
+    }
+    @default {
+      @if (threads().length === 0) {
+        <p class="messages__status" data-testid="threads-empty">
+          {{ emptyText }}
+        </p>
+      }
+      @for (thread of ordered(); track thread.id) {
+        <article class="thread" data-testid="thread">
+          <header class="thread__header">
+            <p class="thread__who">{{ stamp(thread.author, thread.at) }}</p>
+            <span class="thread__badges">
+              <span class="thread__badge" data-testid="thread-status">{{
+                statusLabel(thread)
+              }}</span>
+              @if (overdue(thread)) {
+                <span
+                  class="thread__badge thread__badge--overdue"
+                  data-testid="thread-overdue"
+                  >Vencida</span
+                >
+              }
+            </span>
+          </header>
+          <p class="thread__to">Para: {{ thread.recipients.join(', ') }}</p>
+          <p class="thread__text">{{ thread.text }}</p>
+
+          @if (thread.replies.length > 0) {
+            <ol class="thread__replies" aria-label="Respostas">
+              @for (reply of thread.replies; track reply.id) {
+                <li class="thread__reply" data-testid="reply">
+                  <p class="thread__who">
+                    {{ stamp(reply.author, reply.at)
+                    }}{{
+                      reply.origin === 'audio' ? ' · áudio transcrito' : ''
+                    }}
+                  </p>
+                  <p class="thread__text">{{ reply.text }}</p>
+                </li>
+              }
+            </ol>
+          }
+          @for (change of thread.statusChanges; track $index) {
+            <p class="thread__change" data-testid="status-change">
+              {{ change.kind === 'reopened' ? 'Reaberta' : 'Resolvida' }} por
+              {{ stamp(change.author, change.at) }}
+            </p>
+          }
+
+          <div class="thread__reply-box">
+            <label class="thread__label" [for]="'reply-' + thread.id"
+              >Responder</label
+            >
+            <textarea
+              class="thread__textarea"
+              rows="3"
+              [id]="'reply-' + thread.id"
+              [value]="draft(thread.id)"
+              (input)="onDraft(thread.id, $event)"
+            ></textarea>
+            @if (transcribingId() === thread.id) {
+              <p class="messages__status" role="status">
+                Transcrevendo o áudio…
+              </p>
+            }
+            @if (!connectivity.online()) {
+              <p
+                class="messages__status messages__status--warning"
+                role="status"
+              >
+                {{ offlineHint }}
+              </p>
+              <app-input-chat
+                placeholder="Grave um áudio para responder"
+                [disabled]="true"
+              />
+            } @else {
+              @if (notices()[thread.id]; as notice) {
+                <p
+                  class="messages__status messages__status--warning"
+                  role="alert"
+                >
+                  {{ notice }}
+                </p>
+              }
+              <app-input-chat
+                placeholder="Grave um áudio para responder"
+                [disabled]="transcribingId() !== null"
+                (audioSend)="onAudio(thread, $event)"
+                (audioModeError)="onAudioError(thread, $event)"
+              />
+            }
+            <app-button
+              size="md"
+              iconLeft="paper-plane-tilt"
+              label="Enviar resposta"
+              [disabled]="!canSend(thread.id)"
+              (click)="send(thread)"
+            />
+          </div>
+        </article>
+      }
+    }
+  }
+</section>

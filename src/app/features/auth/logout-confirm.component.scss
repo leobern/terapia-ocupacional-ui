@@ -1,0 +1,17 @@
+.logout-confirm {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-16);
+  padding: var(--space-16);
+
+  &__title,
+  &__message {
+    margin: 0;
+  }
+
+  &__actions {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-8);
+  }
+}

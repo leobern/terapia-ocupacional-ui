@@ -1,6 +1,6 @@
 <button
-  type="button"
   class="button"
+  [attr.type]="htmlType()"
   [class]="variantClass()"
   [class.button--full-width]="fullWidth()"
   [class.keyboard-focus]="keyboardFocused()"

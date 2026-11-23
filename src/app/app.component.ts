@@ -3,6 +3,8 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { NavigationEnd, Router, RouterOutlet } from '@angular/router';
 import { filter, map } from 'rxjs';
 
+import { LogoutService } from './features/auth/logout.service';
+import { LogoutConfirmComponent } from './features/auth/logout-confirm.component';
 import { Role, SessionRoleReader } from './shared/auth/session-role';
 import { AssistantContentComponent } from './shared/components/assistant-content/assistant-content.component';
 import { AssistantFormFooterComponent } from './shared/components/assistant-form-footer/assistant-form-footer.component';
@@ -46,6 +48,7 @@ import { ViewportBreakpointService } from './shared/services/viewport-breakpoint
     BottomSheetComponent,
     DrawerComponent,
     InputChatComponent,
+    LogoutConfirmComponent,
     NavMenuComponent,
     RouterOutlet,
   ],
@@ -66,6 +69,9 @@ export class AppComponent {
   protected readonly viewportBreakpoint = inject(ViewportBreakpointService);
   /** Rotas com `data.hideShell` (ex.: splash) ocultam a navegação e o assistente. */
   protected readonly showShell: Signal<boolean>;
+  protected readonly confirmOpen = signal(false);
+  /** Trava reentrância: duplo clique em Confirmar não pode chamar `logout()` duas vezes. */
+  protected readonly loggingOut = signal(false);
 
   /** Item ativo do menu (Figma v2/NavRail: Home destacada na Home, Notificações em Notificações). */
   protected readonly activeNavItem = computed<NavMenuItemKey | null>(() => {
@@ -123,6 +129,7 @@ export class AppComponent {
     { id: 'meta-nutricional', label: 'Pacientes fora da meta nutricional' },
   ];
 
+  private readonly logoutService = inject(LogoutService);
   private readonly router = inject(Router);
 
   // O fundo decorativo (app-background-mesh) tem UMA instância global aqui no
@@ -203,5 +210,32 @@ export class AppComponent {
   protected onFarmaciaClick(): void {
     this.menuOpen.set(false);
     void this.router.navigate(['/pharmacy']);
+  }
+
+  protected requestLogout(): void {
+    this.menuOpen.set(false);
+    this.confirmOpen.set(true);
+  }
+
+  protected cancelLogout(): void {
+    this.confirmOpen.set(false);
+  }
+
+  protected async confirmLogout(): Promise<void> {
+    if (this.loggingOut()) {
+      return;
+    }
+
+    this.loggingOut.set(true);
+
+    try {
+      await this.logoutService.logout();
+    } finally {
+      this.loggingOut.set(false);
+    }
+
+    this.confirmOpen.set(false);
+    // replaceUrl: a rota autenticada atual sai do histórico.
+    await this.router.navigateByUrl('/login', { replaceUrl: true });
   }
 }

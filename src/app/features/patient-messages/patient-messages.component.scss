@@ -1,0 +1,136 @@
+@use '../../shared/styles/tokens';
+@use '../../shared/styles/typography';
+
+:host {
+  display: block;
+}
+
+// Mesmo cartão do Hub: surface-2, raio md, padding 16, gap 12.
+.messages {
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$space-12;
+  padding: tokens.$space-16;
+  border-radius: tokens.$radius-md;
+  background: tokens.c(surface-2);
+}
+
+.messages__title {
+  margin: 0;
+  color: tokens.c(content-4);
+
+  @include typography.label-md;
+}
+
+.messages__status {
+  margin: 0;
+  color: tokens.c(content-4);
+
+  @include typography.body-md;
+
+  &--warning {
+    color: tokens.c(content-1);
+  }
+}
+
+.thread {
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$space-8;
+  padding: tokens.$space-16;
+  border: 1px solid tokens.c(border);
+  border-radius: tokens.$radius-md;
+  background: tokens.c(surface);
+}
+
+.thread__header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: tokens.$space-8;
+}
+
+.thread__badges {
+  display: flex;
+  gap: tokens.$space-8;
+}
+
+.thread__badge {
+  padding: tokens.$space-4 tokens.$space-8;
+  border: 1px solid tokens.c(border);
+  border-radius: tokens.$radius-md;
+  color: tokens.c(content-1);
+
+  @include typography.label-md;
+
+  &--overdue {
+    border-color: tokens.c(comm-alert);
+    color: tokens.c(comm-alert);
+  }
+}
+
+.thread__who,
+.thread__to,
+.thread__change {
+  margin: 0;
+  color: tokens.c(content-4);
+
+  @include typography.body-md;
+}
+
+.thread__text {
+  margin: 0;
+  color: tokens.c(content-1);
+
+  @include typography.body-lg;
+}
+
+.thread__replies {
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$space-8;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.thread__reply {
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$space-4;
+  padding-top: tokens.$space-8;
+  border-top: 1px solid tokens.c(border);
+}
+
+.thread__reply-box {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: tokens.$space-8;
+}
+
+.thread__label {
+  color: tokens.c(content-1);
+
+  @include typography.title-md;
+}
+
+.thread__textarea {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 72px;
+  padding: tokens.$space-12;
+  border: 1px solid tokens.c(border);
+  border-radius: tokens.$radius-12;
+  background: tokens.c(surface);
+  color: tokens.c(content-1);
+  resize: vertical;
+
+  @include typography.body-lg;
+
+  &:focus-visible {
+    outline: 2px solid tokens.c(input-focus-ring);
+    outline-offset: 2px;
+  }
+}

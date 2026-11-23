@@ -16,6 +16,15 @@ import { HospitalContextService } from '../home/hospital-context.service';
 import { LinkedHospitalsReader } from '../home/linked-hospitals';
 import { NOW, ProfessionalProfileReader } from '../home/professional-profile';
 import {
+  PatientMessagesSource,
+  PatientMessagesWriter,
+  ReplyTranscriber,
+} from '../patient-messages/patient-messages-source';
+import {
+  ProvisionalPatientMessages,
+  ProvisionalReplyTranscriber,
+} from '../patient-messages/provisional-patient-messages';
+import {
   NutritionAddedCards,
   NutritionHiddenCards,
   NutritionHistorySource,
@@ -33,6 +42,7 @@ import { DailyRecordSource } from './daily-record/daily-record-source';
 import { DailyRecordWriter } from './daily-record/daily-record-writer';
 import { EvolutionAiStructurer } from './daily-record/evolution-ai-structurer';
 import { ParameterAiStructurer } from './daily-record/parameter-ai-structurer';
+import { MessageAiAssistant, PatientMessageSource, PatientTeamSource } from './messages/patient-message-source';
 import {
   DIAGNOSIS_FAILED_HINT,
   DIAGNOSIS_OFFLINE_HINT,
@@ -245,6 +255,9 @@ async function setup(
       },
       { provide: DailyEvolutionSource, useValue: { load: (): Promise<null> => Promise.resolve(null) } },
       { provide: EvolutionAiStructurer, useValue: { suggest: (): Promise<string> => Promise.resolve('') } },
+      { provide: PatientMessageSource, useValue: { list: (): Promise<readonly never[]> => Promise.resolve([]) } },
+      { provide: PatientTeamSource, useValue: { listLinked: (): Promise<readonly never[]> => Promise.resolve([]) } },
+      { provide: MessageAiAssistant, useValue: {} },
       { provide: ParameterAiStructurer, useValue: { suggest: (): Promise<readonly never[]> => Promise.resolve([]) } },
       { provide: RefeedingRiskSource, useValue: { load: (): Promise<null> => Promise.resolve(null) } },
       { provide: AssessmentSource, useValue: { loadLatest: (): Promise<null> => Promise.resolve(null) } },
@@ -254,6 +267,16 @@ async function setup(
       { provide: DailyRecordWriter, useValue: { record: (): Promise<[]> => Promise.resolve([]) } },
       { provide: FormulasApi, useValue: { list: (): Promise<[]> => Promise.resolve([]) } },
       { provide: NutritionTargetsReader, useValue: { current: (): Promise<null> => Promise.resolve(null) } },
+      ProvisionalPatientMessages,
+      {
+        provide: PatientMessagesSource,
+        useValue: {
+          list: (): Promise<[]> => Promise.resolve([]),
+          listBySender: (): Promise<[]> => Promise.resolve([]),
+        },
+      },
+      { provide: PatientMessagesWriter, useExisting: ProvisionalPatientMessages },
+      { provide: ReplyTranscriber, useClass: ProvisionalReplyTranscriber },
       ProvisionalFollowUpClosureSource,
       { provide: FollowUpClosureSource, useExisting: ProvisionalFollowUpClosureSource },
       { provide: FollowUpClosureWriter, useExisting: ProvisionalFollowUpClosureSource },
@@ -385,9 +408,35 @@ describe('PatientHubComponent', () => {
       const dialog = (): HTMLDialogElement =>
         (f.nativeElement as HTMLElement).querySelector('app-daily-record-sheet dialog') as HTMLDialogElement;
 
-      expect(actions.map(a => a.label)).toEqual(['Registro diário', 'Ajustar a prescrição', 'Revisão da prescrição']);
+      expect(actions.map(a => a.label)).toEqual([
+        'Registro diário',
+        'Observação ou mensagem',
+        'Ajustar a prescrição',
+        'Revisão da prescrição',
+      ]);
+
       expect(dialog().open).toBe(false);
       actions[0].navigate?.();
+      f.detectChanges();
+      await f.whenStable();
+
+      expect(dialog().open).toBe(true);
+      dialog().dispatchEvent(new Event('cancel', { cancelable: true }));
+      f.detectChanges();
+
+      expect(dialog().open).toBe(false);
+    });
+
+    it('a ação "Observação ou mensagem" abre o registro do assistente e o fecha com Esc', async () => {
+      const f = await setup(new FakeSource());
+      const action = TestBed.inject(ScreenActionsService)
+        .actions()
+        .find(a => a.id === 'patient-message');
+      const dialog = (): HTMLDialogElement =>
+        (f.nativeElement as HTMLElement).querySelector('app-patient-message-sheet dialog') as HTMLDialogElement;
+
+      expect(dialog().open).toBe(false);
+      action?.navigate?.();
       f.detectChanges();
       await f.whenStable();
 
@@ -405,7 +454,7 @@ describe('PatientHubComponent', () => {
         TestBed.inject(ScreenActionsService)
           .actions()
           .map(a => a.label),
-      ).toEqual(['Registro diário']);
+      ).toEqual(['Registro diário', 'Observação ou mensagem']);
     });
 
     it('médico abre a revisão da prescrição pelos atalhos e fecha com Esc', async () => {

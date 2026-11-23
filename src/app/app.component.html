@@ -17,6 +17,7 @@
       (acoesTelaClick)="menuOpen.set(false); aiAssistant.openShortcuts()"
       (farmaciaClick)="onFarmaciaClick()"
       (notificacoesClick)="onNotificacoesClick()"
+      (logoutClick)="requestLogout()"
     />
   }
   <router-outlet />
@@ -93,5 +94,11 @@
         }
       </app-drawer>
     }
+    <app-logout-confirm
+      [open]="confirmOpen()"
+      [busy]="loggingOut()"
+      (cancelled)="cancelLogout()"
+      (confirmed)="confirmLogout()"
+    />
   }
 </div>
