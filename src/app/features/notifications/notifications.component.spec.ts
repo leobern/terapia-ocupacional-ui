@@ -81,9 +81,9 @@ describe('NotificationsComponent', () => {
       createComponent();
       const el: HTMLElement = fixture.nativeElement;
 
-      expect(el.querySelector('.notifications__title')?.textContent?.trim()).toBe('3 notificações');
-      expect(el.querySelector('.notifications__subtitle')?.textContent).toContain('Hospital Vila Nova Star');
-      expect(el.querySelector('.notifications__subtitle')?.textContent).toContain(' de ');
+      expect(el.querySelector('.page-header__title-text')?.textContent?.trim()).toBe('3 notificações');
+      expect(el.querySelector('.page-header__subtitle')?.textContent).toContain('Hospital Vila Nova Star');
+      expect(el.querySelector('.page-header__subtitle')?.textContent).toContain(' de ');
     });
 
     it('mobile: o título também leva a contagem ("3 notificações")', async () => {
@@ -91,14 +91,16 @@ describe('NotificationsComponent', () => {
       await configureStore({ hospitalId: 1, pendingTotalCount: 3, status: 'success' });
       createComponent();
 
-      expect(fixture.nativeElement.querySelector('.notifications__title')?.textContent?.trim()).toBe('3 notificações');
+      expect(fixture.nativeElement.querySelector('.page-header__title-text')?.textContent?.trim()).toBe(
+        '3 notificações',
+      );
     });
 
     it('o botão de voltar vem primeiro, e o de atalhos abre o assistente nas ações da tela', async () => {
       await configureStore({ status: 'success' });
       createComponent();
       const buttons = Array.from(
-        fixture.nativeElement.querySelectorAll('.notifications__header app-icon-button button'),
+        fixture.nativeElement.querySelectorAll('.page-header app-icon-button button'),
       ) as HTMLButtonElement[];
       const assistant = TestBed.inject(AiAssistantService);
 
@@ -115,7 +117,7 @@ describe('NotificationsComponent', () => {
       createComponent();
       const assistant = TestBed.inject(AiAssistantService);
       const button = (): HTMLButtonElement =>
-        fixture.nativeElement.querySelector('.notifications__shortcuts button') as HTMLButtonElement;
+        fixture.nativeElement.querySelector('.page-header__shortcuts button') as HTMLButtonElement;
 
       expect(button().disabled).toBeFalse();
 
@@ -132,9 +134,7 @@ describe('NotificationsComponent', () => {
 
       spyOn(location, 'back');
       spyOnProperty(window.history, 'length').and.returnValue(3);
-      (
-        fixture.nativeElement.querySelector('.notifications__header button[aria-label="Voltar"]') as HTMLButtonElement
-      ).click();
+      (fixture.nativeElement.querySelector('.page-header button[aria-label="Voltar"]') as HTMLButtonElement).click();
 
       expect(location.back).toHaveBeenCalledWith();
     });

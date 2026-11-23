@@ -28,8 +28,8 @@ import { ConfirmDialogComponent } from '../../shared/components/confirm-dialog/c
 import { IconButtonComponent } from '../../shared/components/icon-button/icon-button.component';
 import { InputChatComponent } from '../../shared/components/input-chat/input-chat.component';
 import { PageContainerComponent } from '../../shared/components/page-container/page-container.component';
+import { PageHeaderComponent } from '../../shared/components/page-header/page-header.component';
 import { PhIconComponent } from '../../shared/icons/ph-icon/ph-icon.component';
-import { AiAssistantService } from '../../shared/services/ai-assistant.service';
 import { type ScreenAction, ScreenActionsService } from '../../shared/services/screen-actions.service';
 import { type DirectoryUser } from '../../shared/services/user-directory';
 import { formatRelativeTime } from '../../shared/utils/relative-time';
@@ -86,6 +86,7 @@ const PULL_TO_REFRESH_THRESHOLD = 80;
     CardNotifyComponent,
     ConfirmDialogComponent,
     IconButtonComponent,
+    PageHeaderComponent,
     InputChatComponent,
     NotificationSectionTitleComponent,
     PageContainerComponent,
@@ -137,8 +138,14 @@ export class NotificationsComponent implements OnDestroy {
 
   protected readonly hospitalName = computed(() => this.hospitalContext.selected()?.name ?? '');
   protected readonly todayLabel = computed(() => formatTodayLabel());
+  /** Contexto abaixo do título: "<hospital> · <data>" (Figma v2/PageHeader). */
+  protected readonly subtitle = computed(() => {
+    const id = this.hospitalId();
+    const name = this.hospitalName() || 'Hospital ' + id;
+
+    return id ? name + ' · ' + this.todayLabel() : this.todayLabel();
+  });
   /** Título com a contagem ("3 Notificações"), no mobile e no desktop. */
-  protected readonly assistant = inject(AiAssistantService);
   protected readonly title = computed(() => {
     const total = this.pendingCount();
 
@@ -243,12 +250,7 @@ export class NotificationsComponent implements OnDestroy {
     }
   }
 
-  /** "X" do cabeçalho: volta para a tela em que o usuário estava (ou para a Home, se não há histórico). */
-  /** Botão de atalhos do cabeçalho: abre o assistente nas ações desta tela. */
-  onOpenShortcuts(): void {
-    this.assistant.openShortcuts();
-  }
-
+  /** Voltar do cabeçalho: volta para a tela em que o usuário estava (ou para a Home, se não há histórico). */
   onClose(): void {
     if (window.history.length > 1) {
       this.location.back();

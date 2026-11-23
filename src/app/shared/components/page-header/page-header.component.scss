@@ -1,0 +1,78 @@
+@use '../../styles/breakpoints';
+@use '../../styles/tokens';
+@use '../../styles/typography';
+
+// Figma `v2/PageHeader` (4598:1584): gap 8, padding 8 / 0 / 16 / 0. No desktop, telas iniciais recuam 16px
+// à esquerda; com voltar o botão fica alinhado ao conteúdo (a margem já vem do container da página).
+:host {
+  display: block;
+}
+
+.page-header {
+  display: flex;
+  align-items: center;
+  gap: tokens.$space-8;
+  min-height: 56px;
+  padding-inline: tokens.$space-16;
+
+  @include breakpoints.md {
+    min-height: 88px;
+    padding: tokens.$space-16 0 tokens.$space-16 tokens.$space-16;
+  }
+}
+
+:host(.page-header--back) .page-header {
+  @include breakpoints.md {
+    padding-left: 0;
+  }
+}
+
+.page-header__back,
+.page-header__bell {
+  position: relative;
+  display: inline-flex;
+}
+
+.page-header__text {
+  display: flex;
+  flex: 1 0 0;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.page-header__title {
+  display: flex;
+  align-items: center;
+  gap: tokens.$space-8;
+  margin: 0;
+  color: tokens.c(content-1);
+
+  @include typography.headline;
+
+  ph-icon {
+    flex-shrink: 0;
+    color: tokens.c(secondary);
+  }
+}
+
+.page-header__subtitle {
+  margin: 0;
+  color: tokens.c(content-4);
+
+  @include typography.caption;
+}
+
+// Mesma posição do badge da Home: 26px da esquerda e 4px do topo do botão de 48px.
+.page-header__bell-badge {
+  position: absolute;
+  top: tokens.$space-4;
+  left: 26px;
+}
+
+.page-header__shortcuts {
+  display: none;
+
+  @include breakpoints.md {
+    display: inline-flex;
+  }
+}

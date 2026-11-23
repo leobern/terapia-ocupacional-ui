@@ -12,13 +12,13 @@ import {
 } from '@angular/core';
 import { Router } from '@angular/router';
 
-import { BadgeComponent } from '../../shared/components/badge/badge.component';
 import { ButtonComponent } from '../../shared/components/button/button.component';
 import { ConfirmDialogComponent } from '../../shared/components/confirm-dialog/confirm-dialog.component';
 import { DateStripComponent } from '../../shared/components/date-strip/date-strip.component';
 import { GraphMetaComponent } from '../../shared/components/graph-meta/graph-meta.component';
 import { IconButtonComponent } from '../../shared/components/icon-button/icon-button.component';
 import { PageContainerComponent } from '../../shared/components/page-container/page-container.component';
+import { PageHeaderComponent } from '../../shared/components/page-header/page-header.component';
 import { SwipeRowComponent } from '../../shared/components/swipe-row/swipe-row.component';
 import { TherapyTagComponent } from '../../shared/components/therapy-tag/therapy-tag.component';
 import { PhIconComponent } from '../../shared/icons/ph-icon/ph-icon.component';
@@ -143,13 +143,13 @@ const PULL_THRESHOLD = 80;
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
-    BadgeComponent,
     ButtonComponent,
     ConfirmDialogComponent,
     DateStripComponent,
     FollowUpClosureSheetComponent,
     GraphMetaComponent,
     IconButtonComponent,
+    PageHeaderComponent,
     PageContainerComponent,
     PhIconComponent,
     SwipeRowComponent,
@@ -237,6 +237,21 @@ export class PatientListComponent implements OnInit {
     });
 
     return [...present, ...missing];
+  });
+  /** Título do cabeçalho: contagem quando carregou, senão o nome da área. */
+  readonly title = computed(() => (this.status() === 'ready' ? this.countLabel() : 'Pacientes'));
+  /** Contexto abaixo do título: hospital, modo somente leitura e quantos estão fora da meta. */
+  readonly subtitle = computed(() => {
+    const parts = [this.hospitalName()];
+
+    if (this.readOnly()) {
+      parts.push('Somente leitura');
+    }
+    if (this.status() === 'ready') {
+      parts.push(this.outOfTargetCount() + ' fora da meta');
+    }
+
+    return parts.join(' · ');
   });
   readonly outOfTargetCount = computed(() => this.patients().filter(p => isOutOfTarget(p.adequacy)).length);
   readonly countLabel = computed(() => {

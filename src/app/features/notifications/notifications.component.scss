@@ -25,52 +25,6 @@
 }
 
 // v2/PageHeader: voltar 48 + Headline + subtítulo de contexto + ações (desktop).
-.notifications__header {
-  display: flex;
-  align-items: center;
-  gap: tokens.$space-8;
-}
-
-.notifications__heading {
-  display: flex;
-  flex: 1 0 0;
-  flex-direction: column;
-  min-width: 0;
-}
-
-.notifications__title-row {
-  display: flex;
-  align-items: center;
-  gap: tokens.$space-8;
-}
-
-.notifications__title-icon {
-  flex-shrink: 0;
-  color: tokens.c(secondary);
-}
-
-.notifications__title {
-  margin: 0;
-  color: tokens.c(content-1);
-
-  @include typography.headline;
-}
-
-.notifications__subtitle {
-  margin: 0;
-  color: tokens.c(content-4);
-
-  @include typography.caption;
-}
-
-.notifications__shortcuts {
-  display: none;
-
-  @include breakpoints.md {
-    display: inline-flex;
-  }
-}
-
 .notifications__error {
   display: flex;
   flex-direction: column;

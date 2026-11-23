@@ -5,29 +5,18 @@
     (touchstart)="pullStart($event)"
     (touchend)="pullEnd($event)"
   >
-    <!-- Figma v2/PageHeader: sem voltar (a tela é aberta pelo menu Pacientes); ícone de título em bold. -->
-    <header class="patient-list__header">
-      <div class="patient-list__header-text">
-        <h1 class="patient-list__title">
-          <ph-icon name="users-three" weight="bold" [size]="40" />
-          @if (status() === 'ready') {
-            {{ countLabel() }}
-          } @else {
-            Pacientes
-          }
-        </h1>
-        <p class="patient-list__subtitle">
-          {{ hospitalName() }}
-          @if (readOnly()) {
-            · Somente leitura
-          }
-          @if (status() === 'ready') {
-            · {{ outOfTargetCount() }} fora da meta
-          }
-        </p>
-      </div>
+    <!-- Figma v2/PageHeader (app-page-header): tela inicial da área, sem voltar; sino + atalhos. -->
+    <app-page-header
+      icon="users-three"
+      [title]="title()"
+      [subtitle]="subtitle()"
+      [showBell]="true"
+      [unreadCount]="unreadCount()"
+      [bellLabel]="bellLabel()"
+      (bellClick)="openNotifications()"
+    >
       @if (!readOnly()) {
-        <span class="patient-list__register">
+        <span class="patient-list__register" pageHeaderActions>
           <app-button
             size="md"
             iconLeft="plus"
@@ -36,38 +25,7 @@
           />
         </span>
       }
-      <!-- Primeira tela da área: notificações + atalhos (telas internas mantêm só os atalhos). -->
-      <span class="patient-list__notify">
-        <app-icon-button
-          kind="primary"
-          appearance="icon"
-          icon="bell"
-          [ariaLabel]="bellLabel()"
-          (click)="openNotifications()"
-        />
-        @if (unreadCount() > 0) {
-          <app-badge
-            class="patient-list__notify-badge"
-            type="numeral"
-            [value]="unreadCount()"
-          />
-        }
-      </span>
-      <!--
-        Só no desktop: no mobile a barra inferior já traz o mesmo atalho. Wrapper <span> porque o
-        host do botão é display: contents (mesmo padrão da Home).
-      -->
-      <span class="patient-list__shortcuts">
-        <app-icon-button
-          kind="primary"
-          appearance="icon"
-          icon="squares-four"
-          ariaLabel="Ações da tela"
-          [disabled]="aiAssistant.shortcutsOpen()"
-          (click)="aiAssistant.openShortcuts()"
-        />
-      </span>
-    </header>
+    </app-page-header>
 
     <div class="patient-list__toolbar">
       <app-date-strip

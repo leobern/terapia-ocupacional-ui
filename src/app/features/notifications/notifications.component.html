@@ -1,41 +1,13 @@
 <app-page-container>
   <div class="notifications">
-    <!-- Telas de camada interna: seta de VOLTAR como primeiro elemento do cabeçalho (o mesmo botão
-         que antes era o "X"), depois o sino azul (cor do ícone do menu) e o título escuro. -->
-    <header class="notifications__header">
-      <app-icon-button
-        kind="primary"
-        appearance="icon"
-        icon="arrow-left"
-        ariaLabel="Voltar"
-        (click)="onClose()"
-      />
-      <!-- Figma v2/PageHeader: título Headline + contexto (hospital · data). -->
-      <div class="notifications__heading">
-        <div class="notifications__title-row">
-          <ph-icon class="notifications__title-icon" name="bell" [size]="24" />
-          <h1 class="notifications__title">{{ title() }}</h1>
-        </div>
-        <p class="notifications__subtitle">
-          @if (hospitalId(); as id) {
-            {{ hospitalName() || 'Hospital ' + id }} ·
-          }
-          {{ todayLabel() }}
-        </p>
-      </div>
-      <!-- Ações da tela (Figma 4506:8583): só no desktop; no mobile o mesmo destino é o botão da
-           barra inferior. -->
-      <span class="notifications__shortcuts">
-        <app-icon-button
-          kind="primary"
-          appearance="icon"
-          icon="squares-four"
-          ariaLabel="Ações da tela"
-          [disabled]="assistant.shortcutsOpen()"
-          (click)="onOpenShortcuts()"
-        />
-      </span>
-    </header>
+    <!-- Tela interna: voltar + título com contagem + atalhos (app-page-header, Figma v2/PageHeader). -->
+    <app-page-header
+      icon="bell"
+      [title]="title()"
+      [subtitle]="subtitle()"
+      [back]="true"
+      (backClick)="onClose()"
+    />
 
     @switch (status()) {
       @case ('error') {
