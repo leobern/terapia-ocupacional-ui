@@ -315,6 +315,22 @@ describe('notificationsFeature reducer', () => {
     expect(state.resolvedTotalCount).toBe(1);
   });
 
+  it('resolveFailure mantém a thread pendente e guarda a mensagem; novo pedido limpa o erro', () => {
+    const loaded = reducer(
+      initialNotificationsState,
+      NotificationsActions.loadPendingPageSuccess({
+        page: { items: [notification(1)], nextCursor: null, totalCount: 1 },
+      }),
+    );
+    const failed = reducer(loaded, NotificationsActions.resolveFailure({ notificationId: 1, message: 'erro' }));
+
+    expect(failed.pendingItems.length).toBe(1);
+    expect(failed.resolveErrorMessage).toBe('erro');
+    expect(
+      reducer(failed, NotificationsActions.resolveRequested({ notificationId: 1 })).resolveErrorMessage,
+    ).toBeNull();
+  });
+
   it('resolveSuccess de uma notificação desconhecida não altera o estado', () => {
     const state = reducer(initialNotificationsState, NotificationsActions.resolveSuccess({ notificationId: 99 }));
 

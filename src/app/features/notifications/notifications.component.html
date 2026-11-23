@@ -56,6 +56,9 @@
         </div>
       }
       @default {
+        @if (resolveErrorMessage(); as message) {
+          <p class="notifications__resolve-error" role="alert">{{ message }}</p>
+        }
         <div
           #scrollContainer
           class="notifications__list"
@@ -98,6 +101,8 @@
                 [draftText]="draftText()"
                 [draftAuthorName]="professionalName"
                 [draftAuthorSpecialty]="professionalSpecialty"
+                [canResolve]="isParticipant(notification)"
+                [resolveDisabled]="!online()"
                 (cardClick)="onCardClick(notification.patient?.id)"
                 (answerClick)="onAnswerClick(notification.id)"
                 (viewRepliesClick)="onViewRepliesClick(notification.id)"
