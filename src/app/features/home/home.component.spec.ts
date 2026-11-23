@@ -16,16 +16,16 @@ import { ProfessionalProfileReader } from './professional-profile';
 import { UnreadNotificationsReader } from './unread-notifications-reader';
 
 const HOSPITALS: LinkedHospital[] = [
-  { id: 'a', name: 'Hospital A' },
-  { id: 'b', name: 'Hospital B' },
+  { id: 1, name: 'Hospital A' },
+  { id: 2, name: 'Hospital B' },
 ];
 
 class FakePatients extends DailyPatientsSource {
-  calls: { hospitalId: string; day: Date }[] = [];
+  calls: { hospitalId: number; day: Date }[] = [];
   summary: DailyPatientsSummary = { averageCaloricPercentage: 80, averageProteinPercentage: 70, patientCount: 10 };
-  counts: Record<string, number> = {};
+  counts: Record<number, number> = {};
 
-  loadForDay(hospitalId: string, day: Date): Promise<DailyPatientsSummary> {
+  loadForDay(hospitalId: number, day: Date): Promise<DailyPatientsSummary> {
     this.calls.push({ day, hospitalId });
 
     return Promise.resolve({
@@ -37,14 +37,14 @@ class FakePatients extends DailyPatientsSource {
 
 /** Feed fake com `total` notificações; cursor = índice do próximo item. */
 class FakeNotifications extends HomeNotificationsSource {
-  calls: { hospitalId: string; cursor: string | null; limit: number }[] = [];
+  calls: { hospitalId: number; cursor: string | null; limit: number }[] = [];
   total = 35;
   fail = false;
   failFirst = false;
   custom: readonly HomeNotification[] | null = null;
   gate: Promise<void> | null = null;
 
-  loadPage(hospitalId: string, cursor: string | null, limit: number): Promise<NotificationPage> {
+  loadPage(hospitalId: number, cursor: string | null, limit: number): Promise<NotificationPage> {
     this.calls.push({ cursor, hospitalId, limit });
     if (this.failFirst && cursor === null) {
       return Promise.reject(new Error('offline'));
@@ -73,10 +73,12 @@ class FakeNotifications extends HomeNotificationsSource {
 interface SetupOptions {
   feed?: FakeNotifications;
   hospitals?: readonly LinkedHospital[];
+  /** Substitui a leitura dos hospitais (ex.: pendente ou com falha). */
+  hospitalsRead?: () => Promise<readonly LinkedHospital[]>;
   unread?: number;
   source?: Pick<HomeDataSource, 'load'>;
   summary?: DailyPatientsSummary;
-  counts?: Record<string, number>;
+  counts?: Record<number, number>;
 }
 
 describe('HomeComponent', () => {
@@ -93,6 +95,7 @@ describe('HomeComponent', () => {
   async function setup(options: SetupOptions = {}): Promise<void> {
     const {
       hospitals = [HOSPITALS[0]],
+      hospitalsRead,
       unread = 0,
       source,
       summary,
@@ -116,7 +119,10 @@ describe('HomeComponent', () => {
         { provide: HomeNotificationsSource, useValue: feed },
         ...(source ? [{ provide: HomeDataSource, useValue: source }] : []),
         { provide: ProfessionalProfileReader, useClass: LocalProfessionalProfileReader },
-        { provide: LinkedHospitalsReader, useValue: { read: (): readonly LinkedHospital[] => hospitals } },
+        {
+          provide: LinkedHospitalsReader,
+          useValue: { read: hospitalsRead ?? ((): Promise<readonly LinkedHospital[]> => Promise.resolve(hospitals)) },
+        },
         {
           provide: UnreadNotificationsReader,
           useValue: { countUnread: (): Promise<number> => Promise.resolve(unread) },
@@ -132,6 +138,9 @@ describe('HomeComponent', () => {
     navigate = router.navigate as jasmine.Spy;
     if (!source) {
       TestBed.inject(HomeStateService).setStatus('success');
+    }
+    if (!hospitalsRead) {
+      await TestBed.inject(HospitalContextService).load();
     }
     fixture = TestBed.createComponent(HomeComponent);
     fixture.detectChanges();
@@ -197,18 +206,18 @@ describe('HomeComponent', () => {
       expect(q('app-badge')?.textContent?.trim()).toBe('+999');
     });
 
-    it('navigates to the notifications screen when the bell is tapped', async () => {
+    it('navigates to the notifications screen, passing the hospital in context, when the bell is tapped', async () => {
       await setup({ unread: 5 });
       bell().click();
 
-      expect(navigate).toHaveBeenCalledWith(['/notifications'], { queryParams: {} });
+      expect(navigate).toHaveBeenCalledWith(['/notifications'], { queryParams: { hospitalId: 1 } });
     });
 
-    it('passes the hospital in context when its id is numeric', async () => {
-      await setup({ hospitals: [{ id: '42', name: 'Hospital 42' }] });
+    it('passes no hospital when there is none in context', async () => {
+      await setup({ hospitals: [] });
       bell().click();
 
-      expect(navigate).toHaveBeenCalledWith(['/notifications'], { queryParams: { hospitalId: '42' } });
+      expect(navigate).toHaveBeenCalledWith(['/notifications'], { queryParams: {} });
     });
   });
 
@@ -241,7 +250,7 @@ describe('HomeComponent', () => {
       fixture.detectChanges();
 
       expect(q('.home__local app-tag')?.textContent).toContain('Hospital B');
-      expect(TestBed.inject(HospitalContextService).selected()?.id).toBe('b');
+      expect(TestBed.inject(HospitalContextService).selected()?.id).toBe(2);
       expect(options().length).toBe(0);
     });
 
@@ -251,7 +260,7 @@ describe('HomeComponent', () => {
       options()[0].click();
       fixture.detectChanges();
 
-      expect(TestBed.inject(HospitalContextService).selected()?.id).toBe('a');
+      expect(TestBed.inject(HospitalContextService).selected()?.id).toBe(1);
       expect(options().length).toBe(0);
     });
 
@@ -286,11 +295,11 @@ describe('HomeComponent', () => {
     });
 
     it('reloads the count when the hospital in context changes', async () => {
-      TestBed.inject(HospitalContextService).select('b');
+      TestBed.inject(HospitalContextService).select(2);
       fixture.detectChanges();
       await settle();
 
-      expect(patients.calls.map(c => c.hospitalId)).toEqual(['a', 'b']);
+      expect(patients.calls.map(c => c.hospitalId)).toEqual([1, 2]);
     });
   });
 
@@ -301,23 +310,23 @@ describe('HomeComponent', () => {
       expect(grid()[0].tagName.toLowerCase()).toBe('app-card-patients');
       expect(grid()[0].textContent).toContain('10 pacientes');
       expect(patients.calls.length).toBe(1);
-      expect(patients.calls[0].hospitalId).toBe('a');
+      expect(patients.calls[0].hospitalId).toBe(1);
       expect(patients.calls[0].day.toDateString()).toBe(new Date().toDateString());
     });
 
     it('replaces the number with "Todos os pacientes foram atendidos" when the count is zero', async () => {
-      await setup({ counts: { a: 0 } });
+      await setup({ counts: { 1: 0 } });
 
       expect(grid()[0].textContent).toContain('Todos os pacientes foram atendidos');
       expect(grid()[0].textContent).not.toContain(' Pacientes');
     });
 
     it('switches between number and message when changing to a hospital with a different count', async () => {
-      await setup({ counts: { b: 0 }, hospitals: HOSPITALS });
+      await setup({ counts: { 2: 0 }, hospitals: HOSPITALS });
 
       expect(grid()[0].textContent).toContain('10 pacientes');
 
-      TestBed.inject(HospitalContextService).select('b');
+      TestBed.inject(HospitalContextService).select(2);
       fixture.detectChanges();
       await settle();
 
@@ -533,7 +542,7 @@ describe('HomeComponent', () => {
     it('shows only the 10 most recent of 35 notifications on load (RN-01)', async () => {
       await setup();
 
-      expect(notifications.calls).toEqual([{ cursor: null, hospitalId: 'a', limit: 10 }]);
+      expect(notifications.calls).toEqual([{ cursor: null, hospitalId: 1, limit: 10 }]);
       expect(cards().length).toBe(10);
       expect(cards()[0].textContent).toContain('Notificação 0');
     });
@@ -544,7 +553,7 @@ describe('HomeComponent', () => {
       await fixture.componentInstance.loadNextBatch();
       fixture.detectChanges();
 
-      expect(notifications.calls[1]).toEqual({ cursor: '10', hospitalId: 'a', limit: 10 });
+      expect(notifications.calls[1]).toEqual({ cursor: '10', hospitalId: 1, limit: 10 });
       expect(cards().length).toBe(20);
       expect(cards()[19].textContent).toContain('Notificação 19');
     });
@@ -609,11 +618,11 @@ describe('HomeComponent', () => {
       await setup({ hospitals: HOSPITALS });
       await fixture.componentInstance.loadNextBatch();
 
-      TestBed.inject(HospitalContextService).select('b');
+      TestBed.inject(HospitalContextService).select(2);
       fixture.detectChanges();
       await settle();
 
-      expect(notifications.calls[notifications.calls.length - 1]).toEqual({ cursor: null, hospitalId: 'b', limit: 10 });
+      expect(notifications.calls[notifications.calls.length - 1]).toEqual({ cursor: null, hospitalId: 2, limit: 10 });
       expect(cards().length).toBe(10);
     });
 
@@ -625,7 +634,7 @@ describe('HomeComponent', () => {
       const pendingBatch = fixture.componentInstance.loadNextBatch();
 
       notifications.gate = null;
-      TestBed.inject(HospitalContextService).select('b');
+      TestBed.inject(HospitalContextService).select(2);
       fixture.detectChanges();
       await settle();
       release();
@@ -805,6 +814,48 @@ describe('HomeComponent', () => {
     });
   });
 
+  describe('hospitais vinculados (US-003-1-03)', () => {
+    const retryButton = (): HTMLButtonElement | null => q<HTMLButtonElement>('app-home-error app-button button');
+
+    it('mostra o skeleton enquanto os hospitais carregam', async () => {
+      await setup({ hospitalsRead: () => new Promise<readonly LinkedHospital[]>(() => undefined) });
+
+      expect(q('app-home-skeleton')).toBeTruthy();
+      expect(q('.home__local')).toBeNull();
+    });
+
+    it('mostra o erro genérico quando os hospitais falham e recarrega ao tentar de novo', async () => {
+      let fail = true;
+
+      await setup({
+        hospitalsRead: () => (fail ? Promise.reject(new Error('x')) : Promise.resolve([HOSPITALS[0]])),
+      });
+      await TestBed.inject(HospitalContextService)
+        .load()
+        .catch(() => undefined);
+      await settle();
+
+      expect(q('app-home-error')).toBeTruthy();
+      expect(q('.home__header')).toBeTruthy();
+
+      fail = false;
+      retryButton()?.click();
+      await settle();
+      await settle();
+
+      expect(q('app-home-error')).toBeNull();
+      expect(q('.home__local app-tag')?.textContent).toContain('Hospital A');
+    });
+
+    it('usa o id numérico do hospital único nas fontes, sem seletor navegável (RN-03)', async () => {
+      await setup({ hospitals: [{ id: 42, name: 'Hospital 42' }] });
+
+      expect(notifications.calls[0].hospitalId).toBe(42);
+      expect(patients.calls[0].hospitalId).toBe(42);
+      expect(q('.home__hospital-trigger')).toBeNull();
+    });
+  });
+
   describe('atalho do gestor (FT-009-1)', () => {
     it('gestor vê "Convidar profissional" nos atalhos e ele navega ao convite', async () => {
       await setup();
@@ -819,7 +870,7 @@ describe('HomeComponent', () => {
           { provide: ManagerAccessReader, useValue: { isManager: (): boolean => true } },
           {
             provide: LinkedHospitalsReader,
-            useValue: { read: (): readonly LinkedHospital[] => [{ id: 'h1', name: 'H1' }] },
+            useValue: { read: (): Promise<readonly LinkedHospital[]> => Promise.resolve([{ id: 1, name: 'H1' }]) },
           },
           { provide: UnreadNotificationsReader, useValue: { countUnread: (): Promise<number> => Promise.resolve(0) } },
         ],

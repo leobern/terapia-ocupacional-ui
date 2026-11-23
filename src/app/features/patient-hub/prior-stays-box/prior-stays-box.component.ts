@@ -19,7 +19,7 @@ type SynthesisState = 'idle' | 'loading' | 'ready' | 'error';
 })
 export class PriorStaysBoxComponent {
   readonly patientId = input.required<string>();
-  readonly hospitalId = input.required<string>();
+  readonly hospitalId = input.required<number>();
 
   protected readonly connectivity = inject(ConnectivityService);
   protected readonly visible = signal(false);
@@ -52,7 +52,7 @@ export class PriorStaysBoxComponent {
     void this.load();
   }
 
-  private async check(patientId: string, hospitalId: string): Promise<void> {
+  private async check(patientId: string, hospitalId: number): Promise<void> {
     const token = ++this.token;
 
     this.visible.set(false);

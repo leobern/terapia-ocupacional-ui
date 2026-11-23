@@ -34,7 +34,7 @@ const CATEGORY: Record<FormulaDto['categoria'], FormulaCategory> = {
 export class HttpFormulasApi extends FormulasApi {
   private readonly http = inject(HttpClient);
 
-  async list(hospitalId: string): Promise<readonly Formula[]> {
+  async list(hospitalId: number): Promise<readonly Formula[]> {
     const dtos = await firstValueFrom(this.http.get<FormulaDto[]>(`${this.base(hospitalId)}/formulas`));
 
     return dtos.map(dto => ({
@@ -53,7 +53,7 @@ export class HttpFormulasApi extends FormulasApi {
     }));
   }
 
-  async setStandardized(hospitalId: string, formulaId: string, standardized: boolean): Promise<void> {
+  async setStandardized(hospitalId: number, formulaId: string, standardized: boolean): Promise<void> {
     await firstValueFrom(
       this.http.put(`${this.base(hospitalId)}/formulas/${encodeURIComponent(formulaId)}/padronizacao`, {
         padronizada: standardized,
@@ -61,12 +61,12 @@ export class HttpFormulasApi extends FormulasApi {
     );
   }
 
-  async requestFormula(hospitalId: string, description: string): Promise<void> {
+  async requestFormula(hospitalId: number, description: string): Promise<void> {
     await firstValueFrom(this.http.post(`${this.base(hospitalId)}/solicitacoes-formula`, { descricao: description }));
   }
 
-  private base(hospitalId: string): string {
-    if (!/^\d+$/.test(hospitalId)) {
+  private base(hospitalId: number): string {
+    if (!Number.isInteger(hospitalId)) {
       throw new Error(`Hospital inválido para a API: ${hospitalId}`);
     }
 

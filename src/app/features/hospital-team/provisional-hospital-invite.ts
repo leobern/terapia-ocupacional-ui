@@ -18,7 +18,7 @@ export class ProvisionalHospitalInvite extends HospitalInvitePort {
     ['almira@conductia.com', { name: 'Almira Borges Pereira', relation: 'approved', specialty: 'Enfermeira' }],
   ]);
 
-  lookup(_: string, email: string): Promise<InviteLookup> {
+  lookup(_: number, email: string): Promise<InviteLookup> {
     const key = email.trim().toLowerCase();
     const account = this.accounts.get(key);
 
@@ -33,7 +33,7 @@ export class ProvisionalHospitalInvite extends HospitalInvitePort {
     );
   }
 
-  confirm(_: string, email: string): Promise<InviteResult> {
+  confirm(_: number, email: string): Promise<InviteResult> {
     const account = this.accounts.get(email.trim().toLowerCase());
 
     if (account === undefined || account.relation === 'approved') {

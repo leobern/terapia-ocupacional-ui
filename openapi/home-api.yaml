@@ -7,10 +7,15 @@ info:
     openapi-generator-cli (typescript-angular) — ver
     terapia-ocupacional-ui/openapitools.json. Servido pelo módulo
     pt.terapiaocupacional.home (backend).
+servers:
+  - url: /
+security:
+  - bearerAuth: []
 paths:
-  /home/summary:
+  /api/v1/home/summary:
     get:
       operationId: getHomeSummary
+      x-implemented: false
       summary: Contagem de pacientes do dia + Indicador de Meta Nutricional agregado
       parameters:
         - name: hospitalId
@@ -28,12 +33,21 @@ paths:
                 $ref: "#/components/schemas/HomeSummary"
         "401":
           description: Não autenticado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
         "403":
           description: Profissional sem vínculo com o hospital informado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 
-  /home/notifications:
+  /api/v1/home/notifications:
     get:
       operationId: getHomeNotifications
+      x-implemented: true
       summary: Feed paginado de notificações direcionadas ao profissional autenticado
       parameters:
         - name: hospitalId
@@ -54,8 +68,15 @@ paths:
           schema:
             type: integer
             default: 10
+            minimum: 1
             maximum: 10
       responses:
+        "400":
+          description: Cursor inválido ou limit fora de 1..10
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
         "200":
           description: Lote de até 10 notificações, ordenadas da mais recente para a mais antiga
           content:
@@ -64,25 +85,65 @@ paths:
                 $ref: "#/components/schemas/NotificationPage"
         "401":
           description: Não autenticado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
         "403":
           description: Profissional sem vínculo com o hospital informado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 
-  /home/hospitals:
+  /api/v1/home/hospitals:
     get:
       operationId: getProfissionalHospitals
-      summary: Hospitais vinculados ao profissional autenticado (para o seletor)
+      x-implemented: true
+      summary: Hospitais com vínculo ativo do profissional autenticado (seletor da Home)
       responses:
         "200":
-          description: Lista de hospitais vinculados
+          description: Hospitais com vínculo aprovado, ordenados por nome; um único item quando há só um vínculo (RN-03)
           content:
             application/json:
               schema:
                 type: array
                 items:
                   $ref: "#/components/schemas/Hospital"
+        "401":
+          description: Não autenticado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Usuário autenticado não é profissional
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 
 components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
   schemas:
+    ErrorResponse:
+      type: object
+      required: [message, timestamp]
+      properties:
+        message:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+        detalhes:
+          type: array
+          nullable: true
+          items:
+            type: string
     HomeSummary:
       type: object
       required: [patientCount, nutritionalGoalIndicator, unreadNotificationCount]
@@ -130,7 +191,9 @@ components:
         nextCursor:
           type: string
           nullable: true
-          description: null quando não há mais notificações a carregar (edge case "fim real da lista")
+          description: >
+            null quando não há mais notificações a carregar. Ordenação: createdAt desc,
+            desempate por id desc (RN-03); o cursor codifica (createdAt, id).
 
     Notification:
       type: object

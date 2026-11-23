@@ -100,7 +100,7 @@ async function setup(): Promise<{
   const f = TestBed.createComponent(PrescriptionSheetComponent);
 
   f.componentRef.setInput('patientId', 'p1');
-  f.componentRef.setInput('hospitalId', 'h1');
+  f.componentRef.setInput('hospitalId', 1);
   f.componentRef.setInput('open', true);
   f.detectChanges();
   await f.whenStable();

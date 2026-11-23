@@ -89,7 +89,7 @@ paths:
         "404":
           description: Notificação não encontrada
         "422":
-          description: Corpo inválido (ex.: texto vazio)
+          description: "Corpo inválido (ex.: texto vazio)"
 
 components:
   schemas:

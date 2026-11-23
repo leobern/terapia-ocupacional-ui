@@ -88,7 +88,15 @@ export class HomeComponent implements OnInit, OnDestroy {
   // public: o spec abre o assistente e dispara o estado diretamente na instância.
   readonly aiAssistant = inject(AiAssistantService);
   /** Estado de carregamento inicial, compartilhado com as stories irmãs via HomeStateService. */
-  readonly loadState = inject(HomeStateService).status;
+  readonly loadState = computed<HomeLoadState>(() => {
+    const hospitals = this.context.status();
+
+    if (hospitals === 'error' || this.state.status() === 'error') {
+      return 'error';
+    }
+
+    return hospitals === 'loading' ? 'loading' : this.state.status();
+  });
   /** Último carregamento bem-sucedido da sessão (cache em memória). */
   readonly data = signal<HomeData | null>(null);
   /** Dados exibidos podem estar desatualizados; troca de hospital indisponível. */
@@ -232,6 +240,10 @@ export class HomeComponent implements OnInit, OnDestroy {
   }
 
   async refresh(): Promise<void> {
+    // Falha ao carregar os hospitais vinculados também cai no erro da Home: "tentar de novo" recarrega.
+    if (this.context.status() === 'error') {
+      void this.context.load();
+    }
     if (this.loading()) {
       return;
     }
@@ -259,12 +271,11 @@ export class HomeComponent implements OnInit, OnDestroy {
 
   onViewAllNotifications(): void {
     // A tela de Notificações aceita `hospitalId` numérico na query; sem ele resolve
-    // o hospital sozinha (mesmo default da Home). Os ids provisórios daqui não são
-    // numéricos, então só repassa quando for.
+    // o hospital sozinha (mesmo default da Home).
     const hospitalId = this.context.selected()?.id;
 
     void this.router.navigate(['/notifications'], {
-      queryParams: hospitalId !== undefined && /^\d+$/.test(hospitalId) ? { hospitalId } : {},
+      queryParams: hospitalId === undefined ? {} : { hospitalId },
     });
   }
 
@@ -283,17 +294,17 @@ export class HomeComponent implements OnInit, OnDestroy {
   }
 
   protected onTrigger(): void {
-    if (this.context.canSwitch) {
+    if (this.context.canSwitch()) {
       this.listOpen.update(open => !open);
     }
   }
 
-  protected choose(id: string): void {
+  protected choose(id: number): void {
     this.context.select(id);
     this.listOpen.set(false);
   }
 
-  protected onOptionKeydown(event: Event, index: number, id: string): void {
+  protected onOptionKeydown(event: Event, index: number, id: number): void {
     const key = (event as KeyboardEvent).key;
     const options = (event.currentTarget as HTMLElement).parentElement?.children;
 
@@ -318,7 +329,7 @@ export class HomeComponent implements OnInit, OnDestroy {
     this.feedLoaded.set(false);
   }
 
-  private async loadFirstBatch(hospitalId: string): Promise<void> {
+  private async loadFirstBatch(hospitalId: number): Promise<void> {
     this.resetFeed();
     const generation = this.feedGeneration;
 
@@ -338,7 +349,7 @@ export class HomeComponent implements OnInit, OnDestroy {
     }
   }
 
-  private async loadSummary(hospitalId: string): Promise<void> {
+  private async loadSummary(hospitalId: number): Promise<void> {
     const summary = await this.patients.loadForDay(hospitalId, new Date());
 
     if (this.context.selected()?.id === hospitalId) {

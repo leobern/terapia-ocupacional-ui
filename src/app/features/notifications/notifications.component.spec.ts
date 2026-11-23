@@ -11,6 +11,7 @@ import { AiAssistantService } from '../../shared/services/ai-assistant.service';
 import { ConnectivityService } from '../../shared/services/connectivity.service';
 import { ScreenActionsService } from '../../shared/services/screen-actions.service';
 import { ViewportBreakpointService } from '../../shared/services/viewport-breakpoint.service';
+import { HospitalContextService } from '../home/hospital-context.service';
 import { LinkedHospitalsReader } from '../home/linked-hospitals';
 import { NotificationsRepository } from './data-access/notifications-repository.service';
 import { NotificationsComponent } from './notifications.component';
@@ -51,7 +52,10 @@ describe('NotificationsComponent', () => {
         { provide: ViewportBreakpointService, useValue: { isDesktop: isDesktop.asReadonly() } },
         {
           provide: LinkedHospitalsReader,
-          useValue: { read: (): { id: string; name: string }[] => [{ id: '1', name: 'Hospital Vila Nova Star' }] },
+          useValue: {
+            read: (): Promise<{ id: number; name: string }[]> =>
+              Promise.resolve([{ id: 1, name: 'Hospital Vila Nova Star' }]),
+          },
         },
         provideMockStore({ initialState: { notifications: { ...initialNotificationsState, ...overrides } } }),
         { provide: Actions, useValue: actionsSubject },
@@ -61,6 +65,7 @@ describe('NotificationsComponent', () => {
         },
       ],
     }).compileComponents();
+    await TestBed.inject(HospitalContextService).load();
     store = TestBed.inject(MockStore);
     router = TestBed.inject(Router);
   }

@@ -7,7 +7,7 @@ const base: CensusPatient = {
   bed: '1',
   birthDate: '2000-01-19',
   completedCycles: 1,
-  hospitalId: 'h1',
+  hospitalId: 1,
   id: 'a',
   name: 'Ana',
   registeredInConductia: true,
@@ -25,9 +25,9 @@ describe('assemblePatientList', () => {
         base,
         { ...base, admissionStatus: 'NOT_ADMITTED', id: 'b' },
         { ...base, id: 'c', registeredInConductia: false },
-        { ...base, hospitalId: 'h2', id: 'd' },
+        { ...base, hospitalId: 2, id: 'd' },
       ],
-      'h1',
+      1,
       day,
     );
 
@@ -35,9 +35,9 @@ describe('assemblePatientList', () => {
   });
 
   it('calcula a idade antes e depois do aniversário e não expõe data de nascimento', () => {
-    const before = assemblePatientList([base], 'h1', new Date(2026, 0, 18))[0];
-    const after = assemblePatientList([base], 'h1', new Date(2026, 0, 19))[0];
-    const earlierMonth = assemblePatientList([base], 'h1', new Date(2026, 0, 1))[0];
+    const before = assemblePatientList([base], 1, new Date(2026, 0, 18))[0];
+    const after = assemblePatientList([base], 1, new Date(2026, 0, 19))[0];
+    const earlierMonth = assemblePatientList([base], 1, new Date(2026, 0, 1))[0];
 
     expect(before.age).toBe(25);
     expect(after.age).toBe(26);
@@ -52,7 +52,7 @@ describe('assemblePatientList', () => {
         { ...base, bed: '9', id: 'y' },
         { ...base, id: 'z', ward: 'Ala 0' },
       ],
-      'h1',
+      1,
       day,
     );
 
@@ -60,9 +60,9 @@ describe('assemblePatientList', () => {
   });
 
   it('deriva tempo de terapia, adequação espelhada e primeira avaliação', () => {
-    const [first] = assemblePatientList([{ ...base, completedCycles: 0 }], 'h1', day);
-    const [done] = assemblePatientList([base], 'h1', day);
-    const [future] = assemblePatientList([{ ...base, therapyStartDate: '2026-02-01' }], 'h1', day);
+    const [first] = assemblePatientList([{ ...base, completedCycles: 0 }], 1, day);
+    const [done] = assemblePatientList([base], 1, day);
+    const [future] = assemblePatientList([{ ...base, therapyStartDate: '2026-02-01' }], 1, day);
 
     expect(done.therapyDays).toBe(10);
     expect(future.therapyDays).toBe(0);
@@ -73,7 +73,7 @@ describe('assemblePatientList', () => {
 
   describe('encerramento de acompanhamento (FR-031/FR-032)', () => {
     const closed = { ...base, followUpEndDate: '2026-01-18' };
-    const ids = (d: Date): string[] => assemblePatientList([closed], 'h1', d).map(p => p.id);
+    const ids = (d: Date): string[] => assemblePatientList([closed], 1, d).map(p => p.id);
 
     it('some na data de efeito e depois dela', () => {
       expect(ids(new Date(2026, 0, 18))).toEqual([]);
@@ -85,7 +85,7 @@ describe('assemblePatientList', () => {
     });
 
     it('sem data de efeito (saiu do fluxo sem confirmar) a lista não muda', () => {
-      expect(assemblePatientList([base], 'h1', day).map(p => p.id)).toEqual(['a']);
+      expect(assemblePatientList([base], 1, day).map(p => p.id)).toEqual(['a']);
     });
   });
 
@@ -96,7 +96,7 @@ describe('assemblePatientList', () => {
         { ...base, bed: '2', id: 'b', pendingTasks: 2 },
         { ...base, bed: '3', id: 'c' },
       ],
-      'h1',
+      1,
       day,
     );
 
@@ -107,7 +107,7 @@ describe('assemblePatientList', () => {
     // 2026-11-16 é segunda-feira; getDay: seg=1 … dom=0.
     const week = Array.from({ length: 7 }, (_, i) => new Date(2026, 10, 16 + i));
     const due = (patient: Partial<CensusPatient>, d: Date): boolean =>
-      assemblePatientList([{ ...base, ...patient }], 'h1', d)[0].reassessmentDue;
+      assemblePatientList([{ ...base, ...patient }], 1, d)[0].reassessmentDue;
 
     it('diária: pendente em todos os dias da semana', () => {
       expect(week.map(d => due({ reviewCadence: [0, 1, 2, 3, 4, 5, 6] }, d))).toEqual(Array(7).fill(true));
@@ -147,7 +147,7 @@ describe('assemblePatientList', () => {
 
     it('finalizado exige também não haver reavaliação prevista aberta', () => {
       const finished = (patient: Partial<CensusPatient>, d: Date): boolean =>
-        assemblePatientList([{ ...base, pendingTasks: 0, ...patient }], 'h1', d)[0].finished;
+        assemblePatientList([{ ...base, pendingTasks: 0, ...patient }], 1, d)[0].finished;
 
       expect(finished({ reviewCadence: [1] }, week[0])).toBe(false);
       expect(finished({ reviewCadence: [1] }, week[1])).toBe(true);

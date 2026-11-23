@@ -34,7 +34,7 @@ const PROFILE_LABEL: Record<string, string> = {
 export class HttpHospitalInvite extends HospitalInvitePort {
   private readonly http = inject(HttpClient);
 
-  async lookup(hospitalId: string, email: string): Promise<InviteLookup> {
+  async lookup(hospitalId: number, email: string): Promise<InviteLookup> {
     try {
       const dto = await this.find(hospitalId, email);
 
@@ -55,7 +55,7 @@ export class HttpHospitalInvite extends HospitalInvitePort {
     }
   }
 
-  async confirm(hospitalId: string, email: string): Promise<InviteResult> {
+  async confirm(hospitalId: number, email: string): Promise<InviteResult> {
     const found = await this.find(hospitalId, email);
     const link = await firstValueFrom(
       this.http.post<{ aproveitouSolicitacao: boolean }>(`${this.base(hospitalId)}/convites`, {
@@ -67,7 +67,7 @@ export class HttpHospitalInvite extends HospitalInvitePort {
     return { approvedRequest: link.aproveitouSolicitacao };
   }
 
-  private find(hospitalId: string, email: string): Promise<ProfessionalDto> {
+  private find(hospitalId: number, email: string): Promise<ProfessionalDto> {
     return firstValueFrom(
       this.http.get<ProfessionalDto>(`${this.base(hospitalId)}/profissionais`, {
         params: new HttpParams().set('email', email.trim()),
@@ -75,8 +75,8 @@ export class HttpHospitalInvite extends HospitalInvitePort {
     );
   }
 
-  private base(hospitalId: string): string {
-    if (!/^\d+$/.test(hospitalId)) {
+  private base(hospitalId: number): string {
+    if (!Number.isInteger(hospitalId)) {
       throw new Error(`Hospital inválido para a API: ${hospitalId}`);
     }
 

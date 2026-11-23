@@ -63,7 +63,7 @@ const EMPTY: PrescriptionDraft = {
 export class PrescriptionSheetComponent {
   readonly open = input(false);
   readonly patientId = input.required<string>();
-  readonly hospitalId = input.required<string>();
+  readonly hospitalId = input.required<number>();
   readonly adequacy = input<DailyAdequacy | null>(null);
   readonly closed = output();
   /** Emite depois de a prescrição virar a vigente. */
@@ -227,7 +227,7 @@ export class PrescriptionSheetComponent {
     this.saveFailed.set(false);
   }
 
-  private async load(patientId: string, hospitalId: string): Promise<void> {
+  private async load(patientId: string, hospitalId: number): Promise<void> {
     const token = ++this.token;
 
     this.draft.set(EMPTY);
