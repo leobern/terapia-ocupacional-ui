@@ -1,5 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { ActivatedRoute, convertToParamMap, provideRouter, Router } from '@angular/router';
+import { ActivatedRoute, provideRouter, Router } from '@angular/router';
 
 import { ConfirmResetResult, PasswordResetGateway, RequestResetResult } from './password-reset-gateway';
 import { ResetPasswordComponent } from './reset-password.component';
@@ -15,7 +15,10 @@ describe('ResetPasswordComponent', () => {
   let fixture: ComponentFixture<ResetPasswordComponent>;
   let el: HTMLElement;
 
-  function open(token: string | null = 'tok-1'): void {
+  let token: string | null;
+
+  beforeEach(() => {
+    token = 'tok-1';
     spyOnProperty(navigator, 'language', 'get').and.returnValue('pt-BR');
     gateway = new FakeGateway();
     gateway.confirmReset = jasmine.createSpy('confirmReset').and.resolveTo('ok');
@@ -24,13 +27,14 @@ describe('ResetPasswordComponent', () => {
       providers: [
         provideRouter([]),
         { provide: PasswordResetGateway, useValue: gateway },
-        {
-          provide: ActivatedRoute,
-          useValue: { snapshot: { queryParamMap: convertToParamMap(token ? { token } : {}) } },
-        },
+        { provide: ActivatedRoute, useValue: { snapshot: { queryParamMap: { get: (): string | null => token } } } },
       ],
     });
     navigate = spyOn(TestBed.inject(Router), 'navigateByUrl').and.resolveTo(true);
+  });
+
+  function open(withToken: string | null = 'tok-1'): void {
+    token = withToken;
     fixture = TestBed.createComponent(ResetPasswordComponent);
     fixture.detectChanges();
     el = fixture.nativeElement as HTMLElement;

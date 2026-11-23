@@ -3,10 +3,14 @@ import { HttpPasswordResetGateway } from './http-password-reset-gateway';
 describe('HttpPasswordResetGateway', () => {
   const gateway = new HttpPasswordResetGateway();
 
-  function respond(status: number): jasmine.Spy {
-    const existing = (window.fetch as jasmine.Spy).and ? (window.fetch as jasmine.Spy) : spyOn(window, 'fetch');
+  beforeEach(() => {
+    spyOn(window, 'fetch');
+  });
 
-    return existing.and.callFake(() => Promise.resolve(new Response(null, { status })));
+  function respond(status: number): jasmine.Spy<typeof fetch> {
+    return (window.fetch as jasmine.Spy<typeof fetch>).and.callFake(() =>
+      Promise.resolve(new Response(null, { status })),
+    );
   }
 
   it('posts the e-mail and maps 200 to sent', async () => {
