@@ -10,7 +10,7 @@
       "emailLabel": "E-mail",
       "emailRequired": "Enter your e-mail.",
       "retry": "Try again",
-      "sentMessage": "Check your e-mail",
+      "sentMessage": "If the e-mail address is registered, we will send you a link to reset your password. Also check your spam folder: the link expires shortly.",
       "sentTitle": "Check your e-mail",
       "serviceError": "We could not complete the request. Try again.",
       "submit": "Send link",

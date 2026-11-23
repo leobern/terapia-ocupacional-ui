@@ -49,7 +49,13 @@ describe('ForgotPasswordComponent', () => {
     await fillAndSubmit('medico@hospital.com');
 
     expect(gateway.requestReset).toHaveBeenCalledOnceWith('medico@hospital.com');
-    expect(el.querySelector('[role="status"]')?.textContent).toContain('Verifique seu e-mail');
+    expect(el.querySelector('h1')?.textContent).toContain('Verifique seu e-mail');
+    const message = el.querySelector('[role="status"]')?.textContent ?? '';
+
+    expect(message).toContain('caixa de spam');
+    expect(message).not.toContain('Verifique seu e-mail');
+    // RN03: a mensagem não revela se a conta existe.
+    expect(message).toContain('Se o e-mail informado estiver cadastrado');
   });
 
   it('C2/RN03: unknown e-mail shows the very same confirmation', async () => {

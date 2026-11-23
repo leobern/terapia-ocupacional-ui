@@ -10,7 +10,7 @@
       "emailLabel": "E-mail",
       "emailRequired": "Informe seu e-mail.",
       "retry": "Tentar novamente",
-      "sentMessage": "Verifique seu e-mail",
+      "sentMessage": "Se o e-mail informado estiver cadastrado, enviaremos um link para redefinir sua senha. Confira também a caixa de spam: o link expira em pouco tempo.",
       "sentTitle": "Verifique seu e-mail",
       "serviceError": "Não foi possível concluir a solicitação. Tente novamente.",
       "submit": "Enviar link",

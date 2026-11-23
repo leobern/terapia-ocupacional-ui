@@ -134,6 +134,13 @@ describe('ButtonComponent', () => {
     expect(buttonEl().type).toBe('button');
   });
 
+  it('renders type="submit" when htmlType=submit', () => {
+    fixture.componentRef.setInput('htmlType', 'submit');
+    fixture.detectChanges();
+
+    expect(buttonEl().type).toBe('submit');
+  });
+
   it('is focusable and clickable via keyboard when enabled', () => {
     const clickSpy = jasmine.createSpy('clickSpy');
 

@@ -119,6 +119,32 @@ describe('ResetPasswordComponent', () => {
     expect(navigate).toHaveBeenCalledWith('/login', { replaceUrl: true });
   });
 
+  it('submits with Enter (submit button inside the form, single submission)', async () => {
+    open();
+    const [p, c] = Array.from(el.querySelectorAll('input'));
+
+    p.value = 'Senha123';
+    p.dispatchEvent(new Event('input'));
+    c.value = 'Senha123';
+    c.dispatchEvent(new Event('input'));
+
+    expect(el.querySelector('button')?.type).toBe('submit');
+    // Enter num campo dispara o envio implícito do formulário via botão submit.
+    el.querySelector('form')?.requestSubmit();
+    await fixture.whenStable();
+
+    expect(gateway.confirmReset).toHaveBeenCalledOnceWith('tok-1', 'Senha123');
+    expect(navigate).toHaveBeenCalledWith('/login', { replaceUrl: true });
+  });
+
+  it('does not submit invalid data with Enter', async () => {
+    open();
+    el.querySelector('form')?.requestSubmit();
+    await fixture.whenStable();
+
+    expect(gateway.confirmReset).not.toHaveBeenCalled();
+  });
+
   it('does not allow double submit while sending', async () => {
     open();
     gateway.confirmReset.and.returnValue(new Promise(() => undefined));
