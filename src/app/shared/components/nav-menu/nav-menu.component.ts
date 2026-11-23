@@ -55,7 +55,8 @@ export class NavMenuComponent {
   protected readonly professionalRole = 'Nutróloga';
 
   // Ícones sempre em peso "regular" (não o "bold" padrão do design system) —
-  // decisão específica deste componente (spec.md § Clarifications).
+  // decisão específica deste componente (spec.md § Clarifications). Única exceção:
+  // o ícone de Sair (template) é sempre bold, aberto ou fechado (CLAUDE.md).
   protected readonly items: readonly NavMenuItem[] = [
     { icon: 'hospital', key: 'hospitais', label: 'Hospitais' },
     { icon: 'pill', key: 'farmacia', label: 'Farmácia' },

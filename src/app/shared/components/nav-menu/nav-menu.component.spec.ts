@@ -59,7 +59,7 @@ describe('NavMenuComponent', () => {
     });
   });
 
-  it('renders the logout item with the power icon in "regular" weight and 24px', () => {
+  it('renders the logout item with the power icon always in "bold" weight and 24px', () => {
     const icon = logoutButton().querySelector('ph-icon');
     const iconDebugEl = fixture.debugElement
       .queryAll(By.directive(PhIconComponent))
@@ -67,7 +67,7 @@ describe('NavMenuComponent', () => {
 
     expect(logoutButton().textContent).toContain('Sair');
     expect(iconDebugEl?.componentInstance.name()).toBe('power');
-    expect(iconDebugEl?.componentInstance.weight()).toBe('regular');
+    expect(iconDebugEl?.componentInstance.weight()).toBe('bold');
     expect(iconDebugEl?.componentInstance.size()).toBe(24);
   });
 

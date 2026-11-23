@@ -18,7 +18,11 @@ describe('LogoutService', () => {
     TestBed.configureTestingModule({ providers: [{ provide: SessionRevoker, useValue: revoker }] });
     service = TestBed.inject(LogoutService);
     localStorage.setItem('token', 'x');
+    localStorage.setItem('session.refresh', 'r');
+    localStorage.setItem('lang', 'pt-BR');
     sessionStorage.setItem('patients', 'y');
+    sessionStorage.setItem('cache.beds', 'z');
+    sessionStorage.setItem('ui.sidebar', 'open');
   });
 
   afterEach(() => {
@@ -30,8 +34,12 @@ describe('LogoutService', () => {
     await service.logout();
 
     expect(revoker.revokeCurrentDevice).toHaveBeenCalledTimes(1);
-    expect(localStorage.length).toBe(0);
-    expect(sessionStorage.length).toBe(0);
+    expect(localStorage.getItem('token')).toBeNull();
+    expect(localStorage.getItem('session.refresh')).toBeNull();
+    expect(sessionStorage.getItem('patients')).toBeNull();
+    expect(sessionStorage.getItem('cache.beds')).toBeNull();
+    expect(localStorage.getItem('lang')).toBe('pt-BR');
+    expect(sessionStorage.getItem('ui.sidebar')).toBe('open');
     expect(TestBed.inject(LocalSessionStore).isValid()).toBeFalse();
   });
 
@@ -41,6 +49,8 @@ describe('LogoutService', () => {
     await expectAsync(service.logout()).toBeResolved();
 
     expect(localStorage.getItem('token')).toBeNull();
+    expect(sessionStorage.getItem('cache.beds')).toBeNull();
+    expect(localStorage.getItem('lang')).toBe('pt-BR');
     expect(TestBed.inject(LocalSessionStore).isValid()).toBeFalse();
   });
 });
