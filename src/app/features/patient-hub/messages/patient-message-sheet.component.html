@@ -1,0 +1,212 @@
+<!-- Sem frame no Figma: bottom-sheet no padrão do Registro diário, desenhado pelo agente. O clique no <dialog> é o scrim; Esc fecha. -->
+<!-- eslint-disable-next-line @angular-eslint/template/click-events-have-key-events, @angular-eslint/template/interactive-supports-focus -->
+<dialog
+  #dialogEl
+  class="msg"
+  aria-labelledby="msg-title"
+  (click)="onDialogClick($event)"
+  (cancel)="onCancel($event)"
+>
+  <span class="msg__handle" aria-hidden="true"></span>
+  <div class="msg__header">
+    <h2 id="msg-title" class="msg__title">Observação ou mensagem</h2>
+    <app-icon-button
+      kind="secondary"
+      appearance="icon"
+      icon="x"
+      ariaLabel="Fechar"
+      (click)="close()"
+    />
+  </div>
+
+  @if (open()) {
+    <div class="msg__body">
+      @if (step() === 'compose') {
+        <div class="msg__card">
+          <label class="msg__label" for="msg-content"
+            >Descreva a situação do paciente</label
+          >
+          <textarea
+            id="msg-content"
+            class="msg__textarea"
+            rows="5"
+            placeholder="Ex.: @enfermagem, paciente com SNE exteriorizada"
+            aria-describedby="msg-help"
+            [value]="content()"
+            (input)="onContent($event)"
+          ></textarea>
+          <p id="msg-help" class="msg__help">
+            Mencione quem deve receber com @ (pessoa, @medicos, @nutris,
+            @enfermagem, @fonos, @fisio, @farmacia ou @todos). Sem menção, vira
+            observação no histórico.
+          </p>
+          @if (transcribed()) {
+            <p class="msg__ai-note" role="status">{{ transcribedNote }}</p>
+          }
+        </div>
+        @if (working()) {
+          <p class="msg__status" role="status">Processando…</p>
+        }
+        @if (notice(); as text) {
+          <p class="msg__status msg__status--warning" role="alert">
+            {{ text }}
+          </p>
+        }
+        @if (hint(); as text) {
+          <p class="msg__status msg__status--error" role="alert">{{ text }}</p>
+        }
+        @if (!online()) {
+          <p class="msg__status msg__status--warning" role="status">
+            {{ offlineHint }}
+          </p>
+        }
+        <!-- Offline: o campo é recriado desabilitado (libera o microfone de uma gravação em curso). -->
+        @if (online()) {
+          <app-input-chat
+            class="msg__chat"
+            placeholder="Grave um áudio ou escreva aqui"
+            [disabled]="working()"
+            (send)="onChatText($event)"
+            (audioSend)="onAudio($event)"
+            (audioModeError)="onAudioError($event)"
+          />
+        } @else {
+          <app-input-chat
+            class="msg__chat"
+            placeholder="Grave um áudio ou escreva aqui"
+            [disabled]="true"
+          />
+        }
+        <app-button
+          label="Revisar destinatários"
+          [fullWidth]="true"
+          [disabled]="working()"
+          (click)="review()"
+        />
+      } @else {
+        <section class="msg__card" aria-label="Conteúdo">
+          <span class="msg__label">Conteúdo</span>
+          <p class="msg__content" data-testid="review-content">
+            {{ content() }}
+          </p>
+        </section>
+
+        <section class="msg__card" aria-labelledby="msg-recipients">
+          <span id="msg-recipients" class="msg__label">Destinatários</span>
+          @if (isObservation()) {
+            <p class="msg__help" data-testid="observation-note">
+              Sem destinatário: será registrada como observação no histórico do
+              paciente, sem notificar ninguém.
+            </p>
+          }
+          @if (hasSuggested()) {
+            <p class="msg__ai-note" role="status">{{ aiSuggestedNote }}</p>
+          }
+          <ul class="msg__entries">
+            @for (entry of entries(); track entry.key) {
+              <li
+                class="msg__entry"
+                [class.msg__entry--blocked]="entry.members.length === 0"
+              >
+                <div class="msg__entry-text">
+                  <span class="msg__entry-label"
+                    >{{ entry.label }}
+                    @if (entry.origin === 'ai') {
+                      <span class="msg__tag">Sugerido pela IA</span>
+                    }
+                  </span>
+                  @if (entry.members.length > 0) {
+                    <span class="msg__help">{{ members(entry) }}</span>
+                  } @else {
+                    <span class="msg__status msg__status--error" role="alert"
+                      >Sem destinatário válido. {{ blocked(entry) }}</span
+                    >
+                  }
+                </div>
+                <app-icon-button
+                  kind="secondary"
+                  appearance="icon"
+                  icon="x"
+                  [ariaLabel]="'Remover ' + entry.label"
+                  (click)="removeEntry(entry.key)"
+                />
+              </li>
+            }
+          </ul>
+          @if (hasBlocked()) {
+            <p class="msg__status msg__status--error" role="alert">
+              O envio direcionado está bloqueado até haver um destinatário
+              válido. Remova o destinatário sem profissionais ou registre como
+              observação.
+            </p>
+            <app-button
+              kind="primary"
+              appearance="outlined"
+              label="Registrar como observação"
+              (click)="asObservation()"
+            />
+          }
+          <label class="msg__help" for="msg-add">Adicionar destinatário</label>
+          <select
+            id="msg-add"
+            class="msg__select"
+            (change)="
+              addGroup($any($event.target).value);
+              $any($event.target).value = ''
+            "
+          >
+            <option value="">Selecione…</option>
+            <option value="all">@todos</option>
+            @for (group of groupOptions; track group.key) {
+              <option [value]="'group:' + group.key">{{ group.label }}</option>
+            }
+            @for (person of pickable(); track person.id) {
+              <option [value]="'person:' + person.id">{{ person.name }}</option>
+            }
+          </select>
+          @if (entries().length > 0 && !hasBlocked()) {
+            <app-button
+              kind="primary"
+              appearance="outlined"
+              label="Recusar destinatários (só observação)"
+              (click)="asObservation()"
+            />
+          }
+        </section>
+
+        @if (notice(); as text) {
+          <p class="msg__status msg__status--warning" role="alert">
+            {{ text }}
+          </p>
+        }
+        @if (hint(); as text) {
+          <p class="msg__status msg__status--error" role="alert">{{ text }}</p>
+        }
+        @if (!online()) {
+          <p class="msg__status msg__status--warning" role="status">
+            {{ offlineHint }}
+          </p>
+        }
+        <app-button
+          [label]="
+            isObservation()
+              ? 'Registrar observação'
+              : 'Confirmar e enviar para ' +
+                recipientCount() +
+                ' profissional(is)'
+          "
+          [fullWidth]="true"
+          [disabled]="!canConfirm()"
+          (click)="confirm()"
+        />
+        <app-button
+          kind="primary"
+          appearance="outlined"
+          label="Voltar e editar"
+          [fullWidth]="true"
+          (click)="backToCompose()"
+        />
+      }
+    </div>
+  }
+</dialog>
