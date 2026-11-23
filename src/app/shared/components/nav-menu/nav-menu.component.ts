@@ -108,6 +108,7 @@ export class NavMenuComponent {
   protected readonly showCloseButton = computed(() => !this.viewportBreakpoint.isDesktop());
 
   // Ícones em peso "regular"; o item ativo usa "bold" (Figma v2/NavMenu, Phosphor tem os dois).
+  // Única exceção fixa: o ícone de Sair (template) é sempre bold, aberto ou fechado (CLAUDE.md).
   protected readonly items: readonly NavMenuItem[] = [
     { icon: 'house', key: 'home', label: 'Home' },
     { icon: 'hospital', key: 'hospitais', label: 'Hospitais' },

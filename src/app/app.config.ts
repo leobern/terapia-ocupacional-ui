@@ -7,6 +7,8 @@ import { provideRouterStore } from '@ngrx/router-store';
 import { provideStore } from '@ngrx/store';
 
 import { routes } from './app.routing';
+import { NoopSessionRevoker } from './features/auth/noop-session-revoker';
+import { SessionRevoker } from './features/auth/session-revoker';
 import {
   FoodRecallSource,
   InfusedIntakeSource,
@@ -37,6 +39,8 @@ import {
 import { PendingNotificationsQueryResolver } from './features/notifications/assistant/pending-notifications-query.resolver';
 import { NotificationsApiService } from './features/notifications/data-access/notifications-api.service';
 import { ProvisionalNotificationsApiService } from './features/notifications/data-access/provisional-notifications-api.service';
+import { HttpPasswordResetGateway } from './features/password-recovery/http-password-reset-gateway';
+import { PasswordResetGateway } from './features/password-recovery/password-reset-gateway';
 import { AssessmentAiStructurer } from './features/patient-hub/assessment/assessment-ai-structurer';
 import { AssessmentSource } from './features/patient-hub/assessment/assessment-source';
 import { AssessmentWriter } from './features/patient-hub/assessment/assessment-writer';
@@ -90,8 +94,6 @@ import { ProvisionalNutritionCardStore } from './features/patients/nutrition-pan
 import { ProvisionalNutritionResultsSource } from './features/patients/nutrition-panel/provisional-nutrition-results';
 import { FormulasApi } from './features/pharmacy/formulas-api';
 import { ProvisionalFormulasApi } from './features/pharmacy/provisional-formulas-api';
-import { HttpPasswordResetGateway } from './features/password-recovery/http-password-reset-gateway';
-import { PasswordResetGateway } from './features/password-recovery/password-reset-gateway';
 import { LocalStartupStateReader } from './features/splash/local-startup-state-reader';
 import { StartupStateReader } from './features/splash/startup-state';
 import { ProvisionalSessionRoleReader } from './shared/auth/provisional-session-role-reader';
@@ -106,6 +108,7 @@ export const appConfig: ApplicationConfig = {
   providers: [
     { provide: ProfessionalProfileReader, useClass: LocalProfessionalProfileReader },
     { provide: PasswordResetGateway, useClass: HttpPasswordResetGateway },
+    { provide: SessionRevoker, useClass: NoopSessionRevoker },
     { provide: StartupStateReader, useClass: LocalStartupStateReader },
     { provide: LinkedHospitalsReader, useClass: HomeHospitalsApiService },
     { provide: UnreadNotificationsReader, useClass: LocalUnreadNotificationsReader },

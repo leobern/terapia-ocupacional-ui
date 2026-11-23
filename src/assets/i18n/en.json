@@ -10,6 +10,15 @@
     },
     "stale": "Data may be out of date. No connection right now."
   },
+  "logout": {
+    "cancel": "Cancel",
+    "confirm": "Sign out",
+    "dialogLabel": "Confirm sign out",
+    "menuLabel": "Menu",
+    "message": "Your session on this device will end and data saved on it will be removed.",
+    "signOut": "Sign out",
+    "title": "Sign out of your account?"
+  },
   "passwordRecovery": {
     "backToLogin": "Back to login",
     "forgot": {

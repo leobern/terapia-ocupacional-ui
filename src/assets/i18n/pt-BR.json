@@ -10,6 +10,15 @@
     },
     "stale": "Os dados podem estar desatualizados. Sem conexão no momento."
   },
+  "logout": {
+    "cancel": "Cancelar",
+    "confirm": "Sair",
+    "dialogLabel": "Confirmar saída da conta",
+    "menuLabel": "Menu",
+    "message": "Sua sessão neste dispositivo será encerrada e os dados salvos nele serão removidos.",
+    "signOut": "Sair",
+    "title": "Deseja sair da conta?"
+  },
   "passwordRecovery": {
     "backToLogin": "Voltar ao login",
     "forgot": {

@@ -3,6 +3,8 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Router, RouterModule, Routes } from '@angular/router';
 
 import { AppComponent } from './app.component';
+import { LogoutService } from './features/auth/logout.service';
+import { SessionRevoker } from './features/auth/session-revoker';
 import { ProvisionalSessionRoleReader } from './shared/auth/provisional-session-role-reader';
 import { SessionRoleReader } from './shared/auth/session-role';
 
@@ -17,6 +19,12 @@ interface WritableLike<T> {
 const ROUTES: Routes = [
   { component: DummyComponent, data: { hideShell: true }, path: 'splash' },
   { component: DummyComponent, path: 'home' },
+  { component: DummyComponent, path: 'login' },
+];
+
+const TEST_PROVIDERS = [
+  { provide: SessionRoleReader, useClass: ProvisionalSessionRoleReader },
+  { provide: SessionRevoker, useValue: { revokeCurrentDevice: (): Promise<void> => Promise.resolve() } },
 ];
 
 describe('AppComponent', () => {
@@ -47,7 +55,7 @@ describe('AppComponent', () => {
 
     await TestBed.configureTestingModule({
       imports: [AppComponent, RouterModule.forRoot(ROUTES)],
-      providers: [{ provide: SessionRoleReader, useClass: ProvisionalSessionRoleReader }],
+      providers: TEST_PROVIDERS,
     }).compileComponents();
 
     fixture = TestBed.createComponent(AppComponent);
@@ -122,7 +130,7 @@ describe('AppComponent', () => {
 
     await TestBed.configureTestingModule({
       imports: [AppComponent, RouterModule.forRoot(ROUTES)],
-      providers: [{ provide: SessionRoleReader, useClass: ProvisionalSessionRoleReader }],
+      providers: TEST_PROVIDERS,
     }).compileComponents();
 
     fixture = TestBed.createComponent(AppComponent);
@@ -368,5 +376,102 @@ describe('AppComponent', () => {
 
     expect(router.navigate).toHaveBeenCalledWith(['/home']);
     expect(fixture.componentInstance.menuOpen()).toBeFalse();
+  });
+
+  describe('logout', () => {
+    let logout: jasmine.Spy;
+    let router: Router;
+    let logoutFixture: ComponentFixture<AppComponent>;
+    let el: HTMLElement;
+
+    const button = (label: string): HTMLButtonElement | undefined =>
+      Array.from(el.querySelectorAll('dialog[open] button')).find(b => b.textContent?.trim() === label) as
+        HTMLButtonElement | undefined;
+
+    beforeEach(async () => {
+      spyOnProperty(navigator, 'language', 'get').and.returnValue('pt-BR');
+      logout = jasmine.createSpy('logout').and.resolveTo();
+      TestBed.inject(LogoutService).logout = logout as unknown as LogoutService['logout'];
+      router = TestBed.inject(Router);
+      logoutFixture = TestBed.createComponent(AppComponent);
+      el = logoutFixture.nativeElement as HTMLElement;
+      await router.navigateByUrl('/home');
+      logoutFixture.detectChanges();
+      el.querySelector<HTMLButtonElement>('.nav-menu__link--logout')?.click();
+      logoutFixture.detectChanges();
+    });
+
+    it('asks for confirmation before ending the session', () => {
+      expect(logout).not.toHaveBeenCalled();
+      expect(el.textContent).toContain('Deseja sair da conta?');
+    });
+
+    it('ends the session and redirects to login on confirm', async () => {
+      button('Sair')?.click();
+      await logoutFixture.whenStable();
+
+      expect(logout).toHaveBeenCalledTimes(1);
+      expect(router.url).toBe('/login');
+    });
+
+    it('keeps the session and the route on cancel', async () => {
+      button('Cancelar')?.click();
+      await logoutFixture.whenStable();
+      logoutFixture.detectChanges();
+
+      expect(logout).not.toHaveBeenCalled();
+      expect(router.url).toBe('/home');
+      expect(el.querySelector<HTMLDialogElement>('dialog')?.open ?? false).toBeFalse();
+    });
+
+    it('calls logout once when Confirm is double-clicked and disables the button meanwhile', async () => {
+      let release!: () => void;
+
+      logout.and.returnValue(new Promise<void>(resolve => (release = resolve)));
+      const confirm = button('Sair') as HTMLButtonElement;
+
+      confirm.click();
+      confirm.click();
+      logoutFixture.detectChanges();
+
+      expect(logout).toHaveBeenCalledTimes(1);
+      expect(button('Sair')?.disabled).toBeTrue();
+
+      release();
+      await logoutFixture.whenStable();
+
+      expect(logout).toHaveBeenCalledTimes(1);
+      expect(router.url).toBe('/login');
+    });
+
+    it('opens the confirmation from the Sair button inside the mobile menu panel', () => {
+      button('Cancelar')?.click();
+      logoutFixture.detectChanges();
+      el.querySelector<HTMLButtonElement>('app-bottom-nav-bar button')?.click();
+      logoutFixture.detectChanges();
+
+      expect(logoutFixture.componentInstance.menuOpen()).toBeTrue();
+
+      el.querySelector<HTMLButtonElement>('.nav-menu__link--logout')?.click();
+      logoutFixture.detectChanges();
+
+      expect(el.textContent).toContain('Deseja sair da conta?');
+      expect(logoutFixture.componentInstance.menuOpen()).toBeFalse();
+      expect(logout).not.toHaveBeenCalled();
+    });
+
+    it('ends the session and goes to /login when confirming from the mobile menu', async () => {
+      button('Cancelar')?.click();
+      logoutFixture.detectChanges();
+      el.querySelector<HTMLButtonElement>('app-bottom-nav-bar button')?.click();
+      logoutFixture.detectChanges();
+      el.querySelector<HTMLButtonElement>('.nav-menu__link--logout')?.click();
+      logoutFixture.detectChanges();
+      button('Sair')?.click();
+      await logoutFixture.whenStable();
+
+      expect(logout).toHaveBeenCalledTimes(1);
+      expect(router.url).toBe('/login');
+    });
   });
 });
