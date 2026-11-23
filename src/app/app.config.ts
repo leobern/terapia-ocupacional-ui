@@ -21,6 +21,7 @@ import { FollowUpClosureSource, FollowUpClosureWriter } from './features/follow-
 import { ProvisionalFollowUpClosureSource } from './features/follow-up-closure/provisional-follow-up-closure';
 import { DailyPatientsSource } from './features/home/daily-patients';
 import { HomeApiService } from './features/home/data-access/home-api.service';
+import { HomeNotificationsApiService } from './features/home/data-access/home-notifications-api.service';
 import { HomeNotificationsSource } from './features/home/home-notifications-source';
 import { LinkedHospitalsReader } from './features/home/linked-hospitals';
 import { LocalProfessionalProfileReader } from './features/home/local-professional-profile-reader';
@@ -28,7 +29,6 @@ import { LocalUnreadNotificationsReader } from './features/home/local-unread-not
 import { MockLinkedHospitalsReader } from './features/home/mock-linked-hospitals-reader';
 import { ProfessionalProfileReader } from './features/home/professional-profile';
 import { ProvisionalDailyPatientsSource } from './features/home/provisional-daily-patients';
-import { ProvisionalHomeNotificationsSource } from './features/home/provisional-home-notifications';
 import { UnreadNotificationsReader } from './features/home/unread-notifications-reader';
 import { HospitalInvitePort, ManagerAccessReader } from './features/hospital-team/hospital-invite-port';
 import {
@@ -146,7 +146,7 @@ export const appConfig: ApplicationConfig = {
     { provide: NutritionValueWriter, useExisting: ProvisionalNutritionCardStore },
     { provide: NutritionAddedCards, useExisting: ProvisionalNutritionCardStore },
     { provide: NutritionHiddenCards, useExisting: ProvisionalNutritionCardStore },
-    { provide: HomeNotificationsSource, useClass: ProvisionalHomeNotificationsSource },
+    { provide: HomeNotificationsSource, useClass: HomeNotificationsApiService },
     // Provisórios (sem backend ainda): notificações em memória, hospital único e usuários de exemplo.
     { provide: NotificationsApiService, useClass: ProvisionalNotificationsApiService },
     { provide: HomeApiService, useClass: ProvisionalHomeApiService },
