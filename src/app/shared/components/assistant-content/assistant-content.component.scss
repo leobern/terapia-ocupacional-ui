@@ -47,9 +47,11 @@
   @include typography.chat-hint;
 }
 
+// Ações da tela como chips "tip" (Figma v2/Chip): largura pelo conteúdo, quebram linha quando enchem.
 .assistant-content__actions {
   display: flex;
   flex-direction: column;
+  align-items: flex-start;
   gap: tokens.$space-8;
   margin-top: tokens.$space-16;
 }

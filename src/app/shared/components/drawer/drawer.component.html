@@ -62,10 +62,8 @@
     @if (hasShortcuts()) {
       <div class="drawer__actions">
         @for (shortcut of visibleShortcuts(); track shortcut.id) {
-          <app-button
+          <app-tip
             class="drawer__shortcut"
-            kind="secondary"
-            appearance="outlined"
             [label]="shortcut.label"
             (click)="onShortcut(shortcut)"
           />

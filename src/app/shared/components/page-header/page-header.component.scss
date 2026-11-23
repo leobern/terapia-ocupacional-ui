@@ -12,8 +12,10 @@
   display: flex;
   align-items: center;
   gap: tokens.$space-8;
-  min-height: 56px;
-  padding-inline: tokens.$space-16;
+
+  // Mobile (Figma 4601:1790): padding 16 em cima e embaixo e nenhum lateral — o recuo de 16px vem da margem
+  // da página (`--page-container-margin`), então o voltar fica alinhado aos cards.
+  padding: tokens.$space-16 0;
 
   @include breakpoints.md {
     min-height: 88px;
@@ -37,6 +39,7 @@
   display: flex;
   flex: 1 0 0;
   flex-direction: column;
+  gap: tokens.$space-4;
   min-width: 0;
 }
 
@@ -57,6 +60,7 @@
 
 .page-header__subtitle {
   margin: 0;
+  padding-inline: tokens.$space-4;
   color: tokens.c(content-4);
 
   @include typography.caption;

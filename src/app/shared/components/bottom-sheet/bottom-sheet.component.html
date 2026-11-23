@@ -78,10 +78,8 @@
     @if (hasShortcuts()) {
       <div class="bottom-sheet__actions">
         @for (shortcut of visibleShortcuts(); track shortcut.id) {
-          <app-button
+          <app-tip
             class="bottom-sheet__shortcut"
-            kind="secondary"
-            appearance="outlined"
             [label]="shortcut.label"
             (click)="onShortcut(shortcut)"
           />

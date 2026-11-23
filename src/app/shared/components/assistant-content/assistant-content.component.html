@@ -31,10 +31,7 @@
       <!-- Figma 4506:10097: os botões das ações ficam logo abaixo do texto. -->
       <div class="assistant-content__actions">
         @for (action of screenActions.actions(); track action.id) {
-          <app-button
-            kind="primary"
-            appearance="outlined"
-            [fullWidth]="true"
+          <app-tip
             [label]="action.label"
             (click)="assistant.openAction(action)"
           />

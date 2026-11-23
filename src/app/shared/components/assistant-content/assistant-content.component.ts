@@ -10,6 +10,7 @@ import { AssistantFormComponent } from '../assistant-form/assistant-form.compone
 import { ButtonComponent } from '../button/button.component';
 import { IconButtonComponent } from '../icon-button/icon-button.component';
 import { IconLogoComponent } from '../icon-logo/icon-logo.component';
+import { TipComponent } from '../tip/tip.component';
 
 /** Atalhos de pergunta exibidos ao abrir o assistente (lista simples e substituível). */
 /**
@@ -27,6 +28,7 @@ import { IconLogoComponent } from '../icon-logo/icon-logo.component';
     NgTemplateOutlet,
     ButtonComponent,
     IconButtonComponent,
+    TipComponent,
     IconLogoComponent,
     PhIconComponent,
   ],

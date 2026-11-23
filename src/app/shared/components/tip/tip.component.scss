@@ -1,0 +1,38 @@
+@use '../../styles/mixins';
+@use '../../styles/tokens';
+@use '../../styles/typography';
+
+// Figma v2/Chip: pad 8/16, raio 12, borda 1,5px secondary, texto content-2 (Medium 14/20); pressionado: surface-2.
+:host {
+  display: block;
+  max-width: 100%;
+}
+
+.tip {
+  box-sizing: border-box;
+  max-width: 100%;
+  padding: tokens.$space-8 tokens.$space-16;
+  border: 1.5px solid tokens.c(secondary);
+  border-radius: tokens.$radius-12;
+  background: transparent;
+  color: tokens.c(content-2);
+  cursor: pointer;
+  text-align: left;
+
+  @include typography.label-lg;
+  @include mixins.focus-ring;
+
+  &:hover:not(:disabled) {
+    background: tokens.c(surface-2);
+  }
+
+  &:active:not(:disabled) {
+    background: tokens.c(surface-2);
+  }
+
+  &:disabled {
+    border-color: tokens.c(state-disabled);
+    color: tokens.c(state-disabled-2);
+    cursor: not-allowed;
+  }
+}
