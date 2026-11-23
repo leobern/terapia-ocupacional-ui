@@ -25,9 +25,13 @@ describe('NotificationsRepository', () => {
     const before = repository.list('pending', null, 50).totalCount;
     const version = repository.version();
 
-    const created = repository.create({ dueDate: '', message: 'Olá', recipients: [] });
+    const created = repository.create({
+      message: 'Olá',
+      recipients: [{ id: 3, name: 'Jairo', photoUrl: null, specialty: 'Enfermeiro' }],
+    });
 
     expect(created.patient).toBeNull();
+    expect(created.recipients?.map(r => r.name)).toEqual(['Jairo']);
     expect(created.author.name).toBe('Michelle Franklin');
     expect(repository.list('pending', null, 50).totalCount).toBe(before + 1);
     expect(repository.list('pending', null, 1).items[0].id).toBe(created.id);

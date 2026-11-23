@@ -8,12 +8,10 @@ import {
   type ProfessionalRef,
 } from '../notifications.models';
 
-/** Dados do cadastro de uma notificação (formulário "Criar notificação"). */
+/** Dados de um comunicado interno (assistente central): sempre com destinatários. */
 export interface NewNotification {
   readonly recipients: readonly ProfessionalRef[];
   readonly message: string;
-  /** Data limite para resolução (`yyyy-MM-dd`); vazio = sem prazo. */
-  readonly dueDate: string;
 }
 
 interface StoredNotification {
@@ -142,7 +140,7 @@ export class NotificationsRepository {
     };
   }
 
-  /** Cria uma notificação PENDENTE do profissional autenticado. */
+  /** Cria um comunicado interno ATIVO (pendente) do profissional autenticado. */
   create(input: NewNotification): Notification {
     const notification: Notification = {
       author: ME,
@@ -151,6 +149,7 @@ export class NotificationsRepository {
       id: this.nextId++,
       patient: null,
       read: false,
+      recipients: input.recipients.map(recipient => ({ ...recipient })),
       replies: [],
       replyCount: 0,
     };

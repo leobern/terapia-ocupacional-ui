@@ -20,7 +20,7 @@ describe('LocalUnreadNotificationsReader', () => {
   it('acompanha as notificações criadas', async () => {
     const before = await reader.countUnread();
 
-    repository.create({ dueDate: '', message: 'Nova', recipients: [] });
+    repository.create({ message: 'Nova', recipients: [] });
 
     expect(await reader.countUnread()).toBe(before + 1);
   });

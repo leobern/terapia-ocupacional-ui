@@ -16,7 +16,7 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Actions, ofType } from '@ngrx/effects';
 import { Store } from '@ngrx/store';
-import { take } from 'rxjs';
+import { firstValueFrom, take } from 'rxjs';
 
 import { BottomSheetComponent } from '../../shared/components/bottom-sheet/bottom-sheet.component';
 import {
@@ -30,11 +30,18 @@ import { InputChatComponent } from '../../shared/components/input-chat/input-cha
 import { PageContainerComponent } from '../../shared/components/page-container/page-container.component';
 import { PhIconComponent } from '../../shared/icons/ph-icon/ph-icon.component';
 import { AiAssistantService } from '../../shared/services/ai-assistant.service';
-import { type ScreenAction, ScreenActionsService } from '../../shared/services/screen-actions.service';
+import { ConnectivityService } from '../../shared/services/connectivity.service';
+import {
+  FormSubmitError,
+  type FormValues,
+  type ScreenAction,
+  ScreenActionsService,
+} from '../../shared/services/screen-actions.service';
 import { type DirectoryUser } from '../../shared/services/user-directory';
 import { formatRelativeTime } from '../../shared/utils/relative-time';
 import { HospitalContextService } from '../home/hospital-context.service';
 import { NotificationSectionTitleComponent } from './components/notification-section-title/notification-section-title.component';
+import { NotificationsApiService } from './data-access/notifications-api.service';
 import { NotificationsRepository } from './data-access/notifications-repository.service';
 import { Notification } from './notifications.models';
 import { NotificationsActions } from './state/notifications.actions';
@@ -153,6 +160,8 @@ export class NotificationsComponent implements OnDestroy {
   private readonly location = inject(Location);
   private readonly hospitalContext = inject(HospitalContextService);
   private readonly repository = inject(NotificationsRepository);
+  private readonly api = inject(NotificationsApiService);
+  private readonly connectivity = inject(ConnectivityService);
   private readonly screenActions = inject(ScreenActionsService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly route = inject(ActivatedRoute);
@@ -382,6 +391,37 @@ export class NotificationsComponent implements OnDestroy {
     this.store.dispatch(NotificationsActions.discardConfirmationRequested());
   }
 
+  /** Texto do card: comunicado interno mostra os destinatários ("Para A, B: ..."). */
+  protected cardDescription(notification: Notification): string {
+    const names = (notification.recipients ?? []).map(recipient => recipient.name);
+
+    return names.length > 0 ? `Para ${names.join(', ')}: ${notification.description}` : notification.description;
+  }
+
+  /** Envia o comunicado interno pela API; sem conexão o envio fica indisponível e as respostas são mantidas. */
+  private async sendAnnouncement(values: FormValues): Promise<void> {
+    const hospitalId = this.hospitalContext.selected()?.id ?? this.hospitalId();
+
+    if (!this.connectivity.online()) {
+      throw new FormSubmitError(
+        'Sem conexão: não é possível enviar o comunicado agora. Tente novamente quando voltar a conexão.',
+      );
+    }
+    if (hospitalId == null) {
+      throw new FormSubmitError('Selecione um hospital para enviar o comunicado.');
+    }
+    const recipients = values['recipients'] as readonly DirectoryUser[];
+
+    await firstValueFrom(
+      this.api.createAnnouncement(
+        hospitalId,
+        values['message'] as string,
+        recipients.map(user => user.id),
+      ),
+    );
+    this.store.dispatch(NotificationsActions.refreshRequested());
+  }
+
   private screenActionsList(): readonly ScreenAction[] {
     return [
       {
@@ -390,37 +430,25 @@ export class NotificationsComponent implements OnDestroy {
             {
               id: 'recipients',
               kind: 'mention',
-              label: 'Quem será notificado:',
+              label: 'Quem receberá o comunicado:',
               placeholder: '@nome da pessoa',
               required: true,
+              requiredMessage: 'Informe ao menos um destinatário para enviar o comunicado.',
             },
             {
               id: 'message',
               kind: 'text',
-              label: 'Qual é a mensagem da notificação?',
-              placeholder: 'Escreva a mensagem',
+              label: 'Qual é o comunicado?',
+              placeholder: 'Escreva o comunicado',
               required: true,
             },
-            {
-              id: 'dueDate',
-              kind: 'date',
-              label: 'Data para resolução?',
-              placeholder: 'Selecione uma data final',
-              required: false,
-            },
           ],
-          submit: (values): void => {
-            this.repository.create({
-              dueDate: values['dueDate'] as string,
-              message: values['message'] as string,
-              recipients: (values['recipients'] as readonly DirectoryUser[]).map(user => ({ ...user })),
-            });
-          },
-          submitLabel: 'Criar notificação',
-          title: 'Criar notificação',
+          submit: (values): Promise<void> => this.sendAnnouncement(values),
+          submitLabel: 'Enviar comunicado',
+          title: 'Criar comunicado interno',
         },
         id: 'create',
-        label: 'Criar notificação',
+        label: 'Criar comunicado interno',
       },
       { id: 'edit', label: 'Editar notificação' },
       { id: 'reply', label: 'Responder notificação' },

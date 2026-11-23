@@ -1,7 +1,7 @@
 import { type ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { AssistantFormController } from '../../services/assistant-form-controller.service';
-import { type FormActionDefinition, type FormValues } from '../../services/screen-actions.service';
+import { type FormActionDefinition, FormSubmitError, type FormValues } from '../../services/screen-actions.service';
 import { type DirectoryUser, UserDirectory } from '../../services/user-directory';
 import { AssistantFormComponent } from './assistant-form.component';
 
@@ -25,14 +25,19 @@ describe('AssistantFormComponent', () => {
   let directory: FakeDirectory;
   let saved: FormValues | null;
   let failing: boolean;
+  let failWithReason: boolean;
+  let requiredMessage: string | undefined;
 
   const definition = (): FormActionDefinition => ({
     fields: [
-      { id: 'who', kind: 'mention', label: 'Quem?', placeholder: '@nome', required: true },
+      { id: 'who', kind: 'mention', label: 'Quem?', placeholder: '@nome', required: true, requiredMessage },
       { id: 'text', kind: 'text', label: 'Mensagem?', placeholder: 'Escreva', required: true },
       { id: 'date', kind: 'date', label: 'Data?', placeholder: 'Selecione', required: false },
     ],
     submit: (values): void => {
+      if (failWithReason) {
+        throw new FormSubmitError('Sem conexão.');
+      }
       if (failing) {
         throw new Error('fail');
       }
@@ -76,6 +81,8 @@ describe('AssistantFormComponent', () => {
     directory = new FakeDirectory();
     saved = null;
     failing = false;
+    failWithReason = false;
+    requiredMessage = 'Informe ao menos um destinatário.';
     await TestBed.configureTestingModule({
       imports: [AssistantFormComponent],
       providers: [{ provide: UserDirectory, useValue: directory }],
@@ -203,6 +210,26 @@ describe('AssistantFormComponent', () => {
     fixture.detectChanges();
 
     expect(el().querySelector('.assistant-form__error')?.textContent).toContain('Não foi possível salvar');
+    expect(input(1).value).toBe('Revisar');
+  });
+
+  it('shows the reason while a required question with requiredMessage is unanswered', async () => {
+    expect(el().querySelector('.assistant-form__hint')?.textContent).toContain('Informe ao menos um destinatário.');
+    await type(0, '@jai');
+    await pick();
+
+    expect(el().querySelector('.assistant-form__hint')).toBeNull();
+  });
+
+  it('shows the message of a FormSubmitError and keeps the answers', async () => {
+    failWithReason = true;
+    await type(0, '@jai');
+    await pick();
+    await type(1, 'Revisar');
+    await footer().click();
+    fixture.detectChanges();
+
+    expect(el().querySelector('.assistant-form__error')?.textContent).toContain('Sem conexão.');
     expect(input(1).value).toBe('Revisar');
   });
 

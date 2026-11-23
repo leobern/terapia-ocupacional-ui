@@ -6,6 +6,7 @@ import { AssistantFormController } from '../../services/assistant-form-controlle
 import {
   type FormActionDefinition,
   type FormFieldDefinition,
+  FormSubmitError,
   type FormValues,
 } from '../../services/screen-actions.service';
 import { type DirectoryUser, UserDirectory } from '../../services/user-directory';
@@ -41,6 +42,13 @@ export class AssistantFormComponent {
   /** Data mínima do campo `date`: hoje (não faz sentido resolver no passado). */
   protected readonly today = new Date().toISOString().slice(0, 10);
 
+  /** Motivos das perguntas obrigatórias ainda sem resposta (só as que declaram `requiredMessage`). */
+  protected readonly missingReasons = computed(() =>
+    this.definition()
+      .fields.filter(field => field.required && field.requiredMessage && !this.hasValue(field))
+      .map(field => field.requiredMessage as string),
+  );
+
   protected readonly canSubmit = computed(
     () => !this.submitting() && this.definition().fields.every(field => !field.required || this.hasValue(field)),
   );
@@ -75,8 +83,10 @@ export class AssistantFormComponent {
       await this.definition().submit(this.values());
       this.reset();
       this.submitted.emit();
-    } catch {
-      this.errorMessage.set('Não foi possível salvar. Tente novamente.');
+    } catch (error) {
+      this.errorMessage.set(
+        error instanceof FormSubmitError ? error.message : 'Não foi possível salvar. Tente novamente.',
+      );
     } finally {
       this.submitting.set(false);
     }

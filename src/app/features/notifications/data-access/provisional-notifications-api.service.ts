@@ -1,7 +1,13 @@
-import { inject, Injectable } from '@angular/core';
-import { Observable, of } from 'rxjs';
+import { inject, Injectable, Injector } from '@angular/core';
+import { from, map, Observable, of } from 'rxjs';
 
-import { type NotificationPage, type NotificationReply, type NotificationStatus } from '../notifications.models';
+import { UserDirectory } from '../../../shared/services/user-directory';
+import {
+  type Notification,
+  type NotificationPage,
+  type NotificationReply,
+  type NotificationStatus,
+} from '../notifications.models';
 import { NotificationsApiService } from './notifications-api.service';
 import { NotificationsRepository } from './notifications-repository.service';
 
@@ -13,6 +19,8 @@ import { NotificationsRepository } from './notifications-repository.service';
 @Injectable()
 export class ProvisionalNotificationsApiService extends NotificationsApiService {
   private readonly repository = inject(NotificationsRepository);
+  // Resolvido sob demanda: só o comunicado precisa do diretório de usuários.
+  private readonly injector = inject(Injector);
 
   override getNotifications(
     _: number,
@@ -25,6 +33,14 @@ export class ProvisionalNotificationsApiService extends NotificationsApiService 
 
   override createReply(notificationId: number, text: string): Observable<NotificationReply> {
     return of(this.repository.addReply(notificationId, text));
+  }
+
+  override createAnnouncement(_: number, content: string, recipientIds: readonly number[]): Observable<Notification> {
+    return from(this.injector.get(UserDirectory).search('')).pipe(
+      map(users =>
+        this.repository.create({ message: content, recipients: users.filter(u => recipientIds.includes(u.id)) }),
+      ),
+    );
   }
 
   override resolve(notificationId: number): Observable<void> {

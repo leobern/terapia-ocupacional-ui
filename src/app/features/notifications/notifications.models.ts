@@ -31,6 +31,8 @@ export interface Notification {
   read: boolean;
   replyCount: number;
   replies: NotificationReply[];
+  /** Destinatários de um comunicado interno (sem paciente); ausente nas mensagens de paciente. */
+  recipients?: ProfessionalRef[];
 }
 
 export type NotificationStatus = 'pending' | 'resolved';

@@ -20,6 +20,9 @@ export type FormFieldValue = string | readonly DirectoryUser[];
 
 export type FormValues = Readonly<Record<string, FormFieldValue>>;
 
+/** Erro de envio com mensagem própria para o usuário (ex.: sem conexão); o formulário a exibe e mantém as respostas. */
+export class FormSubmitError extends Error {}
+
 export interface FormFieldDefinition {
   readonly id: string;
   /** Pergunta exibida no cabeçalho do card. */
@@ -27,6 +30,8 @@ export interface FormFieldDefinition {
   readonly kind: FormFieldKind;
   readonly placeholder: string;
   readonly required: boolean;
+  /** Motivo exibido enquanto uma pergunta obrigatória está sem resposta (ex.: "Informe ao menos um destinatário"). */
+  readonly requiredMessage?: string;
 }
 
 export interface FormActionDefinition {

@@ -125,6 +125,10 @@
     </app-accordion>
   }
 
+  @for (reason of missingReasons(); track reason) {
+    <p class="assistant-form__hint">{{ reason }}</p>
+  }
+
   @if (errorMessage(); as message) {
     <p class="assistant-form__error" role="alert">{{ message }}</p>
   }

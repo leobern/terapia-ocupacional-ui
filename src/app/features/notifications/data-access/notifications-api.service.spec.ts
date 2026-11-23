@@ -54,4 +54,13 @@ describe('NotificationsApiService', () => {
 
     expect(done).toBeTrue();
   });
+
+  it('createAnnouncement: POST /v1/notifications/announcements com hospital, conteúdo e destinatários', () => {
+    api.createAnnouncement(1, 'Aviso', [2, 3]).subscribe();
+    const req = http.expectOne(r => r.url.endsWith('/v1/notifications/announcements'));
+
+    expect(req.request.method).toBe('POST');
+    expect(req.request.body).toEqual({ content: 'Aviso', hospitalId: 1, recipientIds: [2, 3] });
+    req.flush({});
+  });
 });

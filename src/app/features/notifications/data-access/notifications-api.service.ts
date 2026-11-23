@@ -3,7 +3,7 @@ import { inject, Injectable } from '@angular/core';
 import { environment } from '@environments/environment';
 import { map, Observable } from 'rxjs';
 
-import { NotificationPage, NotificationReply, NotificationStatus } from '../notifications.models';
+import { Notification, NotificationPage, NotificationReply, NotificationStatus } from '../notifications.models';
 
 /**
  * Cliente HTTP para `GET /api/v1/notifications` e
@@ -36,6 +36,14 @@ export class NotificationsApiService {
 
   createReply(notificationId: number, text: string): Observable<NotificationReply> {
     return this.http.post<NotificationReply>(`${this.baseUrl}/${notificationId}/replies`, { text });
+  }
+
+  /**
+   * Cria um comunicado interno (sem paciente) do profissional autenticado para as pessoas
+   * informadas (`POST /api/v1/notifications/announcements`). O registro em trilha imutável é do backend.
+   */
+  createAnnouncement(hospitalId: number, content: string, recipientIds: readonly number[]): Observable<Notification> {
+    return this.http.post<Notification>(`${this.baseUrl}/announcements`, { content, hospitalId, recipientIds });
   }
 
   /** Marca a notificação como resolvida (botão ✓ do card — Figma v2/NotificationThread). */
