@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 
-import { MessageThread, ThreadReplyRequest } from './patient-messages.models';
+import { MessageThread, ThreadReplyRequest, ThreadResolveRequest } from './patient-messages.models';
 import { PatientMessagesSource, PatientMessagesWriter, ReplyTranscriber } from './patient-messages-source';
 
 const SEED: readonly MessageThread[] = [
@@ -68,6 +68,26 @@ export class ProvisionalPatientMessages extends PatientMessagesSource implements
       statusChanges: current.resolved
         ? [...current.statusChanges, { at: request.at, author: request.author, kind: 'reopened' }]
         : current.statusChanges,
+    };
+
+    this.threads = this.threads.map(t => (t.id === updated.id ? updated : t));
+
+    return Promise.resolve(updated);
+  }
+
+  resolve(request: ThreadResolveRequest): Promise<MessageThread> {
+    const current = this.threads.find(t => t.id === request.threadId);
+
+    if (current === undefined) {
+      return Promise.reject(new Error('thread inexistente'));
+    }
+    if (current.resolved) {
+      return Promise.resolve(current);
+    }
+    const updated: MessageThread = {
+      ...current,
+      resolved: true,
+      statusChanges: [...current.statusChanges, { at: request.at, author: request.author, kind: 'resolved' }],
     };
 
     this.threads = this.threads.map(t => (t.id === updated.id ? updated : t));

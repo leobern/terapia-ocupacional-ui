@@ -42,6 +42,12 @@ export interface ThreadReplyRequest {
   readonly threadId: string;
 }
 
+export interface ThreadResolveRequest {
+  readonly at: string;
+  readonly author: string;
+  readonly threadId: string;
+}
+
 export const THREADS_LOAD_FAILED_HINT = 'Não foi possível carregar as mensagens. Tente novamente.';
 export const THREADS_EMPTY_TEXT = 'Nenhuma mensagem registrada para este paciente.';
 export const REPLY_FAILED_HINT = 'Não foi possível enviar a resposta. O texto foi mantido; tente novamente.';
@@ -63,3 +69,15 @@ export const formatDateTime = (iso: string): string => {
 /** Pendência com prazo já passado e ainda não resolvida (FR-014f): só indicador visual. */
 export const isOverdue = (thread: MessageThread, now: Date): boolean =>
   !thread.resolved && thread.deadline !== null && new Date(thread.deadline).getTime() < now.getTime();
+
+export const RESOLVE_FAILED_HINT = 'Não foi possível marcar como resolvida. A thread continua ativa; tente novamente.';
+export const RESOLVE_OFFLINE_HINT = 'Sem conexão: marcar como resolvida fica indisponível até a conexão voltar.';
+
+/**
+ * Participante (FR-012): remetente, destinatário mencionado pelo nome ou quem já respondeu. Grupos (@medicos,
+ * @todos) dependem da equipe vinculada ao paciente e não são resolvidos aqui.
+ */
+export const isThreadParticipant = (thread: MessageThread, name: string): boolean =>
+  thread.author === name ||
+  thread.replies.some(reply => reply.author === name) ||
+  thread.recipients.some(recipient => recipient.toLowerCase() === `@${name.toLowerCase()}`);

@@ -5,7 +5,7 @@ import { InputChatComponent } from '../../shared/components/input-chat/input-cha
 import { ConnectivityService } from '../../shared/services/connectivity.service';
 import { NOW, ProfessionalProfileReader } from '../home/professional-profile';
 import { PatientThreadsComponent } from './patient-messages.component';
-import { MessageThread, ThreadReplyRequest } from './patient-messages.models';
+import { MessageThread, ThreadReplyRequest, ThreadResolveRequest } from './patient-messages.models';
 import { PatientMessagesSource, PatientMessagesWriter, ReplyTranscriber } from './patient-messages-source';
 import { ProvisionalPatientMessages } from './provisional-patient-messages';
 
@@ -15,6 +15,8 @@ describe('PatientThreadsComponent', () => {
   let online: WritableSignal<boolean>;
   let failList: boolean;
   let failReply: boolean;
+  let failResolve: boolean;
+  let profileName: string;
   let transcript: string | Error;
   let requests: ThreadReplyRequest[];
 
@@ -50,6 +52,8 @@ describe('PatientThreadsComponent', () => {
     online = signal(true);
     failList = false;
     failReply = false;
+    failResolve = false;
+    profileName = 'Michelle';
     transcript = 'texto transcrito';
     requests = [];
     TestBed.configureTestingModule({
@@ -78,6 +82,8 @@ describe('PatientThreadsComponent', () => {
 
                 return failReply ? Promise.reject(new Error('falhou')) : real.reply(r);
               },
+              resolve: (r: ThreadResolveRequest): Promise<MessageThread> =>
+                failResolve ? Promise.reject(new Error('falhou')) : real.resolve(r),
             };
           },
         },
@@ -89,7 +95,10 @@ describe('PatientThreadsComponent', () => {
           },
         },
         { provide: ConnectivityService, useValue: { online } },
-        { provide: ProfessionalProfileReader, useValue: { read: (): object => ({ name: 'Michelle', role: 'other' }) } },
+        {
+          provide: ProfessionalProfileReader,
+          useValue: { read: (): object => ({ name: profileName, role: 'other' }) },
+        },
         { provide: NOW, useValue: (): Date => NOW_DATE },
       ],
     });
@@ -273,5 +282,102 @@ describe('PatientThreadsComponent', () => {
 
     expect(c).toBeDefined();
     expect(textarea().value).toBe('');
+  });
+
+  describe('resolver thread', () => {
+    const resolveButton = (i = 0): HTMLButtonElement | null =>
+      threads()[i].querySelector('[data-testid="resolve-thread"] button');
+    const answer = async (label: string): Promise<void> => {
+      const buttons = Array.from(el().querySelectorAll('app-confirm-dialog button'));
+
+      (buttons.find(b => b.textContent.trim() === label) as HTMLButtonElement).click();
+      await settle();
+    };
+    // thread-2 (mais antiga) é de "Michelle Franklin" e aparece em segundo.
+    const mine = 1;
+
+    beforeEach(() => {
+      profileName = 'Michelle Franklin';
+    });
+
+    it('só participante vê o indicador de resolução', async () => {
+      await create();
+
+      expect(resolveButton(mine)).not.toBeNull();
+      expect(resolveButton(0)).toBeNull();
+    });
+
+    it('quem foi mencionado pelo nome ou já respondeu também participa', async () => {
+      profileName = 'Dra. Helena Prado';
+      await create();
+
+      expect(resolveButton(0)).not.toBeNull();
+      profileName = 'Ana';
+      await create();
+      expect(resolveButton(0)).toBeNull();
+    });
+
+    it('confirmar marca como resolvida, registra a mudança e some o indicador, sem abrir conversa', async () => {
+      await create();
+      resolveButton(mine)?.click();
+      await settle();
+      await answer('Sim');
+
+      expect(threads()[mine].querySelector('[data-testid="thread-status"]')?.textContent).toContain('Resolvida');
+      expect(threads()[mine].querySelector('[data-testid="status-change"]')?.textContent).toContain(
+        'Resolvida por Michelle Franklin',
+      );
+      expect(resolveButton(mine)).toBeNull();
+    });
+
+    it('cancelar não resolve', async () => {
+      await create();
+      resolveButton(mine)?.click();
+      await settle();
+      await answer('Não');
+
+      expect(threads()[mine].querySelector('[data-testid="thread-status"]')?.textContent).toContain('Ativa');
+    });
+
+    it('falha mantém a thread ativa e informa em texto', async () => {
+      failResolve = true;
+      await create();
+      resolveButton(mine)?.click();
+      await settle();
+      await answer('Sim');
+
+      expect(threads()[mine].querySelector('[data-testid="thread-status"]')?.textContent).toContain('Ativa');
+      expect(threads()[mine].querySelector('[data-testid="resolve-error"]')?.textContent).toContain('continua ativa');
+    });
+
+    it('offline: indicador desabilitado com aviso, e nada é despachado', async () => {
+      await create();
+      online.set(false);
+      await settle();
+
+      expect(resolveButton(mine)?.disabled).toBeTrue();
+      expect(threads()[mine].textContent).toContain('marcar como resolvida fica indisponível');
+      const component = fixture.componentInstance as unknown as {
+        onResolveClick(t: MessageThread): void;
+        resolveConfirmId(): string | null;
+        onConfirmResolve(): Promise<void>;
+      };
+      const thread = (await TestBed.inject(PatientMessagesSource).list('p1')).find(t => t.id === 'thread-2');
+
+      component.onResolveClick(thread as MessageThread);
+      expect(component.resolveConfirmId()).toBeNull();
+      await component.onConfirmResolve();
+      expect(threads()[mine].querySelector('[data-testid="thread-status"]')?.textContent).toContain('Ativa');
+    });
+
+    it('se ficar offline com o diálogo aberto, confirmar não grava', async () => {
+      await create();
+      resolveButton(mine)?.click();
+      await settle();
+      online.set(false);
+      await answer('Sim');
+
+      expect(threads()[mine].querySelector('[data-testid="thread-status"]')?.textContent).toContain('Ativa');
+    });
   });
 });

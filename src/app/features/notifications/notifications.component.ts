@@ -36,6 +36,7 @@ import { type DirectoryUser } from '../../shared/services/user-directory';
 import { formatRelativeTime } from '../../shared/utils/relative-time';
 import { HospitalContextService } from '../home/hospital-context.service';
 import { NotificationSectionTitleComponent } from './components/notification-section-title/notification-section-title.component';
+import { isSentThreadNotification } from '../patient-messages/sent-thread-notification';
 import { NotificationsRepository } from './data-access/notifications-repository.service';
 import { Notification } from './notifications.models';
 import { NotificationsActions } from './state/notifications.actions';
@@ -277,6 +278,7 @@ export class NotificationsComponent implements OnDestroy {
     const me = this.currentUserId;
 
     return (
+      isSentThreadNotification(notification) ||
       notification.author.id === me ||
       (notification.mentioned ?? []).some(person => person.id === me) ||
       notification.replies.some(reply => reply.author.id === me)

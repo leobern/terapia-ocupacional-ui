@@ -1,8 +1,8 @@
 import { inject, Injectable } from '@angular/core';
 import { forkJoin, from, map, Observable, of } from 'rxjs';
 
-import { ProfessionalProfileReader } from '../../home/professional-profile';
-import { PatientMessagesSource } from '../../patient-messages/patient-messages-source';
+import { NOW, ProfessionalProfileReader } from '../../home/professional-profile';
+import { PatientMessagesSource, PatientMessagesWriter } from '../../patient-messages/patient-messages-source';
 import { sentThreadToNotification } from '../../patient-messages/sent-thread-notification';
 import { type NotificationPage, type NotificationReply, type NotificationStatus } from '../notifications.models';
 import { NotificationsApiService } from './notifications-api.service';
@@ -17,6 +17,8 @@ import { NotificationsRepository } from './notifications-repository.service';
 export class ProvisionalNotificationsApiService extends NotificationsApiService {
   private readonly repository = inject(NotificationsRepository);
   private readonly messages = inject(PatientMessagesSource);
+  private readonly writer = inject(PatientMessagesWriter);
+  private readonly now = inject(NOW);
   private readonly profile = inject(ProfessionalProfileReader);
 
   override getNotifications(
@@ -48,6 +50,16 @@ export class ProvisionalNotificationsApiService extends NotificationsApiService 
   }
 
   override resolve(notificationId: number): Observable<void> {
+    if (notificationId < 0) {
+      // Thread enviada pelo Hub: o mesmo registro do card do Hub (estado único compartilhado).
+      return from(
+        this.writer.resolve({
+          at: this.now().toISOString(),
+          author: this.profile.read().name,
+          threadId: `thread-${-notificationId}`,
+        }),
+      ).pipe(map(() => undefined));
+    }
     this.repository.resolve(notificationId);
 
     return of(undefined);

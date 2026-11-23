@@ -3,7 +3,7 @@ import { TestBed } from '@angular/core/testing';
 import { firstValueFrom } from 'rxjs';
 
 import { ProfessionalProfileReader } from '../../home/professional-profile';
-import { PatientMessagesSource } from '../../patient-messages/patient-messages-source';
+import { PatientMessagesSource, PatientMessagesWriter } from '../../patient-messages/patient-messages-source';
 import { ProvisionalPatientMessages } from '../../patient-messages/provisional-patient-messages';
 import { NotificationsRepository } from './notifications-repository.service';
 import { ProvisionalNotificationsApiService } from './provisional-notifications-api.service';
@@ -13,6 +13,7 @@ const PROVIDERS = [
   ProvisionalNotificationsApiService,
   ProvisionalPatientMessages,
   { provide: PatientMessagesSource, useExisting: ProvisionalPatientMessages },
+  { provide: PatientMessagesWriter, useExisting: ProvisionalPatientMessages },
   {
     provide: ProfessionalProfileReader,
     useValue: { read: (): object => ({ name: 'Michelle Franklin', role: 'doctor' }) },
@@ -41,6 +42,22 @@ describe('Provisional notification APIs', () => {
     expect((await mine('pending'))[0].description).toContain('Ativa · 1 resposta');
   });
 
+  it('resolver a mensagem enviada grava no registro único da thread, visível no Hub e nas notificações', async () => {
+    TestBed.configureTestingModule({ providers: [...PROVIDERS] });
+    const api = TestBed.inject(ProvisionalNotificationsApiService);
+    const store = TestBed.inject(ProvisionalPatientMessages);
+
+    await firstValueFrom(api.resolve(-2));
+
+    const thread = (await store.list('p1')).find(t => t.id === 'thread-2');
+
+    expect(thread?.resolved).toBeTrue();
+    expect(thread?.statusChanges[0].author).toBe('Michelle Franklin');
+    const resolved = (await firstValueFrom(api.getNotifications(1, 'resolved', null, 50))).items;
+
+    expect(resolved.some(n => n.id === -2)).toBeTrue();
+  });
+
   it('páginas seguintes não repetem as mensagens do remetente, mas mantêm o total', async () => {
     TestBed.configureTestingModule({ providers: [...PROVIDERS] });
     const api = TestBed.inject(ProvisionalNotificationsApiService);
@@ -56,6 +73,7 @@ describe('Provisional notification APIs', () => {
     TestBed.configureTestingModule({
       providers: [
         ...PROVIDERS.slice(0, 4),
+        { provide: PatientMessagesWriter, useExisting: ProvisionalPatientMessages },
         {
           provide: ProfessionalProfileReader,
           useValue: { read: (): object => ({ name: 'Outra Pessoa', role: 'other' }) },
