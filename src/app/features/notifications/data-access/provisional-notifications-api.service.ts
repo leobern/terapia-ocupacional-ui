@@ -1,6 +1,7 @@
 import { inject, Injectable, Injector } from '@angular/core';
 import { from, map, Observable, of } from 'rxjs';
 
+import { membersOfGroup } from '../../../shared/services/provisional-user-directory';
 import { UserDirectory } from '../../../shared/services/user-directory';
 import {
   type Notification,
@@ -35,11 +36,22 @@ export class ProvisionalNotificationsApiService extends NotificationsApiService 
     return of(this.repository.addReply(notificationId, text));
   }
 
-  override createAnnouncement(_: number, content: string, recipientIds: readonly number[]): Observable<Notification> {
+  override createAnnouncement(
+    _: number,
+    content: string,
+    recipientIds: readonly number[],
+    groups: readonly (string | null)[] = [],
+  ): Observable<Notification> {
     return from(this.injector.get(UserDirectory).search('')).pipe(
-      map(users =>
-        this.repository.create({ message: content, recipients: users.filter(u => recipientIds.includes(u.id)) }),
-      ),
+      map(users => {
+        const people = users.filter(user => !user.group);
+        const fromGroups = groups.flatMap(profile => membersOfGroup(profile));
+        const recipients = people.filter(
+          user => recipientIds.includes(user.id) || fromGroups.some(member => member.id === user.id),
+        );
+
+        return this.repository.create({ message: content, recipients });
+      }),
     );
   }
 

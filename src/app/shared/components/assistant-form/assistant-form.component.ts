@@ -43,14 +43,28 @@ export class AssistantFormComponent {
   protected readonly today = new Date().toISOString().slice(0, 10);
 
   /** Motivos das perguntas obrigatórias ainda sem resposta (só as que declaram `requiredMessage`). */
-  protected readonly missingReasons = computed(() =>
-    this.definition()
+  protected readonly missingReasons = computed(() => [
+    ...this.definition()
       .fields.filter(field => field.required && field.requiredMessage && !this.hasValue(field))
       .map(field => field.requiredMessage as string),
+    ...this.emptyGroups().map(
+      group =>
+        `O grupo @${group.name} não tem nenhum profissional vinculado e aprovado. Remova-o ou escolha outro destinatário.`,
+    ),
+  ]);
+
+  /** Grupos marcados que não atingem ninguém: o envio fica impedido até serem trocados. */
+  protected readonly emptyGroups = computed(() =>
+    Object.values(this.mentions())
+      .flat()
+      .filter(user => user.group?.memberCount === 0),
   );
 
   protected readonly canSubmit = computed(
-    () => !this.submitting() && this.definition().fields.every(field => !field.required || this.hasValue(field)),
+    () =>
+      !this.submitting() &&
+      this.emptyGroups().length === 0 &&
+      this.definition().fields.every(field => !field.required || this.hasValue(field)),
   );
 
   private readonly directory = inject(UserDirectory);
@@ -160,6 +174,15 @@ export class AssistantFormComponent {
       ...current,
       [field.id]: (current[field.id] ?? []).filter(u => u.id !== user.id),
     }));
+  }
+
+  /** Chip/tag de menção: grupos aparecem com `@` e a quantidade de pessoas atingidas. */
+  protected label(user: DirectoryUser): string {
+    if (!user.group) {
+      return user.name;
+    }
+
+    return `@${user.name} (${user.group.memberCount})`;
   }
 
   protected formatDate(iso: string): string {

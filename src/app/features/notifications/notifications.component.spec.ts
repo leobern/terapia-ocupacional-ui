@@ -223,7 +223,7 @@ describe('NotificationsComponent', () => {
       await create?.submit({ message: 'Revisar', recipients: [jairo] });
       fixture.detectChanges();
 
-      expect(send).toHaveBeenCalledWith(1, 'Revisar', [3]);
+      expect(send).toHaveBeenCalledWith(1, 'Revisar', [3], []);
       expect(
         TestBed.inject(NotificationsRepository)
           .list('pending', null, 50)
@@ -231,6 +231,30 @@ describe('NotificationsComponent', () => {
       ).toBe('Jairo Nepomuceno');
 
       expect(dispatch).toHaveBeenCalledWith(NotificationsActions.refreshRequested());
+    });
+
+    it('grupos e @todos vão separados das pessoas e chegam à lista dos destinatários resolvidos', async () => {
+      await configureStore({ hospitalId: 1, status: 'success' });
+      createComponent();
+      const send = spyOn(TestBed.inject(NotificationsApiService), 'createAnnouncement').and.callThrough();
+      const create = TestBed.inject(ScreenActionsService).actions()[0].form;
+      const medicos = {
+        group: { memberCount: 2, profile: 'medicos' },
+        id: -5,
+        name: 'medicos',
+        photoUrl: null,
+        specialty: '',
+      };
+      const todos = { group: { memberCount: 6, profile: null }, id: -1, name: 'todos', photoUrl: null, specialty: '' };
+
+      await create?.submit({ message: 'Reunião', recipients: [jairo, medicos, todos] });
+
+      expect(send).toHaveBeenCalledWith(1, 'Reunião', [3], ['medicos', null]);
+      expect(
+        TestBed.inject(NotificationsRepository)
+          .list('pending', null, 50)
+          .items.find(n => n.description === 'Reunião')?.recipients?.length,
+      ).toBe(6);
     });
 
     it('sem conexão o envio fica indisponível, avisa e não chama a API', async () => {

@@ -10,13 +10,21 @@ const USERS: DirectoryUser[] = [
   { id: 2, name: 'Filippa Martins', photoUrl: null, specialty: 'Nutricionista' },
 ];
 
+/** Grupos só aparecem quando o termo digitado os alcança (mantém as listas das pessoas intactas nos outros testes). */
+const GROUPS: DirectoryUser[] = [
+  { group: { memberCount: 3, profile: 'medicos' }, id: -2, name: 'medicos', photoUrl: null, specialty: 'Grupo' },
+  { group: { memberCount: 0, profile: 'psicologos' }, id: -3, name: 'psicologos', photoUrl: null, specialty: 'Grupo' },
+];
+
 class FakeDirectory extends UserDirectory {
   terms: string[] = [];
 
   search(term: string): Promise<readonly DirectoryUser[]> {
     this.terms.push(term);
 
-    return Promise.resolve(USERS.filter(user => user.name.toLowerCase().includes(term.toLowerCase())));
+    const all = term === '' ? USERS : [...USERS, ...GROUPS];
+
+    return Promise.resolve(all.filter(user => user.name.toLowerCase().includes(term.toLowerCase())));
   }
 }
 
@@ -145,6 +153,29 @@ describe('AssistantFormComponent', () => {
     await type(0, '@');
 
     expect(suggestions()).toEqual(['Filippa Martins']);
+  });
+
+  it('um grupo marcado aparece com @ e a quantidade de pessoas atingidas', async () => {
+    await type(0, '@medi');
+    await pick();
+
+    expect(el().querySelector('.assistant-form__chip')?.textContent?.trim()).toBe('@medicos (3)');
+    expect(el().querySelector('.assistant-form__hint')).toBeNull();
+  });
+
+  it('grupo sem nenhum profissional vinculado avisa e impede o envio até ser removido', async () => {
+    await type(0, '@psico');
+    await pick();
+    await type(1, 'Aviso');
+
+    expect(el().querySelector('.assistant-form__hint')?.textContent).toContain('@psicologos');
+    expect(submit().disabled).toBeTrue();
+
+    (el().querySelector('.assistant-form__chip-remove') as HTMLButtonElement).click();
+    await type(0, '@jai');
+    await pick();
+
+    expect(submit().disabled).toBeFalse();
   });
 
   it('a marked user can be removed', async () => {

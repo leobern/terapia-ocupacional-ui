@@ -4,6 +4,11 @@ export interface DirectoryUser {
   readonly name: string;
   readonly specialty: string;
   readonly photoUrl: string | null;
+  /**
+   * Presente quando a entrada é um grupo (`@medicos`, `@todos`) e não uma pessoa: `profile` é o perfil
+   * (ausente em `@todos`) e `memberCount` quantos profissionais vinculados e aprovados ao hospital ele atinge.
+   */
+  readonly group?: { readonly profile: string | null; readonly memberCount: number };
 }
 
 /**

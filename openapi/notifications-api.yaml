@@ -104,7 +104,8 @@ paths:
           application/json:
             schema:
               type: object
-              required: [hospitalId, content, recipientIds]
+              required: [hospitalId, content]
+              description: Ao menos uma pessoa em recipientIds ou um grupo em groups é obrigatório.
               properties:
                 hospitalId:
                   type: integer
@@ -114,10 +115,24 @@ paths:
                   minLength: 1
                 recipientIds:
                   type: array
-                  minItems: 1
                   items:
                     type: integer
                     format: int64
+                groups:
+                  type: array
+                  description: >
+                    Grupos resolvidos pelo backend para todos os profissionais do perfil (ou todos, em
+                    type=all) vinculados e aprovados ao hospital. Grupo sem ninguém é rejeitado (422).
+                  items:
+                    type: object
+                    required: [type]
+                    properties:
+                      type:
+                        type: string
+                        enum: [profile, all]
+                      profile:
+                        type: string
+                        description: Perfil (ex. medicos); obrigatório quando type=profile
       responses:
         "201":
           description: Comunicado criado (status ativo, sem paciente)

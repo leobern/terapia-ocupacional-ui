@@ -66,4 +66,21 @@ describe('Provisional notification APIs', () => {
     expect(created.patient).toBeNull();
     expect(created.recipients?.map(r => r.id)).toEqual([2, 3]);
   });
+
+  it('createAnnouncement resolve grupo por perfil e @todos sem duplicar pessoas', async () => {
+    TestBed.configureTestingModule({
+      providers: [
+        provideHttpClient(),
+        ProvisionalNotificationsApiService,
+        { provide: UserDirectory, useClass: ProvisionalUserDirectory },
+      ],
+    });
+    const api = TestBed.inject(ProvisionalNotificationsApiService);
+
+    const medicos = await firstValueFrom(api.createAnnouncement(1, 'Aviso', [1], ['medicos']));
+    const todos = await firstValueFrom(api.createAnnouncement(1, 'Aviso', [], [null]));
+
+    expect(medicos.recipients?.map(r => r.id)).toEqual([1, 4]);
+    expect(todos.recipients?.length).toBe(6);
+  });
 });

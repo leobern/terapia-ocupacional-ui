@@ -42,8 +42,18 @@ export class NotificationsApiService {
    * Cria um comunicado interno (sem paciente) do profissional autenticado para as pessoas
    * informadas (`POST /api/v1/notifications/announcements`). O registro em trilha imutável é do backend.
    */
-  createAnnouncement(hospitalId: number, content: string, recipientIds: readonly number[]): Observable<Notification> {
-    return this.http.post<Notification>(`${this.baseUrl}/announcements`, { content, hospitalId, recipientIds });
+  createAnnouncement(
+    hospitalId: number,
+    content: string,
+    recipientIds: readonly number[],
+    groups: readonly (string | null)[] = [],
+  ): Observable<Notification> {
+    return this.http.post<Notification>(`${this.baseUrl}/announcements`, {
+      content,
+      groups: groups.map(profile => (profile === null ? { type: 'all' } : { profile, type: 'profile' })),
+      hospitalId,
+      recipientIds,
+    });
   }
 
   /** Marca a notificação como resolvida (botão ✓ do card — Figma v2/NotificationThread). */

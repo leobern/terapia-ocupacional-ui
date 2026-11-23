@@ -59,7 +59,7 @@
               <ul class="assistant-form__chips" aria-label="Marcados">
                 @for (user of selected(field); track user.id) {
                   <li class="assistant-form__chip">
-                    <span>{{ user.name }}</span>
+                    <span>{{ label(user) }}</span>
                     <button
                       type="button"
                       class="assistant-form__chip-remove"
@@ -110,7 +110,7 @@
             @for (user of selected(field); track user.id) {
               <span class="assistant-form__tag">
                 <app-avatar size="small" type="user" [name]="user.name" />
-                {{ user.name }}
+                {{ label(user) }}
               </span>
             }
           }

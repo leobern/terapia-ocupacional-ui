@@ -410,13 +410,16 @@ export class NotificationsComponent implements OnDestroy {
     if (hospitalId == null) {
       throw new FormSubmitError('Selecione um hospital para enviar o comunicado.');
     }
-    const recipients = values['recipients'] as readonly DirectoryUser[];
+    const selected = values['recipients'] as readonly DirectoryUser[];
+    const people = selected.filter(user => !user.group);
+    const groups = selected.flatMap(user => (user.group ? [user.group.profile] : []));
 
     await firstValueFrom(
       this.api.createAnnouncement(
         hospitalId,
         values['message'] as string,
-        recipients.map(user => user.id),
+        people.map(user => user.id),
+        groups,
       ),
     );
     this.store.dispatch(NotificationsActions.refreshRequested());
@@ -431,7 +434,7 @@ export class NotificationsComponent implements OnDestroy {
               id: 'recipients',
               kind: 'mention',
               label: 'Quem receberá o comunicado:',
-              placeholder: '@nome da pessoa',
+              placeholder: '@pessoa, @grupo (ex.: @medicos) ou @todos',
               required: true,
               requiredMessage: 'Informe ao menos um destinatário para enviar o comunicado.',
             },
