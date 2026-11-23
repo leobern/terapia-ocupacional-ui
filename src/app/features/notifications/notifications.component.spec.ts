@@ -150,7 +150,7 @@ describe('NotificationsComponent', () => {
       expect(router.navigate).toHaveBeenCalledWith(['/home']);
     });
 
-    it('lista as resolvidas abaixo do título "Resolvidas", em cards esmaecidos', async () => {
+    it('abre na aba Ativas, mostrando só as ativas', async () => {
       await configureStore({
         pendingItems: [notification(1)],
         resolvedItems: [notification(2)],
@@ -158,15 +158,69 @@ describe('NotificationsComponent', () => {
       });
       createComponent();
       const el: HTMLElement = fixture.nativeElement;
-      const cards = Array.from(el.querySelectorAll('app-card-notify .card-notify'));
+      const tabs = Array.from(el.querySelectorAll('[role="tab"]'));
 
-      const titles = Array.from(el.querySelectorAll('app-notification-section-title')).map(t => t.textContent ?? '');
+      expect(tabs.map(t => t.textContent?.trim())).toEqual(['Ativas', 'Resolvidas']);
+      expect(tabs.map(t => t.getAttribute('aria-selected'))).toEqual(['true', 'false']);
+      expect(el.querySelectorAll('app-card-notify').length).toBe(1);
+      expect(el.querySelector('.card-notify--resolved')).toBeNull();
+    });
 
-      expect(titles[0]).toContain('Pendentes');
-      expect(titles[1]).toContain('Resolvidas');
-      expect(cards.length).toBe(2);
-      expect(cards[0].classList).not.toContain('card-notify--resolved');
-      expect(cards[1].classList).toContain('card-notify--resolved');
+    it('na aba Resolvidas lista só as resolvidas, em cards esmaecidos', async () => {
+      await configureStore({
+        activeTab: 'resolved',
+        pendingItems: [notification(1)],
+        resolvedItems: [notification(2)],
+        resolvedLoaded: true,
+        status: 'success',
+      });
+      createComponent();
+      const el: HTMLElement = fixture.nativeElement;
+
+      expect(el.querySelectorAll('app-card-notify').length).toBe(1);
+      expect(el.querySelector('.card-notify--resolved')).not.toBeNull();
+    });
+
+    it('acionar a aba Resolvidas despacha tabSelected; acionar a aba atual não faz nada', async () => {
+      await configureStore({ status: 'success' });
+      createComponent();
+      const dispatch = jasmine.createSpy('dispatch');
+
+      store.dispatch = dispatch;
+      const tabs = Array.from(fixture.nativeElement.querySelectorAll('[role="tab"]')) as HTMLButtonElement[];
+
+      tabs[0].click();
+
+      expect(dispatch).not.toHaveBeenCalled();
+
+      tabs[1].click();
+
+      expect(dispatch).toHaveBeenCalledWith(NotificationsActions.tabSelected({ tab: 'resolved' }));
+    });
+
+    it('sem notificações ativas, indica que não há notificações pendentes no momento', async () => {
+      await configureStore({ status: 'success' });
+      createComponent();
+
+      expect(fixture.nativeElement.querySelector('.notifications__empty')?.textContent).toContain(
+        'Nenhuma notificação pendente no momento',
+      );
+    });
+
+    it('Resolvidas vazia (já carregada) mostra o estado vazio próprio; antes de carregar não mostra', async () => {
+      await configureStore({ activeTab: 'resolved', resolvedLoaded: false, status: 'success' });
+      createComponent();
+
+      expect(fixture.nativeElement.querySelector('.notifications__empty')).toBeNull();
+
+      store.setState({
+        notifications: { ...initialNotificationsState, activeTab: 'resolved', resolvedLoaded: true, status: 'success' },
+      });
+      fixture.detectChanges();
+
+      expect(fixture.nativeElement.querySelector('.notifications__empty')?.textContent).toContain(
+        'Nenhuma notificação resolvida',
+      );
     });
 
     it('não mostra o cabeçalho de paciente em notificação criada sem paciente', async () => {

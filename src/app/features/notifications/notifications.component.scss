@@ -17,7 +17,7 @@
   padding-top: tokens.$space-8;
 
   @include breakpoints.md {
-    // Desktop: a página não rola; cada coluna (Pendentes | Resolvidas) tem o próprio scroll.
+    // Desktop: a página não rola; só a lista da aba selecionada tem scroll.
     height: 100vh;
     min-height: 0;
     padding: tokens.$space-24 var(--layout-page-margin, 32px) 0;
@@ -88,49 +88,60 @@
   @include typography.title-lg;
 }
 
-// Grade de cards (Figma 4506:8580): 1 coluna no mobile, colunas de no mínimo 360px no desktop
-// (3 em 1328px). Os cards preenchem a coluna (`--card-width`) e o título "Resolvidas" ocupa a
-// linha inteira.
-// Figma (seção 07): mobile empilha Pendentes e depois Resolvidas; desktop coloca as
-// duas seções lado a lado, cada uma com seu título e cards empilhados (gap 16).
+// Abas Ativas | Resolvidas (FR-003): alvo de toque de 44px; a aba ativa leva sublinhado além da
+// cor (o estado não depende só de cor — ver aria-selected).
+.notifications__tabs {
+  display: flex;
+  gap: tokens.$space-8;
+  border-bottom: 1px solid tokens.c(border);
+}
+
+.notifications__tab {
+  min-height: 44px;
+  padding: 0 tokens.$space-16;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  color: tokens.c(content-4);
+  cursor: pointer;
+
+  @include typography.title-lg;
+}
+
+.notifications__tab--active {
+  border-bottom-color: tokens.c(secondary);
+  color: tokens.c(content-1);
+}
+
+// Lista da aba selecionada: 1 coluna no mobile; no desktop só a lista rola e os cards se
+// distribuem em colunas de no mínimo 360px.
 .notifications__list {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
+  display: flex;
+  flex-direction: column;
   gap: tokens.$space-16;
-  align-items: start;
   padding-bottom: calc(var(--bottom-nav-bar-height) + #{tokens.$space-16});
 
   @include breakpoints.md {
     flex: 1 1 0;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    grid-template-rows: minmax(0, 1fr);
-    gap: tokens.$space-24;
     min-height: 0;
-    padding-bottom: 0;
-  }
-}
-
-.notifications__column {
-  display: flex;
-  flex-direction: column;
-  gap: tokens.$space-16;
-  min-width: 0;
-
-  @include breakpoints.md {
-    height: 100%;
     overflow-y: auto;
     padding-bottom: tokens.$space-32;
   }
 }
 
-// Título da seção: 16px de respiro lateral e mais perto do primeiro card (8px).
-.notifications__section-title {
-  display: block;
-  margin: 0 tokens.$space-16 (-(tokens.$space-8));
+.notifications__cards {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: tokens.$space-16;
+  align-items: start;
+
+  @include breakpoints.md {
+    grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+    gap: tokens.$space-24;
+  }
 }
 
 .notifications__empty {
-  grid-column: 1 / -1;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -157,11 +168,11 @@
 }
 
 .notifications__scroll-sentinel {
+  grid-column: 1 / -1;
   height: 1px;
 }
 
 .notifications__loading-more {
-  grid-column: 1 / -1;
   padding: tokens.$space-16;
   text-align: center;
   font-family: tokens.$font-family-base;

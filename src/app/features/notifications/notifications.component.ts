@@ -34,11 +34,12 @@ import { type ScreenAction, ScreenActionsService } from '../../shared/services/s
 import { type DirectoryUser } from '../../shared/services/user-directory';
 import { formatRelativeTime } from '../../shared/utils/relative-time';
 import { HospitalContextService } from '../home/hospital-context.service';
-import { NotificationSectionTitleComponent } from './components/notification-section-title/notification-section-title.component';
 import { NotificationsRepository } from './data-access/notifications-repository.service';
 import { Notification } from './notifications.models';
 import { NotificationsActions } from './state/notifications.actions';
 import {
+  type NotificationsTab,
+  selectActiveTab,
   selectAnswerErrorMessage,
   selectAnsweringId,
   selectDiscardConfirmPending,
@@ -48,7 +49,7 @@ import {
   selectPendingItems,
   selectPendingTotalCount,
   selectResolvedItems,
-  selectResolvedTotalCount,
+  selectResolvedLoaded,
   selectStatus,
   selectSubmitting,
 } from './state/notifications.reducer';
@@ -70,8 +71,7 @@ const PULL_TO_REFRESH_THRESHOLD = 80;
  * Tela "Notificações" (specs/004-notificacoes) — cabeçalho (sino + contagem, sem botão
  * de voltar — FR-002, saída só via Menu, guardada por `canDeactivateNotifications`),
  * fundo decorativo com 1 blob oculto e cor diferente da Home (FR-015), tag de hospital
- * somente leitura (FR-003), lista em duas seções (Pendentes sem título / Resolvidas com
- * título — FR-004a), infinite scroll e pull-to-refresh (FR-004b), e o fluxo de resposta
+ * somente leitura (FR-003), lista em duas abas (Ativas / Resolvidas — FR-003), infinite scroll e pull-to-refresh (FR-004b), e o fluxo de resposta
  * via IA (US3: bottom sheet + rascunho ao vivo no card + diálogo de descarte).
  * Figma: 4495:8526 (pendentes) / 4496:11857 (com Resolvidas) / 4495:10551 (answering).
  *
@@ -87,7 +87,6 @@ const PULL_TO_REFRESH_THRESHOLD = 80;
     ConfirmDialogComponent,
     IconButtonComponent,
     InputChatComponent,
-    NotificationSectionTitleComponent,
     PageContainerComponent,
     PhIconComponent,
   ],
@@ -107,6 +106,12 @@ export class NotificationsComponent implements OnDestroy {
   protected readonly hospitalId = toSignal(this.store.select(selectHospitalId), { initialValue: null });
   protected readonly pendingItems = toSignal(this.store.select(selectPendingItems), { initialValue: [] });
   protected readonly resolvedItems = toSignal(this.store.select(selectResolvedItems), { initialValue: [] });
+  protected readonly activeTab = toSignal(this.store.select(selectActiveTab), { initialValue: 'pending' as const });
+  protected readonly resolvedLoaded = toSignal(this.store.select(selectResolvedLoaded), { initialValue: false });
+  protected readonly tabs: readonly { id: NotificationsTab; label: string }[] = [
+    { id: 'pending', label: 'Ativas' },
+    { id: 'resolved', label: 'Resolvidas' },
+  ];
   protected readonly hasMore = toSignal(this.store.select(selectHasMore), { initialValue: true });
 
   protected readonly answeringId = toSignal(this.store.select(selectAnsweringId), { initialValue: null });
@@ -126,9 +131,25 @@ export class NotificationsComponent implements OnDestroy {
   // de toda a paginação carregar).
   // Figma (seção 07): o título conta as pendentes; cada seção mostra o próprio total.
   protected readonly pendingCount = toSignal(this.store.select(selectPendingTotalCount), { initialValue: 0 });
-  protected readonly resolvedCount = toSignal(this.store.select(selectResolvedTotalCount), { initialValue: 0 });
-  protected readonly isEmpty = computed(
-    () => this.status() === 'success' && this.pendingItems().length === 0 && this.resolvedItems().length === 0,
+  /** Itens da aba selecionada, da mais recente para a mais antiga. */
+  protected readonly visibleItems = computed(() =>
+    this.activeTab() === 'pending' ? this.pendingItems() : this.resolvedItems(),
+  );
+  /** Vazio só depois de carregar a aba (Resolvidas ainda não buscada não é "vazia"). */
+  protected readonly isEmpty = computed(() => {
+    if (this.status() !== 'success' || this.visibleItems().length > 0) {
+      return false;
+    }
+
+    return this.activeTab() === 'pending' || this.resolvedLoaded();
+  });
+  protected readonly emptyTitle = computed(() =>
+    this.activeTab() === 'pending' ? 'Nenhuma notificação pendente no momento' : 'Nenhuma notificação resolvida',
+  );
+  protected readonly emptyText = computed(() =>
+    this.activeTab() === 'pending'
+      ? 'Quando alguém da equipe mencionar você ou um paciente seu, a notificação aparece aqui.'
+      : 'As notificações marcadas como resolvidas aparecem aqui.',
   );
 
   // Sem serviço de sessão no frontend ainda — mesmo valor de exemplo de home.component.ts.
@@ -308,6 +329,12 @@ export class NotificationsComponent implements OnDestroy {
   onBottomSheetClosed(): void {
     if (this.answeringId() != null) {
       this.store.dispatch(NotificationsActions.answerDiscarded());
+    }
+  }
+
+  protected onSelectTab(tab: NotificationsTab): void {
+    if (tab !== this.activeTab()) {
+      this.store.dispatch(NotificationsActions.tabSelected({ tab }));
     }
   }
 
