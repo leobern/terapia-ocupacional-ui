@@ -10,7 +10,7 @@ export interface ProfessionalRef {
 }
 
 export interface PatientRef {
-  id: number;
+  id: number | string;
   name: string;
 }
 

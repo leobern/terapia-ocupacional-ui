@@ -56,6 +56,16 @@ import { ProvisionalDailyRecordSource } from './features/patient-hub/daily-recor
 import { ProvisionalEvolutionAiStructurer } from './features/patient-hub/daily-record/provisional-evolution-ai-structurer';
 import { ProvisionalParameterAiStructurer } from './features/patient-hub/daily-record/provisional-parameter-ai-structurer';
 import {
+  MessageAiAssistant,
+  PatientMessageSource,
+  PatientTeamSource,
+} from './features/patient-hub/messages/patient-message-source';
+import {
+  ProvisionalMessageAiAssistant,
+  ProvisionalPatientMessageSource,
+  ProvisionalPatientTeamSource,
+} from './features/patient-hub/messages/provisional-patient-message';
+import {
   HypothesisSynthesizer,
   HypothesisWriter,
   PatientHubSource,
@@ -134,6 +144,9 @@ export const appConfig: ApplicationConfig = {
     { provide: EvolutionAiStructurer, useClass: ProvisionalEvolutionAiStructurer },
     { provide: PrescriptionSource, useClass: ProvisionalPrescriptionSource },
     { provide: ParameterAiStructurer, useClass: ProvisionalParameterAiStructurer },
+    { provide: PatientMessageSource, useClass: ProvisionalPatientMessageSource },
+    { provide: PatientTeamSource, useClass: ProvisionalPatientTeamSource },
+    { provide: MessageAiAssistant, useClass: ProvisionalMessageAiAssistant },
     { provide: PlanSource, useClass: ProvisionalPlanSource },
     { provide: PrescriptionSource, useClass: ProvisionalPrescriptionSource },
     { provide: NutritionTargetsReader, useClass: PlanNutritionTargetsReader },

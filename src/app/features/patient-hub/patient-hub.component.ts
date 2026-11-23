@@ -46,6 +46,8 @@ import {
 import { NutritionResultsSource } from '../patients/nutrition-panel/nutrition-results-source';
 import { AssessmentSectionComponent } from './assessment/assessment-section.component';
 import { DailyRecordSheetComponent } from './daily-record/daily-record-sheet.component';
+import { PatientMessageSheetComponent } from './messages/patient-message-sheet.component';
+import { PatientMessagesComponent } from './messages/patient-messages.component';
 import { HypothesisOrigin, PatientHubProfile } from './patient-hub.models';
 import { HypothesisSynthesizer, HypothesisWriter, PatientHubSource } from './patient-hub-source';
 import { PlanSectionComponent } from './plan/plan-section.component';
@@ -92,6 +94,8 @@ export const DIAGNOSIS_FAILED_HINT =
     NutritionHiddenCardsSheetComponent,
     NutritionPanelComponent,
     PageContainerComponent,
+    PatientMessageSheetComponent,
+    PatientMessagesComponent,
     PhIconComponent,
     PlanSectionComponent,
     PrescriptionSheetComponent,
@@ -158,6 +162,10 @@ export class PatientHubComponent implements OnInit {
 
   /** Registro diário (FT-004-7) aberto pela ação "Registro diário" dos atalhos. */
   protected readonly dailyRecordOpen = signal(false);
+  /** Observação/mensagem (FT-005-1) aberta pela ação dos atalhos; só cria pelo assistente. */
+  protected readonly messageOpen = signal(false);
+  /** Muda a cada registro gravado, para a lista de cards recarregar. */
+  protected readonly messagesVersion = signal(0);
   /** Revisão da prescrição (FT-004-8) aberta pela ação "Ajustar a prescrição" dos atalhos (só médico). */
   protected readonly prescriptionOpen = signal(false);
   /** Prescrição vigente exibida no Hub; `null` = sem prescrição (ou leitura falhou). */
@@ -240,6 +248,11 @@ export class PatientHubComponent implements OnInit {
       if (this.status() === 'ready' && this.hospitalId() !== null) {
         const actions: ScreenAction[] = [
           { id: 'daily-record', label: 'Registro diário', navigate: (): void => this.dailyRecordOpen.set(true) },
+          {
+            id: 'patient-message',
+            label: 'Observação ou mensagem',
+            navigate: (): void => this.messageOpen.set(true),
+          },
         ];
 
         if (this.professional.read().role === 'doctor') {
