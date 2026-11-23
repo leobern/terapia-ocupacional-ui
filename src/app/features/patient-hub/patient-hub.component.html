@@ -250,6 +250,7 @@
             [patientId]="p.id"
             [canReopen]="hospitalId() !== null"
           />
+          <app-patient-messages [patientId]="p.id" />
           <app-assessment-section
             [patientId]="p.id"
             (concluded)="onAssessmentConcluded()"

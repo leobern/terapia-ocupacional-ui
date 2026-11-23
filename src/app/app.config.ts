@@ -84,6 +84,15 @@ import { PatientListSource } from './features/patient-list/patient-list-source';
 import { ProvisionalPatientListSource } from './features/patient-list/provisional-patient-list';
 import { ProvisionalPatientListAiCommand } from './features/patient-list/provisional-patient-list-ai-command';
 import {
+  PatientMessagesSource,
+  PatientMessagesWriter,
+  ReplyTranscriber,
+} from './features/patient-messages/patient-messages-source';
+import {
+  ProvisionalPatientMessages,
+  ProvisionalReplyTranscriber,
+} from './features/patient-messages/provisional-patient-messages';
+import {
   NutritionAddedCards,
   NutritionHiddenCards,
   NutritionHistorySource,
@@ -112,6 +121,10 @@ export const appConfig: ApplicationConfig = {
     { provide: UnreadNotificationsReader, useClass: LocalUnreadNotificationsReader },
     { provide: DailyPatientsSource, useClass: ProvisionalDailyPatientsSource },
     { provide: PatientListAiCommandPort, useClass: ProvisionalPatientListAiCommand },
+    ProvisionalPatientMessages,
+    { provide: PatientMessagesSource, useExisting: ProvisionalPatientMessages },
+    { provide: PatientMessagesWriter, useExisting: ProvisionalPatientMessages },
+    { provide: ReplyTranscriber, useClass: ProvisionalReplyTranscriber },
     ProvisionalFollowUpClosureSource,
     { provide: FollowUpClosureSource, useExisting: ProvisionalFollowUpClosureSource },
     { provide: FollowUpClosureWriter, useExisting: ProvisionalFollowUpClosureSource },

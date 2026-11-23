@@ -15,6 +15,15 @@ import { ProvisionalFollowUpClosureSource } from '../follow-up-closure/provision
 import { LinkedHospitalsReader } from '../home/linked-hospitals';
 import { NOW, ProfessionalProfileReader } from '../home/professional-profile';
 import {
+  PatientMessagesSource,
+  PatientMessagesWriter,
+  ReplyTranscriber,
+} from '../patient-messages/patient-messages-source';
+import {
+  ProvisionalPatientMessages,
+  ProvisionalReplyTranscriber,
+} from '../patient-messages/provisional-patient-messages';
+import {
   NutritionAddedCards,
   NutritionHiddenCards,
   NutritionHistorySource,
@@ -253,6 +262,16 @@ async function setup(
       { provide: DailyRecordWriter, useValue: { record: (): Promise<[]> => Promise.resolve([]) } },
       { provide: FormulasApi, useValue: { list: (): Promise<[]> => Promise.resolve([]) } },
       { provide: NutritionTargetsReader, useValue: { current: (): Promise<null> => Promise.resolve(null) } },
+      ProvisionalPatientMessages,
+      {
+        provide: PatientMessagesSource,
+        useValue: {
+          list: (): Promise<[]> => Promise.resolve([]),
+          listBySender: (): Promise<[]> => Promise.resolve([]),
+        },
+      },
+      { provide: PatientMessagesWriter, useExisting: ProvisionalPatientMessages },
+      { provide: ReplyTranscriber, useClass: ProvisionalReplyTranscriber },
       ProvisionalFollowUpClosureSource,
       { provide: FollowUpClosureSource, useExisting: ProvisionalFollowUpClosureSource },
       { provide: FollowUpClosureWriter, useExisting: ProvisionalFollowUpClosureSource },

@@ -18,6 +18,7 @@ import { DiagnosisSource } from '../diagnosis/diagnosis-source';
 import { FollowUpStatusComponent } from '../follow-up-closure/follow-up-status.component';
 import { HospitalContextService } from '../home/hospital-context.service';
 import { NOW, ProfessionalProfileReader } from '../home/professional-profile';
+import { PatientMessagesComponent } from '../patient-messages/patient-messages.component';
 import {
   ADD_FAILED_HINT,
   NutritionAddCardSheetComponent,
@@ -86,6 +87,7 @@ export const DIAGNOSIS_FAILED_HINT =
     ButtonComponent,
     DailyRecordSheetComponent,
     FollowUpStatusComponent,
+    PatientMessagesComponent,
     IconButtonComponent,
     NutritionAddCardSheetComponent,
     NutritionCardModalComponent,
