@@ -1,17 +1,18 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { ScreenActionsService } from '../../shared/services/screen-actions.service';
+import { HospitalContextService } from '../home/hospital-context.service';
 import { LinkedHospitalsReader } from '../home/linked-hospitals';
 import { FormulasApi } from './formulas-api';
 import { PharmacyComponent } from './pharmacy.component';
 import { ProvisionalFormulasApi } from './provisional-formulas-api';
 
 class TwoHospitals extends LinkedHospitalsReader {
-  read(): readonly { id: string; name: string }[] {
-    return [
-      { id: 'a', name: 'Hospital A' },
-      { id: 'b', name: 'Hospital B' },
-    ];
+  read(): Promise<readonly { id: number; name: string }[]> {
+    return Promise.resolve([
+      { id: 1, name: 'Hospital A' },
+      { id: 2, name: 'Hospital B' },
+    ]);
   }
 }
 
@@ -35,6 +36,7 @@ describe('PharmacyComponent', () => {
         { provide: FormulasApi, useValue: api },
       ],
     }).compileComponents();
+    await TestBed.inject(HospitalContextService).load();
     fixture = TestBed.createComponent(PharmacyComponent);
     fixture.detectChanges();
     await settle();
@@ -71,10 +73,10 @@ describe('PharmacyComponent', () => {
   });
 
   it('a padronização do hospital A não afeta o B', async () => {
-    await api.setStandardized('a', 'enteral-1', true);
+    await api.setStandardized(1, 'enteral-1', true);
 
-    expect((await api.list('a')).find(f => f.id === 'enteral-1')?.standardized).toBe(true);
-    expect((await api.list('b')).find(f => f.id === 'enteral-1')?.standardized).toBe(false);
+    expect((await api.list(1)).find(f => f.id === 'enteral-1')?.standardized).toBe(true);
+    expect((await api.list(2)).find(f => f.id === 'enteral-1')?.standardized).toBe(false);
   });
 
   it('offline: desabilita as ações, avisa em texto e mantém o catálogo', async () => {
@@ -94,7 +96,7 @@ describe('PharmacyComponent', () => {
   it('ignora o toggle offline', async () => {
     window.dispatchEvent(new Event('offline'));
     spyOn(api, 'setStandardized');
-    const formula = (await api.list('a'))[0];
+    const formula = (await api.list(1))[0];
 
     await (fixture.componentInstance as unknown as { toggle(f: unknown): Promise<void> }).toggle(formula);
 
@@ -150,7 +152,7 @@ describe('PharmacyComponent', () => {
     it('registra o pedido para o hospital atual, sem aprovação automática', async () => {
       await action()?.form?.submit({ description: '  Fórmula hipercalórica Z  ' });
 
-      expect(api.requests).toEqual([{ description: 'Fórmula hipercalórica Z', hospitalId: 'a' }]);
+      expect(api.requests).toEqual([{ description: 'Fórmula hipercalórica Z', hospitalId: 1 }]);
     });
 
     it('rejeita descrição vazia e mantém o formulário aberto', async () => {

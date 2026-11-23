@@ -20,13 +20,12 @@ import { ProvisionalDiagnosisSource } from './features/diagnosis/provisional-dia
 import { FollowUpClosureSource, FollowUpClosureWriter } from './features/follow-up-closure/follow-up-closure-source';
 import { ProvisionalFollowUpClosureSource } from './features/follow-up-closure/provisional-follow-up-closure';
 import { DailyPatientsSource } from './features/home/daily-patients';
-import { HomeApiService } from './features/home/data-access/home-api.service';
+import { HomeHospitalsApiService } from './features/home/data-access/home-hospitals-api.service';
 import { HomeNotificationsApiService } from './features/home/data-access/home-notifications-api.service';
 import { HomeNotificationsSource } from './features/home/home-notifications-source';
 import { LinkedHospitalsReader } from './features/home/linked-hospitals';
 import { LocalProfessionalProfileReader } from './features/home/local-professional-profile-reader';
 import { LocalUnreadNotificationsReader } from './features/home/local-unread-notifications-reader';
-import { MockLinkedHospitalsReader } from './features/home/mock-linked-hospitals-reader';
 import { ProfessionalProfileReader } from './features/home/professional-profile';
 import { ProvisionalDailyPatientsSource } from './features/home/provisional-daily-patients';
 import { UnreadNotificationsReader } from './features/home/unread-notifications-reader';
@@ -37,10 +36,7 @@ import {
 } from './features/hospital-team/provisional-hospital-invite';
 import { PendingNotificationsQueryResolver } from './features/notifications/assistant/pending-notifications-query.resolver';
 import { NotificationsApiService } from './features/notifications/data-access/notifications-api.service';
-import {
-  ProvisionalHomeApiService,
-  ProvisionalNotificationsApiService,
-} from './features/notifications/data-access/provisional-notifications-api.service';
+import { ProvisionalNotificationsApiService } from './features/notifications/data-access/provisional-notifications-api.service';
 import { AssessmentAiStructurer } from './features/patient-hub/assessment/assessment-ai-structurer';
 import { AssessmentSource } from './features/patient-hub/assessment/assessment-source';
 import { AssessmentWriter } from './features/patient-hub/assessment/assessment-writer';
@@ -108,7 +104,7 @@ export const appConfig: ApplicationConfig = {
   providers: [
     { provide: ProfessionalProfileReader, useClass: LocalProfessionalProfileReader },
     { provide: StartupStateReader, useClass: LocalStartupStateReader },
-    { provide: LinkedHospitalsReader, useClass: MockLinkedHospitalsReader },
+    { provide: LinkedHospitalsReader, useClass: HomeHospitalsApiService },
     { provide: UnreadNotificationsReader, useClass: LocalUnreadNotificationsReader },
     { provide: DailyPatientsSource, useClass: ProvisionalDailyPatientsSource },
     { provide: PatientListAiCommandPort, useClass: ProvisionalPatientListAiCommand },
@@ -147,9 +143,8 @@ export const appConfig: ApplicationConfig = {
     { provide: NutritionAddedCards, useExisting: ProvisionalNutritionCardStore },
     { provide: NutritionHiddenCards, useExisting: ProvisionalNutritionCardStore },
     { provide: HomeNotificationsSource, useClass: HomeNotificationsApiService },
-    // Provisórios (sem backend ainda): notificações em memória, hospital único e usuários de exemplo.
+    // Provisórios (sem backend ainda): notificações em memória e usuários de exemplo.
     { provide: NotificationsApiService, useClass: ProvisionalNotificationsApiService },
-    { provide: HomeApiService, useClass: ProvisionalHomeApiService },
     { provide: HospitalInvitePort, useClass: ProvisionalHospitalInvite },
     { provide: ManagerAccessReader, useClass: ProvisionalManagerAccess },
     { provide: UserDirectory, useClass: ProvisionalUserDirectory },

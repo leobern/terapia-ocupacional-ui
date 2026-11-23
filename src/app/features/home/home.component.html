@@ -67,7 +67,7 @@
       @default {
         <div class="home__local">
           <div class="home__local-col">
-            @if (context.canSwitch && controlsEnabled()) {
+            @if (context.canSwitch() && controlsEnabled()) {
               <button
                 type="button"
                 class="home__hospital-trigger"
@@ -98,7 +98,7 @@
                 [id]="listId"
               >
                 @for (
-                  hospital of context.hospitals;
+                  hospital of context.hospitals();
                   track hospital.id;
                   let i = $index
                 ) {

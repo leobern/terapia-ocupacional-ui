@@ -369,7 +369,7 @@ export class PatientListComponent implements OnInit {
     this.unreadCount.set(await this.unread.countUnread());
   }
 
-  async load(hospitalId: string, day: Date = this.selectedDate()): Promise<void> {
+  async load(hospitalId: number, day: Date = this.selectedDate()): Promise<void> {
     const generation = ++this.generation;
 
     this.status.set('loading');

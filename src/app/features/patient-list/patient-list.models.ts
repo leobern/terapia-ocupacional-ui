@@ -15,7 +15,7 @@ export interface Adequacy {
 /** Registro do censo hospitalar: inclui quem NÃO é da EMTN (FR-002 filtra na montagem). */
 export interface CensusPatient {
   readonly id: string;
-  readonly hospitalId: string;
+  readonly hospitalId: number;
   readonly name: string;
   readonly birthDate: string;
   readonly ward: string;

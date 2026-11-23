@@ -1,8 +1,6 @@
 import { inject, Injectable } from '@angular/core';
 import { Observable, of } from 'rxjs';
 
-import { HomeApiService } from '../../home/data-access/home-api.service';
-import { type Hospital } from '../../home/home.models';
 import { type NotificationPage, type NotificationReply, type NotificationStatus } from '../notifications.models';
 import { NotificationsApiService } from './notifications-api.service';
 import { NotificationsRepository } from './notifications-repository.service';
@@ -33,13 +31,5 @@ export class ProvisionalNotificationsApiService extends NotificationsApiService 
     this.repository.resolve(notificationId);
 
     return of(undefined);
-  }
-}
-
-/** Provisório: um único hospital, o mesmo da Home (`MockLinkedHospitalsReader`). */
-@Injectable()
-export class ProvisionalHomeApiService extends HomeApiService {
-  override getHospitals(): Observable<Hospital[]> {
-    return of([{ id: 1, name: 'Hospital Vila Nova Star' }]);
   }
 }

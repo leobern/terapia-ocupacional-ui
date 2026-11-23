@@ -13,7 +13,7 @@ import { HomeApiService } from './home-api.service';
 export class HomeNotificationsApiService extends HomeNotificationsSource {
   private readonly api = inject(HomeApiService);
 
-  loadPage(hospitalId: string, cursor: string | null, limit: number): Promise<NotificationPage> {
+  loadPage(hospitalId: number, cursor: string | null, limit: number): Promise<NotificationPage> {
     return firstValueFrom(this.api.getNotifications(Number(hospitalId), cursor, limit));
   }
 }

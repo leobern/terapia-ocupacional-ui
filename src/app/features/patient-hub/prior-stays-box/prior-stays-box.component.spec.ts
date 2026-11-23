@@ -9,7 +9,7 @@ class FakeStays extends PriorStaysSource {
   fail = false;
   readonly calls: string[] = [];
 
-  hasPriorStays(patientId: string, hospitalId: string): Promise<boolean> {
+  hasPriorStays(patientId: string, hospitalId: number): Promise<boolean> {
     this.calls.push(`${hospitalId}:${patientId}`);
 
     return this.fail ? Promise.reject(new Error('x')) : Promise.resolve(this.has);
@@ -41,7 +41,7 @@ describe('PriorStaysBoxComponent', () => {
   async function setup(): Promise<void> {
     fixture = TestBed.createComponent(PriorStaysBoxComponent);
     fixture.componentRef.setInput('patientId', 'p1');
-    fixture.componentRef.setInput('hospitalId', 'h1');
+    fixture.componentRef.setInput('hospitalId', 1);
     await settle();
   }
 
@@ -69,7 +69,7 @@ describe('PriorStaysBoxComponent', () => {
   it('com internação anterior no mesmo hospital, aparece recolhida e sem consultar a síntese', async () => {
     await setup();
 
-    expect(stays.calls).toEqual(['h1:p1']);
+    expect(stays.calls).toEqual(['1:p1']);
     expect(el().textContent).toContain('Internações anteriores');
     expect(header().getAttribute('aria-expanded')).toBe('false');
     expect(el().querySelector('.stays__content')?.hasAttribute('hidden')).toBeTrue();
@@ -160,7 +160,7 @@ describe('PriorStaysBoxComponent', () => {
     fixture.componentRef.setInput('patientId', 'p2');
     await settle();
 
-    expect(stays.calls).toEqual(['h1:p1', 'h1:p2']);
+    expect(stays.calls).toEqual(['1:p1', '1:p2']);
     expect(header().getAttribute('aria-expanded')).toBe('false');
     expect(el().textContent).not.toContain('Síntese do histórico');
   });

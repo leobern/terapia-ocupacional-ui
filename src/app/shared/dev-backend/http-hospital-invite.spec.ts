@@ -30,7 +30,7 @@ describe('HttpHospitalInvite', () => {
     controller.expectOne(request => request.url === '/api/v1/hospitais/1/profissionais');
 
   it('busca por e-mail e devolve o perfil declarado e a relação', async () => {
-    const promise = invite.lookup('1', ' filippa@conductia.com ');
+    const promise = invite.lookup(1, ' filippa@conductia.com ');
     const request = profileRequest();
 
     expect(request.request.params.get('email')).toBe('filippa@conductia.com');
@@ -44,7 +44,7 @@ describe('HttpHospitalInvite', () => {
   });
 
   it('usa o próprio papel quando não há rótulo para ele', async () => {
-    const promise = invite.lookup('1', 'x@y.com');
+    const promise = invite.lookup(1, 'x@y.com');
 
     profileRequest().flush({ ...PROFILE, perfilDeclarado: 'OUTRO', relacao: 'NENHUMA' });
 
@@ -54,7 +54,7 @@ describe('HttpHospitalInvite', () => {
   });
 
   it('404 de conta inexistente vira "not-registered"', async () => {
-    const promise = invite.lookup('1', 'x@y.com');
+    const promise = invite.lookup(1, 'x@y.com');
 
     profileRequest().flush(
       { message: 'O profissional precisa se cadastrar primeiro' },
@@ -65,7 +65,7 @@ describe('HttpHospitalInvite', () => {
   });
 
   it('outros erros (ex.: hospital inexistente) são repassados', async () => {
-    const promise = invite.lookup('1', 'x@y.com');
+    const promise = invite.lookup(1, 'x@y.com');
 
     profileRequest().flush({ message: 'Hospital não encontrado' }, { status: 404, statusText: 'Not Found' });
 
@@ -73,7 +73,7 @@ describe('HttpHospitalInvite', () => {
   });
 
   it('confirma o convite: localiza a conta e cria o vínculo', async () => {
-    const promise = invite.confirm('1', 'filippa@conductia.com');
+    const promise = invite.confirm(1, 'filippa@conductia.com');
 
     profileRequest().flush(PROFILE);
     await Promise.resolve();
@@ -87,6 +87,6 @@ describe('HttpHospitalInvite', () => {
   });
 
   it('rejeita hospital que não é numérico, sem chamar a API', async () => {
-    await expectAsync(invite.lookup('hospital-vila-nova-star', 'x@y.com')).toBeRejected();
+    await expectAsync(invite.lookup(Number.NaN, 'x@y.com')).toBeRejected();
   });
 });

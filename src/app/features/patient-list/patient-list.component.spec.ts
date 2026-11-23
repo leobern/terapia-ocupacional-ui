@@ -9,6 +9,7 @@ import {
   type ScreenCommand,
 } from '../../shared/services/screen-actions.service';
 import { FollowUpClosureWriter } from '../follow-up-closure/follow-up-closure-source';
+import { HospitalContextService } from '../home/hospital-context.service';
 import { LinkedHospitalsReader } from '../home/linked-hospitals';
 import { ProfessionalProfileReader } from '../home/professional-profile';
 import { UnreadNotificationsReader } from '../home/unread-notifications-reader';
@@ -24,7 +25,7 @@ const census = (n: number, name = 'Paciente'): CensusPatient[] =>
     bed: String(i + 1),
     birthDate: '1980-01-01',
     completedCycles: i === 1 ? 0 : 1,
-    hospitalId: 'h1',
+    hospitalId: 1,
     id: `p${i}`,
     name: `${name} ${i}`,
     registeredInConductia: true,
@@ -45,7 +46,7 @@ class FakeAi extends PatientListAiCommandPort {
 
 class FakeSource extends PatientListSource {
   result: Promise<readonly CensusPatient[]> = Promise.resolve([]);
-  loadCensus(_?: string, __?: Date): Promise<readonly CensusPatient[]> {
+  loadCensus(_?: number, __?: Date): Promise<readonly CensusPatient[]> {
     return this.result;
   }
 }
@@ -69,7 +70,7 @@ describe('PatientListComponent', () => {
     fixture.detectChanges();
   }
 
-  beforeEach(() => {
+  beforeEach(async () => {
     source = new FakeSource();
     ai = new FakeAi();
     TestBed.configureTestingModule({
@@ -85,12 +86,15 @@ describe('PatientListComponent', () => {
         { provide: UnreadNotificationsReader, useValue: { countUnread: (): Promise<number> => Promise.resolve(2) } },
         {
           provide: LinkedHospitalsReader,
-          useValue: { read: (): { id: string; name: string }[] => [{ id: 'h1', name: 'Hospital Um' }] },
+          useValue: {
+            read: (): Promise<{ id: number; name: string }[]> => Promise.resolve([{ id: 1, name: 'Hospital Um' }]),
+          },
         },
       ],
     });
     router = TestBed.inject(Router);
     spyOn(router, 'navigate').and.resolveTo(true);
+    await TestBed.inject(HospitalContextService).load();
   });
 
   it('mostra skeleton enquanto carrega, com o cabeçalho já visível', () => {
@@ -133,7 +137,7 @@ describe('PatientListComponent', () => {
   it('carrossel de datas: hoje destacado e trocar a data recarrega a lista para ela', async () => {
     const days: Date[] = [];
 
-    source.loadCensus = (_?: string, day?: Date): Promise<readonly CensusPatient[]> => {
+    source.loadCensus = (_?: number, day?: Date): Promise<readonly CensusPatient[]> => {
       days.push(day as Date);
 
       return Promise.resolve(census(1));
@@ -840,10 +844,10 @@ describe('PatientListComponent', () => {
     let release!: (v: readonly CensusPatient[]) => void;
 
     source.result = new Promise((r: (v: readonly CensusPatient[]) => void) => (release = r));
-    const slow = comp.load('h1');
+    const slow = comp.load(1);
 
     source.result = Promise.resolve(census(1));
-    await comp.load('h1');
+    await comp.load(1);
     release(census(5));
     await slow;
 
@@ -898,7 +902,7 @@ describe('PatientListComponent', () => {
     it('confirmar recarrega a lista da data, entra em somente leitura e remove as ações de escrita', async () => {
       const days: Date[] = [];
 
-      source.loadCensus = (_?: string, day?: Date): Promise<readonly CensusPatient[]> => {
+      source.loadCensus = (_?: number, day?: Date): Promise<readonly CensusPatient[]> => {
         days.push(day as Date);
 
         return Promise.resolve(census(2));

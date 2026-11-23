@@ -3,6 +3,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter, Router } from '@angular/router';
 
 import { ConnectivityService } from '../../shared/services/connectivity.service';
+import { HospitalContextService } from '../home/hospital-context.service';
 import { LinkedHospitalsReader } from '../home/linked-hospitals';
 import { HospitalInviteComponent } from './hospital-invite.component';
 import { managerOnlyGuard } from './hospital-invite.guard';
@@ -21,7 +22,7 @@ class FakePort extends HospitalInvitePort {
     return this.failLookup ? Promise.reject(new Error('rede')) : Promise.resolve(this.result);
   }
 
-  confirm(_: string, email: string): Promise<{ approvedRequest: boolean }> {
+  confirm(_: number, email: string): Promise<{ approvedRequest: boolean }> {
     if (this.failConfirm) {
       return Promise.reject(new Error('falha'));
     }
@@ -65,7 +66,7 @@ describe('HospitalInviteComponent', () => {
     await settle();
   };
 
-  beforeEach(() => {
+  beforeEach(async () => {
     port = new FakePort();
     TestBed.configureTestingModule({
       providers: [
@@ -73,10 +74,11 @@ describe('HospitalInviteComponent', () => {
         { provide: HospitalInvitePort, useValue: port },
         {
           provide: LinkedHospitalsReader,
-          useValue: { read: (): unknown[] => [{ id: 'h1', name: 'Hospital Central' }] },
+          useValue: { read: (): Promise<unknown[]> => Promise.resolve([{ id: 1, name: 'Hospital Central' }]) },
         },
       ],
     });
+    await TestBed.inject(HospitalContextService).load();
     TestBed.inject(ConnectivityService).online.set(true);
     fixture = TestBed.createComponent(HospitalInviteComponent);
     fixture.detectChanges();
@@ -204,14 +206,14 @@ describe('ProvisionalHospitalInvite e guarda de gestor', () => {
   const provisional = new ProvisionalHospitalInvite();
 
   it('busca conhecida, desconhecida e confirmação com solicitação pendente', async () => {
-    expect(await provisional.lookup('h', 'nada@x.com')).toEqual({ kind: 'not-registered' });
-    const none = await provisional.lookup('h', ' Filippa@conductia.com ');
+    expect(await provisional.lookup(1, 'nada@x.com')).toEqual({ kind: 'not-registered' });
+    const none = await provisional.lookup(1, ' Filippa@conductia.com ');
 
     expect(none.kind === 'found' && none.relation).toBe('none');
-    expect(await provisional.confirm('h', 'filippa@conductia.com')).toEqual({ approvedRequest: false });
-    expect(await provisional.confirm('h', 'jairo@conductia.com')).toEqual({ approvedRequest: true });
-    await expectAsync(provisional.confirm('h', 'jairo@conductia.com')).toBeRejected();
-    await expectAsync(provisional.confirm('h', 'nada@x.com')).toBeRejected();
+    expect(await provisional.confirm(1, 'filippa@conductia.com')).toEqual({ approvedRequest: false });
+    expect(await provisional.confirm(1, 'jairo@conductia.com')).toEqual({ approvedRequest: true });
+    await expectAsync(provisional.confirm(1, 'jairo@conductia.com')).toBeRejected();
+    await expectAsync(provisional.confirm(1, 'nada@x.com')).toBeRejected();
 
     expect(new ProvisionalManagerAccess().isManager()).toBeTrue();
   });

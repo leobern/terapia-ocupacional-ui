@@ -3,7 +3,7 @@ import { TestBed } from '@angular/core/testing';
 import { firstValueFrom } from 'rxjs';
 
 import { NotificationsRepository } from './notifications-repository.service';
-import { ProvisionalHomeApiService, ProvisionalNotificationsApiService } from './provisional-notifications-api.service';
+import { ProvisionalNotificationsApiService } from './provisional-notifications-api.service';
 
 describe('Provisional notification APIs', () => {
   it('reads pages from the in-memory repository', async () => {
@@ -46,13 +46,5 @@ describe('Provisional notification APIs', () => {
 
     expect(repository.list('resolved', null, 50).totalCount).toBe(resolvedBefore + 1);
     expect(repository.list('pending', null, 50).items.some(n => n.id === target.id)).toBeFalse();
-  });
-
-  it('lists a single hospital, the same one the Home shows', async () => {
-    TestBed.configureTestingModule({ providers: [provideHttpClient(), ProvisionalHomeApiService] });
-
-    expect(await firstValueFrom(TestBed.inject(ProvisionalHomeApiService).getHospitals())).toEqual([
-      { id: 1, name: 'Hospital Vila Nova Star' },
-    ]);
   });
 });
