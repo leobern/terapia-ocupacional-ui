@@ -34,6 +34,13 @@ export interface FormActionDefinition {
   readonly title: string;
   readonly submitLabel: string;
   readonly fields: readonly FormFieldDefinition[];
+  /** Placeholder do campo de mensagem/áudio do rodapé (ex.: "Fale ou escreva a notificação"). */
+  readonly messagePlaceholder?: string;
+  /**
+   * Sugestões inteligentes (chips acima do campo de mensagem), calculadas pela IA a partir do histórico. Ausente ou
+   * vazio = a área não aparece (V1 sem IA).
+   */
+  readonly suggestions?: readonly string[];
   /** Persiste o cadastro. Lançar erro mantém o formulário aberto com os dados. */
   readonly submit: (values: FormValues) => Promise<void> | void;
 }

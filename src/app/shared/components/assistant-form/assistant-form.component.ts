@@ -11,6 +11,7 @@ import {
 import { type DirectoryUser, UserDirectory } from '../../services/user-directory';
 import { AccordionComponent, type AccordionState } from '../accordion/accordion.component';
 import { AvatarComponent } from '../avatar/avatar.component';
+import { ButtonComponent } from '../button/button.component';
 
 /** `@` seguido de letras no FIM do texto: o trecho que o autocomplete está completando. */
 const MENTION_TOKEN = /@([^\s@]*)$/u;
@@ -24,7 +25,7 @@ const MENTION_TOKEN = /@([^\s@]*)$/u;
  */
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [AccordionComponent, AutoResizeTextareaDirective, AvatarComponent, PhIconComponent],
+  imports: [AccordionComponent, AutoResizeTextareaDirective, AvatarComponent, ButtonComponent, PhIconComponent],
   selector: 'app-assistant-form',
   styleUrl: './assistant-form.component.scss',
   templateUrl: './assistant-form.component.html',
@@ -54,17 +55,33 @@ export class AssistantFormComponent {
   private searchToken = 0;
 
   constructor() {
-    // O botão de envio mora no rodapé do painel: o formulário se registra para ele acioná-lo.
+    // O rodapé do painel (sugestões + mensagem/áudio) aciona o preenchimento por IA através do controlador.
     inject(DestroyRef).onDestroy(
       this.controller.attach({
-        canSubmit: this.canSubmit,
-        label: computed(() => this.definition().submitLabel),
-        submit: () => this.onSubmit(),
+        apply: values => this.apply(values),
+        definition: this.definition,
       }),
     );
   }
 
-  /** Chamado pelo botão de envio do rodapé (via `AssistantFormController`). */
+  /** Aplica valores vindos da IA: só os campos conhecidos; o usuário revisa e envia. */
+  apply(values: FormValues): void {
+    for (const field of this.definition().fields) {
+      if (!(field.id in values)) {
+        continue;
+      }
+      const value = values[field.id];
+
+      if (field.kind === 'mention' && typeof value !== 'string') {
+        this.mentions.update(current => ({ ...current, [field.id]: value }));
+      } else if (typeof value === 'string') {
+        this.texts.update(current => ({ ...current, [field.id]: value }));
+      }
+    }
+    this.errorMessage.set(null);
+  }
+
+  /** Botão de envio, que só aparece com todas as perguntas obrigatórias respondidas. */
   async onSubmit(): Promise<void> {
     if (!this.canSubmit()) {
       return;

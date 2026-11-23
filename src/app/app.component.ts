@@ -5,8 +5,8 @@ import { filter, map } from 'rxjs';
 
 import { Role, SessionRoleReader } from './shared/auth/session-role';
 import { AssistantContentComponent } from './shared/components/assistant-content/assistant-content.component';
+import { AssistantFormFooterComponent } from './shared/components/assistant-form-footer/assistant-form-footer.component';
 import { AssistantHeadingComponent } from './shared/components/assistant-header/assistant-heading.component';
-import { AssistantSubmitComponent } from './shared/components/assistant-submit/assistant-submit.component';
 import {
   BackgroundMeshComponent,
   type BackgroundMeshVariant,
@@ -40,7 +40,7 @@ import { ViewportBreakpointService } from './shared/services/viewport-breakpoint
   imports: [
     AssistantContentComponent,
     AssistantHeadingComponent,
-    AssistantSubmitComponent,
+    AssistantFormFooterComponent,
     BackgroundMeshComponent,
     BottomNavBarComponent,
     BottomSheetComponent,

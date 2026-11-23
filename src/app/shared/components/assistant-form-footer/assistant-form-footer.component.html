@@ -1,0 +1,20 @@
+<div class="assistant-form-footer">
+  @if (suggestions().length > 0) {
+    <div class="assistant-form-footer__tips">
+      @for (suggestion of suggestions(); track suggestion) {
+        <app-tip [label]="suggestion" (click)="onSend(suggestion)" />
+      }
+    </div>
+  }
+  @if (controller.assistHint(); as hint) {
+    <p class="assistant-form-footer__hint" role="status">{{ hint }}</p>
+  }
+  <app-input-chat
+    [placeholder]="placeholder()"
+    [disabled]="controller.assisting()"
+    [(value)]="value"
+    [(mode)]="mode"
+    (send)="onSend($event)"
+    (audioSend)="onAudio($event)"
+  />
+</div>

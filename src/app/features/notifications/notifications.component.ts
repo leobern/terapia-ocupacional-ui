@@ -459,6 +459,7 @@ export class NotificationsComponent implements OnDestroy {
               recipients: (values['recipients'] as readonly DirectoryUser[]).map(user => ({ ...user })),
             });
           },
+          messagePlaceholder: 'Fale ou escreva a notificação',
           submitLabel: 'Criar notificação',
           title: 'Criar notificação',
         },

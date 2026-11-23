@@ -128,4 +128,17 @@
   @if (errorMessage(); as message) {
     <p class="assistant-form__error" role="alert">{{ message }}</p>
   }
+
+  <!-- Figma 4722:10983: o botão fica alinhado à direita, logo abaixo dos campos, e só surge quando o cadastro
+       pode ser enviado (todas as perguntas obrigatórias respondidas). -->
+  @if (canSubmit()) {
+    <div class="assistant-form__submit">
+      <app-button
+        kind="primary"
+        appearance="solid"
+        [label]="definition().submitLabel"
+        (click)="onSubmit()"
+      />
+    </div>
+  }
 </div>
