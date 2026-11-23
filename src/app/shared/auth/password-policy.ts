@@ -1,11 +1,14 @@
-export const PASSWORD_MIN_LENGTH = 8;
+export const PASSWORD_MIN_LENGTH = 10;
+export const PASSWORD_MAX_LENGTH = 128;
 
-export type PasswordViolation = 'min-length' | 'lowercase' | 'uppercase' | 'digit';
+export type PasswordViolation = 'min-length' | 'max-length' | 'letter' | 'digit';
 
 /**
  * Política de senha única (RN04), a ser reutilizada pelo cadastro (US-001-1-02).
- * PREMISSA: o texto da story não define a política; adotada: mínimo de 8 caracteres
- * com letra minúscula, maiúscula e dígito. Confirmar com a story de cadastro.
+ * Decisão do dono do produto: senha forte padrão, sem regras específicas de composição:
+ * de 10 a 128 caracteres, com ao menos uma letra (qualquer alfabeto) e ao menos um número.
+ * Não exige maiúscula, minúscula nem símbolo. A senha não é aparada nem alterada: espaços
+ * contam como caracteres. O tamanho é medido em unidades UTF-16 (`String.length`).
  */
 export function validatePassword(password: string): PasswordViolation[] {
   const violations: PasswordViolation[] = [];
@@ -13,11 +16,11 @@ export function validatePassword(password: string): PasswordViolation[] {
   if (password.length < PASSWORD_MIN_LENGTH) {
     violations.push('min-length');
   }
-  if (!/[a-z]/.test(password)) {
-    violations.push('lowercase');
+  if (password.length > PASSWORD_MAX_LENGTH) {
+    violations.push('max-length');
   }
-  if (!/[A-Z]/.test(password)) {
-    violations.push('uppercase');
+  if (!/\p{L}/u.test(password)) {
+    violations.push('letter');
   }
   if (!/\d/.test(password)) {
     violations.push('digit');

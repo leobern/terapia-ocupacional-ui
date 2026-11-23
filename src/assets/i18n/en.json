@@ -21,12 +21,13 @@
       "expiredMessage": "The reset link has expired. Request a new link.",
       "expiredTitle": "Link expired",
       "mismatch": "Passwords do not match.",
+      "passwordHint": "Use 10 to 128 characters, with at least one letter and one number.",
       "passwordLabel": "New password",
       "policy": {
         "digit": "Include at least one number.",
-        "lowercase": "Include at least one lowercase letter.",
-        "min-length": "Use at least 8 characters.",
-        "uppercase": "Include at least one uppercase letter."
+        "letter": "Include at least one letter.",
+        "max-length": "Use at most 128 characters.",
+        "min-length": "Use at least 10 characters."
       },
       "requestNew": "Request new link",
       "retry": "Try again",

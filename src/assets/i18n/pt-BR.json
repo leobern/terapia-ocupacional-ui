@@ -21,12 +21,13 @@
       "expiredMessage": "O link de redefinição expirou. Solicite um novo link.",
       "expiredTitle": "Link expirado",
       "mismatch": "As senhas não coincidem.",
+      "passwordHint": "Use de 10 a 128 caracteres, com ao menos uma letra e um número.",
       "passwordLabel": "Nova senha",
       "policy": {
         "digit": "Inclua ao menos um número.",
-        "lowercase": "Inclua ao menos uma letra minúscula.",
-        "min-length": "Use ao menos 8 caracteres.",
-        "uppercase": "Inclua ao menos uma letra maiúscula."
+        "letter": "Inclua ao menos uma letra.",
+        "max-length": "Use no máximo 128 caracteres.",
+        "min-length": "Use ao menos 10 caracteres."
       },
       "requestNew": "Solicitar novo link",
       "retry": "Tentar novamente",
