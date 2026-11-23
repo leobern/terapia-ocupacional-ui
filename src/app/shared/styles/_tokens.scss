@@ -130,6 +130,11 @@ $color-nav-active: #dce2e5; // claro: slate/150 — com `multiply` sobre o menu 
 $color-bg-gradient-patients-1: #e9f5fb;
 $color-bg-gradient-patients-2: #f0f3f5;
 
+// fundo-gradiente-notificacoes/* — gradiente EXCLUSIVO da tela de Notificações (Figma `gradient-notificacoes`):
+// claro: rosado muito claro → superfície; escuro: vinho escuro → superfície.
+$color-bg-gradient-notifications-1: #fff4f3;
+$color-bg-gradient-notifications-2: #f0f3f5;
+
 // decorative/* — usados só no background animado das telas (não são Color
 // Style nomeado no Figma, só um fill solto nos blobs de fundo).
 $color-decorative-forest: #0d7742;
@@ -177,6 +182,8 @@ $color-map: (
   'bg-gradient-3': $color-bg-gradient-3,
   'bg-gradient-patients-1': $color-bg-gradient-patients-1,
   'bg-gradient-patients-2': $color-bg-gradient-patients-2,
+  'bg-gradient-notifications-1': $color-bg-gradient-notifications-1,
+  'bg-gradient-notifications-2': $color-bg-gradient-notifications-2,
   'decorative-forest': $color-decorative-forest,
   'data-tag': $color-data-tag,
   'on-data-tag': $color-on-data-tag,
@@ -427,6 +434,8 @@ $shadow-elevation-bottomsheet: 0 -4px 24px rgba($color-primary, 0.08);
   --color-bg-gradient-3: #{$color-bg-gradient-3};
   --color-bg-gradient-patients-1: #{$color-bg-gradient-patients-1};
   --color-bg-gradient-patients-2: #{$color-bg-gradient-patients-2};
+  --color-bg-gradient-notifications-1: #{$color-bg-gradient-notifications-1};
+  --color-bg-gradient-notifications-2: #{$color-bg-gradient-notifications-2};
   --color-logo-4: #{$color-logo-4};
   --color-decorative-forest: #{$color-decorative-forest};
   --color-data-tag: #{$color-data-tag};
@@ -529,6 +538,8 @@ $shadow-elevation-bottomsheet: 0 -4px 24px rgba($color-primary, 0.08);
   --color-bg-gradient-3: #182125;
   --color-bg-gradient-patients-1: #102f41;
   --color-bg-gradient-patients-2: #182125;
+  --color-bg-gradient-notifications-1: #2c171e;
+  --color-bg-gradient-notifications-2: #182125;
   --color-primary: #8cd0ff;
   --color-secondary: #43b9ff;
   --color-tertiary: #005050;

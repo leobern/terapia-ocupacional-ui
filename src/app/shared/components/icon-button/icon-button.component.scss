@@ -29,25 +29,45 @@
   background: transparent;
   color: var(--icon-button-color);
   cursor: pointer;
-  transition:
-    filter 0.2s ease,
-    transform 0.15s ease,
-    background-color 0.2s ease;
+  position: relative;
+  transition: background-color 0.2s ease;
 
   @include mixins.focus-ring;
 
-  &:hover:not(:disabled) {
+  // Fundo do ghost (hover) e do tonal: camada ATRÁS do ícone com `multiply` (Figma: o `back` do
+  // v2/IconButton compõe em MULTIPLY sobre o gradiente da tela). O botão NÃO pode ter `filter`,
+  // `transform` nem `opacity` (criariam um stacking context e isolariam o blend), por isso o
+  // feedback de hover/press fica na própria camada.
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
     background: tokens.c(surface-2);
+    mix-blend-mode: multiply;
+    opacity: 0;
+    pointer-events: none;
+    transition:
+      opacity 0.2s ease,
+      filter 0.2s ease;
   }
 
-  &:active:not(:disabled) {
+  &:hover:not(:disabled)::before {
+    opacity: 1;
+  }
+
+  &:active:not(:disabled)::before {
     filter: brightness(0.9);
-    transform: scale(0.96);
     transition-duration: 0.08s;
+  }
+
+  &:active:not(:disabled) ph-icon {
+    transform: scale(0.96);
   }
 }
 
 .icon-button ph-icon {
+  position: relative;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -77,9 +97,11 @@
 
 // --- appearances --------------------------------------------------------------
 .icon-button--tonal {
-  background: tokens.c(surface-2);
+  &::before {
+    opacity: 1;
+  }
 
-  &:hover:not(:disabled) {
+  &:hover:not(:disabled)::before {
     filter: brightness(0.97);
   }
 }
@@ -87,6 +109,11 @@
 .icon-button--outlined {
   border-width: 1.5px;
   border-color: var(--icon-button-color);
+}
+
+.icon-button--outlined::before,
+.icon-button--solid::before {
+  display: none;
 }
 
 .icon-button--solid {

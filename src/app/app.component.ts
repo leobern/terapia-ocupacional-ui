@@ -94,6 +94,10 @@ export class AppComponent {
       return 'patients';
     }
 
+    if (url.startsWith('/notifications')) {
+      return 'notifications';
+    }
+
     return url.startsWith('/home') ? 'gradient' : 'blobs';
   });
   protected readonly isNotificationsRoute = computed(() => this.currentUrl().startsWith('/notifications'));

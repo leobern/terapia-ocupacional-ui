@@ -358,3 +358,20 @@ $mesh-fade-mask: radial-gradient(
     transition-duration: 0s;
   }
 }
+
+// Ícone Sparkling (Figma 4722:25082): 58,5% x 62,3% do círculo, deslocado 21,75% / 16,25% (medido no
+// Figma em um círculo de 40px). Cor = token `secondary` (claro e escuro); apagado quando desabilitado.
+.icon-logo__sparkle {
+  color: tokens.c(secondary);
+  fill: currentcolor;
+  height: 62.3%;
+  left: 21.75%;
+  pointer-events: none;
+  position: absolute;
+  top: 16.25%;
+  width: 58.5%;
+}
+
+:host([data-state='disabled']) .icon-logo__sparkle {
+  color: tokens.c(border-2);
+}
