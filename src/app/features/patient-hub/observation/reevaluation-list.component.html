@@ -1,0 +1,81 @@
+@if (!empty()) {
+  <section class="reev" aria-labelledby="reev-title">
+    <h2 id="reev-title" class="reev__title">Pendências e mensagens</h2>
+
+    @for (item of items(); track item.id) {
+      <article
+        class="reev__card"
+        [attr.aria-label]="'Pendência: ' + item.reason"
+      >
+        <p class="reev__reason">{{ item.reason }}</p>
+        <p class="reev__meta">
+          Prazo {{ formatIsoDate(item.dueDate) }} · para
+          {{ recipientsLabel(item.recipients) }}
+        </p>
+        @if (item.resolvedAt) {
+          <p class="reev__badge reev__badge--done">
+            Resolvida por {{ item.resolvedBy }}
+          </p>
+        } @else if (overdue(item)) {
+          <p class="reev__badge reev__badge--overdue">Vencida</p>
+        }
+
+        @if (editingId() === item.id) {
+          <app-recipients-editor
+            [idPrefix]="'reev-rcp-' + item.id"
+            [team]="team()"
+            [value]="draft()"
+            (changed)="setDraft($event)"
+          />
+          <app-button
+            label="Salvar destinatários"
+            [fullWidth]="true"
+            [disabled]="!canSave()"
+            (click)="saveRecipients(item)"
+          />
+          <app-button
+            kind="primary"
+            appearance="outlined"
+            label="Cancelar"
+            [fullWidth]="true"
+            (click)="cancelEdit()"
+          />
+        } @else if (!item.resolvedAt) {
+          <app-button
+            kind="primary"
+            appearance="outlined"
+            label="Alterar destinatários"
+            [fullWidth]="true"
+            [disabled]="!online()"
+            (click)="startEdit(item)"
+          />
+          <app-button
+            label="Marcar como resolvida"
+            [fullWidth]="true"
+            [disabled]="!online()"
+            (click)="resolve(item)"
+          />
+        }
+      </article>
+    }
+
+    @for (message of messages(); track message.id) {
+      <article class="reev__card" aria-label="Mensagem enviada">
+        <p class="reev__reason">{{ message.text }}</p>
+        <p class="reev__meta">
+          De {{ message.author }} · para
+          {{ recipientsLabel(message.recipients) }}
+        </p>
+      </article>
+    }
+
+    @if (!online()) {
+      <p class="reev__meta" role="status">{{ offlineHint }}</p>
+    }
+    @if (failed()) {
+      <p class="reev__error" role="alert">
+        Não foi possível salvar. Tente novamente.
+      </p>
+    }
+  </section>
+}

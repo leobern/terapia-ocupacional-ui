@@ -52,6 +52,20 @@ import { ProvisionalDailyRecordSource } from './features/patient-hub/daily-recor
 import { ProvisionalEvolutionAiStructurer } from './features/patient-hub/daily-record/provisional-evolution-ai-structurer';
 import { ProvisionalParameterAiStructurer } from './features/patient-hub/daily-record/provisional-parameter-ai-structurer';
 import {
+  DirectedMessageSource,
+  DirectedMessageWriter,
+  ObservationSuggester,
+  ObservationWriter,
+  PatientTeamSource,
+  ReevaluationSource,
+  ReevaluationWriter,
+} from './features/patient-hub/observation/observation-source';
+import {
+  ProvisionalObservationStore,
+  ProvisionalObservationSuggester,
+  ProvisionalPatientTeamSource,
+} from './features/patient-hub/observation/provisional-observation';
+import {
   HypothesisSynthesizer,
   HypothesisWriter,
   PatientHubSource,
@@ -108,6 +122,14 @@ export const appConfig: ApplicationConfig = {
     { provide: UnreadNotificationsReader, useClass: LocalUnreadNotificationsReader },
     { provide: DailyPatientsSource, useClass: ProvisionalDailyPatientsSource },
     { provide: PatientListAiCommandPort, useClass: ProvisionalPatientListAiCommand },
+    ProvisionalObservationStore,
+    { provide: ObservationWriter, useExisting: ProvisionalObservationStore },
+    { provide: ReevaluationSource, useExisting: ProvisionalObservationStore },
+    { provide: ReevaluationWriter, useExisting: ProvisionalObservationStore },
+    { provide: DirectedMessageSource, useExisting: ProvisionalObservationStore },
+    { provide: DirectedMessageWriter, useExisting: ProvisionalObservationStore },
+    { provide: ObservationSuggester, useClass: ProvisionalObservationSuggester },
+    { provide: PatientTeamSource, useClass: ProvisionalPatientTeamSource },
     ProvisionalFollowUpClosureSource,
     { provide: FollowUpClosureSource, useExisting: ProvisionalFollowUpClosureSource },
     { provide: FollowUpClosureWriter, useExisting: ProvisionalFollowUpClosureSource },

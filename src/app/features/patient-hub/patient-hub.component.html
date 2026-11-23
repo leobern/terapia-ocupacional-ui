@@ -286,6 +286,15 @@
               (saved)="reloadPrescription()"
             />
           }
+          <app-reevaluation-list
+            [patientId]="p.id"
+            [version]="activityVersion()"
+          />
+          <app-observation-follow-up
+            [observation]="followUpObservation()"
+            (closed)="followUpObservation.set(null)"
+            (changed)="activityVersion.set(activityVersion() + 1)"
+          />
           <app-daily-record-sheet
             [open]="dailyRecordOpen()"
             [patientId]="p.id"

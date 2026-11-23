@@ -34,6 +34,20 @@ import { DailyRecordWriter } from './daily-record/daily-record-writer';
 import { EvolutionAiStructurer } from './daily-record/evolution-ai-structurer';
 import { ParameterAiStructurer } from './daily-record/parameter-ai-structurer';
 import {
+  DirectedMessageSource,
+  DirectedMessageWriter,
+  ObservationSuggester,
+  ObservationWriter,
+  PatientTeamSource,
+  ReevaluationSource,
+  ReevaluationWriter,
+} from './observation/observation-source';
+import {
+  ProvisionalObservationStore,
+  ProvisionalObservationSuggester,
+  ProvisionalPatientTeamSource,
+} from './observation/provisional-observation';
+import {
   DIAGNOSIS_FAILED_HINT,
   DIAGNOSIS_OFFLINE_HINT,
   PatientHubComponent,
@@ -254,6 +268,14 @@ async function setup(
       { provide: DailyRecordWriter, useValue: { record: (): Promise<[]> => Promise.resolve([]) } },
       { provide: FormulasApi, useValue: { list: (): Promise<[]> => Promise.resolve([]) } },
       { provide: NutritionTargetsReader, useValue: { current: (): Promise<null> => Promise.resolve(null) } },
+      ProvisionalObservationStore,
+      { provide: ObservationWriter, useExisting: ProvisionalObservationStore },
+      { provide: ReevaluationSource, useExisting: ProvisionalObservationStore },
+      { provide: ReevaluationWriter, useExisting: ProvisionalObservationStore },
+      { provide: DirectedMessageSource, useExisting: ProvisionalObservationStore },
+      { provide: DirectedMessageWriter, useExisting: ProvisionalObservationStore },
+      { provide: ObservationSuggester, useClass: ProvisionalObservationSuggester },
+      { provide: PatientTeamSource, useClass: ProvisionalPatientTeamSource },
       ProvisionalFollowUpClosureSource,
       { provide: FollowUpClosureSource, useExisting: ProvisionalFollowUpClosureSource },
       { provide: FollowUpClosureWriter, useExisting: ProvisionalFollowUpClosureSource },
@@ -385,7 +407,13 @@ describe('PatientHubComponent', () => {
       const dialog = (): HTMLDialogElement =>
         (f.nativeElement as HTMLElement).querySelector('app-daily-record-sheet dialog') as HTMLDialogElement;
 
-      expect(actions.map(a => a.label)).toEqual(['Registro diário', 'Ajustar a prescrição', 'Revisão da prescrição']);
+      expect(actions.map(a => a.label)).toEqual([
+        'Registro diário',
+        'Registrar observação',
+        'Ajustar a prescrição',
+        'Revisão da prescrição',
+      ]);
+
       expect(dialog().open).toBe(false);
       actions[0].navigate?.();
       f.detectChanges();
@@ -405,7 +433,7 @@ describe('PatientHubComponent', () => {
         TestBed.inject(ScreenActionsService)
           .actions()
           .map(a => a.label),
-      ).toEqual(['Registro diário']);
+      ).toEqual(['Registro diário', 'Registrar observação']);
     });
 
     it('médico abre a revisão da prescrição pelos atalhos e fecha com Esc', async () => {
@@ -445,6 +473,55 @@ describe('PatientHubComponent', () => {
       f.detectChanges();
 
       expect(dialog().open).toBe(false);
+    });
+
+    describe('Registrar observação (US-005-1-04)', () => {
+      const submit = (typed: unknown): Promise<void> | void =>
+        TestBed.inject(ScreenActionsService)
+          .actions()
+          .find(a => a.id === 'register-observation')
+          ?.form?.submit({ text: typed as string });
+
+      it('registra a observação e abre as sugestões quando fazem sentido', async () => {
+        const f = await setup(new FakeSource());
+        const dialog = (): HTMLDialogElement =>
+          (f.nativeElement as HTMLElement).querySelector('app-observation-follow-up dialog') as HTMLDialogElement;
+
+        await submit('Diarreia há 48 horas');
+        f.detectChanges();
+        await f.whenStable();
+        f.detectChanges();
+
+        expect(dialog().open).toBe(true);
+        expect((f.nativeElement as HTMLElement).textContent).toContain('Criar pendência de reavaliação?');
+        (
+          (f.nativeElement as HTMLElement).querySelector('app-observation-follow-up app-button button') as HTMLElement
+        ).click();
+      });
+
+      it('observação neutra não abre sugestões', async () => {
+        const f = await setup(new FakeSource());
+
+        await submit('Dieta interrompida para tomografia');
+        f.detectChanges();
+        await f.whenStable();
+        f.detectChanges();
+
+        expect(
+          ((f.nativeElement as HTMLElement).querySelector('app-observation-follow-up dialog') as HTMLDialogElement)
+            .open,
+        ).toBe(false);
+      });
+
+      it('texto vazio ou offline rejeita (o formulário mantém as respostas)', async () => {
+        const f = await setup(new FakeSource());
+
+        await expectAsync(Promise.resolve(submit('  '))).toBeRejected();
+        TestBed.inject(ConnectivityService).online.set(false);
+        await expectAsync(Promise.resolve(submit('x'))).toBeRejected();
+
+        expect(f).toBeTruthy();
+      });
     });
 
     it('sem hospital com vínculo em contexto, a ação não é oferecida', async () => {

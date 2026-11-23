@@ -1,0 +1,71 @@
+@use '../../../shared/styles/tokens';
+@use '../../../shared/styles/typography';
+
+.rcp {
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$space-8;
+}
+
+.rcp__label {
+  color: tokens.c(content-1);
+
+  @include typography.title-md;
+}
+
+.rcp__select {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 48px;
+  padding: 0 tokens.$space-16;
+  border: 1px solid tokens.c(border-2);
+  border-radius: tokens.$radius-sm;
+  background: tokens.c(surface);
+  color: tokens.c(content-1);
+
+  @include typography.body-lg;
+
+  &:focus-visible {
+    outline: 2px solid tokens.c(input-focus-ring);
+    outline-offset: 2px;
+  }
+}
+
+.rcp__people {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.rcp__person {
+  display: flex;
+  align-items: center;
+  gap: tokens.$space-12;
+  min-height: 44px;
+  color: tokens.c(content-1);
+
+  @include typography.body-lg;
+
+  input {
+    width: 24px;
+    height: 24px;
+    margin: 0;
+    accent-color: tokens.c(primary);
+  }
+}
+
+.rcp__help {
+  margin: 0;
+  color: tokens.c(content-4);
+
+  @include typography.caption;
+}
+
+.rcp__error {
+  margin: 0;
+  color: tokens.c(comm-alert);
+
+  @include typography.body-md;
+}

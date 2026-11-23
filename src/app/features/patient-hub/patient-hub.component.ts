@@ -46,6 +46,15 @@ import {
 import { NutritionResultsSource } from '../patients/nutrition-panel/nutrition-results-source';
 import { AssessmentSectionComponent } from './assessment/assessment-section.component';
 import { DailyRecordSheetComponent } from './daily-record/daily-record-sheet.component';
+import {
+  authorGroupOf,
+  Observation,
+  OBSERVATION_FAILED_HINT,
+  OFFLINE_OBSERVATION_HINT,
+} from './observation/observation.models';
+import { ObservationFollowUpComponent } from './observation/observation-follow-up.component';
+import { ObservationWriter } from './observation/observation-source';
+import { ReevaluationListComponent } from './observation/reevaluation-list.component';
 import { HypothesisOrigin, PatientHubProfile } from './patient-hub.models';
 import { HypothesisSynthesizer, HypothesisWriter, PatientHubSource } from './patient-hub-source';
 import { PlanSectionComponent } from './plan/plan-section.component';
@@ -91,9 +100,11 @@ export const DIAGNOSIS_FAILED_HINT =
     NutritionCardModalComponent,
     NutritionHiddenCardsSheetComponent,
     NutritionPanelComponent,
+    ObservationFollowUpComponent,
     PageContainerComponent,
     PhIconComponent,
     PlanSectionComponent,
+    ReevaluationListComponent,
     PrescriptionSheetComponent,
     PrescriptionSummaryComponent,
     PrescriptionReviewComponent,
@@ -165,6 +176,11 @@ export class PatientHubComponent implements OnInit {
   /** Revisão diária da prescrição (FT-004-8), aberta pela ação dos atalhos; só para o médico. */
   protected readonly prescriptionReviewOpen = signal(false);
 
+  /** Observação recém-registrada que abre as sugestões de pendência/comunicação (US-005-1-04). */
+  protected readonly followUpObservation = signal<Observation | null>(null);
+  /** Incrementa quando uma pendência/mensagem é criada, para a lista recarregar. */
+  protected readonly activityVersion = signal(0);
+
   protected readonly phase = signal<FillPhase>('input');
   /** Texto colado do prontuário (permanece disponível se a síntese falhar). */
   protected readonly pasted = signal('');
@@ -228,6 +244,7 @@ export class PatientHubComponent implements OnInit {
   private readonly synthesizer = inject(HypothesisSynthesizer);
   private readonly writer = inject(HypothesisWriter);
   private readonly professional = inject(ProfessionalProfileReader);
+  private readonly observations = inject(ObservationWriter);
   /** Retorno original da IA, para distinguir "confirmado sem editar" de "editado". */
   private aiText = '';
   private readonly patientId = toSignal(inject(ActivatedRoute).paramMap.pipe(map(params => params.get('id'))), {
@@ -240,6 +257,24 @@ export class PatientHubComponent implements OnInit {
       if (this.status() === 'ready' && this.hospitalId() !== null) {
         const actions: ScreenAction[] = [
           { id: 'daily-record', label: 'Registro diário', navigate: (): void => this.dailyRecordOpen.set(true) },
+          {
+            form: {
+              fields: [
+                {
+                  id: 'text',
+                  kind: 'text',
+                  label: 'O que você observou?',
+                  placeholder: 'Descreva a observação',
+                  required: true,
+                },
+              ],
+              submit: values => this.registerObservation(values['text']),
+              submitLabel: 'Registrar observação',
+              title: 'Registrar observação',
+            },
+            id: 'register-observation',
+            label: 'Registrar observação',
+          },
         ];
 
         if (this.professional.read().role === 'doctor') {
@@ -288,6 +323,33 @@ export class PatientHubComponent implements OnInit {
     } catch {
       // mantém os valores atuais
     }
+  }
+
+  /**
+   * Registro mínimo da observação sem destinatário (só documenta no histórico, sem notificar) e, em seguida,
+   * abre as sugestões. Lançar erro mantém o formulário aberto.
+   */
+  protected async registerObservation(value: unknown): Promise<void> {
+    const id = this.patientId();
+    const text = typeof value === 'string' ? value.trim() : '';
+
+    if (id === null || text === '') {
+      throw new Error(OBSERVATION_FAILED_HINT);
+    }
+    if (!this.connectivity.online()) {
+      throw new Error(OFFLINE_OBSERVATION_HINT);
+    }
+    const professional = this.professional.read();
+
+    this.followUpObservation.set(
+      await this.observations.save({
+        at: this.now().toISOString(),
+        author: professional.name,
+        authorGroup: authorGroupOf(professional.role),
+        patientId: id,
+        text,
+      }),
+    );
   }
 
   /** A prescrição ajustada virou a vigente: o Hub passa a mostrá-la sem recarregar a página. */

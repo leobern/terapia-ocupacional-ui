@@ -1,0 +1,42 @@
+<div class="rcp">
+  <label class="rcp__label" [for]="idPrefix() + '-group'">Grupo</label>
+  <select
+    class="rcp__select"
+    [id]="idPrefix() + '-group'"
+    [disabled]="disabled()"
+    (change)="selectGroup($any($event.target).value)"
+  >
+    <option value="" [selected]="value().group === null">Nenhum grupo</option>
+    @for (group of groups; track group.id) {
+      <option [value]="group.id" [selected]="value().group === group.id">
+        {{ group.label }}
+      </option>
+    }
+  </select>
+
+  <fieldset class="rcp__people">
+    <legend class="rcp__label">Outras pessoas</legend>
+    @for (member of team(); track member.id) {
+      <label class="rcp__person">
+        <input
+          type="checkbox"
+          [checked]="isPicked(member)"
+          [disabled]="disabled()"
+          (change)="toggle(member)"
+        />
+        <span>{{ member.name }}</span>
+      </label>
+    }
+  </fieldset>
+
+  @if (error(); as message) {
+    <p class="rcp__error" role="alert">{{ message }}</p>
+  } @else {
+    <p class="rcp__help">
+      Receberão:
+      @for (member of resolved(); track member.id; let last = $last) {
+        {{ member.name }}{{ last ? '' : ', ' }}
+      }
+    </p>
+  }
+</div>
