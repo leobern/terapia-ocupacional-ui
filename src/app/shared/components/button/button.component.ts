@@ -39,6 +39,8 @@ export class ButtonComponent {
   readonly iconLeft = input<string | null>(null);
   readonly iconRight = input<string | null>(null);
   readonly fullWidth = input<boolean>(false);
+  /** Tipo nativo do `<button>`; `submit` permite o Enter enviar o `<form>` pai. */
+  readonly htmlType = input<'button' | 'submit'>('button');
   readonly label = input.required<string>();
 
   protected readonly variantClass = computed(

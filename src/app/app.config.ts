@@ -90,6 +90,8 @@ import { ProvisionalNutritionCardStore } from './features/patients/nutrition-pan
 import { ProvisionalNutritionResultsSource } from './features/patients/nutrition-panel/provisional-nutrition-results';
 import { FormulasApi } from './features/pharmacy/formulas-api';
 import { ProvisionalFormulasApi } from './features/pharmacy/provisional-formulas-api';
+import { HttpPasswordResetGateway } from './features/password-recovery/http-password-reset-gateway';
+import { PasswordResetGateway } from './features/password-recovery/password-reset-gateway';
 import { LocalStartupStateReader } from './features/splash/local-startup-state-reader';
 import { StartupStateReader } from './features/splash/startup-state';
 import { ProvisionalSessionRoleReader } from './shared/auth/provisional-session-role-reader';
@@ -103,6 +105,7 @@ import { UserDirectory } from './shared/services/user-directory';
 export const appConfig: ApplicationConfig = {
   providers: [
     { provide: ProfessionalProfileReader, useClass: LocalProfessionalProfileReader },
+    { provide: PasswordResetGateway, useClass: HttpPasswordResetGateway },
     { provide: StartupStateReader, useClass: LocalStartupStateReader },
     { provide: LinkedHospitalsReader, useClass: HomeHospitalsApiService },
     { provide: UnreadNotificationsReader, useClass: LocalUnreadNotificationsReader },
