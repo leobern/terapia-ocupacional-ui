@@ -30,11 +30,11 @@ type LoadState = 'loading' | 'ready' | 'error';
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [ButtonComponent, InputChatComponent],
-  selector: 'app-patient-messages',
+  selector: 'app-patient-threads',
   styleUrl: './patient-messages.component.scss',
   templateUrl: './patient-messages.component.html',
 })
-export class PatientMessagesComponent implements OnInit {
+export class PatientThreadsComponent implements OnInit {
   readonly patientId = input.required<string>();
 
   protected readonly state = signal<LoadState>('loading');

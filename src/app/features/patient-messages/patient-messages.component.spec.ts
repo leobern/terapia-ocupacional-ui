@@ -4,14 +4,14 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { InputChatComponent } from '../../shared/components/input-chat/input-chat.component';
 import { ConnectivityService } from '../../shared/services/connectivity.service';
 import { NOW, ProfessionalProfileReader } from '../home/professional-profile';
-import { PatientMessagesComponent } from './patient-messages.component';
+import { PatientThreadsComponent } from './patient-messages.component';
 import { MessageThread, ThreadReplyRequest } from './patient-messages.models';
 import { PatientMessagesSource, PatientMessagesWriter, ReplyTranscriber } from './patient-messages-source';
 import { ProvisionalPatientMessages } from './provisional-patient-messages';
 
-describe('PatientMessagesComponent', () => {
+describe('PatientThreadsComponent', () => {
   const NOW_DATE = new Date('2026-11-22T12:00:00.000Z');
-  let fixture: ComponentFixture<PatientMessagesComponent>;
+  let fixture: ComponentFixture<PatientThreadsComponent>;
   let online: WritableSignal<boolean>;
   let failList: boolean;
   let failReply: boolean;
@@ -38,7 +38,7 @@ describe('PatientMessagesComponent', () => {
     await settle();
   };
   const create = async (patientId = 'p1'): Promise<void> => {
-    fixture = TestBed.createComponent(PatientMessagesComponent);
+    fixture = TestBed.createComponent(PatientThreadsComponent);
     fixture.componentRef.setInput('patientId', patientId);
     await settle();
   };
