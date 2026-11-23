@@ -1,4 +1,36 @@
+const fs = require('fs');
 const path = require('path');
+
+/**
+ * Roda os testes no Chromium do Playwright (de preferência o chrome-headless-shell),
+ * e não no Google Chrome instalado na máquina. No Windows, cada abertura do Chrome
+ * instalado gerava uma tentativa de logon com senha errada (evento 4625), e várias
+ * rodadas seguidas bloqueavam a conta do Windows (política de 10 falhas em 10 min).
+ * Se CHROME_BIN já estiver definido, ele é respeitado; sem Playwright instalado,
+ * o karma-chrome-launcher volta a procurar o Chrome do sistema.
+ */
+function resolvePlaywrightChromium() {
+  try {
+    const { chromium } = require('@playwright/test');
+    const full = chromium.executablePath();
+    const headlessShell = full
+      .replace(/chromium-(\d+)/, 'chromium_headless_shell-$1')
+      .replace(/chrome-(win64|linux64|linux|mac-x64|mac-arm64)/, 'chrome-headless-shell-$1')
+      .replace(/chrome(\.exe)?$/, 'chrome-headless-shell$1');
+
+    return [headlessShell, full].find((candidate) => fs.existsSync(candidate));
+  } catch {
+    return undefined;
+  }
+}
+
+if (!process.env.CHROME_BIN) {
+  const playwrightChromium = resolvePlaywrightChromium();
+
+  if (playwrightChromium) {
+    process.env.CHROME_BIN = playwrightChromium;
+  }
+}
 
 const threshold = {
   emitWarning: false,
