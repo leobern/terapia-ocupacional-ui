@@ -59,6 +59,11 @@ describe('AppComponent', () => {
       Array.from(el.querySelectorAll('dialog[open] button')).find(b => b.textContent?.trim() === label) as
         HTMLButtonElement | undefined;
 
+    const menuSignOut = (): HTMLButtonElement | undefined =>
+      Array.from(el.querySelectorAll('dialog[aria-label="Menu"] button')).find(
+        b => b.textContent?.trim() === 'Sair',
+      ) as HTMLButtonElement | undefined;
+
     beforeEach(async () => {
       spyOnProperty(navigator, 'language', 'get').and.returnValue('pt-BR');
       logout = jasmine.createSpy('logout').and.resolveTo();
@@ -93,6 +98,53 @@ describe('AppComponent', () => {
       expect(logout).not.toHaveBeenCalled();
       expect(router.url).toBe('/home');
       expect(el.querySelector<HTMLDialogElement>('dialog')?.open ?? false).toBeFalse();
+    });
+
+    it('calls logout once when Confirm is double-clicked and disables the button meanwhile', async () => {
+      let release!: () => void;
+
+      logout.and.returnValue(new Promise<void>(resolve => (release = resolve)));
+      const confirm = button('Sair') as HTMLButtonElement;
+
+      confirm.click();
+      confirm.click();
+      fixture.detectChanges();
+
+      expect(logout).toHaveBeenCalledTimes(1);
+      expect(button('Sair')?.disabled).toBeTrue();
+
+      release();
+      await fixture.whenStable();
+
+      expect(logout).toHaveBeenCalledTimes(1);
+      expect(router.url).toBe('/login');
+    });
+
+    it('opens the confirmation from the Sair button inside the mobile menu sheet', () => {
+      button('Cancelar')?.click();
+      fixture.detectChanges();
+      el.querySelector<HTMLButtonElement>('app-bottom-nav-bar button')?.click();
+      fixture.detectChanges();
+      menuSignOut()?.click();
+      fixture.detectChanges();
+
+      expect(el.textContent).toContain('Deseja sair da conta?');
+      expect(el.querySelector('dialog[aria-label="Menu"][open]')).toBeNull();
+      expect(logout).not.toHaveBeenCalled();
+    });
+
+    it('ends the session and goes to /login when confirming from the mobile menu', async () => {
+      button('Cancelar')?.click();
+      fixture.detectChanges();
+      el.querySelector<HTMLButtonElement>('app-bottom-nav-bar button')?.click();
+      fixture.detectChanges();
+      menuSignOut()?.click();
+      fixture.detectChanges();
+      button('Sair')?.click();
+      await fixture.whenStable();
+
+      expect(logout).toHaveBeenCalledTimes(1);
+      expect(router.url).toBe('/login');
     });
 
     it('offers the sign out action from the mobile menu', () => {

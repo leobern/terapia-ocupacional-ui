@@ -22,6 +22,8 @@ import { ViewportBreakpointService } from '../../shared/services/viewport-breakp
 })
 export class LogoutConfirmComponent {
   readonly open = input<boolean>(false);
+  /** Logout em andamento: desabilita Confirmar para impedir envio duplicado. */
+  readonly busy = input<boolean>(false);
 
   readonly confirmed = output();
   readonly cancelled = output();

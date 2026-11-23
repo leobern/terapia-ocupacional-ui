@@ -13,8 +13,9 @@
       <app-button
         kind="primary"
         [fullWidth]="true"
+        [disabled]="busy()"
         [label]="i18n.t('logout.confirm')"
-        (click)="confirmed.emit()"
+        (click)="!busy() && confirmed.emit()"
       />
     </div>
   </div>

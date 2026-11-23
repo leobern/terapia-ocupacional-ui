@@ -43,6 +43,16 @@ describe('LogoutService', () => {
     expect(TestBed.inject(LocalSessionStore).isValid()).toBeFalse();
   });
 
+  it('exposes only the current-device revocation (no sign-out-everywhere)', async () => {
+    await service.logout();
+
+    const methods = Object.getOwnPropertyNames(Object.getPrototypeOf(service)).filter(m => m !== 'constructor');
+
+    expect(methods).toEqual(['logout']);
+    expect(Object.keys(revoker).filter(k => /all/i.test(k))).toEqual([]);
+    expect(revoker.revokeCurrentDevice).toHaveBeenCalledOnceWith();
+  });
+
   it('still clears local data when remote revocation fails', async () => {
     revoker.revokeCurrentDevice.and.rejectWith(new Error('offline'));
 

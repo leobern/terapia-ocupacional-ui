@@ -38,6 +38,16 @@ describe('LogoutConfirmComponent', () => {
     expect(cancelled).not.toHaveBeenCalled();
   });
 
+  it('disables Confirm and does not emit while busy', () => {
+    fixture.componentRef.setInput('busy', true);
+    fixture.detectChanges();
+
+    expect(button('Sair')?.disabled).toBeTrue();
+    button('Sair')?.click();
+
+    expect(confirmed).not.toHaveBeenCalled();
+  });
+
   it('emits cancelled when the user cancels', () => {
     button('Cancelar')?.click();
 

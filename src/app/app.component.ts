@@ -37,6 +37,8 @@ export class AppComponent {
   /** Menu do celular/tablet (a barra inferior abre este sheet; em desktop o rail tem "Sair"). */
   protected readonly menuOpen = signal(false);
   protected readonly confirmOpen = signal(false);
+  /** Trava reentrância: duplo clique em Confirmar não pode chamar `logout()` duas vezes. */
+  protected readonly loggingOut = signal(false);
 
   private readonly router = inject(Router);
   private readonly logoutService = inject(LogoutService);
@@ -71,7 +73,18 @@ export class AppComponent {
   }
 
   protected async confirmLogout(): Promise<void> {
-    await this.logoutService.logout();
+    if (this.loggingOut()) {
+      return;
+    }
+
+    this.loggingOut.set(true);
+
+    try {
+      await this.logoutService.logout();
+    } finally {
+      this.loggingOut.set(false);
+    }
+
     this.confirmOpen.set(false);
     // replaceUrl: a rota autenticada atual sai do histórico.
     await this.router.navigateByUrl('/login', { replaceUrl: true });

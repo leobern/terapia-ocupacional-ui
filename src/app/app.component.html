@@ -37,6 +37,7 @@
     </app-bottom-sheet>
     <app-logout-confirm
       [open]="confirmOpen()"
+      [busy]="loggingOut()"
       (cancelled)="cancelLogout()"
       (confirmed)="confirmLogout()"
     />
