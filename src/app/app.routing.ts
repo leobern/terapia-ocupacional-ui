@@ -29,6 +29,12 @@ export const routes: Routes = [
     path: 'home',
     loadChildren: () => import('./features/home/home.routes').then(m => m.HOME_ROUTES),
   },
+  // Tutorial do app (US-001-3-02): primeiro acesso, sem o shell de navegação.
+  {
+    path: 'tutorial',
+    data: { hideShell: true },
+    loadChildren: () => import('./features/tutorial/tutorial.routes').then(m => m.TUTORIAL_ROUTES),
+  },
   {
     path: 'patients',
     pathMatch: 'full',

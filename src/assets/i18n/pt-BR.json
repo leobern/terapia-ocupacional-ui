@@ -58,5 +58,30 @@
     "noConnection": "Sem conexão",
     "noConnectionHint": "Verifique sua internet e tente novamente.",
     "retry": "Tentar novamente"
+  },
+  "tutorial": {
+    "back": "Voltar",
+    "finish": "Concluir",
+    "next": "Avançar",
+    "progress": "Passo {current} de {total}",
+    "skip": "Pular",
+    "steps": {
+      "home": {
+        "title": "Painel Metabólico",
+        "description": "Veja em um só lugar a situação dos seus pacientes e o que precisa da sua atenção hoje."
+      },
+      "patients": {
+        "title": "Pacientes",
+        "description": "Acompanhe cada paciente, com diagnóstico, plano nutricional e evolução diária."
+      },
+      "notifications": {
+        "title": "Notificações",
+        "description": "Receba avisos e comunicados da equipe e responda sem sair do app."
+      },
+      "assistant": {
+        "title": "Assistente de IA",
+        "description": "Pergunte ou peça ações pelo assistente: ele também reúne os atalhos da tela."
+      }
+    }
   }
 }

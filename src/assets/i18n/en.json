@@ -58,5 +58,30 @@
     "noConnection": "No connection",
     "noConnectionHint": "Check your internet and try again.",
     "retry": "Try again"
+  },
+  "tutorial": {
+    "back": "Back",
+    "finish": "Finish",
+    "next": "Next",
+    "progress": "Step {current} of {total}",
+    "skip": "Skip",
+    "steps": {
+      "home": {
+        "title": "Metabolic Dashboard",
+        "description": "See your patients' status and what needs your attention today, all in one place."
+      },
+      "patients": {
+        "title": "Patients",
+        "description": "Follow each patient, with diagnosis, nutrition plan and daily evolution."
+      },
+      "notifications": {
+        "title": "Notifications",
+        "description": "Get team notices and announcements and reply without leaving the app."
+      },
+      "assistant": {
+        "title": "AI assistant",
+        "description": "Ask or request actions through the assistant, which also gathers the screen shortcuts."
+      }
+    }
   }
 }
