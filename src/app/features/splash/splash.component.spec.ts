@@ -122,6 +122,26 @@ describe('SplashComponent', () => {
     expect(navigate).toHaveBeenCalledWith('/welcome', { replaceUrl: true });
   });
 
+  it('welcome has priority over a pending tutorial on the first approved access', async () => {
+    reader.state = { hasApprovedHospitalLink: true, isLocked: false, isSessionValid: true };
+    welcome.status = Promise.resolve({ name: 'Ana', shouldShow: true });
+    tutorial.status = Promise.resolve('PENDENTE');
+    open();
+    await tick(SPLASH_MIN_DISPLAY_MS);
+
+    expect(navigate).toHaveBeenCalledOnceWith('/welcome', { replaceUrl: true });
+  });
+
+  it('routes to the tutorial when the welcome was already seen and the tutorial is pending', async () => {
+    reader.state = { hasApprovedHospitalLink: true, isLocked: false, isSessionValid: true };
+    welcome.status = Promise.resolve({ name: 'Ana', shouldShow: false });
+    tutorial.status = Promise.resolve('PENDENTE');
+    open();
+    await tick(SPLASH_MIN_DISPLAY_MS);
+
+    expect(navigate).toHaveBeenCalledOnceWith('/tutorial', { replaceUrl: true });
+  });
+
   it('welcome: falls back to home when reading the welcome state fails', async () => {
     reader.state = { hasApprovedHospitalLink: true, isLocked: false, isSessionValid: true };
     welcome.status = Promise.reject(new Error('offline'));
