@@ -115,9 +115,48 @@ describe('Provisional notification APIs', () => {
     const api = TestBed.inject(ProvisionalNotificationsApiService);
     const target = TestBed.inject(NotificationsRepository).list('pending', null, 1).items[0];
 
-    const reply = await firstValueFrom(api.createReply(target.id, 'feito'));
+    const done = firstValueFrom(api.createReply(target.id, 'feito'));
+    const req = TestBed.inject(HttpTestingController).expectOne(r =>
+      r.url.endsWith(`/notifications/${target.id}/replies`),
+    );
 
-    expect(reply.text).toBe('feito');
+    expect(req.request.method).toBe('POST');
+    expect(req.request.body).toEqual({ text: 'feito' });
+    req.flush({ author: target.author, createdAt: '2026-11-24T10:00:00.000Z', id: 99, text: 'feito' });
+
+    expect((await done).text).toBe('feito');
+    expect(
+      TestBed.inject(NotificationsRepository)
+        .list('pending', null, 50)
+        .items.find(n => n.id === target.id)?.replyCount,
+    ).toBe(target.replyCount + 1);
+  });
+
+  it('createReply reabre no espelho local a notificação resolvida', async () => {
+    TestBed.configureTestingModule({ providers: [...PROVIDERS] });
+    const api = TestBed.inject(ProvisionalNotificationsApiService);
+    const repository = TestBed.inject(NotificationsRepository);
+    const target = repository.list('resolved', null, 1).items[0];
+
+    const done = firstValueFrom(api.createReply(target.id, 'voltei'));
+
+    TestBed.inject(HttpTestingController)
+      .expectOne(r => r.url.endsWith(`/notifications/${target.id}/replies`))
+      .flush({ author: target.author, createdAt: '2026-11-24T10:00:00.000Z', id: 100, text: 'voltei' });
+    await done;
+
+    expect(repository.list('pending', null, 50).items.some(n => n.id === target.id)).toBeTrue();
+    expect(repository.list('resolved', null, 50).items.some(n => n.id === target.id)).toBeFalse();
+  });
+
+  it('createReply de thread enviada pelo Hub (id negativo) não chama a API', async () => {
+    TestBed.configureTestingModule({ providers: [...PROVIDERS] });
+    const api = TestBed.inject(ProvisionalNotificationsApiService);
+
+    const reply = await firstValueFrom(api.createReply(-1, 'ok'));
+
+    expect(reply.text).toBe('ok');
+    TestBed.inject(HttpTestingController).expectNone(r => r.url.includes('/replies'));
   });
 
   it('resolve move a notificação para Resolvidas', async () => {

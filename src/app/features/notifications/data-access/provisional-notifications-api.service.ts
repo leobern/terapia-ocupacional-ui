@@ -46,7 +46,12 @@ export class ProvisionalNotificationsApiService extends NotificationsApiService 
   }
 
   override createReply(notificationId: number, text: string): Observable<NotificationReply> {
-    return of(this.repository.addReply(notificationId, text));
+    if (notificationId < 0) {
+      return of(this.repository.addReply(notificationId, text));
+    }
+
+    // `createNotificationReply` é x-implemented no contrato: chamada real; o mock local só espelha o estado.
+    return super.createReply(notificationId, text).pipe(tap(() => this.repository.addReply(notificationId, text)));
   }
 
   override resolve(notificationId: number): Observable<void> {
