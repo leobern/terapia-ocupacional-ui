@@ -241,6 +241,18 @@ export class NotificationsComponent implements OnDestroy {
   private pullStartY: number | null = null;
 
   constructor() {
+    // Desktop mostra Pendentes e Resolvidas juntas: busca a 1ª página de Resolvidas (a aba "resolved" a dispara) e
+    // devolve a aba ativa para Pendentes, que segue paginando pelo scroll.
+    effect(() => {
+      if (!this.isDesktop() || this.status() !== 'success') {
+        return;
+      }
+      if (!this.resolvedLoaded() && this.activeTab() === 'pending') {
+        this.store.dispatch(NotificationsActions.tabSelected({ tab: 'resolved' }));
+      } else if (this.resolvedLoaded() && this.activeTab() === 'resolved') {
+        this.store.dispatch(NotificationsActions.tabSelected({ tab: 'pending' }));
+      }
+    });
     const hospitalIdParam = this.route.snapshot.queryParamMap.get('hospitalId');
     const hospitalId = hospitalIdParam ? Number(hospitalIdParam) : null;
 
