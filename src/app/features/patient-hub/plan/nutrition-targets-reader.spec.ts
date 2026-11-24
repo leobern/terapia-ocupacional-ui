@@ -24,9 +24,9 @@ describe('NutritionTargetsReader', () => {
       referenceWeight: { kg: 75, kind: 'current' },
     } as const;
 
-    expect(await reader.current('p1')).toBeNull();
-    await source.saveTargets({ at: 'x', author: 'A', patientId: 'p1', targets });
+    expect(await reader.current('sem-meta')).toBeNull();
+    await source.saveTargets({ at: 'x', author: 'A', patientId: 'sem-meta', targets });
 
-    expect(await reader.current('p1')).toEqual(targets);
+    expect(await reader.current('sem-meta')).toEqual(targets);
   });
 });

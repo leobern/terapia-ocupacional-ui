@@ -3,7 +3,7 @@
 @use '../../styles/tokens';
 @use '../../styles/typography';
 
-// O seletor `:host(:hover), :host(:focus-within), :host(.nav-menu--open)` reaparece de propósito:
+// O seletor `:host(:hover), :host(:has(:focus-visible)), :host(.nav-menu--open)` reaparece de propósito:
 // cada bloco agrupa as regras do painel EXPANDIDO de um elemento (logo, links, rodapé).
 /* stylelint-disable no-duplicate-selectors */
 
@@ -110,7 +110,7 @@ $duration-collapse: 90ms;
     // conteúdo da rota ao lado. Achado do usuário: o menu aberto ficava
     // ATRÁS do conteúdo. `z-index` precisa estar aqui, no host, também.
     &:hover,
-    &:focus-within {
+    &:has(:focus-visible) {
       z-index: var(--z-index-overlay);
     }
   }
@@ -146,7 +146,7 @@ $duration-collapse: 90ms;
       box-shadow $duration-collapse $ease-standard;
 
     :host(:hover) &,
-    :host(:focus-within) &,
+    :host(:has(:focus-visible)) &,
     :host(.nav-menu--open) & {
       transition:
         width $duration-expand $ease-standard,
@@ -193,7 +193,7 @@ $duration-collapse: 90ms;
 }
 
 :host(:hover),
-:host(:focus-within),
+:host(:has(:focus-visible)),
 :host(.nav-menu--open) {
   .nav-menu__wordmark,
   .nav-menu__label,
@@ -252,9 +252,8 @@ $duration-collapse: 90ms;
   // componente usa 40px. Custom property herdada pelo componente interno via
   // `var(--icon-logo-size, 48px)` — não precisa de input novo.
   --icon-logo-size: #{tokens.$space-40};
-  // Cor de repouso — primary (colapsado). Herdada pelo `icon-logo-visual`
-  // interno via `var(--icon-logo-accent-override, ...)`, escape hatch aditivo
-  // criado especificamente para este caso (ver icon-logo-visual.component.scss).
+  // Borda azul (secondary) em todo estado do menu — mesmo logo do sidebar e do bottom sheet. Herdada pelo
+  // `icon-logo-visual` interno via `var(--icon-logo-accent-override, ...)` (ver icon-logo-visual.component.scss).
   --icon-logo-accent-override: var(--color-secondary);
 
   position: absolute;
@@ -264,7 +263,7 @@ $duration-collapse: 90ms;
 }
 
 .nav-menu__wordmark {
-  // Figma v2/NavMenu: Poppins SemiBold 24 — "Condut" em primary e "ia" em secondary.
+  // Figma v2/NavMenu: Poppins SemiBold 24 — "Conduct" em primary e "ia" em secondary.
   color: #{tokens.c(primary)};
   font-family: Poppins, var(--font-family-base), sans-serif;
   font-size: 24px;
@@ -384,7 +383,7 @@ $duration-collapse: 90ms;
 }
 
 :host(:hover),
-:host(:focus-within),
+:host(:has(:focus-visible)),
 :host(.nav-menu--open) {
   .nav-menu__link {
     // Expandido: largura cheia (o fundo de hover/ativo cobre a linha
@@ -438,7 +437,7 @@ $duration-collapse: 90ms;
 }
 
 :host(:hover),
-:host(:focus-within),
+:host(:has(:focus-visible)),
 :host(.nav-menu--open) {
   .nav-menu__footer {
     border-top-color: #{tokens.c(border)};
@@ -470,7 +469,7 @@ $duration-collapse: 90ms;
 }
 
 :host(:hover),
-:host(:focus-within),
+:host(:has(:focus-visible)),
 :host(.nav-menu--open) {
   .nav-menu__profile {
     gap: tokens.$space-12;
@@ -547,7 +546,7 @@ $duration-collapse: 90ms;
 }
 
 :host(:hover),
-:host(:focus-within),
+:host(:has(:focus-visible)),
 :host(.nav-menu--open) {
   .nav-menu__theme {
     transition-duration: $duration-expand;
@@ -594,8 +593,9 @@ $duration-collapse: 90ms;
 // Figma v2/NavRail: no trilho recolhido o ícone de sair segue a cor primária, como
 // os demais; o vermelho (comm-alert) aparece com o rótulo "Sair" (menu expandido).
 @include breakpoints.md {
-  :host(:not(:hover, :focus-within, .nav-menu--open)) .nav-menu__link--logout,
-  :host(:not(:hover, :focus-within, .nav-menu--open))
+  :host(:not(:hover, :has(:focus-visible), .nav-menu--open))
+    .nav-menu__link--logout,
+  :host(:not(:hover, :has(:focus-visible), .nav-menu--open))
     .nav-menu__link--logout
     .nav-menu__icon {
     color: #{tokens.c(primary)};

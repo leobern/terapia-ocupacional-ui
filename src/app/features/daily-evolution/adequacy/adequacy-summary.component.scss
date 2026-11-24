@@ -15,7 +15,7 @@
 
 .adequacy__title {
   margin: 0;
-  padding-inline: tokens.$space-8;
+  padding-inline: tokens.$space-16;
   color: tokens.c(content-1);
 
   @include typography.title-md;
@@ -45,7 +45,7 @@
   grid-column: 1 / -1;
   block-size: 8px;
   overflow: hidden;
-  border-radius: tokens.$radius-sm;
+  border-radius: tokens.$radius-xs;
   background: tokens.c(border-2);
 }
 
@@ -53,7 +53,7 @@
   display: block;
   block-size: 100%;
   border-radius: inherit;
-  background: tokens.c(primary);
+  background: tokens.c(comm-success);
 }
 
 .adequacy__text {

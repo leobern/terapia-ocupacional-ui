@@ -7,8 +7,8 @@ import { LogoutService } from './features/auth/logout.service';
 import { LogoutConfirmComponent } from './features/auth/logout-confirm.component';
 import { Role, SessionRoleReader } from './shared/auth/session-role';
 import { AssistantContentComponent } from './shared/components/assistant-content/assistant-content.component';
+import { AssistantFormFooterComponent } from './shared/components/assistant-form-footer/assistant-form-footer.component';
 import { AssistantHeadingComponent } from './shared/components/assistant-header/assistant-heading.component';
-import { AssistantSubmitComponent } from './shared/components/assistant-submit/assistant-submit.component';
 import {
   BackgroundMeshComponent,
   type BackgroundMeshVariant,
@@ -23,6 +23,7 @@ import { DrawerComponent, type DrawerSnap } from './shared/components/drawer/dra
 import { InputChatComponent, type InputChatMode } from './shared/components/input-chat/input-chat.component';
 import { NavMenuComponent, type NavMenuItemKey } from './shared/components/nav-menu/nav-menu.component';
 import { AiAssistantService } from './shared/services/ai-assistant.service';
+import { ScreenActionsService } from './shared/services/screen-actions.service';
 import { ViewportBreakpointService } from './shared/services/viewport-breakpoint.service';
 
 /**
@@ -37,12 +38,15 @@ import { ViewportBreakpointService } from './shared/services/viewport-breakpoint
  * NOTA: os atalhos e a mensagem de abertura da IA são texto fixo — ainda não
  * há serviço de conversa com a IA no frontend (fora do escopo desta tela).
  */
+/** Prefixo do id dos chips que são ações da tela (os outros são perguntas rápidas). */
+const ACTION_SHORTCUT_PREFIX = 'action:';
+
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     AssistantContentComponent,
     AssistantHeadingComponent,
-    AssistantSubmitComponent,
+    AssistantFormFooterComponent,
     BackgroundMeshComponent,
     BottomNavBarComponent,
     BottomSheetComponent,
@@ -104,6 +108,10 @@ export class AppComponent {
       return 'patients';
     }
 
+    if (url.startsWith('/notifications')) {
+      return 'notifications';
+    }
+
     return url.startsWith('/home') ? 'gradient' : 'blobs';
   });
   protected readonly isNotificationsRoute = computed(() => this.currentUrl().startsWith('/notifications'));
@@ -120,17 +128,26 @@ export class AppComponent {
 
   // Figma (seção 09): os chips ficam junto do campo de mensagem e somem quando a
   // resposta já foi exibida (tela A2); continuam durante a busca e no aviso de falha.
-  protected readonly shortcuts = computed<readonly ChatShortcut[]>(() =>
-    this.aiAssistant.view() === 'chat' && this.aiAssistant.conversation()?.status !== 'answered'
-      ? this.aiShortcuts
-      : [],
-  );
+  // Os atalhos (tips) da TELA ficam acima do campo de mensagem do chat. Só quando
+  // existe o campo de mensagem/áudio: na primeira tela de "Atalhos" (sem campo) os tips ficam no próprio conteúdo.
+  protected readonly shortcuts = computed<readonly ChatShortcut[]>(() => {
+    if (this.aiAssistant.view() !== 'chat' || this.aiAssistant.conversation()?.status === 'answered') {
+      return [];
+    }
+    const actions = this.screenActions
+      .actions()
+      .map(action => ({ id: ACTION_SHORTCUT_PREFIX + action.id, label: action.label }));
+
+    // Tela com ações: só os atalhos dela (poucos chips, como no Figma). Sem ações: as perguntas rápidas genéricas.
+    return actions.length > 0 ? actions : this.aiShortcuts;
+  });
 
   protected readonly aiShortcuts: readonly ChatShortcut[] = [
     { id: 'pendencias', label: 'Quais são minhas pendências de hoje?' },
     { id: 'meta-nutricional', label: 'Pacientes fora da meta nutricional' },
   ];
 
+  private readonly screenActions = inject(ScreenActionsService);
   private readonly logoutService = inject(LogoutService);
   private readonly router = inject(Router);
 
@@ -150,6 +167,13 @@ export class AppComponent {
     // RN-03: toda abertura começa limpa. Qualquer caminho de fechamento (botão, scrim,
     // Esc, arrastar) chega em `isOpen() === false`; a visão/ação já são zeradas pelo
     // serviço, aqui zera o que vive no shell: encaixe e campo de mensagem.
+    // Cadastro (formulário) abre o bottom sheet no máximo (100%); a tela inicial do assistente e os atalhos abrem na metade.
+    effect(() => {
+      if (this.aiAssistant.view() === 'form') {
+        this.aiSheetSnap.set('full');
+      }
+    });
+
     effect(() => {
       if (!this.aiAssistant.isOpen()) {
         this.aiSheetSnap.set('default');
@@ -179,6 +203,15 @@ export class AppComponent {
   // public: exercitados diretamente pelo spec (ver `menuOpen`/`aiAssistant` acima).
   /** Chip de sugestão: envia a pergunta ao assistente (mesmo fluxo de digitar). */
   onAiShortcut(shortcut: ChatShortcut): void {
+    if (shortcut.id.startsWith(ACTION_SHORTCUT_PREFIX)) {
+      const action = this.screenActions.actions().find(a => ACTION_SHORTCUT_PREFIX + a.id === shortcut.id);
+
+      if (action) {
+        this.aiAssistant.openAction(action);
+
+        return;
+      }
+    }
     this.aiAssistant.ask(shortcut.label);
   }
 

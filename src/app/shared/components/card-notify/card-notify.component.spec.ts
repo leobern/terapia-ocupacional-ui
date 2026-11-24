@@ -271,4 +271,96 @@ describe('CardNotifyComponent', () => {
       expect(fixture.nativeElement.querySelector('.card-notify__resolved-tag').textContent).toContain('Resolvida');
     });
   });
+
+  describe('rascunho e campo de resposta (Figma v2/NotificationThread, States draft e write)', () => {
+    const reply = {
+      authorName: 'Dra. Michelle',
+      authorPhotoUrl: null,
+      authorSpecialty: 'Nutróloga',
+      text: 'Ok',
+      time: '20:27',
+    };
+    const el = (): HTMLElement => fixture.nativeElement;
+
+    async function create(type: 'draft' | 'answering', inputs: Record<string, unknown> = {}): Promise<void> {
+      await createWith({});
+      fixture.componentRef.setInput('type', type);
+      fixture.componentRef.setInput('patientName', 'José da Silva');
+      fixture.componentRef.setInput('replies', [reply]);
+      fixture.componentRef.setInput('draftAuthorName', 'Dra. Michelle Franklin');
+      for (const [key, value] of Object.entries(inputs)) {
+        fixture.componentRef.setInput(key, value);
+      }
+      fixture.detectChanges();
+    }
+
+    it('draft: respostas abertas, texto do rascunho em cinza com o aviso "Rascunho · não enviado"', async () => {
+      await create('draft', { draftText: 'Alinhado com a equipe' });
+
+      expect(el().querySelector('.card-notify')?.classList).toContain('card-notify--draft');
+      expect(el().querySelector('.card-notify__reply-text--draft')?.textContent).toContain('Alinhado com a equipe');
+      expect(el().querySelector('.card-notify__draft-label')?.textContent).toContain('Rascunho · não enviado');
+      expect(el().querySelector('.card-notify__collapse')).not.toBeNull();
+      expect(el().querySelector('.card-notify__actions')).not.toBeNull();
+    });
+
+    it('draft sem nenhuma resposta anterior não mostra "0 respostas" para recolher', async () => {
+      await create('draft', { draftText: 'Oi', replies: [] });
+
+      expect(el().querySelector('.card-notify__collapse')).toBeNull();
+      expect(el().querySelector('.card-notify__actions')).not.toBeNull();
+    });
+
+    it('draft sem texto não mostra o bloco do rascunho', async () => {
+      await create('draft');
+
+      expect(el().querySelector('.card-notify__reply-text--draft')).toBeNull();
+    });
+
+    it('answering: campo de resposta no card com Cancelar no rodapé; digitar, enviar e cancelar emitem', async () => {
+      await create('answering', { draftText: 'Oi' });
+      const changed: string[] = [];
+      let sent = 0;
+      let cancelled = 0;
+
+      fixture.componentInstance.draftChange.subscribe(v => changed.push(v));
+      fixture.componentInstance.sendClick.subscribe(() => sent++);
+      fixture.componentInstance.cancelClick.subscribe(() => cancelled++);
+      const field = fixture.debugElement.query(By.css('app-input-chat'));
+
+      expect(field).not.toBeNull();
+      expect(el().querySelector('.card-notify__reply--writing .card-notify__draft-label')).not.toBeNull();
+
+      field.componentInstance.value.set('Oi, tudo bem');
+      field.componentInstance.send.emit('Oi, tudo bem');
+      (el().querySelector('.card-notify__cancel') as HTMLButtonElement).click();
+
+      expect(changed).toEqual(['Oi, tudo bem']);
+      expect(sent).toBe(1);
+      expect(cancelled).toBe(1);
+    });
+
+    it('answering: áudio gravado sobe para o consumidor transcrever', async () => {
+      await create('answering');
+      const audios: Blob[] = [];
+
+      fixture.componentInstance.audioSend.subscribe(b => audios.push(b));
+      fixture.debugElement.query(By.css('app-input-chat')).componentInstance.audioSend.emit(new Blob(['a']));
+
+      expect(audios.length).toBe(1);
+    });
+
+    it('answering: erro aparece no lugar do aviso de rascunho', async () => {
+      await create('answering', { answerError: 'Não foi possível transcrever', draftText: 'Oi' });
+
+      expect(el().querySelector('.card-notify__draft-error')?.textContent).toContain('Não foi possível transcrever');
+      expect(el().querySelector('.card-notify__reply--writing .card-notify__draft-label')).toBeNull();
+    });
+
+    it('answering sem texto não mostra o aviso de rascunho', async () => {
+      await create('answering');
+
+      expect(el().querySelector('.card-notify__reply--writing .card-notify__draft-label')).toBeNull();
+    });
+  });
 });

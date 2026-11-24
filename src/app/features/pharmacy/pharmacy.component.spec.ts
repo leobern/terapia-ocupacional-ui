@@ -1,8 +1,10 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { Router } from '@angular/router';
 
 import { ScreenActionsService } from '../../shared/services/screen-actions.service';
 import { HospitalContextService } from '../home/hospital-context.service';
 import { LinkedHospitalsReader } from '../home/linked-hospitals';
+import { UnreadNotificationsReader } from '../home/unread-notifications-reader';
 import { FormulasApi } from './formulas-api';
 import { PharmacyComponent } from './pharmacy.component';
 import { ProvisionalFormulasApi } from './provisional-formulas-api';
@@ -34,6 +36,7 @@ describe('PharmacyComponent', () => {
       providers: [
         { provide: LinkedHospitalsReader, useClass: TwoHospitals },
         { provide: FormulasApi, useValue: api },
+        { provide: UnreadNotificationsReader, useValue: { countUnread: (): Promise<number> => Promise.resolve(3) } },
       ],
     }).compileComponents();
     await TestBed.inject(HospitalContextService).load();
@@ -198,5 +201,17 @@ describe('PharmacyComponent', () => {
     other.detectChanges();
 
     expect(other.nativeElement.textContent).toContain('Carregando');
+  });
+
+  it('primeira tela: tem o sino com a contagem de não lidas e ele leva às notificações', async () => {
+    const router = TestBed.inject(Router);
+    const navigate = spyOn(router, 'navigate').and.resolveTo(true);
+    const bell = fixture.nativeElement.querySelector('.page-header__bell button') as HTMLButtonElement;
+
+    expect(bell.getAttribute('aria-label')).toBe('Notificações, 3 não lidas');
+
+    bell.click();
+
+    expect(navigate).toHaveBeenCalledWith(['/notifications']);
   });
 });

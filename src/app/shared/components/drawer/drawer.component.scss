@@ -104,6 +104,14 @@ $icon-hit-inset: ($min-touch-target - tokens.$control-height-md) * 0.5;
   width: 84px;
 }
 
+// Cadastro (Figma 4722:10998): logo de 40px (caixa de 70px com o brilho) ao lado do título.
+.drawer__logo--compact {
+  --icon-logo-size: 40px;
+
+  height: 70px;
+  width: 70px;
+}
+
 .drawer__buttons {
   display: flex;
   flex-shrink: 0;

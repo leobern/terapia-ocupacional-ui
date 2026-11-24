@@ -141,6 +141,10 @@ import { SessionRoleReader } from './shared/auth/session-role';
 import { DEV_BACKEND_PROVIDERS } from './shared/dev-backend/dev-backend.providers';
 import { devTokenInterceptor } from './shared/dev-backend/dev-token.interceptor';
 import { ASSISTANT_QUERY_RESOLVERS } from './shared/services/assistant-query-resolver';
+import { AudioTranscriber } from './shared/services/audio-transcriber';
+import { FormAssistant } from './shared/services/form-assistant';
+import { ProvisionalAudioTranscriber } from './shared/services/provisional-audio-transcriber';
+import { ProvisionalFormAssistant } from './shared/services/provisional-form-assistant';
 import { ProvisionalUserDirectory } from './shared/services/provisional-user-directory';
 import { UserDirectory } from './shared/services/user-directory';
 
@@ -194,6 +198,8 @@ export const appConfig: ApplicationConfig = {
     { provide: RefeedingRiskSource, useClass: ProvisionalRefeedingRiskSource },
     { provide: InfusedIntakeSource, useClass: ProvisionalInfusedIntakeSource },
     { provide: FoodRecallSource, useClass: ProvisionalFoodRecallSource },
+    { provide: AudioTranscriber, useClass: ProvisionalAudioTranscriber },
+    { provide: FormAssistant, useClass: ProvisionalFormAssistant },
     { provide: PriorStaysSource, useClass: ProvisionalPriorStaysSource },
     { provide: PriorStaysSynthesizer, useClass: ProvisionalPriorStaysSynthesizer },
     { provide: NutritionResultsSource, useClass: ProvisionalNutritionResultsSource },

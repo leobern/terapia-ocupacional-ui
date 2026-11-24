@@ -3,6 +3,7 @@ import { NotificationsActions } from './notifications.actions';
 import {
   initialNotificationsState,
   notificationsFeature,
+  NotificationsState,
   selectHasMore,
   selectTotalCount,
 } from './notifications.reducer';
@@ -356,6 +357,56 @@ describe('notificationsFeature reducer', () => {
 
   it('selectTotalCount soma pendentes e resolvidas', () => {
     expect(selectTotalCount.projector(3, 4)).toBe(7);
+  });
+
+  describe('rascunhos guardados por notificação (Cancelar)', () => {
+    const comRascunho = (): NotificationsState => {
+      const respondendo = reducer(initialNotificationsState, NotificationsActions.answerStarted({ notificationId: 1 }));
+
+      return reducer(respondendo, NotificationsActions.draftChanged({ notificationId: 1, text: 'Alinhado' }));
+    };
+
+    it('answerCancelled guarda o texto como rascunho da notificação e fecha o campo', () => {
+      const state = reducer(comRascunho(), NotificationsActions.answerCancelled());
+
+      expect(state.answeringId).toBeNull();
+      expect(state.draftText).toBe('');
+      expect(state.drafts).toEqual({ 1: 'Alinhado' });
+    });
+
+    it('answerCancelled sem texto não guarda rascunho e descarta o que havia guardado', () => {
+      const guardado = reducer(comRascunho(), NotificationsActions.answerCancelled());
+      const reaberto = reducer(guardado, NotificationsActions.answerStarted({ notificationId: 1 }));
+      const apagado = reducer(reaberto, NotificationsActions.draftChanged({ notificationId: 1, text: '  ' }));
+      const state = reducer(apagado, NotificationsActions.answerCancelled());
+
+      expect(state.drafts).toEqual({});
+    });
+
+    it('answerCancelled sem resposta em andamento só limpa o campo', () => {
+      const state = reducer(initialNotificationsState, NotificationsActions.answerCancelled());
+
+      expect(state.drafts).toEqual({});
+      expect(state.answeringId).toBeNull();
+    });
+
+    it('answerStarted retoma o rascunho guardado daquela notificação', () => {
+      const guardado = reducer(comRascunho(), NotificationsActions.answerCancelled());
+      const state = reducer(guardado, NotificationsActions.answerStarted({ notificationId: 1 }));
+
+      expect(state.draftText).toBe('Alinhado');
+    });
+
+    it('enviar a resposta remove o rascunho daquela notificação e mantém os outros', () => {
+      const guardado = reducer(comRascunho(), NotificationsActions.answerCancelled());
+      const comOutro = { ...guardado, drafts: { ...guardado.drafts, 2: 'Outro' } };
+      const state = reducer(
+        comOutro,
+        NotificationsActions.answerSubmitSuccess({ notificationId: 1, reply: {} as never }),
+      );
+
+      expect(state.drafts).toEqual({ 2: 'Outro' });
+    });
   });
 
   it('markAsReadRequested marca como lidas as notificações informadas, em ambas as abas', () => {

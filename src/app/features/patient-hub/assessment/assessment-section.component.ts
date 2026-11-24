@@ -12,6 +12,7 @@ import {
 
 import { ButtonComponent } from '../../../shared/components/button/button.component';
 import { IconButtonComponent } from '../../../shared/components/icon-button/icon-button.component';
+import { IconLogoComponent } from '../../../shared/components/icon-logo/icon-logo.component';
 import {
   type InputChatAudioError,
   InputChatComponent,
@@ -72,7 +73,7 @@ function shortDate(iso: string): string {
  */
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ButtonComponent, IconButtonComponent, InputChatComponent, PhIconComponent, TagComponent],
+  imports: [IconLogoComponent, ButtonComponent, IconButtonComponent, InputChatComponent, PhIconComponent, TagComponent],
   selector: 'app-assessment-section',
   styleUrl: './assessment-section.component.scss',
   templateUrl: './assessment-section.component.html',

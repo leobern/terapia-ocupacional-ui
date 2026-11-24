@@ -15,9 +15,9 @@ import {
 
 import { ViewportBreakpointService } from '../../services/viewport-breakpoint.service';
 import { ViewportKeyboardService } from '../../services/viewport-keyboard.service';
-import { ButtonComponent } from '../button/button.component';
 import { IconButtonComponent } from '../icon-button/icon-button.component';
 import { IconLogoComponent } from '../icon-logo/icon-logo.component';
+import { TipComponent } from '../tip/tip.component';
 
 /** Ponto de encaixe do sheet. Lista fechada — ver spec.md § Altura e pontos de encaixe. */
 export type BottomSheetSnap = 'default' | 'full';
@@ -29,7 +29,7 @@ export interface ChatShortcut {
 }
 
 /** Teto de atalhos renderizados (spec.md FR-023). Excedentes são ignorados. */
-const MAX_SHORTCUTS = 3;
+const MAX_SHORTCUTS = 6;
 
 /** Fração da altura visível do sheet que o arraste precisa cruzar para comprometer. */
 const COMMIT_THRESHOLD_RATIO = 0.25;
@@ -102,7 +102,7 @@ const SCRIM_MIN_OPACITY = 0.2;
  */
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ButtonComponent, IconButtonComponent, IconLogoComponent],
+  imports: [IconButtonComponent, IconLogoComponent, TipComponent],
   selector: 'app-bottom-sheet',
   styleUrl: './bottom-sheet.component.scss',
   templateUrl: './bottom-sheet.component.html',

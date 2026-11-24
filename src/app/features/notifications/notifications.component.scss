@@ -17,7 +17,9 @@
   padding-top: tokens.$space-8;
 
   @include breakpoints.md {
-    // Desktop: a página não rola; só a lista da aba selecionada tem scroll.
+    // Desktop (Figma 4722:10983): 24px entre o cabeçalho e as colunas. A página não rola; cada coluna
+    // (Pendentes | Resolvidas) tem o próprio scroll.
+    gap: tokens.$space-24;
     height: 100vh;
     min-height: 0;
     padding: tokens.$space-24 var(--layout-page-margin, 32px) 0;
@@ -25,52 +27,6 @@
 }
 
 // v2/PageHeader: voltar 48 + Headline + subtítulo de contexto + ações (desktop).
-.notifications__header {
-  display: flex;
-  align-items: center;
-  gap: tokens.$space-8;
-}
-
-.notifications__heading {
-  display: flex;
-  flex: 1 0 0;
-  flex-direction: column;
-  min-width: 0;
-}
-
-.notifications__title-row {
-  display: flex;
-  align-items: center;
-  gap: tokens.$space-8;
-}
-
-.notifications__title-icon {
-  flex-shrink: 0;
-  color: tokens.c(secondary);
-}
-
-.notifications__title {
-  margin: 0;
-  color: tokens.c(content-1);
-
-  @include typography.headline;
-}
-
-.notifications__subtitle {
-  margin: 0;
-  color: tokens.c(content-4);
-
-  @include typography.caption;
-}
-
-.notifications__shortcuts {
-  display: none;
-
-  @include breakpoints.md {
-    display: inline-flex;
-  }
-}
-
 .notifications__error {
   display: flex;
   flex-direction: column;
@@ -124,29 +80,59 @@
 // Lista da aba selecionada: 1 coluna no mobile; no desktop só a lista rola e os cards se
 // distribuem em colunas de no mínimo 360px.
 .notifications__list {
-  display: flex;
-  flex-direction: column;
-  gap: tokens.$space-16;
-  padding-bottom: calc(var(--bottom-nav-bar-height) + #{tokens.$space-16});
-
-  @include breakpoints.md {
-    flex: 1 1 0;
-    min-height: 0;
-    overflow-y: auto;
-    padding-bottom: tokens.$space-32;
-  }
-}
-
-.notifications__cards {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   gap: tokens.$space-16;
   align-items: start;
+  padding-bottom: calc(var(--bottom-nav-bar-height) + #{tokens.$space-16});
 
   @include breakpoints.md {
-    grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+    flex: 1 1 0;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-rows: minmax(0, 1fr);
     gap: tokens.$space-24;
+    min-height: 0;
+    padding-bottom: 0;
   }
+}
+
+.notifications__column {
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$space-16;
+  min-width: 0;
+
+  @include breakpoints.md {
+    height: 100%;
+    overflow-y: auto;
+    // A barra de rolagem fica a 4px do card (esta folga) e só aparece enquanto se rola (`appScrollReveal`).
+    padding-bottom: tokens.$space-32;
+    padding-right: tokens.$space-4;
+
+    // `auto` devolve o controle ao ::-webkit-scrollbar (o `*` global com scrollbar-color/width o desativaria).
+    scrollbar-color: auto;
+    scrollbar-width: auto;
+
+    &::-webkit-scrollbar-thumb {
+      background: transparent;
+    }
+
+    &[data-scrolling='true']::-webkit-scrollbar-thumb {
+      background: var(--color-border-2);
+      background-clip: content-box;
+    }
+
+    // 8px de folga no topo, para a barra não começar colada no título da coluna.
+    &::-webkit-scrollbar-track-piece:start {
+      margin-top: tokens.$space-8;
+    }
+  }
+}
+
+// Título da seção: 16px de respiro lateral e mais perto do primeiro card (8px).
+.notifications__section-title {
+  display: block;
+  margin: 0 tokens.$space-16 (-(tokens.$space-8));
 }
 
 .notifications__empty {

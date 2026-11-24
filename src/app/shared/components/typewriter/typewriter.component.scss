@@ -1,0 +1,16 @@
+:host {
+  display: block;
+  position: relative;
+}
+
+// O texto inteiro reserva o espaço (invisível, mas lido pelos leitores de tela); a camada que digita fica por cima.
+.typewriter__ghost {
+  display: block;
+  opacity: 0;
+}
+
+.typewriter__live {
+  display: block;
+  inset: 0;
+  position: absolute;
+}

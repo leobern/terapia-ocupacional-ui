@@ -6,8 +6,8 @@ import { map } from 'rxjs';
 
 import { ButtonComponent } from '../../shared/components/button/button.component';
 import { ConfirmDialogComponent } from '../../shared/components/confirm-dialog/confirm-dialog.component';
-import { IconButtonComponent } from '../../shared/components/icon-button/icon-button.component';
 import { PageContainerComponent } from '../../shared/components/page-container/page-container.component';
+import { PageHeaderComponent } from '../../shared/components/page-header/page-header.component';
 import { SkeletonComponent } from '../../shared/components/skeleton/skeleton.component';
 import { ConnectivityService } from '../../shared/services/connectivity.service';
 import { NOW, ProfessionalProfileReader } from '../home/professional-profile';
@@ -74,10 +74,10 @@ interface CriterionRow {
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
+    PageHeaderComponent,
     AlterSheetComponent,
     ButtonComponent,
     ConfirmDialogComponent,
-    IconButtonComponent,
     PageContainerComponent,
     SkeletonComponent,
   ],

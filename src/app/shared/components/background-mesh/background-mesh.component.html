@@ -25,8 +25,8 @@
     </defs>
     <rect width="1" height="1" fill="url(#bg-gradient)" />
   </svg>
-} @else if (variant() === 'patients') {
-  <!-- Gradiente da tela de Pacientes: mesmo vetor do Figma, 2 paradas (0 e 18,5% no claro / 51,4% no escuro). -->
+} @else if (variant() === 'patients' || variant() === 'notifications') {
+  <!-- Gradiente de Pacientes e de Notificações: mesmo vetor do Figma, 2 paradas (0 e 18,5% no claro / 51,4% no escuro); as cores mudam por tela (SCSS). -->
   <svg
     class="background-mesh__gradient"
     preserveAspectRatio="none"

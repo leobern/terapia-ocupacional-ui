@@ -1,0 +1,63 @@
+<header class="page-header">
+  @if (back()) {
+    <span class="page-header__back">
+      <app-icon-button
+        kind="primary"
+        appearance="tonal"
+        icon="arrow-left"
+        [ariaLabel]="backLabel()"
+        (click)="backClick.emit()"
+      />
+    </span>
+  }
+  <div class="page-header__text">
+    <h1 class="page-header__title">
+      @if (icon(); as name) {
+        <ph-icon weight="fill" [name]="name" [size]="24" />
+      }
+      <span class="page-header__title-text">{{ title() }}</span>
+    </h1>
+    @if (subtitle(); as text) {
+      <p class="page-header__subtitle">
+        @for (part of subtitleParts(); track $index) {
+          @if (!$first) {
+            <span class="page-header__subtitle-sep"> · </span>
+          }
+          <span class="page-header__subtitle-part">{{ part }}</span>
+        }
+      </p>
+    }
+  </div>
+  <!-- Ações próprias da tela (ex.: "Cadastrar paciente"); somem no mobile se a tela esconder. -->
+  <ng-content select="[pageHeaderActions]" />
+  @if (showBell()) {
+    <span class="page-header__bell">
+      <app-icon-button
+        kind="primary"
+        appearance="icon"
+        icon="bell"
+        [solid]="true"
+        [ariaLabel]="bellLabel()"
+        (click)="bellClick.emit()"
+      />
+      @if (unreadCount() > 0) {
+        <app-badge
+          class="page-header__bell-badge"
+          type="numeral"
+          [value]="unreadCount()"
+        />
+      }
+    </span>
+  }
+  <span class="page-header__shortcuts">
+    <app-icon-button
+      kind="primary"
+      appearance="icon"
+      icon="squares-four"
+      ariaLabel="Ações da tela"
+      [solid]="true"
+      [disabled]="assistant.shortcutsOpen()"
+      (click)="assistant.openShortcuts()"
+    />
+  </span>
+</header>

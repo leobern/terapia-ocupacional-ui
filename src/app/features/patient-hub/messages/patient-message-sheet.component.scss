@@ -33,10 +33,13 @@
 
   // Desktop: sem desenho 1920; diálogo centralizado com a mesma estrutura.
   @include breakpoints.md {
+    // Padrão de cadastro: sidebar fixo à direita (desktop); bottom sheet no mobile.
     width: 480px;
-    margin: auto;
+    height: 100dvh;
+    max-height: 100dvh;
+    margin: 0 0 0 auto;
     padding-block: tokens.$space-16 tokens.$space-24;
-    border-radius: tokens.$radius-md;
+    border-radius: tokens.$radius-md 0 0 tokens.$radius-md;
   }
 }
 
@@ -222,4 +225,13 @@
   color: tokens.c(secondary);
 
   @include typography.label-sm;
+}
+
+// Padrão dos modais: primária à esquerda, secundária à direita, mesma linha, alinhadas à direita, gap 16.
+// O rótulo da primária é longo; só nesse caso a linha quebra (as duas ações continuam alinhadas à direita).
+.msg__confirm-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: tokens.$space-16;
+  justify-content: flex-end;
 }

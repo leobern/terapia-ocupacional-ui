@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input, output, signal } from '@angular/core';
 
 import { KeyboardFocusService } from '../../services/keyboard-focus.service';
-import { IconLogoVisualComponent, type IconLogoVisualState } from './icon-logo-visual.component';
+import { type IconLogoSparkle, IconLogoVisualComponent, type IconLogoVisualState } from './icon-logo-visual.component';
 
 /**
  * Símbolo da IA do Conductia como **controle clicável** (DS-component-icon-logo).
@@ -29,6 +29,8 @@ import { IconLogoVisualComponent, type IconLogoVisualState } from './icon-logo-v
 })
 export class IconLogoButtonComponent {
   readonly ariaLabel = input.required<string>();
+  /** Ícone Sparkling do logo: `outline` (padrão), `solid` (ativo) ou `none` (menu). */
+  readonly sparkle = input<IconLogoSparkle>('none');
   readonly disabled = input<boolean>(false);
 
   /**

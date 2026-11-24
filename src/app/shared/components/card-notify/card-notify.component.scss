@@ -34,9 +34,13 @@
   }
 }
 
-.card-notify--answering {
+.card-notify--answering,
+.card-notify--draft {
   border-color: tokens.c(secondary);
   border-width: 1.5px;
+}
+
+.card-notify--answering {
   cursor: default;
 }
 
@@ -213,6 +217,29 @@
   color: tokens.c(content-1);
 
   @include typography.body-md;
+}
+
+.card-notify__reply-text--draft {
+  color: tokens.c(content-4);
+}
+
+// State=write: o bloco do campo de resposta ganha contorno (border-2) e o campo cai dentro dele.
+.card-notify__reply--writing {
+  // Figma 4722:10991: o bloco de escrita é só contorno, SEM fundo (o card aparece por trás).
+  background: transparent;
+  border: 1px solid tokens.c(border-2);
+
+  // Figma Frame 10: o aviso de rascunho/erro tem 16px de recuo lateral, alinhado ao texto do campo.
+  .card-notify__draft-label,
+  .card-notify__draft-error {
+    padding-inline: tokens.$space-16;
+  }
+}
+
+.card-notify__draft-error {
+  color: tokens.c(comm-alert);
+
+  @include typography.label-sm;
 }
 
 .card-notify__draft-label {

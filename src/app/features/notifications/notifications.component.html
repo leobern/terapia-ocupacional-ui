@@ -1,41 +1,13 @@
 <app-page-container>
   <div class="notifications">
-    <!-- Telas de camada interna: seta de VOLTAR como primeiro elemento do cabeçalho (o mesmo botão
-         que antes era o "X"), depois o sino azul (cor do ícone do menu) e o título escuro. -->
-    <header class="notifications__header">
-      <app-icon-button
-        kind="primary"
-        appearance="icon"
-        icon="arrow-left"
-        ariaLabel="Voltar"
-        (click)="onClose()"
-      />
-      <!-- Figma v2/PageHeader: título Headline + contexto (hospital · data). -->
-      <div class="notifications__heading">
-        <div class="notifications__title-row">
-          <ph-icon class="notifications__title-icon" name="bell" [size]="24" />
-          <h1 class="notifications__title">{{ title() }}</h1>
-        </div>
-        <p class="notifications__subtitle">
-          @if (hospitalId(); as id) {
-            {{ hospitalName() || 'Hospital ' + id }} ·
-          }
-          {{ todayLabel() }}
-        </p>
-      </div>
-      <!-- Ações da tela (Figma 4506:8583): só no desktop; no mobile o mesmo destino é o botão da
-           barra inferior. -->
-      <span class="notifications__shortcuts">
-        <app-icon-button
-          kind="primary"
-          appearance="icon"
-          icon="squares-four"
-          ariaLabel="Ações da tela"
-          [disabled]="assistant.shortcutsOpen()"
-          (click)="onOpenShortcuts()"
-        />
-      </span>
-    </header>
+    <!-- Tela interna: voltar + título com contagem + atalhos (app-page-header, Figma v2/PageHeader). -->
+    <app-page-header
+      icon="bell"
+      [title]="title()"
+      [subtitle]="subtitle()"
+      [back]="true"
+      (backClick)="onClose()"
+    />
 
     @switch (status()) {
       @case ('error') {
@@ -65,69 +37,63 @@
           (touchstart)="onTouchStart($event, scrollContainer)"
           (touchend)="onTouchEnd($event)"
         >
-          <div
-            class="notifications__tabs"
-            role="tablist"
-            aria-label="Visão das notificações"
-          >
-            @for (tab of tabs; track tab.id) {
-              <button
-                type="button"
-                role="tab"
-                class="notifications__tab"
-                [class.notifications__tab--active]="activeTab() === tab.id"
-                [attr.aria-selected]="activeTab() === tab.id"
-                (click)="onSelectTab(tab.id)"
-              >
-                {{ tab.label }}
-              </button>
-            }
-          </div>
-
           @if (isEmpty()) {
             <div class="notifications__empty" role="status">
               <ph-icon name="bell" [size]="48" />
-              <p class="notifications__empty-title">{{ emptyTitle() }}</p>
-              <p class="notifications__empty-text">{{ emptyText() }}</p>
+              <p class="notifications__empty-title">{{ emptyTitle }}</p>
+              <p class="notifications__empty-text">{{ emptyText }}</p>
             </div>
           }
 
-          <section
-            class="notifications__cards"
-            role="tabpanel"
-            [attr.aria-label]="
-              activeTab() === 'pending' ? 'Ativas' : 'Resolvidas'
-            "
-          >
-            @for (notification of visibleItems(); track notification.id) {
-              <app-card-notify
-                actionAriaLabel="Responder"
-                [resolved]="activeTab() === 'resolved'"
-                [type]="cardType(notification.id)"
-                [authorName]="cardName(notification)"
-                [authorSpecialty]="cardSubtitle(notification)"
-                [authorPhotoUrl]="notification.author?.photoUrl ?? null"
-                [kindLabel]="kindLabel(notification.type)"
-                [overdue]="notification.overdue === true"
-                [unread]="!notification.read"
-                [patientName]="notification.patient?.name ?? ''"
-                [description]="cardDescription(notification)"
-                [time]="formatTime(notification.createdAt)"
-                [replies]="toReplies(notification)"
-                [draftText]="draftText()"
-                [draftAuthorName]="professionalName"
-                [draftAuthorSpecialty]="professionalSpecialty"
-                [canResolve]="isParticipant(notification)"
-                [resolveDisabled]="!online()"
-                (cardClick)="onNotificationClick(notification)"
-                (answerClick)="onAnswerClick(notification.id)"
-                (viewRepliesClick)="onViewRepliesClick(notification.id)"
-                (collapseClick)="onCollapseClick(notification.id)"
-                (resolveClick)="onResolveClick(notification.id)"
-              />
-            }
-            <div #scrollSentinel class="notifications__scroll-sentinel"></div>
-          </section>
+          @if (pendingItems().length > 0) {
+            <section
+              appScrollReveal
+              class="notifications__column"
+              aria-label="Pendentes"
+            >
+              @if (pendingItems().length > 0) {
+                <app-notification-section-title
+                  class="notifications__section-title"
+                  label="Pendentes"
+                  [count]="pendingCount()"
+                />
+              }
+              @for (notification of pendingItems(); track notification.id) {
+                <ng-container
+                  *ngTemplateOutlet="
+                    card;
+                    context: { $implicit: notification, resolved: false }
+                  "
+                />
+              }
+              <div #scrollSentinel class="notifications__scroll-sentinel"></div>
+            </section>
+          }
+
+          @if (resolvedItems().length > 0) {
+            <section
+              appScrollReveal
+              class="notifications__column"
+              aria-label="Resolvidas"
+            >
+              @if (resolvedItems().length > 0) {
+                <app-notification-section-title
+                  class="notifications__section-title"
+                  label="Resolvidas"
+                  [count]="resolvedCount()"
+                />
+              }
+              @for (notification of resolvedItems(); track notification.id) {
+                <ng-container
+                  *ngTemplateOutlet="
+                    card;
+                    context: { $implicit: notification, resolved: true }
+                  "
+                />
+              }
+              <div #scrollSentinel class="notifications__scroll-sentinel"></div>
+            </section>
+          }
 
           @if (
             status() === 'loading-more-pending' ||
@@ -142,27 +108,6 @@
     }
   </div>
 </app-page-container>
-
-<app-bottom-sheet
-  ariaLabel="Responder notificação"
-  snap="default"
-  [open]="answeringId() !== null"
-  (closed)="onBottomSheetClosed()"
->
-  <div bottomSheetContent class="notifications__answer-sheet">
-    @if (answerErrorMessage(); as message) {
-      <p class="notifications__answer-error">{{ message }}</p>
-    }
-  </div>
-  <app-input-chat
-    bottomSheetFooter
-    placeholder="Escreva a sua resposta"
-    [value]="draftText()"
-    [disabled]="submitting()"
-    (valueChange)="onDraftInput($event)"
-    (send)="onSendDraft()"
-  />
-</app-bottom-sheet>
 
 <app-confirm-dialog
   title="Resolver notificação?"
@@ -179,3 +124,37 @@
   (confirmed)="onConfirmDiscard()"
   (cancelled)="onCancelDiscard()"
 />
+
+<ng-template #card let-notification let-resolved="resolved">
+  <app-card-notify
+    actionAriaLabel="Responder"
+    [resolved]="resolved"
+    [type]="cardType(notification.id)"
+    [authorName]="cardName(notification)"
+    [authorSpecialty]="cardSubtitle(notification)"
+    [authorPhotoUrl]="notification.author?.photoUrl ?? null"
+    [kindLabel]="kindLabel(notification.type)"
+    [overdue]="notification.overdue === true"
+    [unread]="!notification.read"
+    [patientName]="notification.patient?.name ?? ''"
+    [description]="cardDescription(notification)"
+    [time]="formatTime(notification.createdAt)"
+    [replies]="toReplies(notification)"
+    [draftText]="cardDraftText(notification.id)"
+    [draftAuthorName]="professionalName"
+    [draftAuthorSpecialty]="professionalSpecialty"
+    [answerBusy]="submitting() || transcribing()"
+    [answerError]="cardAnswerError(notification.id)"
+    [canResolve]="isParticipant(notification)"
+    [resolveDisabled]="!online()"
+    (draftChange)="onDraftInput($event)"
+    (sendClick)="onSendDraft()"
+    (cancelClick)="onCancelAnswer()"
+    (audioSend)="onAudio($event)"
+    (cardClick)="onNotificationClick(notification)"
+    (answerClick)="onAnswerClick(notification.id)"
+    (viewRepliesClick)="onViewRepliesClick(notification.id)"
+    (collapseClick)="onCollapseClick(notification.id)"
+    (resolveClick)="onResolveClick(notification.id)"
+  />
+</ng-template>

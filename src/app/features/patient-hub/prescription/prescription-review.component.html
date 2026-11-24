@@ -9,6 +9,7 @@
 >
   <span class="review__handle" aria-hidden="true"></span>
   <div class="review__header">
+    <app-icon-logo class="sheet-logo" state="default" sparkle="solid" />
     <h2 id="review-title" class="review__title">Revisão da prescrição</h2>
     <app-icon-button
       kind="secondary"
@@ -110,15 +111,15 @@
                 />
                 <div class="review__actions">
                   <app-button
+                    label="Salvar meta"
+                    [disabled]="savingTargets() || !online()"
+                    (click)="saveTargets()"
+                  />
+                  <app-button
                     kind="secondary"
                     label="Cancelar"
                     [disabled]="savingTargets()"
                     (click)="cancelTargets()"
-                  />
-                  <app-button
-                    label="Salvar meta"
-                    [disabled]="savingTargets() || !online()"
-                    (click)="saveTargets()"
                   />
                 </div>
               } @else {

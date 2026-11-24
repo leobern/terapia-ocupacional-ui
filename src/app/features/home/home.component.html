@@ -16,6 +16,7 @@
           kind="primary"
           appearance="icon"
           icon="bell"
+          [solid]="true"
           [ariaLabel]="bellLabel()"
           (click)="onViewAllNotifications()"
         />
@@ -43,6 +44,7 @@
           appearance="icon"
           icon="squares-four"
           ariaLabel="Ações da tela"
+          [solid]="true"
           [disabled]="aiAssistant.shortcutsOpen()"
           (click)="aiAssistant.openShortcuts()"
         />

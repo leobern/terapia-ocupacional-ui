@@ -172,6 +172,11 @@
   color: tokens.c(comm-alert);
 }
 
+.assistant-form__submit {
+  display: flex;
+  justify-content: flex-end;
+}
+
 .assistant-form__hint {
   margin: 0;
   font-family: tokens.$font-family-interactive;

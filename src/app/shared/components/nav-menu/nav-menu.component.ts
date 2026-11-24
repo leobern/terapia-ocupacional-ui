@@ -23,8 +23,7 @@ import { IconButtonComponent } from '../icon-button/icon-button.component';
 import { IconLogoButtonComponent } from '../icon-logo/icon-logo-button.component';
 
 /** Mapeia as 6 chaves fixas dos itens de navegação (spec.md § Clarifications + Home). */
-export type NavMenuItemKey =
-  'home' | 'hospitais' | 'farmacia' | 'pacientes' | 'acoes-tela' | 'notificacoes' | 'configuracoes';
+export type NavMenuItemKey = 'home' | 'hospitais' | 'farmacia' | 'pacientes' | 'notificacoes' | 'configuracoes';
 
 interface NavMenuItem {
   readonly key: NavMenuItemKey;
@@ -75,8 +74,6 @@ interface NavMenuItem {
 })
 export class NavMenuComponent {
   readonly activeItem = input<NavMenuItemKey | null>(null);
-  /** O menu de atalhos está aberto: o item "Ações da tela" fica desabilitado e esmaecido. */
-  readonly actionsOpen = input<boolean>(false);
   /** Itens sem acesso para o perfil atual: ficam desabilitados (ex.: Farmácia só para o gestor). */
   readonly disabledItems = input<readonly NavMenuItemKey[]>([]);
 
@@ -90,7 +87,6 @@ export class NavMenuComponent {
   readonly hospitaisClick = output();
   readonly farmaciaClick = output();
   readonly pacientesClick = output();
-  readonly acoesTelaClick = output();
   readonly notificacoesClick = output();
   readonly configuracoesClick = output();
   readonly logoutClick = output();
@@ -109,14 +105,13 @@ export class NavMenuComponent {
   /** Só oferece o botão de fechar fora do desktop — no desktop quem fecha é o mouse saindo do trilho. */
   protected readonly showCloseButton = computed(() => !this.viewportBreakpoint.isDesktop());
 
-  // Ícones em peso "regular"; o item ativo usa "bold" (Figma v2/NavMenu, Phosphor tem os dois).
+  // Ordem e ícones do Figma 4741:11339 (v2/NavRail). Ícones em peso "regular"; o item ativo é SÓLIDO ("fill").
   // Única exceção fixa: o ícone de Sair (template) é sempre bold, aberto ou fechado (CLAUDE.md).
   protected readonly items: readonly NavMenuItem[] = [
     { icon: 'house', key: 'home', label: 'Home' },
+    { icon: 'users-three', key: 'pacientes', label: 'Pacientes' },
     { icon: 'hospital', key: 'hospitais', label: 'Hospitais' },
     { icon: 'pill', key: 'farmacia', label: 'Farmácia' },
-    { icon: 'users-four', key: 'pacientes', label: 'Pacientes' },
-    { icon: 'squares-four', key: 'acoes-tela', label: 'Ações da tela' },
     { icon: 'bell', key: 'notificacoes', label: 'Notificações' },
     { icon: 'gear', key: 'configuracoes', label: 'Configurações' },
   ];
@@ -152,9 +147,6 @@ export class NavMenuComponent {
         break;
       case 'pacientes':
         this.pacientesClick.emit();
-        break;
-      case 'acoes-tela':
-        this.acoesTelaClick.emit();
         break;
       case 'notificacoes':
         this.notificacoesClick.emit();

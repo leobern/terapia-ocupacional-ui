@@ -8,6 +8,7 @@ import { MockStore, provideMockStore } from '@ngrx/store/testing';
 import { of, Subject, throwError } from 'rxjs';
 
 import { AiAssistantService } from '../../shared/services/ai-assistant.service';
+import { AudioTranscriber } from '../../shared/services/audio-transcriber';
 import { ConnectivityService } from '../../shared/services/connectivity.service';
 import { ProvisionalUserDirectory } from '../../shared/services/provisional-user-directory';
 import {
@@ -73,6 +74,7 @@ describe('NotificationsComponent', () => {
           },
         },
         provideMockStore({ initialState: { notifications: { ...initialNotificationsState, ...overrides } } }),
+        { provide: AudioTranscriber, useValue: { transcribe: (): Promise<string> => Promise.resolve('') } },
         { provide: Actions, useValue: actionsSubject },
         {
           provide: ActivatedRoute,
@@ -93,14 +95,46 @@ describe('NotificationsComponent', () => {
   // --- Cabeçalho, fechar e seções (Figma 4506:8583 / 4506:8580) ---
 
   describe('cabeçalho e seções', () => {
+    for (const desktop of [true, false]) {
+      it(`mostra Pendentes e Resolvidas juntas (nosso layout), sem abas, ${desktop ? 'no desktop' : 'no mobile'}`, async () => {
+        isDesktop.set(desktop);
+        await configureStore({ pendingItems: [notification(1)], resolvedItems: [notification(2)], status: 'success' });
+        createComponent();
+        const el: HTMLElement = fixture.nativeElement;
+
+        expect(el.querySelectorAll('[role="tab"]').length).toBe(0);
+        expect(el.querySelectorAll('.notifications__column').length).toBe(2);
+        expect(el.querySelectorAll('app-card-notify').length).toBe(2);
+        expect(el.querySelectorAll('.card-notify--resolved').length).toBe(1);
+      });
+    }
+
+    it('busca a 1ª página de Resolvidas ao abrir e devolve a aba ativa para Pendentes', async () => {
+      await configureStore({ status: 'success' });
+      const dispatch = jasmine.createSpy('dispatch');
+
+      store.dispatch = dispatch;
+      createComponent();
+
+      expect(dispatch).toHaveBeenCalledWith(NotificationsActions.tabSelected({ tab: 'resolved' }));
+
+      dispatch.calls.reset();
+      store.setState({
+        notifications: { ...initialNotificationsState, activeTab: 'resolved', resolvedLoaded: true, status: 'success' },
+      });
+      fixture.detectChanges();
+
+      expect(dispatch).toHaveBeenCalledWith(NotificationsActions.tabSelected({ tab: 'pending' }));
+    });
+
     it('mostra o título com a contagem e o contexto (hospital · data) no subtítulo (Figma v2/PageHeader)', async () => {
       await configureStore({ hospitalId: 1, pendingTotalCount: 3, status: 'success', pendingItems: [notification(1)] });
       createComponent();
       const el: HTMLElement = fixture.nativeElement;
 
-      expect(el.querySelector('.notifications__title')?.textContent?.trim()).toBe('3 notificações');
-      expect(el.querySelector('.notifications__subtitle')?.textContent).toContain('Hospital Vila Nova Star');
-      expect(el.querySelector('.notifications__subtitle')?.textContent).toContain(' de ');
+      expect(el.querySelector('.page-header__title-text')?.textContent?.trim()).toBe('3 notificações');
+      expect(el.querySelector('.page-header__subtitle')?.textContent).toContain('Hospital Vila Nova Star');
+      expect(el.querySelector('.page-header__subtitle')?.textContent).toContain(' de ');
     });
 
     it('mobile: o título também leva a contagem ("3 notificações")', async () => {
@@ -108,14 +142,16 @@ describe('NotificationsComponent', () => {
       await configureStore({ hospitalId: 1, pendingTotalCount: 3, status: 'success' });
       createComponent();
 
-      expect(fixture.nativeElement.querySelector('.notifications__title')?.textContent?.trim()).toBe('3 notificações');
+      expect(fixture.nativeElement.querySelector('.page-header__title-text')?.textContent?.trim()).toBe(
+        '3 notificações',
+      );
     });
 
     it('o botão de voltar vem primeiro, e o de atalhos abre o assistente nas ações da tela', async () => {
       await configureStore({ status: 'success' });
       createComponent();
       const buttons = Array.from(
-        fixture.nativeElement.querySelectorAll('.notifications__header app-icon-button button'),
+        fixture.nativeElement.querySelectorAll('.page-header app-icon-button button'),
       ) as HTMLButtonElement[];
       const assistant = TestBed.inject(AiAssistantService);
 
@@ -132,7 +168,7 @@ describe('NotificationsComponent', () => {
       createComponent();
       const assistant = TestBed.inject(AiAssistantService);
       const button = (): HTMLButtonElement =>
-        fixture.nativeElement.querySelector('.notifications__shortcuts button') as HTMLButtonElement;
+        fixture.nativeElement.querySelector('.page-header__shortcuts button') as HTMLButtonElement;
 
       expect(button().disabled).toBeFalse();
 
@@ -149,9 +185,7 @@ describe('NotificationsComponent', () => {
 
       spyOn(location, 'back');
       spyOnProperty(window.history, 'length').and.returnValue(3);
-      (
-        fixture.nativeElement.querySelector('.notifications__header button[aria-label="Voltar"]') as HTMLButtonElement
-      ).click();
+      (fixture.nativeElement.querySelector('.page-header button[aria-label="Voltar"]') as HTMLButtonElement).click();
 
       expect(location.back).toHaveBeenCalledWith();
     });
@@ -167,40 +201,8 @@ describe('NotificationsComponent', () => {
       expect(router.navigate).toHaveBeenCalledWith(['/home']);
     });
 
-    it('abre na aba Ativas, mostrando só as ativas', async () => {
+    it('na coluna Resolvidas o card oferece responder (sem Resolver) e acioná-lo inicia a resposta', async () => {
       await configureStore({
-        pendingItems: [notification(1)],
-        resolvedItems: [notification(2)],
-        status: 'success',
-      });
-      createComponent();
-      const el: HTMLElement = fixture.nativeElement;
-      const tabs = Array.from(el.querySelectorAll('[role="tab"]'));
-
-      expect(tabs.map(t => t.textContent?.trim())).toEqual(['Ativas', 'Resolvidas']);
-      expect(tabs.map(t => t.getAttribute('aria-selected'))).toEqual(['true', 'false']);
-      expect(el.querySelectorAll('app-card-notify').length).toBe(1);
-      expect(el.querySelector('.card-notify--resolved')).toBeNull();
-    });
-
-    it('na aba Resolvidas lista só as resolvidas, em cards esmaecidos', async () => {
-      await configureStore({
-        activeTab: 'resolved',
-        pendingItems: [notification(1)],
-        resolvedItems: [notification(2)],
-        resolvedLoaded: true,
-        status: 'success',
-      });
-      createComponent();
-      const el: HTMLElement = fixture.nativeElement;
-
-      expect(el.querySelectorAll('app-card-notify').length).toBe(1);
-      expect(el.querySelector('.card-notify--resolved')).not.toBeNull();
-    });
-
-    it('na aba Resolvidas o card oferece responder (sem Resolver) e acioná-lo inicia a resposta', async () => {
-      await configureStore({
-        activeTab: 'resolved',
         resolvedItems: [notification(2)],
         resolvedLoaded: true,
         status: 'success',
@@ -210,29 +212,13 @@ describe('NotificationsComponent', () => {
       const el: HTMLElement = fixture.nativeElement;
       const answer = el.querySelector('.card-notify__actions app-icon-button button') as HTMLButtonElement;
 
+      expect(el.querySelector('.card-notify--resolved')).not.toBeNull();
       expect(answer).not.toBeNull();
       expect(el.querySelector('.card-notify__row app-icon-button')).toBeNull();
 
       answer.click();
 
       expect(store.dispatch).toHaveBeenCalledWith(NotificationsActions.answerStarted({ notificationId: 2 }));
-    });
-
-    it('acionar a aba Resolvidas despacha tabSelected; acionar a aba atual não faz nada', async () => {
-      await configureStore({ status: 'success' });
-      createComponent();
-      const dispatch = jasmine.createSpy('dispatch');
-
-      store.dispatch = dispatch;
-      const tabs = Array.from(fixture.nativeElement.querySelectorAll('[role="tab"]')) as HTMLButtonElement[];
-
-      tabs[0].click();
-
-      expect(dispatch).not.toHaveBeenCalled();
-
-      tabs[1].click();
-
-      expect(dispatch).toHaveBeenCalledWith(NotificationsActions.tabSelected({ tab: 'resolved' }));
     });
 
     it('notificações não lidas exibidas são marcadas como lidas; já lidas não disparam marcação', async () => {
@@ -264,22 +250,6 @@ describe('NotificationsComponent', () => {
 
       expect(fixture.nativeElement.querySelector('.notifications__empty')?.textContent).toContain(
         'Nenhuma notificação pendente no momento',
-      );
-    });
-
-    it('Resolvidas vazia (já carregada) mostra o estado vazio próprio; antes de carregar não mostra', async () => {
-      await configureStore({ activeTab: 'resolved', resolvedLoaded: false, status: 'success' });
-      createComponent();
-
-      expect(fixture.nativeElement.querySelector('.notifications__empty')).toBeNull();
-
-      store.setState({
-        notifications: { ...initialNotificationsState, activeTab: 'resolved', resolvedLoaded: true, status: 'success' },
-      });
-      fixture.detectChanges();
-
-      expect(fixture.nativeElement.querySelector('.notifications__empty')?.textContent).toContain(
-        'Nenhuma notificação resolvida',
       );
     });
 
@@ -449,7 +419,7 @@ describe('NotificationsComponent', () => {
     ];
 
     for (const tab of ['pending', 'resolved'] as const) {
-      it(`aba ${tab}: identifica cada tipo em texto, "Vencida" só na vencida e sem paciente no comunicado`, async () => {
+      it(`seção ${tab}: identifica cada tipo em texto, "Vencida" só na vencida e sem paciente no comunicado`, async () => {
         await configureStore(
           tab === 'pending'
             ? { status: 'success', pendingItems: mixed() }
@@ -795,13 +765,13 @@ describe('NotificationsComponent', () => {
     expect(store.dispatch).toHaveBeenCalledWith(NotificationsActions.answerSubmitted({ notificationId: 5 }));
   });
 
-  it('onBottomSheetClosed descarta o rascunho sem diálogo (FR-010)', async () => {
+  it('onCancelAnswer fecha o campo de resposta e guarda o texto como rascunho', async () => {
     await configureStore({ status: 'success', answeringId: 5 });
     createComponent();
     spyOn(store, 'dispatch');
 
-    fixture.componentInstance.onBottomSheetClosed();
+    fixture.componentInstance.onCancelAnswer();
 
-    expect(store.dispatch).toHaveBeenCalledWith(NotificationsActions.answerDiscarded());
+    expect(store.dispatch).toHaveBeenCalledWith(NotificationsActions.answerCancelled());
   });
 });

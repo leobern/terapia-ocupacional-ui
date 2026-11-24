@@ -10,6 +10,7 @@ import {
 } from '@angular/core';
 
 import { IconButtonComponent } from '../../../shared/components/icon-button/icon-button.component';
+import { IconLogoComponent } from '../../../shared/components/icon-logo/icon-logo.component';
 import { CatalogNutritionIndicatorId, NUTRITION_CARD_CATALOG } from './nutrition-panel.models';
 
 export const OFFLINE_ADD_HINT = 'Conexão necessária para adicionar um card.';
@@ -23,7 +24,7 @@ export const NO_CARDS_AVAILABLE_TEXT = 'Todos os cards disponíveis já foram ad
  */
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [IconButtonComponent],
+  imports: [IconLogoComponent, IconButtonComponent],
   selector: 'app-nutrition-add-card-sheet',
   styleUrl: './nutrition-add-card-sheet.component.scss',
   templateUrl: './nutrition-add-card-sheet.component.html',

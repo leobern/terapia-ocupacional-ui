@@ -1,0 +1,99 @@
+@use '../../styles/breakpoints';
+@use '../../styles/tokens';
+@use '../../styles/typography';
+
+// Figma `v2/PageHeader` (4598:1584): gap 16 entre o voltar (48px) e o texto, padding 8 / 0 / 16 / 0, ícone de título de 24px. No desktop, telas iniciais recuam 16px
+// à esquerda; com voltar o botão fica alinhado ao conteúdo (a margem já vem do container da página).
+:host {
+  display: block;
+}
+
+.page-header {
+  display: flex;
+  align-items: center;
+  gap: tokens.$space-16;
+
+  // Padding 8 em cima e 16 embaixo, nenhum lateral (Figma 4598:1584 / 4601:1644) — o recuo de 16px vem da margem
+  // da página (`--page-container-margin`), então o voltar fica alinhado aos cards.
+  padding: tokens.$space-8 0 tokens.$space-16;
+
+  @include breakpoints.md {
+    padding: tokens.$space-8 0 tokens.$space-16 tokens.$space-16;
+  }
+}
+
+:host(.page-header--back) .page-header {
+  // Desktop, tela interna (Figma v2/PageHeader, 4722:10983): sem recuo à esquerda (o voltar alinha com o conteúdo).
+  @include breakpoints.md {
+    padding: tokens.$space-8 0 tokens.$space-16;
+  }
+}
+
+.page-header__back,
+.page-header__bell {
+  position: relative;
+  display: inline-flex;
+}
+
+.page-header__text {
+  display: flex;
+  flex: 1 0 0;
+  flex-direction: column;
+  gap: tokens.$space-4;
+  min-width: 0;
+}
+
+.page-header__title {
+  display: flex;
+  align-items: center;
+  gap: tokens.$space-8;
+  margin: 0;
+  color: tokens.c(content-1);
+
+  @include typography.headline;
+
+  ph-icon {
+    flex-shrink: 0;
+    color: tokens.c(secondary);
+  }
+}
+
+// Mobile: hospital e data em duas linhas (Figma 4601:1644); desktop: uma linha com " · ".
+.page-header__subtitle-part {
+  display: block;
+
+  @include breakpoints.md {
+    display: inline;
+  }
+}
+
+.page-header__subtitle-sep {
+  display: none;
+
+  @include breakpoints.md {
+    display: inline;
+  }
+}
+
+.page-header__subtitle {
+  margin: 0;
+  padding-inline: tokens.$space-4;
+  color: tokens.c(content-4);
+
+  @include typography.caption;
+}
+
+// Mesma posição do badge da Home: 26px da esquerda e 4px do topo do botão de 48px.
+.page-header__bell-badge {
+  position: absolute;
+  top: tokens.$space-4;
+  left: 26px;
+}
+
+.page-header__shortcuts {
+  display: none;
+
+  @include breakpoints.md {
+    display: inline-flex;
+  }
+}

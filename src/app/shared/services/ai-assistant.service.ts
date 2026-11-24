@@ -50,6 +50,8 @@ export const COMMAND_TIMEOUT_MS = 15000;
 @Injectable({ providedIn: 'root' })
 export class AiAssistantService {
   readonly isOpen: Signal<boolean>;
+  /** Quantas vezes o painel foi aberto (fechado → aberto): a saudação da tela se escreve de novo a cada abertura. */
+  readonly openCount: Signal<number>;
   /**
    * O menu de atalhos está aberto (a tela de atalhos, um formulário ou o aviso de ação indisponível):
    * os botões que o abrem ficam desabilitados e esmaecidos para mostrar isso. O chat não conta.
@@ -74,11 +76,13 @@ export class AiAssistantService {
   private requestId = 0;
   private readonly lastQuestionSignal = signal<string | null>(null);
   private readonly isOpenSignal = signal(false);
+  private readonly openCountSignal = signal(0);
   private readonly viewSignal = signal<AssistantView>('chat');
   private readonly activeActionSignal = signal<ScreenAction | null>(null);
 
   constructor() {
     this.isOpen = this.isOpenSignal.asReadonly();
+    this.openCount = this.openCountSignal.asReadonly();
     this.shortcutsOpen = computed(() => this.isOpenSignal() && this.viewSignal() !== 'chat');
     this.lastQuestion = this.lastQuestionSignal.asReadonly();
     this.conversation = this.conversationSignal.asReadonly();
@@ -250,6 +254,9 @@ export class AiAssistantService {
   private show(view: AssistantView, action: ScreenAction | null): void {
     this.viewSignal.set(view);
     this.activeActionSignal.set(action);
+    if (!this.isOpenSignal()) {
+      this.openCountSignal.update(count => count + 1);
+    }
     this.isOpenSignal.set(true);
   }
 }

@@ -13,9 +13,9 @@ import {
 
 import { ViewportBreakpointService } from '../../services/viewport-breakpoint.service';
 import { type ChatShortcut } from '../bottom-sheet/bottom-sheet.component';
-import { ButtonComponent } from '../button/button.component';
 import { IconButtonComponent } from '../icon-button/icon-button.component';
 import { IconLogoComponent } from '../icon-logo/icon-logo.component';
+import { TipComponent } from '../tip/tip.component';
 
 /** Largura do painel. Lista fechada — ver spec.md § Altura e pontos de encaixe. */
 export type DrawerSnap = 'default' | 'expanded';
@@ -116,7 +116,7 @@ type DialogMode = 'closed' | 'non-modal' | 'modal';
  */
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ButtonComponent, IconButtonComponent, IconLogoComponent],
+  imports: [IconButtonComponent, IconLogoComponent, TipComponent],
   selector: 'app-drawer',
   styleUrl: './drawer.component.scss',
   templateUrl: './drawer.component.html',

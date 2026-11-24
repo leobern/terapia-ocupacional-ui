@@ -92,4 +92,22 @@ describe('IconLogoComponent', () => {
       expect(parseFloat(getComputedStyle(base).borderTopWidth)).toBeCloseTo(4, 1);
     });
   });
+
+  describe('estrelas (Sparkling do Figma): só no logo da sidebar e do bottom sheet', () => {
+    it('por padrão não tem as estrelas (logo do menu, da barra inferior e do splash)', async () => {
+      await create();
+
+      expect(host().querySelector('.icon-logo__sparkle')).toBeNull();
+    });
+
+    it('com sparkle="solid" mostra as estrelas, preenchidas e contornadas como no Figma', async () => {
+      await create();
+      fixture.componentRef.setInput('sparkle', 'solid');
+      fixture.detectChanges();
+
+      expect(host().querySelector('.icon-logo__sparkle')).not.toBeNull();
+      expect(host().querySelector('.icon-logo__sparkle-fill')).not.toBeNull();
+      expect(host().querySelector('.icon-logo__sparkle-stroke')).not.toBeNull();
+    });
+  });
 });

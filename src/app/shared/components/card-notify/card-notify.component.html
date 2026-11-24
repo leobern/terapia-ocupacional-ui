@@ -11,6 +11,7 @@
   [class.card-notify--resolved]="resolved()"
   [class.card-notify--expanded-open]="isAnswerOpen()"
   [class.card-notify--answering]="isAnswering()"
+  [class.card-notify--draft]="isDraft()"
   (click)="onCardClick()"
 >
   <div class="card-notify__row">
@@ -93,8 +94,9 @@
       </div>
     }
 
-    @if (isAnswering()) {
-      <div class="card-notify__reply card-notify__reply--draft">
+    @if (isDraft() && draftText()) {
+      <!-- Figma State=draft: resposta escrita e não enviada, em cinza, com o aviso de rascunho. -->
+      <div class="card-notify__reply">
         <div class="card-notify__reply-head">
           <app-avatar
             size="small"
@@ -104,13 +106,40 @@
           />
           <span class="card-notify__reply-meta">{{ draftAuthorName() }}</span>
         </div>
-        <p
-          class="card-notify__reply-text"
-          [class.card-notify__description--placeholder]="!draftText()"
-        >
-          {{ draftText() || 'Escreva a sua mensagem...' }}
+        <p class="card-notify__reply-text card-notify__reply-text--draft">
+          {{ draftText() }}
         </p>
         <span class="card-notify__draft-label">Rascunho · não enviado</span>
+      </div>
+    }
+
+    @if (isAnswering()) {
+      <!-- Figma State=write: campo de resposta no próprio card (texto ou áudio transcrito em texto). -->
+      <div class="card-notify__reply card-notify__reply--writing">
+        <div class="card-notify__reply-head">
+          <app-avatar
+            size="small"
+            [name]="draftAuthorName()"
+            [imageUrl]="draftAuthorPhotoUrl() ?? ''"
+            [type]="draftAvatarType()"
+          />
+          <span class="card-notify__reply-meta">{{ draftAuthorName() }}</span>
+        </div>
+        <app-input-chat
+          [placeholder]="answerPlaceholder()"
+          [value]="draftText()"
+          [disabled]="answerBusy()"
+          (valueChange)="draftChange.emit($event)"
+          (send)="sendClick.emit()"
+          (audioSend)="audioSend.emit($event)"
+        />
+        @if (answerError(); as message) {
+          <span class="card-notify__draft-error" role="alert">{{
+            message
+          }}</span>
+        } @else if (draftText().trim()) {
+          <span class="card-notify__draft-label">Rascunho · não enviado</span>
+        }
       </div>
     }
   }
@@ -143,7 +172,18 @@
       </button>
     }
 
-    @if (isAnswerOpen()) {
+    @if (isAnswering()) {
+      <button
+        type="button"
+        class="card-notify__collapse card-notify__cancel"
+        (click)="onCancelClick($event)"
+      >
+        <ph-icon name="x" [size]="20" />
+        <span>Cancelar</span>
+      </button>
+    }
+
+    @if ((isAnswerOpen() || isDraft()) && replies().length > 0) {
       <button
         type="button"
         class="card-notify__collapse"

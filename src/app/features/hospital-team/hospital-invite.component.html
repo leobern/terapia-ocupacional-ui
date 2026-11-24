@@ -1,18 +1,11 @@
 <app-page-container>
   <div class="invite">
-    <header class="invite__header">
-      <app-icon-button
-        kind="primary"
-        appearance="icon"
-        icon="arrow-left"
-        ariaLabel="Voltar"
-        (click)="back()"
-      />
-      <div class="invite__heading">
-        <h1 class="invite__title">Convidar profissional</h1>
-        <p class="invite__subtitle">{{ hospitalName() }}</p>
-      </div>
-    </header>
+    <app-page-header
+      title="Convidar profissional"
+      [subtitle]="hospitalName()"
+      [back]="true"
+      (backClick)="back()"
+    />
 
     <section class="invite__card" aria-label="Convite de profissional">
       @if (phase() === 'done') {

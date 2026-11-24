@@ -1,8 +1,12 @@
 <!-- Figma Hub (4608-4371), seção "Diagnóstico": título + card de superfície com tiles. -->
-<section class="nutrition-panel" aria-labelledby="nutrition-panel-title">
+<section
+  class="nutrition-panel"
+  aria-labelledby="nutrition-panel-title"
+  [class.nutrition-panel--embedded]="embedded()"
+>
   <div class="nutrition-panel__header">
     <h2 id="nutrition-panel-title" class="nutrition-panel__title">
-      Diagnóstico
+      {{ title() }}
     </h2>
     <app-icon-button
       kind="secondary"

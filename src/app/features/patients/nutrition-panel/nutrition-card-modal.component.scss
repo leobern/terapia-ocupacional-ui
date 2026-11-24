@@ -33,10 +33,13 @@
 
   // Desktop: o desenho 1920 não existe; diálogo centralizado com a mesma estrutura.
   @include breakpoints.md {
+    // Padrão de cadastro: sidebar fixo à direita (desktop); bottom sheet no mobile.
     width: 480px;
-    margin: auto;
+    height: 100dvh;
+    max-height: 100dvh;
+    margin: 0 0 0 auto;
     padding-block: tokens.$space-16 tokens.$space-24;
-    border-radius: tokens.$radius-md;
+    border-radius: tokens.$radius-md 0 0 tokens.$radius-md;
   }
 }
 

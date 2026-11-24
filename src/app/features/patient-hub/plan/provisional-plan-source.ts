@@ -30,7 +30,21 @@ export class ProvisionalPlanSource extends PlanSource {
   /** Trilha de auditoria: só recebe acréscimos e é devolvida como cópia congelada. */
   private readonly trail: readonly ConductFlagAudit[] = [];
   private readonly referenceWeights = new Map<string, ReferenceWeight>();
-  private readonly targets = new Map<string, NutritionTargets>();
+  /** Provisório: o `p1` já tem meta (valores do Figma 4608:4845) para exercitar o Aporte do dia e as Metas nutricionais. */
+  private readonly targets = new Map<string, NutritionTargets>([
+    [
+      'p1',
+      {
+        calorimetry: null,
+        formula: 'simplified',
+        kcalPerDay: 1875,
+        kcalPerKg: 25,
+        proteinPerDay: 112.5,
+        proteinPerKg: 1.5,
+        referenceWeight: { kg: 75, kind: 'current' },
+      },
+    ],
+  ]);
   /** Pesos calculados provisórios: só o `p1` tem (a Avaliação atual guarda apenas peso atual e altura). */
   private readonly weights = new Map<string, CalculatedWeights>([
     ['p1', { adjusted: 68, current: 75, dry: 72.5, ideal: 62 }],

@@ -21,7 +21,7 @@
         (clicked)="logoClick.emit()"
       />
     </span>
-    <span class="nav-menu__wordmark">Condut<em>ia</em></span>
+    <span class="nav-menu__wordmark">Conduct<em>ia</em></span>
 
     @if (showCloseButton()) {
       <!--
@@ -50,17 +50,14 @@
         class="nav-menu__link"
         [class.nav-menu__link--active]="activeItem() === item.key"
         [class.keyboard-focus]="keyboardFocused()"
-        [disabled]="
-          (item.key === 'acoes-tela' && actionsOpen()) ||
-          disabledItems().includes(item.key)
-        "
+        [disabled]="disabledItems().includes(item.key)"
         (click)="onItemClick(item.key)"
         (focus)="onFocus()"
         (blur)="onBlur()"
       >
         <ph-icon
           class="nav-menu__icon"
-          [weight]="activeItem() === item.key ? 'bold' : 'regular'"
+          [weight]="activeItem() === item.key ? 'fill' : 'regular'"
           [name]="item.icon"
           [size]="24"
         />
@@ -86,7 +83,7 @@
       >
         <ph-icon
           [name]="theme.icon"
-          [weight]="themeService.theme() === theme.value ? 'bold' : 'regular'"
+          [weight]="themeService.theme() === theme.value ? 'fill' : 'regular'"
           [size]="24"
         />
       </button>

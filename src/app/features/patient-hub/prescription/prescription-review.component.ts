@@ -14,6 +14,7 @@ import {
 
 import { ButtonComponent } from '../../../shared/components/button/button.component';
 import { IconButtonComponent } from '../../../shared/components/icon-button/icon-button.component';
+import { IconLogoComponent } from '../../../shared/components/icon-logo/icon-logo.component';
 import { ConnectivityService } from '../../../shared/services/connectivity.service';
 import { DailyAdequacy } from '../../daily-evolution/adequacy/adequacy.models';
 import { NOW, ProfessionalProfileReader } from '../../home/professional-profile';
@@ -45,7 +46,7 @@ type LoadState = 'idle' | 'loading' | 'ready' | 'error';
  */
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ButtonComponent, IconButtonComponent, RouteChangeComponent, TargetsEditorComponent],
+  imports: [IconLogoComponent, ButtonComponent, IconButtonComponent, RouteChangeComponent, TargetsEditorComponent],
   selector: 'app-prescription-review',
   styleUrl: './prescription-review.component.scss',
   templateUrl: './prescription-review.component.html',

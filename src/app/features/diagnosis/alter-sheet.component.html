@@ -68,12 +68,12 @@
   </div>
 
   <div class="alter__actions">
+    <app-button label="Salvar alteração" size="md" (click)="save()" />
     <app-button
       label="Cancelar"
       kind="secondary"
       size="md"
       (click)="cancelled.emit()"
     />
-    <app-button label="Salvar alteração" size="md" (click)="save()" />
   </div>
 </dialog>

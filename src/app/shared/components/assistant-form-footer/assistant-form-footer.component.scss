@@ -1,0 +1,28 @@
+@use '../../styles/tokens';
+@use '../../styles/typography';
+
+:host {
+  display: block;
+  width: 100%;
+}
+
+.assistant-form-footer {
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$space-8;
+}
+
+// Figma 4722:25110: sugestões em coluna, largura pelo conteúdo, a linha quebra quando enche.
+.assistant-form-footer__tips {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: tokens.$space-8;
+}
+
+.assistant-form-footer__hint {
+  margin: 0;
+  color: tokens.c(content-4);
+
+  @include typography.caption;
+}

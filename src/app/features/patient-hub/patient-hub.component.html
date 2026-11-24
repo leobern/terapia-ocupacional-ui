@@ -1,135 +1,86 @@
 <app-page-container>
   <div class="hub">
     <!-- Figma v2/PageHeader (Subtitle=true): voltar + título + hospital · data. -->
-    <header class="hub__header">
-      <app-icon-button
-        kind="primary"
-        appearance="icon"
-        icon="arrow-left"
-        ariaLabel="Voltar"
-        (click)="back()"
+    <app-page-header
+      title="Paciente"
+      [subtitle]="hospitalName() + ' · ' + todayLabel()"
+      [back]="true"
+      (backClick)="back()"
+    >
+      <!-- Ação primária da tela (Figma 4608:4845): abre o registro diário no sidebar/bottom sheet. -->
+      <app-button
+        pageHeaderActions
+        size="md"
+        label="Evoluir Paciente"
+        (click)="dailyRecordOpen.set(true)"
       />
-      <div class="hub__heading">
-        <h1 class="hub__title">Paciente</h1>
-        <p class="hub__subtitle">{{ hospitalName() }} · {{ todayLabel() }}</p>
-      </div>
-    </header>
+    </app-page-header>
 
     @switch (status()) {
       @case ('ready') {
-        <section class="hub__identity" aria-label="Identificação do paciente">
-          <p class="hub__bed">{{ header()?.bed }}</p>
-          <h2 class="hub__name">{{ profile()?.name }}</h2>
-          <p class="hub__details">{{ header()?.details }}</p>
-          <div class="hub__tags">
-            <span class="hub__pill">{{ header()?.therapyDays }}</span>
-            <app-therapy-tag [label]="profile()?.therapy ?? ''" />
-          </div>
-        </section>
-
-        <section class="hub__hypothesis" aria-labelledby="hypothesis-title">
-          <h2 id="hypothesis-title" class="hub__card-title">
-            Hipótese diagnóstica
-          </h2>
-          @if (hypothesis(); as text) {
-            <p class="hub__hypothesis-text">{{ text }}</p>
-          }
-          @if (hypothesis() !== null && mode() === 'view') {
-            <div class="hub__actions">
-              <app-button
-                size="md"
-                iconLeft="sparkle"
-                label="Atualizar com novo texto"
-                (click)="startPaste()"
-              />
-              <app-button
-                size="md"
-                kind="primary"
-                appearance="outlined"
-                iconLeft="pencil-simple"
-                label="Editar texto"
-                (click)="startEdit()"
-              />
-            </div>
-          }
-          @if (mode() === 'edit') {
-            <div class="hub__empty">
-              <label class="hub__label" for="edit-text"
-                >Editar hipótese diagnóstica</label
-              >
-              <textarea
-                id="edit-text"
-                class="hub__textarea"
-                rows="5"
-                [value]="draft()"
-                (input)="onDraft($event)"
-              ></textarea>
-              <div class="hub__actions">
-                <app-button
-                  size="md"
-                  iconLeft="check"
-                  label="Salvar"
-                  [disabled]="saving() || offline()"
-                  (click)="confirm()"
-                />
-                <app-button
-                  size="md"
-                  kind="primary"
-                  appearance="outlined"
-                  label="Cancelar"
-                  (click)="cancel()"
-                />
+        <div class="hub__grid">
+          <div class="hub__col">
+            <section
+              class="hub__identity hub__o-1"
+              aria-label="Identificação do paciente"
+            >
+              <p class="hub__bed">{{ header()?.bed }}</p>
+              <h2 class="hub__name">{{ profile()?.name }}</h2>
+              <p class="hub__details">{{ header()?.details }}</p>
+              <div class="hub__tags">
+                <span class="hub__pill">{{ header()?.therapyDays }}</span>
+                <app-therapy-tag [label]="profile()?.therapy ?? ''" />
               </div>
-              @if (offline()) {
-                <p class="hub__status hub__status--warning" role="status">
-                  Conexão necessária para sintetizar ou confirmar a hipótese.
-                </p>
+            </section>
+
+            <section
+              class="hub__hypothesis hub__o-2"
+              aria-labelledby="hypothesis-title"
+            >
+              <h2 id="hypothesis-title" class="hub__card-title">
+                Hipótese diagnóstica
+              </h2>
+              @if (hypothesis(); as text) {
+                <p class="hub__hypothesis-text">{{ text }}</p>
               }
-              @if (hint(); as message) {
-                <p class="hub__status hub__status--warning" role="alert">
-                  {{ message }}
-                </p>
-              }
-            </div>
-          }
-          @if (mode() === 'paste') {
-            <div class="hub__empty">
-              @if (
-                phase() === 'input' ||
-                phase() === 'loading' ||
-                phase() === 'failed'
-              ) {
-                @if (hypothesis() === null) {
-                  <p class="hub__empty-text">
-                    Ainda não há hipótese diagnóstica preenchida para este
-                    paciente.
-                  </p>
-                }
-                <label class="hub__label" for="paste-text"
-                  >Texto do prontuário</label
-                >
-                <textarea
-                  id="paste-text"
-                  class="hub__textarea"
-                  rows="4"
-                  placeholder="Cole aqui o motivo de internação, intercorrências e demais dados relevantes"
-                  [value]="pasted()"
-                  [disabled]="phase() === 'loading'"
-                  (input)="onPasted($event)"
-                ></textarea>
+              @if (hypothesis() !== null && mode() === 'view') {
                 <div class="hub__actions">
                   <app-button
                     size="md"
                     iconLeft="sparkle"
-                    [label]="
-                      phase() === 'failed'
-                        ? 'Tentar sintetizar de novo'
-                        : 'Sintetizar com IA'
-                    "
-                    [disabled]="phase() === 'loading' || offline()"
-                    (click)="synthesize()"
+                    label="Atualizar com novo texto"
+                    (click)="startPaste()"
                   />
-                  @if (hypothesis() !== null) {
+                  <app-button
+                    size="md"
+                    kind="primary"
+                    appearance="outlined"
+                    iconLeft="pencil-simple"
+                    label="Editar texto"
+                    (click)="startEdit()"
+                  />
+                </div>
+              }
+              @if (mode() === 'edit') {
+                <div class="hub__empty">
+                  <label class="hub__label" for="edit-text"
+                    >Editar hipótese diagnóstica</label
+                  >
+                  <textarea
+                    id="edit-text"
+                    class="hub__textarea"
+                    rows="5"
+                    [value]="draft()"
+                    (input)="onDraft($event)"
+                  ></textarea>
+                  <div class="hub__actions">
+                    <app-button
+                      size="md"
+                      iconLeft="check"
+                      label="Salvar"
+                      [disabled]="saving() || offline()"
+                      (click)="confirm()"
+                    />
                     <app-button
                       size="md"
                       kind="primary"
@@ -137,89 +88,261 @@
                       label="Cancelar"
                       (click)="cancel()"
                     />
+                  </div>
+                  @if (offline()) {
+                    <p class="hub__status hub__status--warning" role="status">
+                      Conexão necessária para sintetizar ou confirmar a
+                      hipótese.
+                    </p>
+                  }
+                  @if (hint(); as message) {
+                    <p class="hub__status hub__status--warning" role="alert">
+                      {{ message }}
+                    </p>
                   }
                 </div>
               }
-              @if (phase() === 'loading') {
-                <p class="hub__status" role="status">
-                  Sintetizando o texto com IA…
-                </p>
-              }
-              @if (phase() === 'failed') {
-                <p class="hub__status hub__status--warning" role="alert">
-                  A síntese por IA falhou ou está indisponível. Digite a
-                  hipótese manualmente e confirme.
-                </p>
-              }
-              @if (phase() === 'review' || phase() === 'failed') {
-                @if (phase() === 'review') {
-                  <span class="hub__ai-tag">
-                    <ph-icon name="sparkle" [size]="16" />
-                    Gerado por IA
-                  </span>
-                }
-                <label class="hub__label" for="draft-text">
-                  {{
-                    phase() === 'review'
-                      ? 'Revise e edite antes de confirmar'
-                      : 'Hipótese diagnóstica (manual)'
-                  }}
-                </label>
-                <textarea
-                  id="draft-text"
-                  class="hub__textarea"
-                  rows="5"
-                  [value]="draft()"
-                  (input)="onDraft($event)"
-                ></textarea>
-                <div class="hub__actions">
-                  <app-button
-                    size="md"
-                    iconLeft="check"
-                    label="Confirmar hipótese"
-                    [disabled]="saving() || offline()"
-                    (click)="confirm()"
-                  />
-                  @if (phase() === 'review') {
-                    <app-button
-                      size="md"
-                      kind="primary"
-                      appearance="outlined"
-                      label="Descartar"
-                      (click)="discard()"
-                    />
+              @if (mode() === 'paste') {
+                <div class="hub__empty">
+                  @if (
+                    phase() === 'input' ||
+                    phase() === 'loading' ||
+                    phase() === 'failed'
+                  ) {
+                    @if (hypothesis() === null) {
+                      <p class="hub__empty-text">
+                        Ainda não há hipótese diagnóstica preenchida para este
+                        paciente.
+                      </p>
+                    }
+                    <label class="hub__label" for="paste-text"
+                      >Texto do prontuário</label
+                    >
+                    <textarea
+                      id="paste-text"
+                      class="hub__textarea"
+                      rows="4"
+                      placeholder="Cole aqui o motivo de internação, intercorrências e demais dados relevantes"
+                      [value]="pasted()"
+                      [disabled]="phase() === 'loading'"
+                      (input)="onPasted($event)"
+                    ></textarea>
+                    <div class="hub__actions">
+                      <app-button
+                        size="md"
+                        iconLeft="sparkle"
+                        [label]="
+                          phase() === 'failed'
+                            ? 'Tentar sintetizar de novo'
+                            : 'Sintetizar com IA'
+                        "
+                        [disabled]="phase() === 'loading' || offline()"
+                        (click)="synthesize()"
+                      />
+                      @if (hypothesis() !== null) {
+                        <app-button
+                          size="md"
+                          kind="primary"
+                          appearance="outlined"
+                          label="Cancelar"
+                          (click)="cancel()"
+                        />
+                      }
+                    </div>
+                  }
+                  @if (phase() === 'loading') {
+                    <p class="hub__status" role="status">
+                      Sintetizando o texto com IA…
+                    </p>
+                  }
+                  @if (phase() === 'failed') {
+                    <p class="hub__status hub__status--warning" role="alert">
+                      A síntese por IA falhou ou está indisponível. Digite a
+                      hipótese manualmente e confirme.
+                    </p>
+                  }
+                  @if (phase() === 'review' || phase() === 'failed') {
+                    @if (phase() === 'review') {
+                      <span class="hub__ai-tag">
+                        <ph-icon name="sparkle" [size]="16" />
+                        Gerado por IA
+                      </span>
+                    }
+                    <label class="hub__label" for="draft-text">
+                      {{
+                        phase() === 'review'
+                          ? 'Revise e edite antes de confirmar'
+                          : 'Hipótese diagnóstica (manual)'
+                      }}
+                    </label>
+                    <textarea
+                      id="draft-text"
+                      class="hub__textarea"
+                      rows="5"
+                      [value]="draft()"
+                      (input)="onDraft($event)"
+                    ></textarea>
+                    <div class="hub__actions">
+                      <app-button
+                        size="md"
+                        iconLeft="check"
+                        label="Confirmar hipótese"
+                        [disabled]="saving() || offline()"
+                        (click)="confirm()"
+                      />
+                      @if (phase() === 'review') {
+                        <app-button
+                          size="md"
+                          kind="primary"
+                          appearance="outlined"
+                          label="Descartar"
+                          (click)="discard()"
+                        />
+                      }
+                    </div>
+                  }
+                  @if (offline()) {
+                    <p class="hub__status hub__status--warning" role="status">
+                      Conexão necessária para sintetizar ou confirmar a
+                      hipótese.
+                    </p>
+                  }
+                  @if (hint(); as message) {
+                    <p class="hub__status hub__status--warning" role="alert">
+                      {{ message }}
+                    </p>
                   }
                 </div>
               }
-              @if (offline()) {
-                <p class="hub__status hub__status--warning" role="status">
-                  Conexão necessária para sintetizar ou confirmar a hipótese.
-                </p>
+            </section>
+
+            @if (profile(); as p) {
+              @if (hospitalId(); as hospital) {
+                <app-prior-stays-box
+                  class="hub__o-3"
+                  [patientId]="p.id"
+                  [hospitalId]="hospital"
+                />
               }
-              @if (hint(); as message) {
-                <p class="hub__status hub__status--warning" role="alert">
+            }
+
+            @if (profile(); as p) {
+              <app-follow-up-status
+                class="hub__o-9"
+                [patientId]="p.id"
+                [canReopen]="hospitalId() !== null"
+              />
+              <app-patient-threads
+                class="hub__o-9"
+                [patientId]="p.id"
+                [refreshKey]="messagesVersion()"
+              />
+            }
+          </div>
+          <div class="hub__col">
+            @if (profile(); as p) {
+              <h2 class="hub__section-title hub__o-4">Diagnóstico</h2>
+              <div class="hub__diag hub__o-4">
+                <app-measure-chart
+                  title="Peso"
+                  unit="kg"
+                  caption="Medido hoje, 28/05 · 6 medições"
+                  [series]="weightSeries"
+                  [badge]="{ icon: 'arrow-up', text: '+2,5 kg desde 01/05' }"
+                  [reference]="{ label: 'Internação · 48,5 kg', value: 48.5 }"
+                />
+                <app-measure-chart
+                  title="IMC"
+                  unit="kg/m²"
+                  caption="Altura 1,63 m · faixa ideal 18,5–24,9"
+                  [series]="bmiSeries"
+                  [badge]="{
+                    icon: 'check',
+                    text: 'Na faixa ideal desde 10/05',
+                  }"
+                  [idealRange]="[18.5, 24.9]"
+                  [reference]="{
+                    label: '18,5 · início da faixa ideal',
+                    value: 18.5,
+                  }"
+                />
+                <app-nutrition-panel
+                  title="Avaliações"
+                  [embedded]="true"
+                  [values]="values()"
+                  [addedCards]="addedCards()"
+                  [hiddenCards]="hiddenCards()"
+                  (cardSelect)="openCardModal($event)"
+                  (addRequest)="openAddSheet()"
+                  (hiddenRequest)="openHiddenSheet()"
+                />
+              </div>
+              <app-assessment-section
+                class="hub__o-6"
+                [patientId]="p.id"
+                (concluded)="onAssessmentConcluded()"
+              />
+              @if (diagnosisHint(); as message) {
+                <p
+                  class="hub__status hub__status--warning hub__o-6"
+                  role="alert"
+                >
                   {{ message }}
                 </p>
               }
-            </div>
-          }
-        </section>
-
-        @if (profile(); as p) {
-          @if (hospitalId(); as hospital) {
-            <app-prior-stays-box [patientId]="p.id" [hospitalId]="hospital" />
-          }
-        }
-
-        <!-- Painel Nutricional (FT-004-3): paciente novo mostra todos os cards em "Sem dados". -->
-        <app-nutrition-panel
-          [values]="values()"
-          [addedCards]="addedCards()"
-          [hiddenCards]="hiddenCards()"
-          (cardSelect)="openCardModal($event)"
-          (addRequest)="openAddSheet()"
-          (hiddenRequest)="openHiddenSheet()"
-        />
+              <!-- Acesso fixo ao Diagnóstico (FR-008): a tela trata o pré-requisito e o offline. -->
+              <button
+                type="button"
+                class="hub__diagnosis hub__o-6"
+                (click)="openDiagnosis()"
+              >
+                <span class="hub__diagnosis-title">Diagnóstico</span>
+                <ph-icon name="caret-right" [size]="16" />
+              </button>
+              <app-plan-section
+                class="hub__o-6"
+                [patientId]="p.id"
+                (targetsSaved)="reloadResults()"
+              />
+            }
+          </div>
+          <div class="hub__col">
+            @if (profile(); as p) {
+              @if (targetTiles(); as tiles) {
+                <section
+                  class="hub__targets hub__o-7"
+                  aria-labelledby="targets-title"
+                >
+                  <h2 id="targets-title" class="hub__section-title">
+                    Metas nutricionais
+                  </h2>
+                  <ul class="hub__tiles">
+                    @for (tile of tiles; track tile.label) {
+                      <li class="hub__tile">
+                        <span class="hub__tile-label">{{ tile.label }}</span>
+                        <span class="hub__tile-value"
+                          >{{ tile.value }} <small>{{ tile.unit }}</small></span
+                        >
+                      </li>
+                    }
+                  </ul>
+                </section>
+              }
+              @if (adequacy(); as a) {
+                <app-adequacy-summary class="hub__o-7" [adequacy]="a" />
+              }
+              <app-prescription-summary
+                class="hub__o-8"
+                [prescriptions]="prescription()"
+              />
+              <app-patient-messages
+                class="hub__o-9"
+                [patientId]="p.id"
+                [refreshKey]="messagesVersion()"
+              />
+            }
+          </div>
+        </div>
         <app-nutrition-add-card-sheet
           [open]="addSheetOpen()"
           [present]="addedCards()"
@@ -246,44 +369,6 @@
         />
 
         @if (profile(); as p) {
-          <app-follow-up-status
-            [patientId]="p.id"
-            [canReopen]="hospitalId() !== null"
-          />
-          <app-patient-threads
-            [patientId]="p.id"
-            [refreshKey]="messagesVersion()"
-          />
-          <app-patient-messages
-            [patientId]="p.id"
-            [refreshKey]="messagesVersion()"
-          />
-          <app-assessment-section
-            [patientId]="p.id"
-            (concluded)="onAssessmentConcluded()"
-          />
-          @if (diagnosisHint(); as message) {
-            <p class="hub__status hub__status--warning" role="alert">
-              {{ message }}
-            </p>
-          }
-          <!-- Acesso fixo ao Diagnóstico (FR-008): a tela trata o pré-requisito e o offline. -->
-          <button
-            type="button"
-            class="hub__diagnosis"
-            (click)="openDiagnosis()"
-          >
-            <span class="hub__diagnosis-title">Diagnóstico</span>
-            <ph-icon name="caret-right" [size]="16" />
-          </button>
-          @if (adequacy(); as a) {
-            <app-adequacy-summary [adequacy]="a" />
-          }
-          <app-prescription-summary [prescriptions]="prescription()" />
-          <app-plan-section
-            [patientId]="p.id"
-            (targetsSaved)="reloadResults()"
-          />
           @if (hospitalId(); as hospital) {
             <app-prescription-sheet
               [open]="prescriptionOpen()"

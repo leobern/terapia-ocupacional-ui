@@ -11,22 +11,36 @@
 // `align-items: flex-end` é o que mantém o botão colado na base enquanto o
 // campo cresce para cima (nó Figma 4426:8736).
 .input-chat {
+  @include input-shell.chrome;
+
   align-items: flex-end;
-  display: flex;
+  // Figma v2/InputChat: 24px; o botão de 40px fica DENTRO da borda, com 4px de folga (pad 0/4/0/16 — os 16 da
+  // esquerda vêm da row interna do campo).
+  border-radius: tokens.$radius-md;
   gap: tokens.$space-8;
   justify-content: flex-end;
+  // EXCEÇÃO DE ESPAÇAMENTO (Thiago, 2026-11-24, hardcode só aqui, fora dos tokens): o botão fica a 3px da lateral
+  // direita (2px de padding + a borda de 1px); em cima e embaixo são 3px + borda = 4px e o campo fecha em 48px.
+  padding: 3px 2px 3px 0;
 
   // Âncora do botão de cancelar do modo áudio, que é posicionado
   // absolutamente dentro da barra de ondas (nó 4054:3363).
   position: relative;
   width: 100%;
+
+  &--disabled {
+    @include input-shell.disabled-chrome;
+  }
+
+  &:hover:not(.input-chat--disabled, :focus-within) {
+    @include input-shell.hover-chrome;
+  }
 }
 
 .input-chat__shell {
-  @include input-shell.chrome;
-
-  // 24px: com uma linha (48px) parece pílula; com várias linhas não vira uma elipse.
-  border-radius: tokens.$radius-md; // Figma v2/InputChat
+  // Sem borda própria: quem tem a borda é o `.input-chat` (o botão fica dentro dela).
+  align-self: stretch;
+  box-sizing: border-box;
   flex: 1 0 0;
   min-width: 0;
 
@@ -37,16 +51,8 @@
   // quebre em vez de gerar rolagem horizontal (Figma: `overflow-x-clip`).
   overflow: clip auto;
 
-  // Só o padding VERTICAL — o horizontal vive na row interna (FR-002).
-  padding: tokens.$space-8 0;
-
-  &--disabled {
-    @include input-shell.disabled-chrome;
-  }
-
-  &:hover:not(.input-chat__shell--disabled, :focus-within) {
-    @include input-shell.hover-chrome;
-  }
+  // Só o padding VERTICAL — o horizontal vive na row interna (FR-002). Com os 4px do contêiner dá 48px.
+  padding: tokens.$space-4 0;
 }
 
 .input-chat__content {
@@ -100,7 +106,7 @@
 // Estado disabled: TODA cor vem de `state-disabled*`, sem exceção nem
 // vazamento parcial (Constituição, Princípio VIII — regra transversal elevada
 // a partir do achado em `DS-component-input-select`).
-.input-chat__shell--disabled .input-chat__field {
+.input-chat--disabled .input-chat__field {
   @include input-shell.disabled-content;
 }
 
@@ -109,11 +115,10 @@
 // com altura fixa de uma linha e o padding horizontal reduzido, já que o conteúdo
 // é o conjunto de ondas e não texto.
 .input-chat__audio {
-  @include input-shell.chrome;
-
-  border-radius: tokens.$radius-pill;
   align-items: center;
+  align-self: stretch;
   flex: 1 0 0;
+  min-height: 40px;
   min-width: 0;
   padding: 0 tokens.$space-8;
   position: relative;

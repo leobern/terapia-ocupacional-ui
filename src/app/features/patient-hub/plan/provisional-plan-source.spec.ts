@@ -84,7 +84,8 @@ describe('ProvisionalPlanSource', () => {
     expect((await source.loadCalculatedWeights('p1')).adjusted).toBe(68);
     expect(await source.loadCalculatedWeights('x')).toEqual({});
     expect(await source.loadReferenceWeight('p1')).toBeNull();
-    expect(await source.loadTargets('p1')).toBeNull();
+    expect(await source.loadTargets('x')).toBeNull();
+    expect((await source.loadTargets('p1'))?.kcalPerDay).toBe(1875);
     await source.saveReferenceWeight({ at: 'x', author: 'A', patientId: 'p1', weight });
     await source.saveTargets({ at: 'x', author: 'A', patientId: 'p1', targets });
 

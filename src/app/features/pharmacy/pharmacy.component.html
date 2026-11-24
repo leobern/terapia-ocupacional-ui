@@ -1,15 +1,17 @@
 <app-page-container>
   <div class="pharmacy">
-    <header class="pharmacy__header">
-      <div class="pharmacy__title-row">
-        <ph-icon class="pharmacy__title-icon" name="pill" [size]="24" />
-        <h1 class="pharmacy__title">Farmácia</h1>
-      </div>
-      <p class="pharmacy__subtitle">
-        {{ hospital()?.name }} · Fórmulas padronizadas ficam disponíveis na
-        prescrição deste hospital.
-      </p>
-    </header>
+    <app-page-header
+      icon="pill"
+      title="Farmácia"
+      [subtitle]="
+        (hospital()?.name ?? '') +
+        ' · Fórmulas padronizadas ficam disponíveis na prescrição deste hospital.'
+      "
+      [showBell]="true"
+      [unreadCount]="unreadCount()"
+      [bellLabel]="bellLabel()"
+      (bellClick)="openNotifications()"
+    />
 
     @if (!online()) {
       <p class="pharmacy__notice" role="status">

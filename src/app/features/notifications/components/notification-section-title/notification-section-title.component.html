@@ -1,0 +1,7 @@
+<!-- Figma v2/SectionTitle: Title/Md + contador opcional. -->
+<h2 class="notification-section-title">
+  <span class="notification-section-title__label">{{ label() }}</span>
+  @if (count() !== null) {
+    <span class="notification-section-title__count">{{ count() }}</span>
+  }
+</h2>

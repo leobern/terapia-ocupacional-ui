@@ -59,8 +59,10 @@
   width: var(--icon-logo-box);
 }
 
+// Decisão do Thiago (2026-11-23): TODO logo do sistema usa a borda azul secundária do logo do sidebar e do bottom
+// sheet — inclusive o do botão (barra inferior e menu), que antes usava `primary`.
 :host([data-state='button']) {
-  --icon-logo-accent: var(--icon-logo-accent-override, #{tokens.c(primary)});
+  --icon-logo-accent: var(--icon-logo-accent-override, #{tokens.c(secondary)});
 }
 
 :host([data-state='disabled']) {
@@ -357,4 +359,30 @@ $mesh-fade-mask: radial-gradient(
   .icon-logo__light {
     transition-duration: 0s;
   }
+}
+
+// Ícone Sparkling (Figma 4722:25082): 58,5% x 62,3% do círculo, deslocado 21,75% / 16,25% (medido no Figma em um
+// círculo de 40px). Preenchido com `surface` e contornado em `secondary` (1,5px por dentro = traço de 3px recortado
+// pela forma); desabilitado: contorno em `border-2`.
+.icon-logo__sparkle {
+  height: 62.3%;
+  left: 21.75%;
+  pointer-events: none;
+  position: absolute;
+  top: 16.25%;
+  width: 58.5%;
+}
+
+.icon-logo__sparkle-fill {
+  fill: tokens.c(surface);
+}
+
+.icon-logo__sparkle-stroke {
+  fill: none;
+  stroke: tokens.c(secondary);
+  stroke-width: 3;
+}
+
+:host([data-state='disabled']) .icon-logo__sparkle-stroke {
+  stroke: tokens.c(border-2);
 }

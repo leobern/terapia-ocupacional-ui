@@ -217,3 +217,11 @@
 
   @include typography.body-md;
 }
+
+// Padrão dos modais: primária à esquerda, secundária à direita, mesma linha, alinhadas à direita, gap 16.
+.closure__confirm-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: tokens.$space-16;
+  justify-content: flex-end;
+}

@@ -189,8 +189,8 @@ $ease-sheet: cubic-bezier(0.32, 0.72, 0, 1);
   display: flex;
   flex-shrink: 0;
   justify-content: space-between;
-  // Sem padding à esquerda (a logo encosta na borda); só 24px à direita.
-  padding: 0 var(--space-24) 0 0;
+  // Figma v2/AssistantPanel: logo de 40px a 16px da borda (a caixa do logo já traz o brilho: 15px de folga + 1px).
+  padding: 0 var(--space-16) 0 1px;
   touch-action: none;
 
   &:active {
@@ -200,9 +200,20 @@ $ease-sheet: cubic-bezier(0.32, 0.72, 0, 1);
 
 .bottom-sheet__logo,
 .bottom-sheet__logo-placeholder {
+  // Figma v2/AssistantPanel: logo de 40px (caixa de 70px com o brilho).
+  --icon-logo-size: 40px;
+
   flex-shrink: 0;
-  height: 84px;
-  width: 84px;
+  height: 70px;
+  width: 70px;
+}
+
+// Cadastro (Figma 4722:10998): logo de 40px (caixa de 70px com o brilho) ao lado do título.
+.bottom-sheet__logo--compact {
+  --icon-logo-size: 40px;
+
+  height: 70px;
+  width: 70px;
 }
 
 .bottom-sheet__handle {
@@ -255,6 +266,11 @@ $ease-sheet: cubic-bezier(0.32, 0.72, 0, 1);
 }
 
 .bottom-sheet__content {
+  // Figma v2/AssistantPanel: 16px de cada lado; só o TEXTO da saudação ganha +16px (32px da borda). O conteúdo
+  // do assistente lê estas duas variáveis (no drawer elas não existem e valem os padrões dele).
+  --assistant-content-inset: 0;
+  --assistant-text-inset: var(--space-16);
+
   flex: 1 0 0;
   min-height: 0;
   overflow-y: auto;
@@ -262,7 +278,7 @@ $ease-sheet: cubic-bezier(0.32, 0.72, 0, 1);
   // Impede o scroll chaining: rolar a conversa até o fim não pode continuar
   // rolando a página por baixo.
   overscroll-behavior: contain;
-  padding: 0;
+  padding: 0 var(--space-16);
 }
 
 // Faixa de atalhos: some inteira (padding incluído) quando não há atalhos —
@@ -272,15 +288,15 @@ $ease-sheet: cubic-bezier(0.32, 0.72, 0, 1);
   flex-shrink: 0;
   flex-wrap: wrap;
   gap: var(--space-16);
-  padding: var(--space-16) var(--space-24);
+  padding: var(--space-24) var(--space-16) 0;
 }
 
 .bottom-sheet__footer {
   display: flex;
   flex-direction: column;
   flex-shrink: 0;
-  padding: var(--space-16) var(--space-24)
-    calc(var(--space-16) + env(safe-area-inset-bottom));
+  padding: var(--space-24) var(--space-16)
+    calc(var(--space-24) + env(safe-area-inset-bottom));
 }
 
 // O arraste continua funcionando: é gesto direto, não animação decorativa.

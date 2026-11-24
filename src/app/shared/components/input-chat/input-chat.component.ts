@@ -120,7 +120,7 @@ export class InputChatComponent {
       return { appearance: 'solid', ariaLabel: 'Enviar mensagem', icon: 'paper-plane-tilt', kind: 'primary' };
     }
 
-    return { appearance: 'icon', ariaLabel: 'Gravar áudio', icon: 'waveform', kind: 'secondary' };
+    return { appearance: 'tonal', ariaLabel: 'Gravar áudio', icon: 'waveform', kind: 'primary' };
   });
 
   // Anel rosa só quando o foco chega via teclado — ver KeyboardFocusService.

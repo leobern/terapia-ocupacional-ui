@@ -45,6 +45,13 @@ export interface FormActionDefinition {
   readonly title: string;
   readonly submitLabel: string;
   readonly fields: readonly FormFieldDefinition[];
+  /** Placeholder do campo de mensagem/áudio do rodapé (ex.: "Fale ou escreva a notificação"). */
+  readonly messagePlaceholder?: string;
+  /**
+   * Sugestões inteligentes (chips acima do campo de mensagem), calculadas pela IA a partir do histórico. Ausente ou
+   * vazio = a área não aparece (V1 sem IA).
+   */
+  readonly suggestions?: readonly string[];
   /** Respostas de texto já preenchidas (por id de campo), ex.: conteúdo ditado por áudio; continuam editáveis. */
   readonly initialValues?: Readonly<Record<string, string>>;
   /** Aviso discreto exibido no topo do formulário (ex.: falha na transcrição do áudio). */
@@ -134,6 +141,17 @@ export interface ScreenSortDefinition {
   readonly select: (id: string) => void;
 }
 
+/**
+ * Texto do assistente para a tela atual (a tela de Notificações fala de notificações, a de Pacientes de pacientes...).
+ * O painel o mostra no lugar da saudação genérica; sem contexto registrado, usa a saudação padrão.
+ */
+export interface ScreenContext {
+  /** Título (ex.: "Como posso ajudar nas notificações?"). */
+  readonly title: string;
+  /** Texto descritivo das ações da tela, escrito como a IA se apresentando para aquela tela. */
+  readonly description: string;
+}
+
 /** Comando livre do profissional (texto ou áudio gravado) a encaminhar à camada de IA da tela. */
 export type ScreenCommand =
   { readonly kind: 'text'; readonly text: string } | { readonly kind: 'audio'; readonly audio: Blob };
@@ -151,16 +169,21 @@ export class ScreenActionsService {
 
   readonly sort: Signal<ScreenSortDefinition | null>;
 
+  /** Texto do assistente para a tela atual; `null` = saudação genérica. */
+  readonly context: Signal<ScreenContext | null>;
+
   /** Quando a tela registra um handler, mensagens do assistente são encaminhadas a ele, sem interpretação local. */
   readonly commandHandler: Signal<ScreenCommandHandler | null>;
 
   private readonly commandSignal = signal<ScreenCommandHandler | null>(null);
+  private readonly contextSignal = signal<ScreenContext | null>(null);
   private readonly actionsSignal = signal<readonly ScreenAction[]>([]);
   private readonly sortSignal = signal<ScreenSortDefinition | null>(null);
 
   constructor() {
     this.actions = this.actionsSignal.asReadonly();
     this.sort = this.sortSignal.asReadonly();
+    this.context = this.contextSignal.asReadonly();
     this.commandHandler = this.commandSignal.asReadonly();
   }
 
@@ -171,6 +194,17 @@ export class ScreenActionsService {
     return (): void => {
       if (this.commandSignal() === handler) {
         this.commandSignal.set(null);
+      }
+    };
+  }
+
+  /** Registra o texto do assistente para a tela; o cleanup só remove se ainda for o atual. */
+  registerContext(context: ScreenContext): () => void {
+    this.contextSignal.set(context);
+
+    return (): void => {
+      if (this.contextSignal() === context) {
+        this.contextSignal.set(null);
       }
     };
   }

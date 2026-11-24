@@ -12,10 +12,15 @@
     (keydown)="onKeydown($event)"
   >
     <div class="drawer__header">
-      @if (showLogo()) {
-        <app-icon-logo class="drawer__logo" state="default" />
-      } @else {
-        <!-- Em vez da logo: o título + seta de voltar de uma ação aberta (padrão de cadastro). -->
+      <!-- Cabeçalho padrão (Figma 4722:10998): logo + título + fechar. No cadastro o logo fica compacto e o
+           título da ação vem ao lado. -->
+      <app-icon-logo
+        class="drawer__logo"
+        state="default"
+        sparkle="solid"
+        [class.drawer__logo--compact]="!showLogo()"
+      />
+      @if (!showLogo()) {
         <ng-content select="[drawerHeaderStart]" />
       }
 
@@ -62,10 +67,8 @@
     @if (hasShortcuts()) {
       <div class="drawer__actions">
         @for (shortcut of visibleShortcuts(); track shortcut.id) {
-          <app-button
+          <app-tip
             class="drawer__shortcut"
-            kind="secondary"
-            appearance="outlined"
             [label]="shortcut.label"
             (click)="onShortcut(shortcut)"
           />

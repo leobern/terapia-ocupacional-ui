@@ -9,6 +9,7 @@
 >
   <span class="msg__handle" aria-hidden="true"></span>
   <div class="msg__header">
+    <app-icon-logo class="sheet-logo" state="default" sparkle="solid" />
     <h2 id="msg-title" class="msg__title">Observação ou mensagem</h2>
     <app-icon-button
       kind="secondary"
@@ -187,25 +188,25 @@
             {{ offlineHint }}
           </p>
         }
-        <app-button
-          [label]="
-            isObservation()
-              ? 'Registrar observação'
-              : 'Confirmar e enviar para ' +
-                recipientCount() +
-                ' profissional(is)'
-          "
-          [fullWidth]="true"
-          [disabled]="!canConfirm()"
-          (click)="confirm()"
-        />
-        <app-button
-          kind="primary"
-          appearance="outlined"
-          label="Voltar e editar"
-          [fullWidth]="true"
-          (click)="backToCompose()"
-        />
+        <div class="msg__confirm-actions">
+          <app-button
+            [label]="
+              isObservation()
+                ? 'Registrar observação'
+                : 'Confirmar e enviar para ' +
+                  recipientCount() +
+                  ' profissional(is)'
+            "
+            [disabled]="!canConfirm()"
+            (click)="confirm()"
+          />
+          <app-button
+            kind="primary"
+            appearance="outlined"
+            label="Voltar e editar"
+            (click)="backToCompose()"
+          />
+        </div>
       }
     </div>
   }

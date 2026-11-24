@@ -46,6 +46,11 @@ describe('InputChatComponent', () => {
   let fixture: ComponentFixture<InputChatComponent>;
   let capture: FakeAudioCaptureService;
 
+  /** Contêiner com a borda: o botão principal fica DENTRO dele (Figma v2/InputChat). */
+  function rootEl(): HTMLElement {
+    return fixture.nativeElement.querySelector('.input-chat');
+  }
+
   function shellEl(): HTMLElement {
     return fixture.nativeElement.querySelector('.input-chat__shell');
   }
@@ -209,7 +214,7 @@ describe('InputChatComponent', () => {
       fixture.detectChanges();
 
       expect(fieldEl().disabled).toBeTrue();
-      expect(shellEl().classList).toContain('input-chat__shell--disabled');
+      expect(rootEl().classList).toContain('input-chat--disabled');
     });
   });
 
@@ -219,7 +224,7 @@ describe('InputChatComponent', () => {
       fieldEl().dispatchEvent(new Event('focus'));
       fixture.detectChanges();
 
-      expect(shellEl().classList).toContain('keyboard-focus');
+      expect(rootEl().classList).toContain('keyboard-focus');
     });
 
     it('nao marca `keyboard-focus` quando o foco chega por clique de mouse', () => {
@@ -227,7 +232,7 @@ describe('InputChatComponent', () => {
       fieldEl().dispatchEvent(new Event('focus'));
       fixture.detectChanges();
 
-      expect(shellEl().classList).not.toContain('keyboard-focus');
+      expect(rootEl().classList).not.toContain('keyboard-focus');
     });
 
     it('remove `keyboard-focus` ao perder o foco', () => {
@@ -237,7 +242,7 @@ describe('InputChatComponent', () => {
       fieldEl().dispatchEvent(new Event('blur'));
       fixture.detectChanges();
 
-      expect(shellEl().classList).not.toContain('keyboard-focus');
+      expect(rootEl().classList).not.toContain('keyboard-focus');
     });
   });
 
@@ -589,8 +594,8 @@ describe('InputChatComponent', () => {
       attachToDom();
     });
 
-    // 50px, não 48: borda 1 + padding 8 + row (`min-height: 32px`) + padding 8 +
-    // borda 1. É a soma exata da estrutura que o Figma declara no nó `4045:2681`.
+    // O rolável (shell) mede 40px: padding 4 + row (`min-height: 32px`) + padding 4. Dentro do contêiner com borda de 1px
+    // e padding de 4px, o campo inteiro fecha em exatos 48px (Figma v2/InputChat).
     // A metadata do Figma mede o símbolo como 48px porque desenha o stroke por
     // dentro do frame — a mesma diferença de 2px já documentada em
     // `input-select`, que lá é absorvida por um `max-height: 48px` (impossível
@@ -599,10 +604,12 @@ describe('InputChatComponent', () => {
     // Uma versão anterior omitia o `min-height: 32px` da row para fechar em
     // exatos 48px. O efeito colateral era o texto encostado no topo do campo,
     // reportado em teste manual — a altura "certa" custava um alinhamento errado.
-    const ALTURA_UMA_LINHA = 50;
+    const ALTURA_UMA_LINHA = 40;
+    const ALTURA_CAMPO_INTEIRO = 48;
 
     it('mede uma linha com o campo vazio', () => {
       expect(shellHeight()).toBe(ALTURA_UMA_LINHA);
+      expect(Math.round(rootEl().getBoundingClientRect().height)).toBe(ALTURA_CAMPO_INTEIRO);
     });
 
     it('mantem a altura de uma linha com uma unica linha de texto', () => {
@@ -681,29 +688,29 @@ describe('InputChatComponent', () => {
       attachToDom();
     });
 
-    it('mede 48x48px na face "gravar"', () => {
+    it('mede 40x40px (dentro da borda) na face "gravar"', () => {
       const box = buttonBox();
 
-      expect(Math.round(box.width)).toBe(48);
-      expect(Math.round(box.height)).toBe(48);
+      expect(Math.round(box.width)).toBe(40);
+      expect(Math.round(box.height)).toBe(40);
     });
 
-    it('mede 48x48px na face "enviar mensagem"', () => {
+    it('mede 40x40px (dentro da borda) na face "enviar mensagem"', () => {
       setValue('ola');
 
       const box = buttonBox();
 
-      expect(Math.round(box.width)).toBe(48);
-      expect(Math.round(box.height)).toBe(48);
+      expect(Math.round(box.width)).toBe(40);
+      expect(Math.round(box.height)).toBe(40);
     });
 
-    it('mede 48x48px na face "enviar audio"', async () => {
+    it('mede 40x40px (dentro da borda) na face "enviar audio"', async () => {
       await enterAudioMode();
 
       const box = buttonBox();
 
-      expect(Math.round(box.width)).toBe(48);
-      expect(Math.round(box.height)).toBe(48);
+      expect(Math.round(box.width)).toBe(40);
+      expect(Math.round(box.height)).toBe(40);
     });
 
     it('nao desloca ao comecar e parar de digitar — zero layout shift', () => {

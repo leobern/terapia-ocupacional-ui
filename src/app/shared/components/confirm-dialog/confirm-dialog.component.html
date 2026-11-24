@@ -1,5 +1,6 @@
 @if (open()) {
-  <!-- Figma v2/Dialog Type=confirm: título, texto e duas ações md, a destrutiva à direita. -->
+  <!-- Figma v2/Dialog Type=confirm: título, texto e duas ações md. Padrão dos modais (Thiago, 2026-11-23): ação
+       primária à ESQUERDA da secundária, na mesma linha, alinhadas à direita, com 16px entre elas. -->
   <div class="confirm-dialog__scrim">
     <div
       class="confirm-dialog__panel"
@@ -16,17 +17,17 @@
       <div class="confirm-dialog__actions">
         <app-button
           kind="primary"
-          appearance="ghost"
-          size="md"
-          [label]="cancelLabel()"
-          (click)="cancelled.emit()"
-        />
-        <app-button
-          kind="primary"
           appearance="solid"
           size="md"
           [label]="confirmLabel()"
           (click)="confirmed.emit()"
+        />
+        <app-button
+          kind="primary"
+          appearance="ghost"
+          size="md"
+          [label]="cancelLabel()"
+          (click)="cancelled.emit()"
         />
       </div>
     </div>

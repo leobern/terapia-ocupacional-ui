@@ -14,6 +14,7 @@ import {
 
 import { ButtonComponent } from '../../../shared/components/button/button.component';
 import { IconButtonComponent } from '../../../shared/components/icon-button/icon-button.component';
+import { IconLogoComponent } from '../../../shared/components/icon-logo/icon-logo.component';
 import { ConnectivityService } from '../../../shared/services/connectivity.service';
 import { NOW, ProfessionalProfileReader } from '../../home/professional-profile';
 import { NutritionHiddenCards, NutritionHistorySource, NutritionValueWriter } from './nutrition-card-ports';
@@ -53,7 +54,7 @@ function shortDate(iso: string): string {
  */
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ButtonComponent, IconButtonComponent],
+  imports: [IconLogoComponent, ButtonComponent, IconButtonComponent],
   selector: 'app-nutrition-card-modal',
   styleUrl: './nutrition-card-modal.component.scss',
   templateUrl: './nutrition-card-modal.component.html',

@@ -31,10 +31,7 @@
       <!-- Figma 4506:10097: os botões das ações ficam logo abaixo do texto. -->
       <div class="assistant-content__actions">
         @for (action of screenActions.actions(); track action.id) {
-          <app-button
-            kind="primary"
-            appearance="outlined"
-            [fullWidth]="true"
+          <app-tip
             [label]="action.label"
             (click)="assistant.openAction(action)"
           />
@@ -105,16 +102,30 @@
     <p class="assistant-content__body">Esta ação ainda não está disponível.</p>
   }
   @default {
-    <div class="assistant-content">
-      <!-- Figma (seção 09): com uma conversa em andamento, a mensagem de boas-vindas sai. -->
+    <div class="assistant-content assistant-content--intro">
+      <!-- Figma (seção 09): com uma conversa em andamento, a mensagem de boas-vindas sai. A saudação é da TELA
+           atual e se escreve sozinha, como a IA digitando; o aviso de texto/áudio entra depois, com fade. -->
       @if (!assistant.conversation()) {
-        <h2 class="assistant-content__title">Como eu posso te ajudar?</h2>
+        <h2 class="assistant-content__title">
+          <app-typewriter
+            [text]="intro().title"
+            [restartKey]="typingKey()"
+            [enabled]="typing()"
+            (finished)="onTitleFinished()"
+          />
+        </h2>
         <p class="assistant-content__body">
-          Quer tirar uma dúvida, ou quer que eu faça um resumo de todas as suas
-          tarefas do dia? Eu posso fazer praticamente tudo, só me diz o que você
-          precisa?
+          <app-typewriter
+            [text]="intro().description"
+            [restartKey]="typingKey()"
+            [enabled]="typing() && titleDone()"
+            (finished)="onDescriptionFinished()"
+          />
         </p>
-        <p class="assistant-content__hint">
+        <p
+          class="assistant-content__hint"
+          [class.assistant-content__hint--visible]="hintVisible()"
+        >
           Você pode conversar comigo via texto ou áudio.
         </p>
       }

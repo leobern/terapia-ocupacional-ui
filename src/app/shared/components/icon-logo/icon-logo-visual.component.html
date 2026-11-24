@@ -40,6 +40,47 @@
   </svg>
 
   <!--
+    Ícone Sparkling (Figma 4722:25082, desenhado pelo Thiago): por cima da malha, no centro do círculo, em TODO
+    uso do logo. No Figma é PREENCHIDO com `surface/surface` e CONTORNADO em `default/secondary`, 1,5px POR DENTRO
+    (o contorno por dentro é o traço de 3px recortado pela própria forma). Cores por token (claro e escuro).
+    É um `<svg>` simples, sem transform/filter, então não cria stacking context para as luzes.
+  -->
+  @if (sparkle() !== 'none') {
+    <svg
+      class="icon-logo__sparkle"
+      viewBox="0 0 24 25"
+      aria-hidden="true"
+      focusable="false"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <defs>
+        @for (d of sparklePaths; track $index) {
+          <path [attr.id]="sparkleId + '-' + $index" [attr.d]="d" />
+        }
+        <clipPath [attr.id]="sparkleId + '-clip'">
+          @for (d of sparklePaths; track $index) {
+            <use [attr.xlink:href]="'#' + sparkleId + '-' + $index" />
+          }
+        </clipPath>
+      </defs>
+      @for (d of sparklePaths; track $index) {
+        <use
+          class="icon-logo__sparkle-fill"
+          [attr.xlink:href]="'#' + sparkleId + '-' + $index"
+        />
+      }
+      <g [attr.clip-path]="'url(#' + sparkleId + '-clip)'">
+        @for (d of sparklePaths; track $index) {
+          <use
+            class="icon-logo__sparkle-stroke"
+            [attr.xlink:href]="'#' + sparkleId + '-' + $index"
+          />
+        }
+      </g>
+    </svg>
+  }
+
+  <!--
     As 3 luzes ficam SEMPRE no DOM (visibilidade por `opacity`, não por `@if`): FR-011 exige
     crossfade ao entrar E ao sair de `anim`, e um elemento removido do DOM não tem como
     animar a saída. Em `default`/`disabled` ficam em `opacity: 0`.

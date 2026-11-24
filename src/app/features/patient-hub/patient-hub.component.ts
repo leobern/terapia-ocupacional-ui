@@ -5,12 +5,13 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { map } from 'rxjs';
 
 import { ButtonComponent } from '../../shared/components/button/button.component';
-import { IconButtonComponent } from '../../shared/components/icon-button/icon-button.component';
 import { PageContainerComponent } from '../../shared/components/page-container/page-container.component';
+import { PageHeaderComponent } from '../../shared/components/page-header/page-header.component';
 import { TherapyTagComponent } from '../../shared/components/therapy-tag/therapy-tag.component';
 import { PhIconComponent } from '../../shared/icons/ph-icon/ph-icon.component';
 import { ConnectivityService } from '../../shared/services/connectivity.service';
 import { ScreenAction, ScreenActionsService } from '../../shared/services/screen-actions.service';
+import { PATIENT_HUB_CONTEXT } from '../../shared/services/screen-contexts';
 import { adequacyPanelValues, DailyAdequacy } from '../daily-evolution/adequacy/adequacy.models';
 import { AdequacySummaryComponent } from '../daily-evolution/adequacy/adequacy-summary.component';
 import { DailyAdequacyService } from '../daily-evolution/adequacy/daily-adequacy.service';
@@ -47,6 +48,7 @@ import {
 } from '../patients/nutrition-panel/nutrition-panel.models';
 import { NutritionResultsSource } from '../patients/nutrition-panel/nutrition-results-source';
 import { AssessmentSectionComponent } from './assessment/assessment-section.component';
+import { MeasureChartComponent } from './charts/measure-chart.component';
 import { DailyRecordSheetComponent } from './daily-record/daily-record-sheet.component';
 import { PatientMessageSheetComponent } from './messages/patient-message-sheet.component';
 import { PatientMessagesComponent } from './messages/patient-messages.component';
@@ -60,6 +62,7 @@ import { PrescriptionSheetComponent } from './prescription/prescription-sheet.co
 import { PrescriptionSource } from './prescription/prescription-source';
 import { PrescriptionSummaryComponent } from './prescription/prescription-summary.component';
 import { PriorStaysBoxComponent } from './prior-stays-box/prior-stays-box.component';
+import { PROVISIONAL_BMI, PROVISIONAL_WEIGHT } from './provisional-measures';
 
 type HubStatus = 'loading' | 'ready' | 'not-found' | 'error' | 'revoked';
 
@@ -87,12 +90,13 @@ export const DIAGNOSIS_FAILED_HINT =
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
+    PageHeaderComponent,
     AssessmentSectionComponent,
+    MeasureChartComponent,
     ButtonComponent,
     DailyRecordSheetComponent,
     FollowUpStatusComponent,
     PatientThreadsComponent,
-    IconButtonComponent,
     NutritionAddCardSheetComponent,
     NutritionCardModalComponent,
     NutritionHiddenCardsSheetComponent,
@@ -191,6 +195,24 @@ export class PatientHubComponent implements OnInit {
   protected readonly offline = computed(() => !this.connectivity.online());
 
   protected readonly hospitalId = computed(() => this.context.selected()?.id ?? null);
+  /** Tiles de "Metas nutricionais" (Figma 4608:4845), calculados da meta vigente quando há aporte calculado. */
+  protected readonly targetTiles = computed(() => {
+    const a = this.adequacy();
+
+    if (a?.status !== 'available') {
+      return null;
+    }
+    const n = (v: number): string => v.toLocaleString('pt-BR', { maximumFractionDigits: 1 });
+
+    return [
+      { label: 'Calorias', unit: 'kcal/kg', value: n(a.targets.kcalPerKg) },
+      { label: 'Meta calórica', unit: 'kcal/dia', value: n(a.targets.kcalPerDay) },
+      { label: 'Proteína', unit: 'g/kg', value: n(a.targets.proteinPerKg) },
+      { label: 'Meta proteica', unit: 'g/dia', value: n(a.targets.proteinPerDay) },
+    ];
+  });
+  protected readonly weightSeries = PROVISIONAL_WEIGHT;
+  protected readonly bmiSeries = PROVISIONAL_BMI;
   protected readonly hospitalName = computed(() => this.context.selected()?.name ?? '');
   protected readonly todayLabel = computed(() => {
     const label = this.now().toLocaleDateString('pt-BR', { day: 'numeric', month: 'long', weekday: 'long' });
@@ -250,6 +272,10 @@ export class PatientHubComponent implements OnInit {
   });
 
   constructor() {
+    effect(onCleanup => {
+      onCleanup(this.screenActions.registerContext(PATIENT_HUB_CONTEXT));
+    });
+
     // A ação só existe com o paciente carregado e hospital com vínculo aprovado em contexto.
     effect(onCleanup => {
       if (this.status() === 'ready' && this.hospitalId() !== null) {

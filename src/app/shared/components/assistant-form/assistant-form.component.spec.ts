@@ -1,6 +1,7 @@
 import { type ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { AssistantFormController } from '../../services/assistant-form-controller.service';
+import { FormAssistant } from '../../services/form-assistant';
 import { type FormActionDefinition, FormSubmitError, type FormValues } from '../../services/screen-actions.service';
 import { type DirectoryUser, UserDirectory } from '../../services/user-directory';
 import { AssistantFormComponent } from './assistant-form.component';
@@ -25,6 +26,17 @@ class FakeDirectory extends UserDirectory {
     const all = term === '' ? USERS : [...USERS, ...GROUPS];
 
     return Promise.resolve(all.filter(user => user.name.toLowerCase().includes(term.toLowerCase())));
+  }
+}
+
+class FakeAssistant extends FormAssistant {
+  result: FormValues | null = null;
+  calls: unknown[] = [];
+
+  fill(_: FormActionDefinition, input: unknown): Promise<FormValues | null> {
+    this.calls.push(input);
+
+    return Promise.resolve(this.result);
   }
 }
 
@@ -64,20 +76,18 @@ describe('AssistantFormComponent', () => {
     await fixture.whenStable();
     fixture.detectChanges();
   };
-  const footer = (): { label: string; disabled: boolean; click: () => Promise<void> } => {
-    const form = TestBed.inject(AssistantFormController).active();
-
-    return {
-      click: () => form?.submit() ?? Promise.resolve(),
-      disabled: !form?.canSubmit(),
-      label: form?.label() ?? '',
-    };
-  };
-  const submit = (): { disabled: boolean; textContent: string; click: () => void } => {
-    const f = footer();
-
-    return { click: () => void f.click(), disabled: f.disabled, textContent: f.label };
-  };
+  // O botão de envio fica DENTRO do formulário e só existe com todas as perguntas obrigatórias respondidas.
+  const button = (): HTMLButtonElement | null => el().querySelector('.assistant-form__submit app-button button');
+  const footer = (): { click: () => Promise<void> } => ({
+    click: async (): Promise<void> => {
+      button()?.click();
+      await fixture.whenStable();
+    },
+  });
+  const submit = (): { disabled: boolean; textContent: string } => ({
+    disabled: button() === null,
+    textContent: button()?.textContent ?? '',
+  });
   const suggestions = (): string[] =>
     Array.from(el().querySelectorAll('.assistant-form__suggestion-name')).map(e => e.textContent?.trim() ?? '');
   const pick = async (): Promise<void> => {
@@ -93,14 +103,17 @@ describe('AssistantFormComponent', () => {
     requiredMessage = 'Informe ao menos um destinatário.';
     await TestBed.configureTestingModule({
       imports: [AssistantFormComponent],
-      providers: [{ provide: UserDirectory, useValue: directory }],
+      providers: [
+        { provide: UserDirectory, useValue: directory },
+        { provide: FormAssistant, useClass: FakeAssistant },
+      ],
     }).compileComponents();
     fixture = TestBed.createComponent(AssistantFormComponent);
     fixture.componentRef.setInput('definition', definition());
     fixture.detectChanges();
   });
 
-  it('renders one card per question, all open, and registers a disabled submit with the footer', () => {
+  it('renders one card per question, all open, and shows no submit button until the required ones are answered', () => {
     expect(el().querySelectorAll('app-accordion').length).toBe(3);
     expect(Array.from(el().querySelectorAll('.accordion__header')).map(h => h.getAttribute('aria-expanded'))).toEqual([
       'true',
@@ -109,7 +122,6 @@ describe('AssistantFormComponent', () => {
     ]);
 
     expect(submit().disabled).toBeTrue();
-    expect(submit().textContent).toContain('Criar');
   });
 
   it('typing @ opens the registered users and each letter after it narrows the list', async () => {
@@ -197,6 +209,7 @@ describe('AssistantFormComponent', () => {
     await type(1, 'Revisar prescrição');
 
     expect(submit().disabled).toBeFalse();
+    expect(submit().textContent).toContain('Criar');
   });
 
   it('unregisters from the footer when destroyed', () => {
@@ -206,7 +219,7 @@ describe('AssistantFormComponent', () => {
   });
 
   it('ignores a submit while required answers are missing', async () => {
-    await footer().click();
+    await fixture.componentInstance.onSubmit();
 
     expect(saved).toBeNull();
   });
@@ -289,6 +302,38 @@ describe('AssistantFormComponent', () => {
     fixture.detectChanges();
 
     expect(el().querySelectorAll('.assistant-form__answer')[2].textContent).toContain('04/05/2030');
+  });
+
+  describe('preenchimento por IA (apply)', () => {
+    it('aplica texto, data e usuários marcados, ignora campos desconhecidos, e libera o envio', async () => {
+      fixture.componentInstance.apply({ date: '2026-12-01', text: 'Revisar', unknown: 'x', who: [USERS[0]] });
+      fixture.detectChanges();
+
+      expect(el().querySelector('.assistant-form__chip')?.textContent).toContain('Jairo Nepomuceno');
+      expect(submit().disabled).toBeFalse();
+    });
+
+    it('um valor ausente não apaga o que o usuário já preencheu', async () => {
+      await type(1, 'Meu texto');
+      fixture.componentInstance.apply({ who: [USERS[1]] });
+      fixture.detectChanges();
+
+      expect(input(1).value).toBe('Meu texto');
+    });
+  });
+
+  it('o rodapé aciona o preenchimento pelo controlador: com IA os campos são preenchidos', async () => {
+    const controller = TestBed.inject(AssistantFormController);
+    const assistant = TestBed.inject(FormAssistant) as FakeAssistant;
+
+    assistant.result = { text: 'Preenchido pela IA', who: [USERS[0]] };
+    const done = await controller.assist({ text: 'avisar o Jairo' });
+
+    fixture.detectChanges();
+
+    expect(done).toBeTrue();
+    expect(assistant.calls.length).toBe(1);
+    expect(submit().disabled).toBeFalse();
   });
 
   describe('sugestão de destinatários', () => {
