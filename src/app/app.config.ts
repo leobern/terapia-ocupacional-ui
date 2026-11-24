@@ -32,15 +32,13 @@ import { ProfessionalProfileReader } from './features/home/professional-profile'
 import { ProvisionalDailyPatientsSource } from './features/home/provisional-daily-patients';
 import { UnreadNotificationsReader } from './features/home/unread-notifications-reader';
 import { HospitalInvitePort, ManagerAccessReader } from './features/hospital-team/hospital-invite-port';
+import { ProfessionalAccessApiService } from './features/hospital-team/professional-access-api.service';
 import { ProfessionalAccessRevoker, ProfessionalAccessSource } from './features/hospital-team/professional-access-port';
 import {
   ProvisionalHospitalInvite,
   ProvisionalManagerAccess,
 } from './features/hospital-team/provisional-hospital-invite';
-import {
-  ProvisionalProfessionalAccess,
-  ProvisionalProfessionalRevoker,
-} from './features/hospital-team/provisional-professional-access';
+import { ProvisionalProfessionalAccess } from './features/hospital-team/provisional-professional-access';
 import { AnnouncementAssistant } from './features/notifications/assistant/announcement-assistant';
 import { PendingNotificationsQueryResolver } from './features/notifications/assistant/pending-notifications-query.resolver';
 import { ProvisionalAnnouncementAssistant } from './features/notifications/assistant/provisional-announcement-assistant';
@@ -187,7 +185,7 @@ export const appConfig: ApplicationConfig = {
     { provide: HospitalInvitePort, useClass: ProvisionalHospitalInvite },
     ProvisionalProfessionalAccess,
     { provide: ProfessionalAccessSource, useExisting: ProvisionalProfessionalAccess },
-    { provide: ProfessionalAccessRevoker, useClass: ProvisionalProfessionalRevoker },
+    { provide: ProfessionalAccessRevoker, useClass: ProfessionalAccessApiService },
     { provide: ManagerAccessReader, useClass: ProvisionalManagerAccess },
     { provide: UserDirectory, useClass: ProvisionalUserDirectory },
     { provide: AnnouncementAssistant, useClass: ProvisionalAnnouncementAssistant },

@@ -1,0 +1,107 @@
+openapi: 3.0.3
+info:
+  title: Vínculos com Hospitais API
+  version: 1.0.0
+  description: >
+    Contrato da US-001-2-04 (Ter acesso revogado pelo gestor). A revogação é
+    imediata (RN01), o vínculo muda para REVOGADO e o histórico é mantido
+    (RN02). Motivo da revogação não faz parte do contrato (ponto em aberto).
+servers:
+  - url: /
+security:
+  - bearerAuth: []
+paths:
+  /api/v1/hospitais/{hospitalId}/profissionais/{usuarioId}/revogacao:
+    post:
+      operationId: revogarAcessoProfissional
+      x-implemented: true
+      summary: Revoga o acesso aprovado de um profissional ao hospital (apenas GESTOR)
+      tags: [Vínculos]
+      parameters:
+        - name: hospitalId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: usuarioId
+          in: path
+          required: true
+          description: Identificador do profissional cujo acesso será revogado
+          schema:
+            type: integer
+            format: int64
+      responses:
+        "200":
+          description: Vínculo revogado com efeito imediato; o profissional é notificado (US-001-2-03)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VinculoRevogado"
+        "401":
+          description: Não autenticado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Usuário autenticado não é GESTOR
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Hospital, profissional ou vínculo inexistente
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
+          description: Vínculo não está APROVADO (pendente ou já revogado)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    StatusVinculo:
+      type: string
+      enum: [AGUARDANDO_APROVACAO, APROVADO, REVOGADO]
+    VinculoRevogado:
+      type: object
+      required: [vinculoId, hospitalId, usuarioId, status, updatedAt]
+      properties:
+        vinculoId:
+          type: integer
+          format: int64
+        hospitalId:
+          type: integer
+          format: int64
+        usuarioId:
+          type: integer
+          format: int64
+        status:
+          $ref: "#/components/schemas/StatusVinculo"
+          description: Sempre REVOGADO nesta resposta
+        updatedAt:
+          type: string
+          format: date-time
+    ErrorResponse:
+      type: object
+      required: [message, timestamp]
+      properties:
+        message:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+        detalhes:
+          type: array
+          nullable: true
+          items:
+            type: string
