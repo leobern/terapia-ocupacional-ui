@@ -33,6 +33,8 @@ export interface NotificationsState {
   submitting: boolean;
   /** Erro do último envio, se houver — exibido no bottom sheet (não a tela cheia). */
   answerErrorMessage: string | null;
+  /** Falha ao resolver a thread (texto; a thread permanece pendente). */
+  resolveErrorMessage: string | null;
   /** Diálogo "Descartar resposta não enviada?" pendente (FR-010a/FR-004b). */
   discardConfirmPending: boolean;
 }
@@ -55,6 +57,7 @@ export const initialNotificationsState: NotificationsState = {
   draftText: '',
   submitting: false,
   answerErrorMessage: null,
+  resolveErrorMessage: null,
   discardConfirmPending: false,
 };
 
@@ -260,9 +263,16 @@ export const notificationsFeature = createFeature({
       discardConfirmPending: false,
     })),
 
-    on(NotificationsActions.resolveSuccess, (state, { notificationId }): NotificationsState =>
-      resolveNotification(state, notificationId),
-    ),
+    on(NotificationsActions.resolveRequested, (state): NotificationsState => ({ ...state, resolveErrorMessage: null })),
+    on(NotificationsActions.resolveSuccess, (state, { notificationId }): NotificationsState => {
+      const next = resolveNotification(state, notificationId);
+
+      return next === state ? state : { ...next, resolveErrorMessage: null };
+    }),
+    on(NotificationsActions.resolveFailure, (state, { message }): NotificationsState => ({
+      ...state,
+      resolveErrorMessage: message,
+    })),
     on(NotificationsActions.discardConfirmationRequested, (state): NotificationsState => ({
       ...state,
       discardConfirmPending: hasUnsavedDraft(state),
@@ -293,6 +303,7 @@ export const {
   selectDraftText,
   selectSubmitting,
   selectAnswerErrorMessage,
+  selectResolveErrorMessage,
   selectDiscardConfirmPending,
 } = notificationsFeature;
 

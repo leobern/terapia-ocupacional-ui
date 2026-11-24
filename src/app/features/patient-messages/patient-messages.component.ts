@@ -1,12 +1,14 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input, OnInit, signal } from '@angular/core';
 
 import { ButtonComponent } from '../../shared/components/button/button.component';
+import { ConfirmDialogComponent } from '../../shared/components/confirm-dialog/confirm-dialog.component';
 import { InputChatAudioError, InputChatComponent } from '../../shared/components/input-chat/input-chat.component';
 import { ConnectivityService } from '../../shared/services/connectivity.service';
 import { NOW, ProfessionalProfileReader } from '../home/professional-profile';
 import {
   formatDateTime,
   isOverdue,
+  isThreadParticipant,
   MessageThread,
   REPLY_AUDIO_EMPTY_HINT,
   REPLY_AUDIO_FAILED_HINT,
@@ -15,6 +17,8 @@ import {
   REPLY_MIC_FAILED_HINT,
   REPLY_OFFLINE_HINT,
   ReplyOrigin,
+  RESOLVE_FAILED_HINT,
+  RESOLVE_OFFLINE_HINT,
   THREADS_EMPTY_TEXT,
   THREADS_LOAD_FAILED_HINT,
 } from './patient-messages.models';
@@ -29,7 +33,7 @@ type LoadState = 'loading' | 'ready' | 'error';
  */
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ButtonComponent, InputChatComponent],
+  imports: [ButtonComponent, ConfirmDialogComponent, InputChatComponent],
   selector: 'app-patient-threads',
   styleUrl: './patient-messages.component.scss',
   templateUrl: './patient-messages.component.html',
@@ -45,6 +49,10 @@ export class PatientThreadsComponent implements OnInit {
   protected readonly notices = signal<Readonly<Record<string, string>>>({});
   protected readonly sendingId = signal<string | null>(null);
   protected readonly transcribingId = signal<string | null>(null);
+  /** Thread aguardando a confirmação de "Resolver" (null = diálogo fechado). */
+  protected readonly resolveConfirmId = signal<string | null>(null);
+  protected readonly resolveNotices = signal<Readonly<Record<string, string>>>({});
+  protected readonly resolveOfflineHint = RESOLVE_OFFLINE_HINT;
   protected readonly connectivity = inject(ConnectivityService);
   protected readonly loadFailedHint = THREADS_LOAD_FAILED_HINT;
   protected readonly emptyText = THREADS_EMPTY_TEXT;
@@ -101,6 +109,43 @@ export class PatientThreadsComponent implements OnInit {
     return thread.resolved ? 'Resolvida' : 'Ativa';
   }
 
+  protected canResolve(thread: MessageThread): boolean {
+    return !thread.resolved && isThreadParticipant(thread, this.profile.read().name);
+  }
+
+  protected onResolveClick(thread: MessageThread): void {
+    if (this.connectivity.online() && this.canResolve(thread)) {
+      this.resolveConfirmId.set(thread.id);
+    }
+  }
+
+  protected onCancelResolve(): void {
+    this.resolveConfirmId.set(null);
+  }
+
+  /** "Sim": grava a resolução; se falhar, a thread continua ativa e o erro aparece em texto. */
+  protected async onConfirmResolve(): Promise<void> {
+    const id = this.resolveConfirmId();
+    const thread = this.threads().find(t => t.id === id);
+
+    this.resolveConfirmId.set(null);
+    if (thread === undefined || !this.connectivity.online() || !this.canResolve(thread)) {
+      return;
+    }
+    this.setResolveNotice(thread.id, null);
+    try {
+      const updated = await this.writer.resolve({
+        at: this.now().toISOString(),
+        author: this.profile.read().name,
+        threadId: thread.id,
+      });
+
+      this.threads.update(list => list.map(t => (t.id === updated.id ? updated : t)));
+    } catch {
+      this.setResolveNotice(thread.id, RESOLVE_FAILED_HINT);
+    }
+  }
+
   protected async send(thread: MessageThread): Promise<void> {
     if (!this.canSend(thread.id)) {
       return;
@@ -152,6 +197,14 @@ export class PatientThreadsComponent implements OnInit {
 
   protected onAudioError(thread: MessageThread, reason: InputChatAudioError): void {
     this.setNotice(thread.id, reason === 'permission-denied' ? REPLY_MIC_DENIED_HINT : REPLY_MIC_FAILED_HINT);
+  }
+
+  private setResolveNotice(id: string, message: string | null): void {
+    this.resolveNotices.update(n => {
+      const rest = Object.fromEntries(Object.entries(n).filter(([key]) => key !== id));
+
+      return message === null ? rest : { ...rest, [id]: message };
+    });
   }
 
   private setNotice(id: string, message: string | null): void {

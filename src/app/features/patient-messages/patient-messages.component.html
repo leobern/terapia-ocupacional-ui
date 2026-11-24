@@ -41,6 +41,35 @@
               }
             </span>
           </header>
+          @if (canResolve(thread)) {
+            <app-button
+              size="md"
+              kind="primary"
+              appearance="outlined"
+              iconLeft="check"
+              label="Marcar como resolvida"
+              data-testid="resolve-thread"
+              [disabled]="!connectivity.online()"
+              (click)="onResolveClick(thread)"
+            />
+            @if (!connectivity.online()) {
+              <p
+                class="messages__status messages__status--warning"
+                role="status"
+              >
+                {{ resolveOfflineHint }}
+              </p>
+            }
+          }
+          @if (resolveNotices()[thread.id]; as notice) {
+            <p
+              class="messages__status messages__status--warning"
+              role="alert"
+              data-testid="resolve-error"
+            >
+              {{ notice }}
+            </p>
+          }
           <p class="thread__to">Para: {{ thread.recipients.join(', ') }}</p>
           <p class="thread__text">{{ thread.text }}</p>
 
@@ -122,3 +151,13 @@
     }
   }
 </section>
+
+<app-confirm-dialog
+  title="Resolver thread?"
+  message="Deseja realmente marcar esta thread como resolvida?"
+  confirmLabel="Sim"
+  cancelLabel="Não"
+  [open]="resolveConfirmId() !== null"
+  (confirmed)="onConfirmResolve()"
+  (cancelled)="onCancelResolve()"
+/>

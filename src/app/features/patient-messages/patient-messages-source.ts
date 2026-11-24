@@ -1,4 +1,4 @@
-import { MessageThread, ThreadReplyRequest } from './patient-messages.models';
+import { MessageThread, ThreadReplyRequest, ThreadResolveRequest } from './patient-messages.models';
 
 /** Porta de leitura das threads do paciente. Sem contrato de API: a real substitui a provisória. */
 export abstract class PatientMessagesSource {
@@ -14,6 +14,11 @@ export abstract class PatientMessagesSource {
  */
 export abstract class PatientMessagesWriter {
   abstract reply(request: ThreadReplyRequest): Promise<MessageThread>;
+  /**
+   * Marca a thread como resolvida e registra autor e data/hora (FR-014). É o registro único lido pelo card do
+   * Hub e pela lista de notificações. Rejeita quando a gravação falha (a thread continua ativa); exige conexão.
+   */
+  abstract resolve(request: ThreadResolveRequest): Promise<MessageThread>;
 }
 
 /** Porta de transcrição do áudio da resposta (IA fora de escopo). Devolve '' se nada foi reconhecido; rejeita se falhar. */

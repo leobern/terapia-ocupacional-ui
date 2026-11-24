@@ -8,6 +8,7 @@ import { MockStore, provideMockStore } from '@ngrx/store/testing';
 import { Subject } from 'rxjs';
 
 import { AiAssistantService } from '../../shared/services/ai-assistant.service';
+import { ConnectivityService } from '../../shared/services/connectivity.service';
 import { ScreenActionsService } from '../../shared/services/screen-actions.service';
 import { ViewportBreakpointService } from '../../shared/services/viewport-breakpoint.service';
 import { HospitalContextService } from '../home/hospital-context.service';
@@ -26,6 +27,7 @@ function notification(id: number, overrides: Partial<Notification> = {}): Notifi
     description: 'Descrição ' + id,
     createdAt: new Date().toISOString(),
     read: false,
+    mentioned: [{ id: 4, name: 'Michelle Franklin', specialty: 'Nutróloga', photoUrl: null }],
     replyCount: 0,
     replies: [],
     ...overrides,
@@ -310,6 +312,73 @@ describe('NotificationsComponent', () => {
     fixture.componentInstance.onConfirmResolve();
 
     expect(store.dispatch).toHaveBeenCalledWith(NotificationsActions.resolveRequested({ notificationId: 7 }));
+  });
+
+  describe('resolver thread (FR-012 a FR-014)', () => {
+    const me = { id: 4, name: 'Michelle Franklin', specialty: 'Nutróloga', photoUrl: null };
+    const other = { id: 9, name: 'Outro', specialty: 'Médico', photoUrl: null };
+    const resolveButtons = (): NodeListOf<HTMLElement> =>
+      (fixture.nativeElement as HTMLElement).querySelectorAll('button[aria-label="Resolver"]');
+
+    it('participante (remetente, mencionado ou que respondeu) vê o indicador; quem não participa não vê', async () => {
+      await configureStore({
+        status: 'success',
+        pendingItems: [
+          notification(1, { author: me, mentioned: [] }),
+          notification(2),
+          notification(3, {
+            mentioned: undefined,
+            replies: [{ id: 1, author: me, text: 'ok', createdAt: new Date().toISOString() }],
+          }),
+          notification(4, { mentioned: [other] }),
+        ],
+      });
+      createComponent();
+      fixture.detectChanges();
+
+      expect(resolveButtons().length).toBe(3);
+    });
+
+    it('sem conexão o indicador fica desabilitado e nada é despachado', async () => {
+      await configureStore({ status: 'success', pendingItems: [notification(1)] });
+      createComponent();
+      const online = TestBed.inject(ConnectivityService).online;
+
+      online.set(false);
+      fixture.detectChanges();
+      spyOn(store, 'dispatch');
+
+      expect(resolveButtons()[0].hasAttribute('disabled')).toBeTrue();
+      fixture.componentInstance.onResolveClick(1);
+      fixture.componentInstance.onConfirmResolve();
+
+      expect(store.dispatch).not.toHaveBeenCalled();
+      online.set(true);
+    });
+
+    it('confirmar sem diálogo aberto não despacha', async () => {
+      await configureStore({ status: 'success' });
+      createComponent();
+      spyOn(store, 'dispatch');
+
+      fixture.componentInstance.onConfirmResolve();
+
+      expect(store.dispatch).not.toHaveBeenCalled();
+    });
+
+    it('falha ao resolver mostra a mensagem de erro em texto', async () => {
+      await configureStore({
+        status: 'success',
+        pendingItems: [notification(1)],
+        resolveErrorMessage: 'Não foi possível resolver a notificação.',
+      });
+      createComponent();
+      fixture.detectChanges();
+
+      expect((fixture.nativeElement as HTMLElement).querySelector('[role="alert"]')?.textContent).toContain(
+        'Não foi possível resolver',
+      );
+    });
   });
 
   it('"Não" no diálogo de Resolver não despacha nada', async () => {

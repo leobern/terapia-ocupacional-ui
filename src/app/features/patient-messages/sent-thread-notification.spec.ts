@@ -1,5 +1,5 @@
 import { MessageThread } from './patient-messages.models';
-import { sentThreadStatusText, sentThreadToNotification } from './sent-thread-notification';
+import { isSentThreadNotification, sentThreadStatusText, sentThreadToNotification } from './sent-thread-notification';
 
 const thread: MessageThread = {
   at: '2026-11-20T10:00:00.000Z',
@@ -33,5 +33,12 @@ describe('sent-thread-notification', () => {
     expect(n.description).toBe('Ativa · 1 resposta — Oi');
     expect(n.replyCount).toBe(1);
     expect(n.replies[0].text).toBe('ok');
+  });
+});
+
+describe('isSentThreadNotification', () => {
+  it('é verdadeiro só para notificações geradas de threads enviadas (id negativo)', () => {
+    expect(isSentThreadNotification(sentThreadToNotification(thread))).toBeTrue();
+    expect(isSentThreadNotification({ ...sentThreadToNotification(thread), id: 5 })).toBeFalse();
   });
 });

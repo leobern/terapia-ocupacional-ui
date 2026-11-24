@@ -8,13 +8,19 @@ info:
     terapia-ocupacional-ui/openapitools.json. Servido pelo módulo
     pt.terapiaocupacional.home (backend) — Notificacao já é dono deste módulo desde a
     Home (research.md §1), esta feature estende com respostas e listagem por status.
+servers:
+  - url: /
+security:
+  - bearerAuth: []
 paths:
   /api/v1/notifications:
     get:
       operationId: getNotifications
+      x-implemented: true
       summary: >
-        Lista paginada de notificações do profissional autenticado, filtrada por status
-        (pendente/resolvida — FR-004a). Cada seção da tela pagina de forma independente.
+        Lista paginada (mensagens/pendências de paciente + comunicados internos) do profissional
+        autenticado, filtrada por status (pending = aba Ativas, resolved = aba Resolvidas).
+        Cada aba pagina de forma independente; também devolve o contador de não lidas.
       parameters:
         - name: hospitalId
           in: query
@@ -41,6 +47,12 @@ paths:
             default: 10
             maximum: 10
       responses:
+        "400":
+          description: Cursor inválido ou limit fora de 1..10
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
         "200":
           description: >
             Lote de até 10 notificações daquele status, ordenadas da mais recente para a
@@ -51,12 +63,21 @@ paths:
                 $ref: "#/components/schemas/NotificationPage"
         "401":
           description: Não autenticado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
         "403":
           description: Profissional sem vínculo com o hospital informado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 
   /api/v1/notifications/{notificationId}/replies:
     post:
       operationId: createNotificationReply
+      x-implemented: false
       summary: >
         Registra a resposta do profissional autenticado a uma notificação (FR-009); move a
         notificação da seção Pendentes para Resolvidas.
@@ -82,28 +103,158 @@ paths:
                 $ref: "#/components/schemas/NotificationReply"
         "401":
           description: Não autenticado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
         "403":
           description: >
             Profissional sem vínculo com o hospital da notificação, ou notificação não
             direcionada a este profissional (destinatarioId ≠ subject do JWT)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
         "404":
           description: Notificação não encontrada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
         "422":
           description: "Corpo inválido (ex.: texto vazio)"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/v1/notifications/{notificationId}/read:
+    put:
+      operationId: markNotificationAsRead
+      x-implemented: true
+      summary: Marca a notificação como lida para o profissional autenticado (idempotente)
+      parameters:
+        - name: notificationId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        "204":
+          description: Notificação marcada como lida (ou já estava lida)
+        "401":
+          description: Não autenticado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Notificação não direcionada a este profissional
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Notificação não encontrada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /api/v1/notifications/{notificationId}/resolve:
+    post:
+      operationId: resolveNotification
+      x-implemented: true
+      summary: Marca a thread/pendência como resolvida (registro compartilhado com o Hub do paciente)
+      description: >
+        Permitido a qualquer participante da thread: remetente original, destinatário
+        mencionado (pessoa, ou membro de grupo resolvido) ou quem já respondeu. Não exige
+        abrir a conversa nem corpo de requisição. O status é um único registro
+        compartilhado — o mesmo valor aparece na lista de notificações e no card do Hub do
+        paciente. Persiste autor e data/hora da ação em trilha de auditoria imutável
+        (FR-014). Idempotente: se a thread já está resolvida, retorna 200 com o estado
+        atual, sem nova entrada de auditoria. Uma nova resposta reabre a thread
+        (comportamento da US-005-1-02, fora desta operação).
+      parameters:
+        - name: notificationId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        "200":
+          description: Thread resolvida; retorna o registro atualizado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Notification"
+        "401":
+          description: Não autenticado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Profissional sem vínculo com o hospital/paciente, ou não é participante da thread
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Notificação não encontrada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 
 components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
   schemas:
+    ErrorResponse:
+      type: object
+      required: [message, timestamp]
+      properties:
+        message:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+        detalhes:
+          type: array
+          nullable: true
+          items:
+            type: string
+
+    NotificationType:
+      type: string
+      enum: [patient_message, reevaluation_pending, internal_notice]
+      description: >
+        patient_message e reevaluation_pending vêm da FT-005-1 (somente exibidos aqui);
+        internal_notice é o comunicado interno, sem paciente.
     NotificationStatus:
       type: string
       enum: [pending, resolved]
       description: >
-        pending = nenhuma resposta registrada; resolved = ao menos 1 resposta registrada
-        (status derivado, não uma coluna persistida — ver data-model.md).
+        pending = thread ativa; resolved = thread marcada como resolvida por um participante
+        (POST .../resolve) e não reaberta por resposta posterior. Revisão da US-005-1-03:
+        o status passa a ser o registro compartilhado de resolução (resolvedAt), não mais
+        derivado apenas da existência de respostas.
 
     NotificationPage:
       type: object
-      required: [items, nextCursor]
+      required: [items, nextCursor, unreadCount]
       properties:
+        unreadCount:
+          type: integer
+          minimum: 0
+          description: >
+            Total de notificações não lidas do profissional neste hospital, somando mensagens/pendências
+            de paciente e comunicados internos (independe de status/cursor).
         items:
           type: array
           items:
@@ -115,9 +266,9 @@ components:
 
     Notification:
       type: object
-      required: [id, author, patient, description, createdAt, read, replyCount]
+      required: [id, type, author, description, createdAt, read, replyCount]
       description: >
-        `patient` é required nesta v1 porque o único `tipoEvento` suportado hoje é
+        `patient` é opcional: ausente quando type = internal_notice. Antes era required porque o único `tipoEvento` suportado hoje é
         relacionado a paciente (spec.md FR-006) — mas a coluna correspondente no banco
         (`notificacao.paciente_id`) já é nullable, de propósito, para permitir tipos de
         notificação futuros sem paciente associado (research.md §4, spec.md § Assumptions).
@@ -130,8 +281,13 @@ components:
           format: int64
         author:
           $ref: "#/components/schemas/ProfessionalRef"
+        type:
+          $ref: "#/components/schemas/NotificationType"
         patient:
           $ref: "#/components/schemas/PatientRef"
+        overdue:
+          type: boolean
+          description: true para pendência de reavaliação vencida (indicador definido na FT-005-1)
         description:
           type: string
         createdAt:
