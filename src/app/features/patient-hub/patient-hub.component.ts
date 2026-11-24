@@ -17,6 +17,7 @@ import { DailyAdequacyService } from '../daily-evolution/adequacy/daily-adequacy
 import { DiagnosisSource } from '../diagnosis/diagnosis-source';
 import { FollowUpStatusComponent } from '../follow-up-closure/follow-up-status.component';
 import { HospitalContextService } from '../home/hospital-context.service';
+import { LinkRevocationChecker } from '../home/link-revocation-checker';
 import { NOW, ProfessionalProfileReader } from '../home/professional-profile';
 import { PatientThreadsComponent } from '../patient-messages/patient-messages.component';
 import {
@@ -232,6 +233,7 @@ export class PatientHubComponent implements OnInit {
   private readonly adequacyService = inject(DailyAdequacyService);
   private pullFrom: number | null = null;
   private readonly context = inject(HospitalContextService);
+  private readonly revocation = inject(LinkRevocationChecker);
   private readonly location = inject(Location);
   private readonly router = inject(Router);
   private readonly diagnosisSource = inject(DiagnosisSource);
@@ -606,8 +608,12 @@ export class PatientHubComponent implements OnInit {
     } catch (failure) {
       const hospital = this.context.selected();
 
-      if ((failure as { status?: number }).status === 403 && hospital !== null) {
-        // Acesso negado = vínculo revogado: não exibe dado algum (US-001-2-04, Cenário 2).
+      // 403 também é "sem permissão": só vira revogação se o vínculo constar como REVOGADO (US-001-2-04, Cenário 2).
+      if (
+        (failure as { status?: number }).status === 403 &&
+        hospital !== null &&
+        (await this.revocation.isRevoked(hospital.id))
+      ) {
         this.revokedName.set(hospital.name);
         this.context.revokeAccess(hospital.id);
         this.status.set('revoked');

@@ -10,6 +10,7 @@ import { HomeData, HomeDataSource } from './home-data-source';
 import { HomeNotificationsSource } from './home-notifications-source';
 import { HomeStateService } from './home-state.service';
 import { HospitalContextService } from './hospital-context.service';
+import { LinkRevocationChecker } from './link-revocation-checker';
 import { LinkedHospital, LinkedHospitalsReader } from './linked-hospitals';
 import { LocalProfessionalProfileReader } from './local-professional-profile-reader';
 import { ProfessionalProfileReader } from './professional-profile';
@@ -79,6 +80,8 @@ interface SetupOptions {
   source?: Pick<HomeDataSource, 'load'>;
   summary?: DailyPatientsSummary;
   counts?: Record<number, number>;
+  /** Resposta do verificador de vínculo revogado (padrão: revogado). */
+  linkRevoked?: boolean;
 }
 
 describe('HomeComponent', () => {
@@ -101,6 +104,7 @@ describe('HomeComponent', () => {
       summary,
       counts = {},
       feed = new FakeNotifications(),
+      linkRevoked = true,
     } = options;
 
     notifications = feed;
@@ -117,6 +121,10 @@ describe('HomeComponent', () => {
         provideRouter([]),
         { provide: DailyPatientsSource, useValue: patients },
         { provide: HomeNotificationsSource, useValue: feed },
+        {
+          provide: LinkRevocationChecker,
+          useValue: { isRevoked: (): Promise<boolean> => Promise.resolve(linkRevoked) },
+        },
         ...(source ? [{ provide: HomeDataSource, useValue: source }] : []),
         { provide: ProfessionalProfileReader, useClass: LocalProfessionalProfileReader },
         {
@@ -539,6 +547,19 @@ describe('HomeComponent', () => {
       expect(q('.home__stale-banner')?.textContent).toContain(`Seu acesso a ${HOSPITALS[0].name} foi revogado`);
     });
 
+    it('403 sem vínculo revogado (ex.: não é gestor) não troca o hospital: sinaliza dados desatualizados', async () => {
+      const feed = new FakeNotifications();
+
+      feed.loadPage = (): Promise<NotificationPage> => Promise.reject({ status: 403 });
+      await setup({ feed, hospitals: HOSPITALS, linkRevoked: false });
+      await fixture.whenStable();
+      fixture.detectChanges();
+
+      expect(TestBed.inject(HospitalContextService).selected()).toEqual(HOSPITALS[0]);
+      expect(TestBed.inject(HospitalContextService).hospitals()).toEqual([...HOSPITALS]);
+      expect(fixture.componentInstance.stale()).toBeTrue();
+    });
+
     it('flags stale data (without the generic error) when the first batch fails', async () => {
       const feed = new FakeNotifications();
 
@@ -882,6 +903,7 @@ describe('HomeComponent', () => {
           provideRouter([]),
           { provide: DailyPatientsSource, useValue: new FakePatients() },
           { provide: HomeNotificationsSource, useValue: new FakeNotifications() },
+          { provide: LinkRevocationChecker, useValue: { isRevoked: (): Promise<boolean> => Promise.resolve(false) } },
           { provide: ProfessionalProfileReader, useClass: LocalProfessionalProfileReader },
           { provide: ManagerAccessReader, useValue: { isManager: (): boolean => true } },
           {

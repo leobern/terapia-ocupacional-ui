@@ -13,6 +13,7 @@ import { DiagnosisSource } from '../diagnosis/diagnosis-source';
 import { FollowUpClosureSource, FollowUpClosureWriter } from '../follow-up-closure/follow-up-closure-source';
 import { ProvisionalFollowUpClosureSource } from '../follow-up-closure/provisional-follow-up-closure';
 import { HospitalContextService } from '../home/hospital-context.service';
+import { LinkRevocationChecker } from '../home/link-revocation-checker';
 import { LinkedHospitalsReader } from '../home/linked-hospitals';
 import { NOW, ProfessionalProfileReader } from '../home/professional-profile';
 import {
@@ -74,6 +75,7 @@ const PROFILE: PatientHubProfile = {
   ward: 'Ala 2',
 };
 
+const revocation = { revoked: true, isRevoked: (): Promise<boolean> => Promise.resolve(revocation.revoked) };
 const locationMock = { back: jasmine.createSpy('back') };
 
 class FakeSource extends PatientHubSource {
@@ -239,6 +241,7 @@ async function setup(
       { provide: Location, useValue: locationMock },
       { provide: ActivatedRoute, useValue: { paramMap: of(convertToParamMap(id === null ? {} : { id })) } },
       { provide: PatientHubSource, useValue: source },
+      { provide: LinkRevocationChecker, useValue: revocation },
       { provide: NutritionResultsSource, useValue: results },
       { provide: DailyAdequacyService, useValue: adequacy },
       { provide: NutritionHistorySource, useFactory: (): ProvisionalNutritionCardStore => store },
@@ -347,6 +350,7 @@ const cards = (f: ComponentFixture<unknown>): string[] =>
 
 describe('PatientHubComponent', () => {
   beforeEach(() => {
+    revocation.revoked = true;
     prescriptionStore.fail = false;
     prescriptionStore.value = null;
     store = new ProvisionalNutritionCardStore();
@@ -370,6 +374,20 @@ describe('PatientHubComponent', () => {
     expect(priorStays.calls).toEqual(['1:p1']);
     expect(text(f)).toContain('Internações anteriores');
     expect(f.nativeElement.querySelector('.stays__header').getAttribute('aria-expanded')).toBe('false');
+  });
+
+  it('403 sem vínculo revogado (ex.: sem permissão) mostra erro comum e mantém o hospital no contexto', async () => {
+    const source = new FakeSource();
+
+    source.denied = true;
+    revocation.revoked = false;
+    const f = await setup(source, 'p1', [{ id: 1, name: 'Hospital Vila Nova Star' }]);
+
+    await f.whenStable();
+    f.detectChanges();
+
+    expect(text(f)).not.toContain('foi revogado');
+    expect(TestBed.inject(HospitalContextService).selected()?.id).toBe(1);
   });
 
   it('acesso negado (403) bloqueia os dados, avisa em texto e tira o hospital do contexto (US-001-2-04)', async () => {
