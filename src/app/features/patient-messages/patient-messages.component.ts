@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject, input, OnInit, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, input, signal, untracked } from '@angular/core';
 
 import { ButtonComponent } from '../../shared/components/button/button.component';
 import { ConfirmDialogComponent } from '../../shared/components/confirm-dialog/confirm-dialog.component';
@@ -38,8 +38,10 @@ type LoadState = 'loading' | 'ready' | 'error';
   styleUrl: './patient-messages.component.scss',
   templateUrl: './patient-messages.component.html',
 })
-export class PatientThreadsComponent implements OnInit {
+export class PatientThreadsComponent {
   readonly patientId = input.required<string>();
+  /** Muda a cada mensagem enviada pelo assistente; faz a lista recarregar. */
+  readonly refreshKey = input(0);
 
   protected readonly state = signal<LoadState>('loading');
   protected readonly threads = signal<readonly MessageThread[]>([]);
@@ -67,8 +69,12 @@ export class PatientThreadsComponent implements OnInit {
   private readonly profile = inject(ProfessionalProfileReader);
   private readonly now = inject(NOW);
 
-  ngOnInit(): void {
-    void this.load();
+  constructor() {
+    effect(() => {
+      this.patientId();
+      this.refreshKey();
+      untracked(() => void this.load());
+    });
   }
 
   /** Falha com threads já carregadas (ex.: offline) mantém o que está na tela. */

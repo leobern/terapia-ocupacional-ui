@@ -5,7 +5,12 @@ import { InputChatComponent } from '../../shared/components/input-chat/input-cha
 import { ConnectivityService } from '../../shared/services/connectivity.service';
 import { NOW, ProfessionalProfileReader } from '../home/professional-profile';
 import { PatientThreadsComponent } from './patient-messages.component';
-import { MessageThread, ThreadReplyRequest, ThreadResolveRequest } from './patient-messages.models';
+import {
+  MessageThread,
+  ThreadCreateRequest,
+  ThreadReplyRequest,
+  ThreadResolveRequest,
+} from './patient-messages.models';
 import { PatientMessagesSource, PatientMessagesWriter, ReplyTranscriber } from './patient-messages-source';
 import { ProvisionalPatientMessages } from './provisional-patient-messages';
 
@@ -77,6 +82,7 @@ describe('PatientThreadsComponent', () => {
             const real = TestBed.inject(ProvisionalPatientMessages);
 
             return {
+              create: (r: ThreadCreateRequest): Promise<MessageThread> => real.create(r),
               reply: (r: ThreadReplyRequest): Promise<MessageThread> => {
                 requests.push(r);
 
@@ -111,6 +117,25 @@ describe('PatientThreadsComponent', () => {
     expect(el().textContent).toContain('Dra. Helena Prado · ');
     expect(el().textContent).toContain('Para: @nutris');
     expect(el().textContent).toContain('resíduo gástrico elevado');
+  });
+
+  it('recarrega as threads quando uma nova mensagem é enviada (refreshKey)', async () => {
+    await create();
+    const real = TestBed.inject(ProvisionalPatientMessages);
+
+    await real.create({
+      at: '2026-11-23T10:00:00.000Z',
+      author: 'Michelle',
+      patientId: 'p1',
+      patientName: 'Lucas',
+      recipients: ['@Almira'],
+      text: 'nova mensagem do assistente',
+    });
+    fixture.componentRef.setInput('refreshKey', 1);
+    await settle();
+
+    expect(threads().length).toBe(3);
+    expect(el().textContent).toContain('nova mensagem do assistente');
   });
 
   it('cada card mostra estado em texto e "Vencida" quando o prazo passou', async () => {

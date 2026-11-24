@@ -250,7 +250,14 @@
             [patientId]="p.id"
             [canReopen]="hospitalId() !== null"
           />
-          <app-patient-threads [patientId]="p.id" />
+          <app-patient-threads
+            [patientId]="p.id"
+            [refreshKey]="messagesVersion()"
+          />
+          <app-patient-messages
+            [patientId]="p.id"
+            [refreshKey]="messagesVersion()"
+          />
           <app-assessment-section
             [patientId]="p.id"
             (concluded)="onAssessmentConcluded()"
@@ -287,10 +294,6 @@
               (saved)="reloadPrescription()"
             />
           }
-          <app-patient-messages
-            [patientId]="p.id"
-            [refreshKey]="messagesVersion()"
-          />
           <app-patient-message-sheet
             [open]="messageOpen()"
             [patientId]="p.id"

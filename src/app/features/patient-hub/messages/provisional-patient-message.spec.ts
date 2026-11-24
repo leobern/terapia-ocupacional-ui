@@ -1,6 +1,8 @@
 import { TestBed } from '@angular/core/testing';
 
 import { NotificationsRepository } from '../../notifications/data-access/notifications-repository.service';
+import { PatientMessagesWriter } from '../../patient-messages/patient-messages-source';
+import { ProvisionalPatientMessages } from '../../patient-messages/provisional-patient-messages';
 import { PatientHubSource } from '../patient-hub-source';
 import {
   ProvisionalMessageAiAssistant,
@@ -24,6 +26,8 @@ describe('provisional patient messages', () => {
     TestBed.configureTestingModule({
       providers: [
         ProvisionalPatientMessageSource,
+        ProvisionalPatientMessages,
+        { provide: PatientMessagesWriter, useExisting: ProvisionalPatientMessages },
         {
           provide: PatientHubSource,
           useValue: { loadProfile: (): Promise<{ name: string }> => Promise.resolve({ name: 'Maria' }) },
@@ -52,6 +56,24 @@ describe('provisional patient messages', () => {
 
     expect(notifications.list('pending', null, 50).totalCount).toBe(before + 1);
     expect(notifications.list('pending', null, 1).items[0].patient).toEqual({ id: 'p1', name: 'Maria' });
+  });
+
+  it('mensagem direcionada vira uma thread do paciente; observação não', async () => {
+    const store = TestBed.inject(ProvisionalPatientMessages);
+    const before = (await store.list('p1')).length;
+
+    await source.send({ ...base, content: 'só observação', recipients: [] });
+
+    expect((await store.list('p1')).length).toBe(before);
+
+    await source.send({ ...base, content: 'pedido', recipients: [{ id: 5, name: 'Almira', specialty: 'Enfermeira' }] });
+    const threads = await store.list('p1');
+    const created = threads[threads.length - 1];
+
+    expect(threads.length).toBe(before + 1);
+    expect(created).toEqual(
+      jasmine.objectContaining({ patientName: 'Maria', recipients: ['@Almira'], text: 'pedido' }),
+    );
   });
 
   it('equipe e IA provisórias', async () => {
