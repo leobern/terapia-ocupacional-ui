@@ -317,6 +317,12 @@
       @case ('not-found') {
         <p class="hub__message" role="status">Paciente não encontrado.</p>
       }
+      @case ('revoked') {
+        <p class="hub__message" role="alert">
+          Seu acesso a {{ revokedName() }} foi revogado pelo gestor. Os dados
+          deste hospital não estão mais disponíveis.
+        </p>
+      }
       @case ('error') {
         <p class="hub__message" role="alert">
           Não foi possível carregar o paciente. Tente novamente em instantes.

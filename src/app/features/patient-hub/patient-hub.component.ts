@@ -59,7 +59,7 @@ import { PrescriptionSource } from './prescription/prescription-source';
 import { PrescriptionSummaryComponent } from './prescription/prescription-summary.component';
 import { PriorStaysBoxComponent } from './prior-stays-box/prior-stays-box.component';
 
-type HubStatus = 'loading' | 'ready' | 'not-found' | 'error';
+type HubStatus = 'loading' | 'ready' | 'not-found' | 'error' | 'revoked';
 
 /** Etapa do preenchimento da Hipótese: colar → carregando → revisão (IA) ou falha (manual). */
 type FillPhase = 'input' | 'loading' | 'review' | 'failed';
@@ -121,6 +121,7 @@ export class PatientHubComponent implements OnInit {
   protected readonly connectivity = inject(ConnectivityService);
 
   protected readonly status = signal<HubStatus>('loading');
+  protected readonly revokedName = signal('');
   protected readonly profile = signal<PatientHubProfile | null>(null);
   /** Hipótese confirmada; `null` = ainda não preenchida. */
   protected readonly hypothesis = signal<string | null>(null);
@@ -602,8 +603,17 @@ export class PatientHubComponent implements OnInit {
       this.profile.set(profile);
       this.hypothesis.set(hypothesis);
       this.status.set(profile === null ? 'not-found' : 'ready');
-    } catch {
-      this.status.set('error');
+    } catch (failure) {
+      const hospital = this.context.selected();
+
+      if ((failure as { status?: number }).status === 403 && hospital !== null) {
+        // Acesso negado = vínculo revogado: não exibe dado algum (US-001-2-04, Cenário 2).
+        this.revokedName.set(hospital.name);
+        this.context.revokeAccess(hospital.id);
+        this.status.set('revoked');
+      } else {
+        this.status.set('error');
+      }
     }
   }
 

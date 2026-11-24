@@ -523,6 +523,22 @@ describe('HomeComponent', () => {
       expect(fixture.componentInstance.notifications()).toEqual([]);
     });
 
+    it('acesso negado (403) no primeiro lote trata como revogação: troca o hospital e avisa em texto', async () => {
+      const feed = new FakeNotifications();
+      const original = feed.loadPage.bind(feed);
+
+      feed.loadPage = (hospitalId, cursor, limit): Promise<NotificationPage> =>
+        hospitalId === 1 ? Promise.reject({ status: 403 }) : original(hospitalId, cursor, limit);
+      await setup({ feed, hospitals: HOSPITALS });
+      await fixture.whenStable();
+      fixture.detectChanges();
+
+      expect(TestBed.inject(HospitalContextService).selected()).toEqual(HOSPITALS[1]);
+      expect(TestBed.inject(HospitalContextService).hospitals()).toEqual([HOSPITALS[1]]);
+      expect(fixture.componentInstance.stale()).toBeFalse();
+      expect(q('.home__stale-banner')?.textContent).toContain(`Seu acesso a ${HOSPITALS[0].name} foi revogado`);
+    });
+
     it('flags stale data (without the generic error) when the first batch fails', async () => {
       const feed = new FakeNotifications();
 
@@ -888,6 +904,14 @@ describe('HomeComponent', () => {
 
       expect(action?.label).toBe('Convidar profissional');
       expect(router.navigate).toHaveBeenCalledWith(['/hospital-team', 'invite']);
+
+      const revoke = TestBed.inject(ScreenActionsService)
+        .actions()
+        .find(a => a.id === 'revoke-professional-access');
+
+      revoke?.navigate?.();
+
+      expect(router.navigate).toHaveBeenCalledWith(['/hospital-team', 'access']);
     });
   });
 });

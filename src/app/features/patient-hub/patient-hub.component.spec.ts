@@ -80,8 +80,13 @@ class FakeSource extends PatientHubSource {
   profile: PatientHubProfile | null = PROFILE;
   hypothesis: string | null = 'Insuficiência respiratória aguda.';
   fail = false;
+  denied = false;
 
   loadProfile(): Promise<PatientHubProfile | null> {
+    if (this.denied) {
+      return Promise.reject({ status: 403 });
+    }
+
     return this.fail ? Promise.reject(new Error('x')) : Promise.resolve(this.profile);
   }
 
@@ -365,6 +370,23 @@ describe('PatientHubComponent', () => {
     expect(priorStays.calls).toEqual(['1:p1']);
     expect(text(f)).toContain('Internações anteriores');
     expect(f.nativeElement.querySelector('.stays__header').getAttribute('aria-expanded')).toBe('false');
+  });
+
+  it('acesso negado (403) bloqueia os dados, avisa em texto e tira o hospital do contexto (US-001-2-04)', async () => {
+    const source = new FakeSource();
+
+    source.denied = true;
+    const f = await setup(source, 'p1', [
+      { id: 1, name: 'Hospital Vila Nova Star' },
+      { id: 2, name: 'Hospital B' },
+    ]);
+
+    await f.whenStable();
+    f.detectChanges();
+
+    expect(text(f)).toContain('Seu acesso a Hospital Vila Nova Star foi revogado');
+    expect(text(f)).not.toContain('José Raimundo');
+    expect(TestBed.inject(HospitalContextService).selected()?.id).toBe(2);
   });
 
   describe('Prescrição ativa', () => {

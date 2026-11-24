@@ -8,4 +8,9 @@ export const HOSPITAL_TEAM_ROUTES: Routes = [
     canActivate: [managerOnlyGuard],
     loadComponent: () => import('./hospital-invite.component').then(m => m.HospitalInviteComponent),
   },
+  {
+    path: 'access',
+    canActivate: [managerOnlyGuard],
+    loadComponent: () => import('./professional-access.component').then(m => m.ProfessionalAccessComponent),
+  },
 ];
