@@ -17,6 +17,25 @@ describe('ProvisionalPatientMessages', () => {
     expect((await s.listBySender('Michelle Franklin')).length).toBe(1);
   });
 
+  it('create cria uma thread ativa, sem respostas, lida por paciente e por remetente', async () => {
+    const s = new ProvisionalPatientMessages();
+    const t = await s.create({
+      at: req.at,
+      author: 'Ana',
+      patientId: 'p9',
+      patientName: 'Maria',
+      recipients: ['@Almira'],
+      text: 'oi',
+    });
+
+    expect(t).toEqual(
+      jasmine.objectContaining({ deadline: null, id: 'thread-3', replies: [], resolved: false, statusChanges: [] }),
+    );
+
+    expect((await s.list('p9')).length).toBe(1);
+    expect((await s.listBySender('Ana')).length).toBe(1);
+  });
+
   it('reply acrescenta a resposta sem reabrir thread ativa', async () => {
     const s = new ProvisionalPatientMessages();
     const t = await s.reply(req);

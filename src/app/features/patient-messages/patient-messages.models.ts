@@ -42,6 +42,17 @@ export interface ThreadReplyRequest {
   readonly threadId: string;
 }
 
+/** Cria a thread de uma mensagem direcionada enviada pelo assistente (FT-005-1, US-005-1-01). */
+export interface ThreadCreateRequest {
+  readonly at: string;
+  readonly author: string;
+  readonly patientId: string;
+  readonly patientName: string;
+  /** Destinatários como exibidos: "@nome", "@medicos", "@todos". */
+  readonly recipients: readonly string[];
+  readonly text: string;
+}
+
 export interface ThreadResolveRequest {
   readonly at: string;
   readonly author: string;

@@ -1,6 +1,7 @@
 import { inject, Injectable } from '@angular/core';
 
 import { NotificationsRepository } from '../../notifications/data-access/notifications-repository.service';
+import { PatientMessagesWriter } from '../../patient-messages/patient-messages-source';
 import { PatientHubSource } from '../patient-hub-source';
 import { LinkedProfessional, PatientRecord, PatientRecordRequest, ProfessionalGroup } from './patient-message.models';
 import { MessageAiAssistant, PatientMessageSource, PatientTeamSource } from './patient-message-source';
@@ -30,6 +31,7 @@ export class ProvisionalPatientTeamSource extends PatientTeamSource {
 export class ProvisionalPatientMessageSource extends PatientMessageSource {
   private readonly notifications = inject(NotificationsRepository);
   private readonly hub = inject(PatientHubSource);
+  private readonly threads = inject(PatientMessagesWriter);
   private readonly store = new Map<string, readonly PatientRecord[]>();
   private sequence = 0;
 
@@ -42,11 +44,22 @@ export class ProvisionalPatientMessageSource extends PatientMessageSource {
 
     if (record.recipients.length > 0) {
       const profile = await this.hub.loadProfile(record.patientId);
+      const patient = { id: record.patientId, name: profile?.name ?? '' };
+
+      // A mensagem direcionada vira uma thread (a mesma do card de Mensagens e da lista do remetente).
+      await this.threads.create({
+        at: record.at,
+        author: record.author,
+        patientId: patient.id,
+        patientName: patient.name,
+        recipients: record.recipients.map(r => `@${r.name}`),
+        text: record.content,
+      });
 
       this.notifications.create({
         dueDate: '',
         message: record.content,
-        patient: { id: record.patientId, name: profile?.name ?? '' },
+        patient,
         recipients: record.recipients.map(r => ({ ...r, photoUrl: null })),
       });
     }

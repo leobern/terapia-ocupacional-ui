@@ -1,6 +1,11 @@
 import { Injectable } from '@angular/core';
 
-import { MessageThread, ThreadReplyRequest, ThreadResolveRequest } from './patient-messages.models';
+import {
+  MessageThread,
+  ThreadCreateRequest,
+  ThreadReplyRequest,
+  ThreadResolveRequest,
+} from './patient-messages.models';
 import { PatientMessagesSource, PatientMessagesWriter, ReplyTranscriber } from './patient-messages-source';
 
 const SEED: readonly MessageThread[] = [
@@ -44,6 +49,26 @@ export class ProvisionalPatientMessages extends PatientMessagesSource implements
 
   listBySender(author: string): Promise<readonly MessageThread[]> {
     return Promise.resolve(this.threads.filter(t => t.author === author));
+  }
+
+  create(request: ThreadCreateRequest): Promise<MessageThread> {
+    const thread: MessageThread = {
+      at: request.at,
+      author: request.author,
+      deadline: null,
+      id: `thread-${this.threads.length + 1}`,
+      patientId: request.patientId,
+      patientName: request.patientName,
+      recipients: request.recipients,
+      replies: [],
+      resolved: false,
+      statusChanges: [],
+      text: request.text,
+    };
+
+    this.threads = [...this.threads, thread];
+
+    return Promise.resolve(thread);
   }
 
   reply(request: ThreadReplyRequest): Promise<MessageThread> {
