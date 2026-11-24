@@ -1,4 +1,5 @@
 import { provideHttpClient } from '@angular/common/http';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { firstValueFrom } from 'rxjs';
 
@@ -6,23 +7,20 @@ import { NotificationsRepository } from './notifications-repository.service';
 import { ProvisionalNotificationsApiService } from './provisional-notifications-api.service';
 
 describe('Provisional notification APIs', () => {
-  it('reads pages from the in-memory repository', async () => {
-    TestBed.configureTestingModule({ providers: [provideHttpClient(), ProvisionalNotificationsApiService] });
+  it('getNotifications e markAsRead usam o cliente HTTP real (x-implemented: true)', () => {
+    TestBed.configureTestingModule({
+      providers: [provideHttpClient(), provideHttpClientTesting(), ProvisionalNotificationsApiService],
+    });
     const api = TestBed.inject(ProvisionalNotificationsApiService);
+    const http = TestBed.inject(HttpTestingController);
 
-    const page = await firstValueFrom(api.getNotifications(1, 'pending', null, 2));
-
-    expect(page.items.length).toBe(2);
-    expect(page.totalCount).toBe(TestBed.inject(NotificationsRepository).list('pending', null, 50).totalCount);
-  });
-
-  it('usa o tamanho de lote padrão (10) quando o limite não é informado', async () => {
-    TestBed.configureTestingModule({ providers: [provideHttpClient(), ProvisionalNotificationsApiService] });
-    const api = TestBed.inject(ProvisionalNotificationsApiService);
-    const repository = TestBed.inject(NotificationsRepository);
-    const page = await firstValueFrom(api.getNotifications(1, 'resolved', null));
-
-    expect(page.items.length).toBe(Math.min(10, repository.list('resolved', null, 50).totalCount));
+    api.getNotifications(1, 'pending', null).subscribe();
+    http
+      .expectOne(r => r.method === 'GET' && r.url.endsWith('/v1/notifications'))
+      .flush({ items: [], nextCursor: null });
+    api.markAsRead(7).subscribe();
+    http.expectOne(r => r.method === 'PUT' && r.url.endsWith('/v1/notifications/7/read')).flush(null);
+    http.verify();
   });
 
   it('createReply records the reply', async () => {
@@ -46,16 +44,5 @@ describe('Provisional notification APIs', () => {
 
     expect(repository.list('resolved', null, 50).totalCount).toBe(resolvedBefore + 1);
     expect(repository.list('pending', null, 50).items.some(n => n.id === target.id)).toBeFalse();
-  });
-
-  it('markAsRead marca a notificação como lida no repositório', async () => {
-    TestBed.configureTestingModule({ providers: [provideHttpClient(), ProvisionalNotificationsApiService] });
-    const api = TestBed.inject(ProvisionalNotificationsApiService);
-    const repository = TestBed.inject(NotificationsRepository);
-    const target = repository.list('pending', null, 1).items[0];
-
-    await firstValueFrom(api.markAsRead(target.id));
-
-    expect(repository.list('pending', null, 50).items.find(n => n.id === target.id)?.read).toBeTrue();
   });
 });
