@@ -1,8 +1,21 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter, Router } from '@angular/router';
 
+import { TutorialStateStore, TutorialStatus } from '../tutorial/tutorial-state';
 import { SPLASH_MIN_DISPLAY_MS, SPLASH_TIMEOUT_MS, SplashComponent } from './splash.component';
 import { LocalStartupState, StartupStateReader } from './startup-state';
+
+class FakeTutorial extends TutorialStateStore {
+  status: Promise<TutorialStatus> = Promise.resolve('CONCLUIDO');
+
+  read(): Promise<TutorialStatus> {
+    return this.status;
+  }
+
+  register(): Promise<void> {
+    return Promise.resolve();
+  }
+}
 
 class FakeReader extends StartupStateReader {
   state: LocalStartupState = { hasApprovedHospitalLink: false, isLocked: false, isSessionValid: false };
@@ -15,25 +28,36 @@ class FakeReader extends StartupStateReader {
 
 describe('SplashComponent', () => {
   let reader: FakeReader;
+  let tutorial: FakeTutorial;
   let navigate: jasmine.Spy;
   let fixture: ComponentFixture<SplashComponent>;
+
+  async function drain(times: number): Promise<void> {
+    if (times > 0) {
+      await Promise.resolve();
+      await drain(times - 1);
+    }
+  }
 
   /** Avança o relógio simulado e drena as promises pendentes. */
   async function tick(ms: number): Promise<void> {
     jasmine.clock().tick(ms);
-    await Promise.resolve();
-    await Promise.resolve();
-    await Promise.resolve();
+    await drain(8);
   }
 
   beforeEach(() => {
     jasmine.clock().install();
     spyOnProperty(navigator, 'language', 'get').and.returnValue('pt-BR');
     reader = new FakeReader();
+    tutorial = new FakeTutorial();
     reader.initialize = jasmine.createSpy('initialize').and.callFake(() => Promise.resolve());
     TestBed.configureTestingModule({
       imports: [SplashComponent],
-      providers: [provideRouter([]), { provide: StartupStateReader, useValue: reader }],
+      providers: [
+        provideRouter([]),
+        { provide: StartupStateReader, useValue: reader },
+        { provide: TutorialStateStore, useValue: tutorial },
+      ],
     });
     navigate = spyOn(TestBed.inject(Router), 'navigateByUrl').and.resolveTo(true);
   });
@@ -78,6 +102,56 @@ describe('SplashComponent', () => {
     await tick(SPLASH_MIN_DISPLAY_MS);
 
     expect(navigate).toHaveBeenCalledWith('/home', { replaceUrl: true });
+  });
+
+  it('routes to the tutorial when it is pending (first access)', async () => {
+    reader.state = { hasApprovedHospitalLink: true, isLocked: false, isSessionValid: true };
+    tutorial.status = Promise.resolve('PENDENTE');
+    open();
+    await tick(SPLASH_MIN_DISPLAY_MS);
+
+    expect(navigate).toHaveBeenCalledWith('/tutorial', { replaceUrl: true });
+  });
+
+  it('routes straight to home when the tutorial was skipped', async () => {
+    reader.state = { hasApprovedHospitalLink: true, isLocked: false, isSessionValid: true };
+    tutorial.status = Promise.resolve('PULADO');
+    open();
+    await tick(SPLASH_MIN_DISPLAY_MS);
+
+    expect(navigate).toHaveBeenCalledWith('/home', { replaceUrl: true });
+  });
+
+  it('routes to home without blocking when reading the tutorial state fails', async () => {
+    reader.state = { hasApprovedHospitalLink: true, isLocked: false, isSessionValid: true };
+    tutorial.status = Promise.reject(new Error('offline'));
+    open();
+    await tick(SPLASH_MIN_DISPLAY_MS);
+
+    expect(navigate).toHaveBeenCalledWith('/home', { replaceUrl: true });
+  });
+
+  it('does not read the tutorial before login, lock or hospital links', async () => {
+    const read = spyOn(tutorial, 'read').and.callThrough();
+
+    open();
+    await tick(SPLASH_MIN_DISPLAY_MS);
+
+    expect(read).not.toHaveBeenCalled();
+  });
+
+  it('does not navigate when destroyed while reading the tutorial', async () => {
+    reader.state = { hasApprovedHospitalLink: true, isLocked: false, isSessionValid: true };
+    let resolve!: (s: TutorialStatus) => void;
+
+    tutorial.status = new Promise<TutorialStatus>(r => (resolve = r));
+    open();
+    await tick(SPLASH_MIN_DISPLAY_MS);
+    fixture.destroy();
+    resolve('PENDENTE');
+    await tick(0);
+
+    expect(navigate).not.toHaveBeenCalled();
   });
 
   it('RN-03: routes to hospital links without approved link', async () => {

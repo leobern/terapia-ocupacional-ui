@@ -4,6 +4,7 @@ import { Router } from '@angular/router';
 import { ButtonComponent } from '../../shared/components/button/button.component';
 import { IconLogoComponent } from '../../shared/components/icon-logo/icon-logo.component';
 import { I18nService } from '../../shared/services/i18n.service';
+import { TutorialStateStore } from '../tutorial/tutorial-state';
 import { decideDestination } from './splash-destination';
 import { StartupStateReader } from './startup-state';
 
@@ -30,6 +31,7 @@ export class SplashComponent implements OnInit {
   protected readonly i18n = inject(I18nService);
 
   private readonly reader = inject(StartupStateReader);
+  private readonly tutorial = inject(TutorialStateStore);
   private readonly router = inject(Router);
   private attempt = 0;
   private timers: ReturnType<typeof setTimeout>[] = [];
@@ -60,7 +62,7 @@ export class SplashComponent implements OnInit {
     const tryNavigate = (): void => {
       if (isCurrent() && minElapsed && ready) {
         this.clearTimers();
-        void this.router.navigateByUrl(decideDestination(this.reader.readLocal()), { replaceUrl: true });
+        void this.navigate(attempt);
       }
     };
 
@@ -94,6 +96,17 @@ export class SplashComponent implements OnInit {
         }
       },
     );
+  }
+
+  private async navigate(attempt: number): Promise<void> {
+    const state = this.reader.readLocal();
+    // Só consulta o tutorial quando o acesso já levaria ao Painel; falha na leitura não bloqueia o médico.
+    const tutorialPending =
+      decideDestination(state) === '/home' && (await this.tutorial.read().catch(() => 'CONCLUIDO')) === 'PENDENTE';
+
+    if (attempt === this.attempt) {
+      await this.router.navigateByUrl(decideDestination(state, tutorialPending), { replaceUrl: true });
+    }
   }
 
   private fail(): void {
