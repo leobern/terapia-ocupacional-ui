@@ -14,6 +14,7 @@ import {
   type PatientMessageCode,
   type PatientSex,
   type RuleResult,
+  validateAdmitChoice,
   validateBirthDate,
   validateFullName,
   validateMedicalRecordNumber,
@@ -69,6 +70,17 @@ export class PatientRegistrationAction {
             optional: true,
             parse: raw => parse(validateMedicalRecordNumber(raw)),
             prompt: t('prompts.medicalRecordNumber'),
+          },
+          {
+            // US-002-1-05: internação é opcional. "Sim" só registra a escolha (values['admit']); as perguntas
+            // de internação entram aqui nas próximas stories da FT-002-1.
+            id: 'admit',
+            options: [
+              { label: t('admit.yes'), value: 'yes' },
+              { label: t('admit.no'), value: 'no' },
+            ],
+            parse: raw => parse(validateAdmitChoice(raw)),
+            prompt: t('prompts.admit'),
           },
         ],
         submit: values => this.submit(values, message),

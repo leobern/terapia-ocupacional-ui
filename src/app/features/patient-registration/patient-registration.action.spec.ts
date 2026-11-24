@@ -44,6 +44,7 @@ describe('PatientRegistrationAction (US-002-1-02)', () => {
     assistant.ask('15/09/1975');
     flow.choose(flow.options()[0]);
     flow.skip();
+    assistant.ask('não');
     await settle();
 
     expect(create).toHaveBeenCalledOnceWith({
@@ -63,6 +64,7 @@ describe('PatientRegistrationAction (US-002-1-02)', () => {
     assistant.ask('01/01/2000');
     assistant.ask('feminino');
     assistant.ask('ABC-1');
+    assistant.ask('não');
     await settle();
 
     expect(create.calls.mostRecent().args[0]).toEqual(
@@ -88,6 +90,7 @@ describe('PatientRegistrationAction (US-002-1-02)', () => {
     expect(flow.currentStep()?.id).toBe('sex');
     assistant.ask('masculino');
     assistant.ask('');
+    assistant.ask('não');
     await settle();
 
     expect(create.calls.mostRecent().args[0]).toEqual(jasmine.objectContaining({ fullName: 'Ana' }));
@@ -131,11 +134,93 @@ describe('PatientRegistrationAction (US-002-1-02)', () => {
     assistant.ask('01/01/2000');
     assistant.ask('masculino');
     assistant.ask('');
+    assistant.ask('não');
     await settle();
 
     expect(create).not.toHaveBeenCalled();
     expect(flow.canRetry()).toBeTrue();
     expect(texts().at(-1)).toBe('Não foi possível cadastrar o paciente. Tente novamente.');
+  });
+});
+
+describe('PatientRegistrationAction admit question (US-002-1-05)', () => {
+  let flow: AssistantConversationService;
+  let assistant: AiAssistantService;
+  let create: jasmine.Spy;
+  const settle = (): Promise<void> => new Promise(resolve => setTimeout(resolve));
+
+  async function toAdmitQuestion(): Promise<void> {
+    spyOnProperty(navigator, 'language').and.returnValue('pt-BR');
+    create = jasmine.createSpy('create').and.resolveTo({});
+    TestBed.configureTestingModule({
+      providers: [
+        { provide: PatientCreationPort, useValue: { create } },
+        {
+          provide: LinkedHospitalsReader,
+          useValue: { read: (): Promise<unknown> => Promise.resolve([{ id: 7, name: 'H' }]) },
+        },
+      ],
+    });
+    await TestBed.inject(HospitalContextService).load();
+    flow = TestBed.inject(AssistantConversationService);
+    assistant = TestBed.inject(AiAssistantService);
+    assistant.openAction(TestBed.inject(PatientRegistrationAction).build());
+    assistant.ask('Ana');
+    assistant.ask('01/01/2000');
+    assistant.ask('masculino');
+    assistant.ask('');
+  }
+
+  it('scenario 1: asks whether to admit after the basic data, with Sim/Não options', async () => {
+    await toAdmitQuestion();
+
+    expect(create).not.toHaveBeenCalled();
+    expect(flow.messages().at(-1)?.text).toBe('Deseja internar o paciente agora?');
+    expect(flow.options().map(o => o.label)).toEqual(['Sim', 'Não']);
+  });
+
+  it('scenarios 2 and 3: "não" saves only the fixed data and asks nothing else', async () => {
+    await toAdmitQuestion();
+    flow.choose(flow.options()[1]);
+    await settle();
+
+    expect(create).toHaveBeenCalledOnceWith({
+      birthDate: '2000-01-01',
+      fullName: 'Ana',
+      hospitalId: 7,
+      sex: 'MALE',
+    });
+
+    expect(flow.finished()).toBeTrue();
+    expect(flow.currentStep()).toBeNull();
+    expect(flow.messages().at(-1)?.text).toBe('Paciente cadastrado com sucesso.');
+  });
+
+  it('"sim" saves no admission data and asks no admission questions yet', async () => {
+    await toAdmitQuestion();
+    assistant.ask('sim');
+    await settle();
+
+    expect(create.calls.mostRecent().args[0]).not.toEqual(jasmine.objectContaining({ admit: jasmine.anything() }));
+    expect(
+      flow
+        .messages()
+        .map(m => m.text)
+        .join(' '),
+    ).not.toMatch(/leito|conv[êe]nio/iu);
+  });
+
+  it('an ambiguous answer repeats the question', async () => {
+    await toAdmitQuestion();
+    assistant.ask('talvez');
+
+    expect(create).not.toHaveBeenCalled();
+    expect(
+      flow
+        .messages()
+        .slice(-2)
+        .map(m => m.text),
+    ).toEqual(['Responda sim ou não.', 'Deseja internar o paciente agora?']);
   });
 });
 
@@ -165,6 +250,7 @@ describe('PatientRegistrationAction server errors', () => {
     assistant.ask('01/01/2000');
     assistant.ask('masculino');
     assistant.ask('');
+    assistant.ask('não');
     await settle();
   }
 

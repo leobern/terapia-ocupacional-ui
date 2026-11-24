@@ -1,4 +1,5 @@
 import {
+  validateAdmitChoice,
   validateBirthDate,
   validateFullName,
   validateMedicalRecordNumber,
@@ -40,5 +41,19 @@ describe('patient registration rules', () => {
     expect(validateMedicalRecordNumber('')).toEqual({ value: '' });
     expect(validateMedicalRecordNumber('1'.repeat(30))).toEqual({ value: '1'.repeat(30) });
     expect(validateMedicalRecordNumber('1'.repeat(31))).toEqual({ code: 'sameTooLong' });
+  });
+});
+
+describe('validateAdmitChoice', () => {
+  it('accepts yes/no in any case, with or without accent', () => {
+    expect(validateAdmitChoice('Sim')).toEqual({ value: 'yes' });
+    expect(validateAdmitChoice(' yes ')).toEqual({ value: 'yes' });
+    expect(validateAdmitChoice('NÃO')).toEqual({ value: 'no' });
+    expect(validateAdmitChoice('nao')).toEqual({ value: 'no' });
+    expect(validateAdmitChoice('no')).toEqual({ value: 'no' });
+  });
+
+  it('rejects anything else', () => {
+    expect(validateAdmitChoice('talvez')).toEqual({ code: 'admitChoice' });
   });
 });

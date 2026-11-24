@@ -7,7 +7,7 @@ export const FULL_NAME_MAX = 150;
 export const SAME_MAX = 30;
 
 /** Códigos das mensagens do sistema usados nas validações. */
-export type PatientMessageCode = 'MSG-01' | 'MSG-02' | 'MSG-03' | 'MSG-05' | 'sameTooLong';
+export type PatientMessageCode = 'MSG-01' | 'MSG-02' | 'MSG-03' | 'MSG-05' | 'admitChoice' | 'sameTooLong';
 
 export type RuleResult<T> = { readonly value: T } | { readonly code: PatientMessageCode };
 
@@ -67,4 +67,15 @@ export function validateMedicalRecordNumber(raw: string): RuleResult<string> {
   const same = raw.trim();
 
   return same.length > SAME_MAX ? { code: 'sameTooLong' } : { value: same };
+}
+
+/** Internar agora? Aceita sim/yes e não/no (rótulos das opções); qualquer outra coisa é `admitChoice`. */
+export function validateAdmitChoice(raw: string): RuleResult<'yes' | 'no'> {
+  const answer = normalize(raw);
+
+  if (answer === 'sim' || answer === 'yes') {
+    return { value: 'yes' };
+  }
+
+  return answer === 'nao' || answer === 'no' ? { value: 'no' } : { code: 'admitChoice' };
 }
