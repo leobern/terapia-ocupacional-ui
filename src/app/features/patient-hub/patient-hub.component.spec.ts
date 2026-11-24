@@ -44,6 +44,8 @@ import { DailyRecordWriter } from './daily-record/daily-record-writer';
 import { EvolutionAiStructurer } from './daily-record/evolution-ai-structurer';
 import { ParameterAiStructurer } from './daily-record/parameter-ai-structurer';
 import { MessageAiAssistant, PatientMessageSource, PatientTeamSource } from './messages/patient-message-source';
+import { BedMovementPort } from './move-bed/bed-movement.port';
+import { BedNumberExtractor } from './move-bed/bed-number-extractor';
 import {
   DIAGNOSIS_FAILED_HINT,
   DIAGNOSIS_OFFLINE_HINT,
@@ -235,12 +237,17 @@ async function setup(
   hospitals: unknown[] = [{ id: 1, name: 'Hospital Vila Nova Star' }],
   role = 'doctor',
 ): Promise<ComponentFixture<PatientHubComponent>> {
+  if (!jasmine.isSpy(Object.getOwnPropertyDescriptor(navigator, 'language')?.get as () => string)) {
+    spyOnProperty(navigator, 'language').and.returnValue('pt-BR');
+  }
   TestBed.configureTestingModule({
     providers: [
       provideRouter([]),
       { provide: Location, useValue: locationMock },
       { provide: ActivatedRoute, useValue: { paramMap: of(convertToParamMap(id === null ? {} : { id })) } },
       { provide: PatientHubSource, useValue: source },
+      { provide: BedMovementPort, useValue: { resolve: (): Promise<never> => Promise.reject(new Error('x')) } },
+      { provide: BedNumberExtractor, useValue: { extract: (): null => null } },
       { provide: LinkRevocationChecker, useValue: revocation },
       { provide: NutritionResultsSource, useValue: results },
       { provide: DailyAdequacyService, useValue: adequacy },
@@ -451,6 +458,7 @@ describe('PatientHubComponent', () => {
       expect(actions.map(a => a.label)).toEqual([
         'Registro diário',
         'Observação ou mensagem',
+        'Movimentar leito',
         'Ajustar a prescrição',
         'Revisão da prescrição',
       ]);
@@ -494,7 +502,7 @@ describe('PatientHubComponent', () => {
         TestBed.inject(ScreenActionsService)
           .actions()
           .map(a => a.label),
-      ).toEqual(['Registro diário', 'Observação ou mensagem']);
+      ).toEqual(['Registro diário', 'Observação ou mensagem', 'Movimentar leito']);
     });
 
     it('médico abre a revisão da prescrição pelos atalhos e fecha com Esc', async () => {

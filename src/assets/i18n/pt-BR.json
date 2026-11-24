@@ -24,6 +24,19 @@
     "signOut": "Sair",
     "title": "Deseja sair da conta?"
   },
+  "moveBed": {
+    "messages": {
+      "MSG-11": "Este paciente ainda não possui internação registrada. É necessário internar o paciente antes de movimentar o leito.",
+      "MSG-12": "Não consegui identificar o novo leito. Pode informar o número do leito?",
+      "error": "Não foi possível processar a movimentação de leito. Tente novamente.",
+      "noCurrentBed": "não informado",
+      "resolved": "Pedido associado à internação mais recente de {patient}. Leito atual: {current}. Novo leito: {new}. A mudança ainda não foi aplicada."
+    },
+    "prompts": {
+      "bedNumber": "Para qual leito deseja movimentar o paciente?"
+    },
+    "title": "Movimentar leito"
+  },
   "notifications": {
     "fallbackTitle": "Notificação",
     "linkStatus": {
