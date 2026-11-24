@@ -10,7 +10,8 @@ export interface ProfessionalRef {
 }
 
 export interface PatientRef {
-  id: number;
+  /** Número nas notificações antigas; o id do paciente (texto) quando vem de uma mensagem do Hub. */
+  id: number | string;
   name: string;
 }
 
@@ -34,6 +35,8 @@ export interface Notification {
   description: string;
   createdAt: string;
   read: boolean;
+  /** Destinatários mencionados (pessoa, ou grupo já resolvido para pessoas) — define quem participa da thread. */
+  mentioned?: ProfessionalRef[];
   replyCount: number;
   replies: NotificationReply[];
 }

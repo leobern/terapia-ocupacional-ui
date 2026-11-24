@@ -7,6 +7,8 @@ import { provideRouterStore } from '@ngrx/router-store';
 import { provideStore } from '@ngrx/store';
 
 import { routes } from './app.routing';
+import { NoopSessionRevoker } from './features/auth/noop-session-revoker';
+import { SessionRevoker } from './features/auth/session-revoker';
 import {
   FoodRecallSource,
   InfusedIntakeSource,
@@ -37,6 +39,8 @@ import {
 import { PendingNotificationsQueryResolver } from './features/notifications/assistant/pending-notifications-query.resolver';
 import { NotificationsApiService } from './features/notifications/data-access/notifications-api.service';
 import { ProvisionalNotificationsApiService } from './features/notifications/data-access/provisional-notifications-api.service';
+import { HttpPasswordResetGateway } from './features/password-recovery/http-password-reset-gateway';
+import { PasswordResetGateway } from './features/password-recovery/password-reset-gateway';
 import { AssessmentAiStructurer } from './features/patient-hub/assessment/assessment-ai-structurer';
 import { AssessmentSource } from './features/patient-hub/assessment/assessment-source';
 import { AssessmentWriter } from './features/patient-hub/assessment/assessment-writer';
@@ -51,6 +55,16 @@ import { ProvisionalDailyEvolutionSource } from './features/patient-hub/daily-re
 import { ProvisionalDailyRecordSource } from './features/patient-hub/daily-record/provisional-daily-record-source';
 import { ProvisionalEvolutionAiStructurer } from './features/patient-hub/daily-record/provisional-evolution-ai-structurer';
 import { ProvisionalParameterAiStructurer } from './features/patient-hub/daily-record/provisional-parameter-ai-structurer';
+import {
+  MessageAiAssistant,
+  PatientMessageSource,
+  PatientTeamSource,
+} from './features/patient-hub/messages/patient-message-source';
+import {
+  ProvisionalMessageAiAssistant,
+  ProvisionalPatientMessageSource,
+  ProvisionalPatientTeamSource,
+} from './features/patient-hub/messages/provisional-patient-message';
 import {
   HypothesisSynthesizer,
   HypothesisWriter,
@@ -80,6 +94,15 @@ import { PatientListSource } from './features/patient-list/patient-list-source';
 import { ProvisionalPatientListSource } from './features/patient-list/provisional-patient-list';
 import { ProvisionalPatientListAiCommand } from './features/patient-list/provisional-patient-list-ai-command';
 import {
+  PatientMessagesSource,
+  PatientMessagesWriter,
+  ReplyTranscriber,
+} from './features/patient-messages/patient-messages-source';
+import {
+  ProvisionalPatientMessages,
+  ProvisionalReplyTranscriber,
+} from './features/patient-messages/provisional-patient-messages';
+import {
   NutritionAddedCards,
   NutritionHiddenCards,
   NutritionHistorySource,
@@ -103,11 +126,17 @@ import { UserDirectory } from './shared/services/user-directory';
 export const appConfig: ApplicationConfig = {
   providers: [
     { provide: ProfessionalProfileReader, useClass: LocalProfessionalProfileReader },
+    { provide: PasswordResetGateway, useClass: HttpPasswordResetGateway },
+    { provide: SessionRevoker, useClass: NoopSessionRevoker },
     { provide: StartupStateReader, useClass: LocalStartupStateReader },
     { provide: LinkedHospitalsReader, useClass: HomeHospitalsApiService },
     { provide: UnreadNotificationsReader, useClass: LocalUnreadNotificationsReader },
     { provide: DailyPatientsSource, useClass: ProvisionalDailyPatientsSource },
     { provide: PatientListAiCommandPort, useClass: ProvisionalPatientListAiCommand },
+    ProvisionalPatientMessages,
+    { provide: PatientMessagesSource, useExisting: ProvisionalPatientMessages },
+    { provide: PatientMessagesWriter, useExisting: ProvisionalPatientMessages },
+    { provide: ReplyTranscriber, useClass: ProvisionalReplyTranscriber },
     ProvisionalFollowUpClosureSource,
     { provide: FollowUpClosureSource, useExisting: ProvisionalFollowUpClosureSource },
     { provide: FollowUpClosureWriter, useExisting: ProvisionalFollowUpClosureSource },
@@ -128,6 +157,9 @@ export const appConfig: ApplicationConfig = {
     { provide: EvolutionAiStructurer, useClass: ProvisionalEvolutionAiStructurer },
     { provide: PrescriptionSource, useClass: ProvisionalPrescriptionSource },
     { provide: ParameterAiStructurer, useClass: ProvisionalParameterAiStructurer },
+    { provide: PatientMessageSource, useClass: ProvisionalPatientMessageSource },
+    { provide: PatientTeamSource, useClass: ProvisionalPatientTeamSource },
+    { provide: MessageAiAssistant, useClass: ProvisionalMessageAiAssistant },
     { provide: PlanSource, useClass: ProvisionalPlanSource },
     { provide: PrescriptionSource, useClass: ProvisionalPrescriptionSource },
     { provide: NutritionTargetsReader, useClass: PlanNutritionTargetsReader },

@@ -161,6 +161,53 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
+  /api/v1/notifications/{notificationId}/resolve:
+    post:
+      operationId: resolveNotification
+      x-implemented: true
+      summary: Marca a thread/pendência como resolvida (registro compartilhado com o Hub do paciente)
+      description: >
+        Permitido a qualquer participante da thread: remetente original, destinatário
+        mencionado (pessoa, ou membro de grupo resolvido) ou quem já respondeu. Não exige
+        abrir a conversa nem corpo de requisição. O status é um único registro
+        compartilhado — o mesmo valor aparece na lista de notificações e no card do Hub do
+        paciente. Persiste autor e data/hora da ação em trilha de auditoria imutável
+        (FR-014). Idempotente: se a thread já está resolvida, retorna 200 com o estado
+        atual, sem nova entrada de auditoria. Uma nova resposta reabre a thread
+        (comportamento da US-005-1-02, fora desta operação).
+      parameters:
+        - name: notificationId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        "200":
+          description: Thread resolvida; retorna o registro atualizado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Notification"
+        "401":
+          description: Não autenticado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Profissional sem vínculo com o hospital/paciente, ou não é participante da thread
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Notificação não encontrada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
 components:
   securitySchemes:
     bearerAuth:
@@ -193,8 +240,10 @@ components:
       type: string
       enum: [pending, resolved]
       description: >
-        pending = nenhuma resposta registrada; resolved = ao menos 1 resposta registrada
-        (status derivado, não uma coluna persistida — ver data-model.md).
+        pending = thread ativa; resolved = thread marcada como resolvida por um participante
+        (POST .../resolve) e não reaberta por resposta posterior. Revisão da US-005-1-03:
+        o status passa a ser o registro compartilhado de resolução (resolvedAt), não mais
+        derivado apenas da existência de respostas.
 
     NotificationPage:
       type: object

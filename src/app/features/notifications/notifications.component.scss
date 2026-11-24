@@ -81,6 +81,14 @@
   color: tokens.c(content-4);
 }
 
+.notifications__resolve-error {
+  margin: 0;
+  padding: tokens.$space-8 tokens.$space-16;
+  color: tokens.c(content-1);
+
+  @include typography.caption;
+}
+
 .notifications__error-title {
   margin: 0;
   color: tokens.c(content-1);

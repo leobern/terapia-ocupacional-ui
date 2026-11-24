@@ -5,6 +5,7 @@ import {
   type NotificationPage,
   type NotificationReply,
   type NotificationStatus,
+  type PatientRef,
   type ProfessionalRef,
 } from '../notifications.models';
 
@@ -14,6 +15,8 @@ export interface NewNotification {
   readonly message: string;
   /** Data limite para resolução (`yyyy-MM-dd`); vazio = sem prazo. */
   readonly dueDate: string;
+  /** Paciente vinculado (mensagens do Hub, FT-005-1); ausente = comunicado sem paciente. */
+  readonly patient?: PatientRef;
 }
 
 interface StoredNotification {
@@ -196,7 +199,7 @@ export class NotificationsRepository {
       createdAt: new Date().toISOString(),
       description: input.message,
       id: this.nextId++,
-      patient: null,
+      patient: input.patient ?? null,
       read: false,
       replies: [],
       replyCount: 0,
