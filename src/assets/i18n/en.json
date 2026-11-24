@@ -67,6 +67,10 @@
     }
   },
   "patientRegistration": {
+    "admit": {
+      "no": "No",
+      "yes": "Yes"
+    },
     "duplicate": {
       "accessDenied": "You do not have access to this hospital.",
       "birthDate": "Date of birth",
@@ -91,10 +95,12 @@
       "MSG-03": "Select the patient's sex.",
       "MSG-04": "Patient registered successfully.",
       "MSG-05": "The full name must have at most 150 characters.",
+      "admitChoice": "Answer yes or no.",
       "error": "Could not register the patient. Try again.",
       "sameTooLong": "The medical record number must have at most 30 characters."
     },
     "prompts": {
+      "admit": "Do you want to admit the patient now?",
       "birthDate": "What is the date of birth? (dd/mm/yyyy)",
       "fullName": "Tell me the patient's full name",
       "medicalRecordNumber": "What is the patient's medical record number (SAME)? (optional)",
