@@ -10,6 +10,7 @@ import { AudioTranscriber } from '../../shared/services/audio-transcriber';
 import { ViewportBreakpointService } from '../../shared/services/viewport-breakpoint.service';
 import { HospitalContextService } from '../home/hospital-context.service';
 import { LinkedHospitalsReader } from '../home/linked-hospitals';
+import { AnnouncementAssistant } from './assistant/announcement-assistant';
 import { NotificationsComponent } from './notifications.component';
 import { Notification } from './notifications.models';
 import { NotificationsActions } from './state/notifications.actions';
@@ -39,6 +40,7 @@ class FakeTranscriber extends AudioTranscriber {
 }
 
 const notification = (id: number): Notification => ({
+  type: 'patient_message',
   author: { id: 1, name: 'Jairo', photoUrl: null, specialty: 'Enfermeiro' },
   createdAt: '2026-11-17T10:30:00',
   description: 'Descrição ' + id,
@@ -81,6 +83,10 @@ describe('NotificationsComponent — rolagem, rascunho e gestos', () => {
       providers: [
         provideHttpClient(),
         { provide: AudioTranscriber, useValue: transcriber },
+        {
+          provide: AnnouncementAssistant,
+          useValue: { suggestRecipients: (): Promise<never[]> => Promise.resolve([]) },
+        },
         provideMockStore({ initialState: { notifications: { ...initialNotificationsState, ...overrides } } }),
         { provide: Actions, useValue: actions },
         { provide: ViewportBreakpointService, useValue: { isDesktop: signal(true).asReadonly() } },

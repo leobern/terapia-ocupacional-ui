@@ -41,7 +41,7 @@
         size="small"
         icon="check"
         ariaLabel="Resolver"
-        [disabled]="actionDisabled()"
+        [disabled]="actionDisabled() || resolveDisabled()"
         (click)="onResolveClick($event)"
       />
     }
@@ -52,6 +52,19 @@
       </span>
     }
   </div>
+
+  @if (kindLabel() || overdue()) {
+    <div class="card-notify__kind">
+      @if (kindLabel()) {
+        <span class="card-notify__kind-label">{{ kindLabel() }}</span>
+      }
+      @if (overdue()) {
+        <span class="card-notify__kind-label card-notify__kind-label--overdue"
+          >Vencida</span
+        >
+      }
+    </div>
+  }
 
   @if (showPatientHeader()) {
     <!-- Figma v2/NotificationThread: chip só com texto (sem foto do paciente). -->

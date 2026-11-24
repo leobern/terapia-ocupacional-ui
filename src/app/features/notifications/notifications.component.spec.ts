@@ -5,15 +5,27 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Actions } from '@ngrx/effects';
 import { MockStore, provideMockStore } from '@ngrx/store/testing';
-import { Subject } from 'rxjs';
+import { of, Subject, throwError } from 'rxjs';
 
 import { AiAssistantService } from '../../shared/services/ai-assistant.service';
 import { AudioTranscriber } from '../../shared/services/audio-transcriber';
-import { ScreenActionsService } from '../../shared/services/screen-actions.service';
+import { ConnectivityService } from '../../shared/services/connectivity.service';
+import { ProvisionalUserDirectory } from '../../shared/services/provisional-user-directory';
+import {
+  FormSubmitError,
+  type ScreenAction,
+  ScreenActionsService,
+  type ScreenCommand,
+} from '../../shared/services/screen-actions.service';
+import { UserDirectory } from '../../shared/services/user-directory';
 import { ViewportBreakpointService } from '../../shared/services/viewport-breakpoint.service';
 import { HospitalContextService } from '../home/hospital-context.service';
 import { LinkedHospitalsReader } from '../home/linked-hospitals';
-import { NotificationsRepository } from './data-access/notifications-repository.service';
+import { AnnouncementAssistant } from './assistant/announcement-assistant';
+import { ProvisionalAnnouncementAssistant } from './assistant/provisional-announcement-assistant';
+import { type Comunicado, ComunicadosApiService } from './data-access/comunicados-api.service';
+import { NotificationsApiService } from './data-access/notifications-api.service';
+import { ProvisionalNotificationsApiService } from './data-access/provisional-notifications-api.service';
 import { NotificationsComponent } from './notifications.component';
 import { Notification } from './notifications.models';
 import { NotificationsActions } from './state/notifications.actions';
@@ -27,8 +39,10 @@ function notification(id: number, overrides: Partial<Notification> = {}): Notifi
     description: 'Descrição ' + id,
     createdAt: new Date().toISOString(),
     read: false,
+    mentioned: [{ id: 4, name: 'Michelle Franklin', specialty: 'Nutróloga', photoUrl: null }],
     replyCount: 0,
     replies: [],
+    type: 'patient_message',
     ...overrides,
   };
 }
@@ -48,6 +62,9 @@ describe('NotificationsComponent', () => {
       imports: [NotificationsComponent],
       providers: [
         provideHttpClient(),
+        { provide: NotificationsApiService, useClass: ProvisionalNotificationsApiService },
+        { provide: UserDirectory, useClass: ProvisionalUserDirectory },
+        { provide: AnnouncementAssistant, useClass: ProvisionalAnnouncementAssistant },
         { provide: ViewportBreakpointService, useValue: { isDesktop: isDesktop.asReadonly() } },
         {
           provide: LinkedHospitalsReader,
@@ -78,6 +95,20 @@ describe('NotificationsComponent', () => {
   // --- Cabeçalho, fechar e seções (Figma 4506:8583 / 4506:8580) ---
 
   describe('cabeçalho e seções', () => {
+    // As abas Ativas | Resolvidas são do mobile; no desktop (Figma seção 07) as duas colunas aparecem lado a lado.
+    beforeEach(() => isDesktop.set(false));
+
+    it('no desktop mostra Pendentes e Resolvidas lado a lado, sem abas', async () => {
+      isDesktop.set(true);
+      await configureStore({ pendingItems: [notification(1)], resolvedItems: [notification(2)], status: 'success' });
+      createComponent();
+      const el: HTMLElement = fixture.nativeElement;
+
+      expect(el.querySelectorAll('[role="tab"]').length).toBe(0);
+      expect(el.querySelectorAll('.notifications__column').length).toBe(2);
+      expect(el.querySelectorAll('app-card-notify').length).toBe(2);
+    });
+
     it('mostra o título com a contagem e o contexto (hospital · data) no subtítulo (Figma v2/PageHeader)', async () => {
       await configureStore({ hospitalId: 1, pendingTotalCount: 3, status: 'success', pendingItems: [notification(1)] });
       createComponent();
@@ -152,7 +183,7 @@ describe('NotificationsComponent', () => {
       expect(router.navigate).toHaveBeenCalledWith(['/home']);
     });
 
-    it('lista as resolvidas abaixo do título "Resolvidas", em cards esmaecidos', async () => {
+    it('abre na aba Ativas, mostrando só as ativas', async () => {
       await configureStore({
         pendingItems: [notification(1)],
         resolvedItems: [notification(2)],
@@ -160,15 +191,92 @@ describe('NotificationsComponent', () => {
       });
       createComponent();
       const el: HTMLElement = fixture.nativeElement;
-      const cards = Array.from(el.querySelectorAll('app-card-notify .card-notify'));
+      const tabs = Array.from(el.querySelectorAll('[role="tab"]'));
 
-      const titles = Array.from(el.querySelectorAll('app-notification-section-title')).map(t => t.textContent ?? '');
+      expect(tabs.map(t => t.textContent?.trim())).toEqual(['Ativas', 'Resolvidas']);
+      expect(tabs.map(t => t.getAttribute('aria-selected'))).toEqual(['true', 'false']);
+      expect(el.querySelectorAll('app-card-notify').length).toBe(1);
+      expect(el.querySelector('.card-notify--resolved')).toBeNull();
+    });
 
-      expect(titles[0]).toContain('Pendentes');
-      expect(titles[1]).toContain('Resolvidas');
-      expect(cards.length).toBe(2);
-      expect(cards[0].classList).not.toContain('card-notify--resolved');
-      expect(cards[1].classList).toContain('card-notify--resolved');
+    it('na aba Resolvidas lista só as resolvidas, em cards esmaecidos', async () => {
+      await configureStore({
+        activeTab: 'resolved',
+        pendingItems: [notification(1)],
+        resolvedItems: [notification(2)],
+        resolvedLoaded: true,
+        status: 'success',
+      });
+      createComponent();
+      const el: HTMLElement = fixture.nativeElement;
+
+      expect(el.querySelectorAll('app-card-notify').length).toBe(1);
+      expect(el.querySelector('.card-notify--resolved')).not.toBeNull();
+    });
+
+    it('acionar a aba Resolvidas despacha tabSelected; acionar a aba atual não faz nada', async () => {
+      await configureStore({ status: 'success' });
+      createComponent();
+      const dispatch = jasmine.createSpy('dispatch');
+
+      store.dispatch = dispatch;
+      const tabs = Array.from(fixture.nativeElement.querySelectorAll('[role="tab"]')) as HTMLButtonElement[];
+
+      tabs[0].click();
+
+      expect(dispatch).not.toHaveBeenCalled();
+
+      tabs[1].click();
+
+      expect(dispatch).toHaveBeenCalledWith(NotificationsActions.tabSelected({ tab: 'resolved' }));
+    });
+
+    it('notificações não lidas exibidas são marcadas como lidas; já lidas não disparam marcação', async () => {
+      await configureStore({
+        pendingItems: [notification(1), notification(2, { read: true }), notification(3)],
+        status: 'success',
+      });
+      const dispatch = jasmine.createSpy('dispatch');
+
+      store.dispatch = dispatch;
+      createComponent();
+
+      expect(dispatch).toHaveBeenCalledWith(NotificationsActions.markAsReadRequested({ notificationIds: [1, 3] }));
+    });
+
+    it('com tudo lido não dispara nenhuma marcação', async () => {
+      await configureStore({ pendingItems: [notification(1, { read: true })], status: 'success' });
+      const dispatch = jasmine.createSpy('dispatch');
+
+      store.dispatch = dispatch;
+      createComponent();
+
+      expect(dispatch).not.toHaveBeenCalledWith(jasmine.objectContaining({ notificationIds: jasmine.anything() }));
+    });
+
+    it('sem notificações ativas, indica que não há notificações pendentes no momento', async () => {
+      await configureStore({ status: 'success' });
+      createComponent();
+
+      expect(fixture.nativeElement.querySelector('.notifications__empty')?.textContent).toContain(
+        'Nenhuma notificação pendente no momento',
+      );
+    });
+
+    it('Resolvidas vazia (já carregada) mostra o estado vazio próprio; antes de carregar não mostra', async () => {
+      await configureStore({ activeTab: 'resolved', resolvedLoaded: false, status: 'success' });
+      createComponent();
+
+      expect(fixture.nativeElement.querySelector('.notifications__empty')).toBeNull();
+
+      store.setState({
+        notifications: { ...initialNotificationsState, activeTab: 'resolved', resolvedLoaded: true, status: 'success' },
+      });
+      fixture.detectChanges();
+
+      expect(fixture.nativeElement.querySelector('.notifications__empty')?.textContent).toContain(
+        'Nenhuma notificação resolvida',
+      );
     });
 
     it('não mostra o cabeçalho de paciente em notificação criada sem paciente', async () => {
@@ -182,13 +290,13 @@ describe('NotificationsComponent', () => {
   // --- Ações da tela no assistente (padrão de cadastro) ---
 
   describe('ações da tela', () => {
-    it('registra Criar, Editar e Responder notificação e as remove ao sair da tela', async () => {
+    it('registra Criar comunicado, Editar e Responder e as remove ao sair da tela', async () => {
       await configureStore({ status: 'success' });
       createComponent();
       const registry = TestBed.inject(ScreenActionsService);
 
       expect(registry.actions().map(a => a.label)).toEqual([
-        'Criar notificação',
+        'Criar comunicado interno',
         'Editar notificação',
         'Responder notificação',
       ]);
@@ -196,30 +304,183 @@ describe('NotificationsComponent', () => {
       expect(registry.actions()[0].form?.fields.map(f => [f.kind, f.required])).toEqual([
         ['mention', true],
         ['text', true],
-        ['date', false],
       ]);
+
+      expect(registry.actions()[0].form?.fields[0].requiredMessage).toContain('destinatário');
 
       fixture.destroy();
 
       expect(registry.actions()).toEqual([]);
     });
 
-    it('o formulário de criar grava a notificação no repositório e recarrega a lista', async () => {
+    it('o campo de destinatários pede sugestão ao assistente a partir do texto do comunicado', async () => {
       await configureStore({ status: 'success' });
       createComponent();
-      const repository = TestBed.inject(NotificationsRepository);
+      const assistant = TestBed.inject(AnnouncementAssistant);
+      const spy = spyOn(assistant, 'suggestRecipients').and.callThrough();
+      const field = TestBed.inject(ScreenActionsService).actions()[0].form?.fields[0];
+
+      expect(field?.suggest?.from).toBe('message');
+      expect((await field?.suggest?.run('Estoque de medicamento baixo'))?.map(u => u.name)).toEqual(['farmaceuticos']);
+      expect(spy).toHaveBeenCalledWith('Estoque de medicamento baixo');
+    });
+
+    describe('comando por texto ou áudio', () => {
+      const open = async (command: ScreenCommand, transcript: string | Error): Promise<ScreenAction> => {
+        await configureStore({ status: 'success' });
+        createComponent();
+        spyOn(TestBed.inject(AnnouncementAssistant), 'transcribe').and.callFake(() =>
+          transcript instanceof Error ? Promise.reject(transcript) : Promise.resolve(transcript),
+        );
+        const assistant = TestBed.inject(AiAssistantService);
+
+        spyOn(assistant, 'openAction');
+
+        await TestBed.inject(ScreenActionsService).commandHandler()?.(command);
+
+        return (assistant.openAction as jasmine.Spy).calls.mostRecent().args[0];
+      };
+
+      it('texto abre o formulário do comunicado com o conteúdo preenchido', async () => {
+        const action = await open({ kind: 'text', text: 'Reunião às 10h' }, '');
+
+        expect(action.form?.initialValues).toEqual({ message: 'Reunião às 10h' });
+        expect(action.form?.notice).toBeUndefined();
+      });
+
+      it('áudio transcrito preenche o conteúdo editável', async () => {
+        const action = await open({ audio: new Blob(['x']), kind: 'audio' }, 'Estoque baixo');
+
+        expect(action.form?.initialValues).toEqual({ message: 'Estoque baixo' });
+      });
+
+      it('falha na transcrição abre o formulário vazio com aviso para digitar', async () => {
+        const action = await open({ audio: new Blob(['x']), kind: 'audio' }, new Error('falha'));
+
+        expect(action.form?.initialValues).toBeUndefined();
+        expect(action.form?.notice).toContain('Digite o comunicado');
+      });
+    });
+
+    const jairo = { id: 3, name: 'Jairo Nepomuceno', photoUrl: null, specialty: 'Farmacêutico' };
+
+    it('o formulário envia o comunicado pela API de comunicados e recarrega a lista', async () => {
+      await configureStore({ hospitalId: 1, status: 'success' });
+      createComponent();
+      const send = spyOn(TestBed.inject(ComunicadosApiService), 'create').and.returnValue(of({} as Comunicado));
       const dispatch = spyOn(store, 'dispatch').and.callThrough();
       const create = TestBed.inject(ScreenActionsService).actions()[0].form;
 
-      await create?.submit({
-        dueDate: '2030-01-01',
-        message: 'Revisar',
-        recipients: [{ id: 3, name: 'Jairo Nepomuceno', photoUrl: null, specialty: 'Farmacêutico' }],
-      });
-      fixture.detectChanges();
+      await create?.submit({ message: 'Revisar', recipients: [jairo] });
 
-      expect(repository.list('pending', null, 50).items.some(n => n.description === 'Revisar')).toBeTrue();
+      expect(send).toHaveBeenCalledWith(1, 'Revisar', [{ professionalId: 3, type: 'PESSOA' }]);
       expect(dispatch).toHaveBeenCalledWith(NotificationsActions.refreshRequested());
+    });
+
+    it('grupos por perfil e @todos vão como GRUPO e TODOS, junto das pessoas', async () => {
+      await configureStore({ hospitalId: 1, status: 'success' });
+      createComponent();
+      const send = spyOn(TestBed.inject(ComunicadosApiService), 'create').and.returnValue(of({} as Comunicado));
+      const create = TestBed.inject(ScreenActionsService).actions()[0].form;
+      const medicos = {
+        group: { memberCount: 2, profile: 'medicos' },
+        id: -5,
+        name: 'medicos',
+        photoUrl: null,
+        specialty: '',
+      };
+      const todos = { group: { memberCount: 6, profile: null }, id: -1, name: 'todos', photoUrl: null, specialty: '' };
+
+      await create?.submit({ message: 'Reunião', recipients: [jairo, medicos, todos] });
+
+      expect(send).toHaveBeenCalledWith(1, 'Reunião', [
+        { professionalId: 3, type: 'PESSOA' },
+        { perfil: 'medicos', type: 'GRUPO' },
+        { type: 'TODOS' },
+      ]);
+    });
+
+    it('sem conexão o envio fica indisponível, avisa e não chama a API', async () => {
+      await configureStore({ hospitalId: 1, status: 'success' });
+      createComponent();
+      TestBed.inject(ConnectivityService).online.set(false);
+      const api = TestBed.inject(ComunicadosApiService);
+
+      spyOn(api, 'create');
+      const create = TestBed.inject(ScreenActionsService).actions()[0].form;
+
+      await expectAsync(
+        create?.submit({ message: 'Revisar', recipients: [jairo] }) as Promise<void>,
+      ).toBeRejectedWithError(FormSubmitError, /Sem conexão/u);
+
+      expect(api.create).not.toHaveBeenCalled();
+    });
+
+    it('falha da API propaga o erro (o formulário mantém as respostas)', async () => {
+      await configureStore({ hospitalId: 1, status: 'success' });
+      createComponent();
+      spyOn(TestBed.inject(ComunicadosApiService), 'create').and.returnValue(throwError(() => new Error('x')));
+      const create = TestBed.inject(ScreenActionsService).actions()[0].form;
+
+      await expectAsync(create?.submit({ message: 'x', recipients: [jairo] }) as Promise<void>).toBeRejected();
+    });
+
+    it('o card de comunicado mostra os destinatários antes do texto', async () => {
+      await configureStore({
+        status: 'success',
+        pendingItems: [notification(1, { patient: null, recipients: [jairo] })],
+      });
+      createComponent();
+
+      expect(fixture.nativeElement.textContent).toContain('Para Jairo Nepomuceno: Descrição 1');
+    });
+  });
+
+  describe('tipos de conteúdo', () => {
+    const mixed = (): Notification[] => [
+      notification(1),
+      notification(2, { type: 'reevaluation_pending', overdue: true }),
+      notification(3, { type: 'reevaluation_pending', overdue: false }),
+      notification(4, { type: 'internal_notice', patient: undefined }),
+    ];
+
+    for (const tab of ['pending', 'resolved'] as const) {
+      it(`aba ${tab}: identifica cada tipo em texto, "Vencida" só na vencida e sem paciente no comunicado`, async () => {
+        await configureStore(
+          tab === 'pending'
+            ? { status: 'success', pendingItems: mixed() }
+            : { activeTab: 'resolved', resolvedItems: mixed(), resolvedLoaded: true, status: 'success' },
+        );
+        createComponent();
+        const cards = Array.from(fixture.nativeElement.querySelectorAll('app-card-notify')) as HTMLElement[];
+        const labels = cards.map(c => c.querySelector('.card-notify__kind-label')?.textContent?.trim());
+
+        expect(labels).toEqual([
+          'Mensagem de paciente',
+          'Pendência de reavaliação',
+          'Pendência de reavaliação',
+          'Comunicado interno',
+        ]);
+
+        expect(cards.map(c => c.querySelector('.card-notify__kind-label--overdue')?.textContent?.trim())).toEqual([
+          undefined,
+          'Vencida',
+          undefined,
+          undefined,
+        ]);
+
+        expect(cards[3].querySelector('.card-notify__patient')).toBeNull();
+      });
+    }
+
+    it('toque em comunicado interno não navega ao paciente', async () => {
+      await configureStore({ status: 'success', pendingItems: mixed() });
+      createComponent();
+      spyOn(router, 'navigate');
+
+      fixture.componentInstance.onCardClick(undefined);
+
+      expect(router.navigate).not.toHaveBeenCalled();
     });
   });
 
@@ -312,6 +573,73 @@ describe('NotificationsComponent', () => {
     fixture.componentInstance.onConfirmResolve();
 
     expect(store.dispatch).toHaveBeenCalledWith(NotificationsActions.resolveRequested({ notificationId: 7 }));
+  });
+
+  describe('resolver thread (FR-012 a FR-014)', () => {
+    const me = { id: 4, name: 'Michelle Franklin', specialty: 'Nutróloga', photoUrl: null };
+    const other = { id: 9, name: 'Outro', specialty: 'Médico', photoUrl: null };
+    const resolveButtons = (): NodeListOf<HTMLElement> =>
+      (fixture.nativeElement as HTMLElement).querySelectorAll('button[aria-label="Resolver"]');
+
+    it('participante (remetente, mencionado ou que respondeu) vê o indicador; quem não participa não vê', async () => {
+      await configureStore({
+        status: 'success',
+        pendingItems: [
+          notification(1, { author: me, mentioned: [] }),
+          notification(2),
+          notification(3, {
+            mentioned: undefined,
+            replies: [{ id: 1, author: me, text: 'ok', createdAt: new Date().toISOString() }],
+          }),
+          notification(4, { mentioned: [other] }),
+        ],
+      });
+      createComponent();
+      fixture.detectChanges();
+
+      expect(resolveButtons().length).toBe(3);
+    });
+
+    it('sem conexão o indicador fica desabilitado e nada é despachado', async () => {
+      await configureStore({ status: 'success', pendingItems: [notification(1)] });
+      createComponent();
+      const online = TestBed.inject(ConnectivityService).online;
+
+      online.set(false);
+      fixture.detectChanges();
+      spyOn(store, 'dispatch');
+
+      expect(resolveButtons()[0].hasAttribute('disabled')).toBeTrue();
+      fixture.componentInstance.onResolveClick(1);
+      fixture.componentInstance.onConfirmResolve();
+
+      expect(store.dispatch).not.toHaveBeenCalled();
+      online.set(true);
+    });
+
+    it('confirmar sem diálogo aberto não despacha', async () => {
+      await configureStore({ status: 'success' });
+      createComponent();
+      spyOn(store, 'dispatch');
+
+      fixture.componentInstance.onConfirmResolve();
+
+      expect(store.dispatch).not.toHaveBeenCalled();
+    });
+
+    it('falha ao resolver mostra a mensagem de erro em texto', async () => {
+      await configureStore({
+        status: 'success',
+        pendingItems: [notification(1)],
+        resolveErrorMessage: 'Não foi possível resolver a notificação.',
+      });
+      createComponent();
+      fixture.detectChanges();
+
+      expect((fixture.nativeElement as HTMLElement).querySelector('[role="alert"]')?.textContent).toContain(
+        'Não foi possível resolver',
+      );
+    });
   });
 
   it('"Não" no diálogo de Resolver não despacha nada', async () => {

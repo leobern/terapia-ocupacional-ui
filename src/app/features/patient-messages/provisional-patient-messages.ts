@@ -1,6 +1,11 @@
 import { Injectable } from '@angular/core';
 
-import { MessageThread, ThreadReplyRequest } from './patient-messages.models';
+import {
+  MessageThread,
+  ThreadCreateRequest,
+  ThreadReplyRequest,
+  ThreadResolveRequest,
+} from './patient-messages.models';
 import { PatientMessagesSource, PatientMessagesWriter, ReplyTranscriber } from './patient-messages-source';
 
 const SEED: readonly MessageThread[] = [
@@ -46,6 +51,26 @@ export class ProvisionalPatientMessages extends PatientMessagesSource implements
     return Promise.resolve(this.threads.filter(t => t.author === author));
   }
 
+  create(request: ThreadCreateRequest): Promise<MessageThread> {
+    const thread: MessageThread = {
+      at: request.at,
+      author: request.author,
+      deadline: null,
+      id: `thread-${this.threads.length + 1}`,
+      patientId: request.patientId,
+      patientName: request.patientName,
+      recipients: request.recipients,
+      replies: [],
+      resolved: false,
+      statusChanges: [],
+      text: request.text,
+    };
+
+    this.threads = [...this.threads, thread];
+
+    return Promise.resolve(thread);
+  }
+
   reply(request: ThreadReplyRequest): Promise<MessageThread> {
     const current = this.threads.find(t => t.id === request.threadId);
 
@@ -68,6 +93,26 @@ export class ProvisionalPatientMessages extends PatientMessagesSource implements
       statusChanges: current.resolved
         ? [...current.statusChanges, { at: request.at, author: request.author, kind: 'reopened' }]
         : current.statusChanges,
+    };
+
+    this.threads = this.threads.map(t => (t.id === updated.id ? updated : t));
+
+    return Promise.resolve(updated);
+  }
+
+  resolve(request: ThreadResolveRequest): Promise<MessageThread> {
+    const current = this.threads.find(t => t.id === request.threadId);
+
+    if (current === undefined) {
+      return Promise.reject(new Error('thread inexistente'));
+    }
+    if (current.resolved) {
+      return Promise.resolve(current);
+    }
+    const updated: MessageThread = {
+      ...current,
+      resolved: true,
+      statusChanges: [...current.statusChanges, { at: request.at, author: request.author, kind: 'resolved' }],
     };
 
     this.threads = this.threads.map(t => (t.id === updated.id ? updated : t));

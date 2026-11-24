@@ -2,7 +2,7 @@ import { type ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { AssistantFormController } from '../../services/assistant-form-controller.service';
 import { FormAssistant } from '../../services/form-assistant';
-import { type FormActionDefinition, type FormValues } from '../../services/screen-actions.service';
+import { type FormActionDefinition, FormSubmitError, type FormValues } from '../../services/screen-actions.service';
 import { type DirectoryUser, UserDirectory } from '../../services/user-directory';
 import { AssistantFormComponent } from './assistant-form.component';
 
@@ -11,13 +11,21 @@ const USERS: DirectoryUser[] = [
   { id: 2, name: 'Filippa Martins', photoUrl: null, specialty: 'Nutricionista' },
 ];
 
+/** Grupos só aparecem quando o termo digitado os alcança (mantém as listas das pessoas intactas nos outros testes). */
+const GROUPS: DirectoryUser[] = [
+  { group: { memberCount: 3, profile: 'medicos' }, id: -2, name: 'medicos', photoUrl: null, specialty: 'Grupo' },
+  { group: { memberCount: 0, profile: 'psicologos' }, id: -3, name: 'psicologos', photoUrl: null, specialty: 'Grupo' },
+];
+
 class FakeDirectory extends UserDirectory {
   terms: string[] = [];
 
   search(term: string): Promise<readonly DirectoryUser[]> {
     this.terms.push(term);
 
-    return Promise.resolve(USERS.filter(user => user.name.toLowerCase().includes(term.toLowerCase())));
+    const all = term === '' ? USERS : [...USERS, ...GROUPS];
+
+    return Promise.resolve(all.filter(user => user.name.toLowerCase().includes(term.toLowerCase())));
   }
 }
 
@@ -37,14 +45,19 @@ describe('AssistantFormComponent', () => {
   let directory: FakeDirectory;
   let saved: FormValues | null;
   let failing: boolean;
+  let failWithReason: boolean;
+  let requiredMessage: string | undefined;
 
   const definition = (): FormActionDefinition => ({
     fields: [
-      { id: 'who', kind: 'mention', label: 'Quem?', placeholder: '@nome', required: true },
+      { id: 'who', kind: 'mention', label: 'Quem?', placeholder: '@nome', required: true, requiredMessage },
       { id: 'text', kind: 'text', label: 'Mensagem?', placeholder: 'Escreva', required: true },
       { id: 'date', kind: 'date', label: 'Data?', placeholder: 'Selecione', required: false },
     ],
     submit: (values): void => {
+      if (failWithReason) {
+        throw new FormSubmitError('Sem conexão.');
+      }
       if (failing) {
         throw new Error('fail');
       }
@@ -86,6 +99,8 @@ describe('AssistantFormComponent', () => {
     directory = new FakeDirectory();
     saved = null;
     failing = false;
+    failWithReason = false;
+    requiredMessage = 'Informe ao menos um destinatário.';
     await TestBed.configureTestingModule({
       imports: [AssistantFormComponent],
       providers: [
@@ -150,6 +165,29 @@ describe('AssistantFormComponent', () => {
     await type(0, '@');
 
     expect(suggestions()).toEqual(['Filippa Martins']);
+  });
+
+  it('um grupo marcado aparece com @ e a quantidade de pessoas atingidas', async () => {
+    await type(0, '@medi');
+    await pick();
+
+    expect(el().querySelector('.assistant-form__chip')?.textContent?.trim()).toBe('@medicos (3)');
+    expect(el().querySelector('.assistant-form__hint')).toBeNull();
+  });
+
+  it('grupo sem nenhum profissional vinculado avisa e impede o envio até ser removido', async () => {
+    await type(0, '@psico');
+    await pick();
+    await type(1, 'Aviso');
+
+    expect(el().querySelector('.assistant-form__hint')?.textContent).toContain('@psicologos');
+    expect(submit().disabled).toBeTrue();
+
+    (el().querySelector('.assistant-form__chip-remove') as HTMLButtonElement).click();
+    await type(0, '@jai');
+    await pick();
+
+    expect(submit().disabled).toBeFalse();
   });
 
   it('a marked user can be removed', async () => {
@@ -219,6 +257,26 @@ describe('AssistantFormComponent', () => {
     expect(input(1).value).toBe('Revisar');
   });
 
+  it('shows the reason while a required question with requiredMessage is unanswered', async () => {
+    expect(el().querySelector('.assistant-form__hint')?.textContent).toContain('Informe ao menos um destinatário.');
+    await type(0, '@jai');
+    await pick();
+
+    expect(el().querySelector('.assistant-form__hint')).toBeNull();
+  });
+
+  it('shows the message of a FormSubmitError and keeps the answers', async () => {
+    failWithReason = true;
+    await type(0, '@jai');
+    await pick();
+    await type(1, 'Revisar');
+    await footer().click();
+    fixture.detectChanges();
+
+    expect(el().querySelector('.assistant-form__error')?.textContent).toContain('Sem conexão.');
+    expect(input(1).value).toBe('Revisar');
+  });
+
   it('closing a card with an answer summarises it, and without an answer leaves it empty', async () => {
     await type(1, 'Revisar');
     const headers = el().querySelectorAll<HTMLButtonElement>('.accordion__header');
@@ -276,5 +334,112 @@ describe('AssistantFormComponent', () => {
     expect(done).toBeTrue();
     expect(assistant.calls.length).toBe(1);
     expect(submit().disabled).toBeFalse();
+  });
+
+  describe('sugestão de destinatários', () => {
+    let suggest: () => Promise<readonly DirectoryUser[]>;
+    const chips = (label: string): string[] =>
+      Array.from(el().querySelectorAll(`[aria-label="${label}"] .assistant-form__chip span`)).map(
+        e => e.textContent?.trim() ?? '',
+      );
+    const blurMessage = async (value: string): Promise<void> => {
+      await type(1, value);
+      input(1).dispatchEvent(new Event('blur'));
+      await fixture.whenStable();
+      fixture.detectChanges();
+    };
+
+    beforeEach(() => {
+      suggest = (): Promise<readonly DirectoryUser[]> => Promise.resolve([USERS[0], USERS[1]]);
+      const base = definition();
+
+      fixture = TestBed.createComponent(AssistantFormComponent);
+      fixture.componentRef.setInput('definition', {
+        ...base,
+        fields: [
+          { ...base.fields[0], suggest: { from: 'text', run: (): Promise<readonly DirectoryUser[]> => suggest() } },
+          ...base.fields.slice(1),
+        ],
+      });
+      fixture.detectChanges();
+    });
+
+    it('apresenta sugestões marcadas como sugestão sem liberar o envio', async () => {
+      await blurMessage('Aviso');
+
+      expect(chips('Sugeridos')).toEqual(['Jairo Nepomuceno · sugerido', 'Filippa Martins · sugerido']);
+      expect(submit().disabled).toBeTrue();
+    });
+
+    it('confirmar as sugestões as torna destinatários e libera o envio', async () => {
+      await blurMessage('Aviso');
+      (el().querySelector('.assistant-form__confirm') as HTMLButtonElement).click();
+      fixture.detectChanges();
+
+      expect(chips('Marcados')).toEqual(['Jairo Nepomuceno', 'Filippa Martins']);
+      expect(el().querySelector('[aria-label="Sugeridos"]')).toBeNull();
+      expect(submit().disabled).toBeFalse();
+    });
+
+    it('descartar uma sugestão mantém só as demais; descartar todas mantém o envio impedido', async () => {
+      await blurMessage('Aviso');
+      (el().querySelector('[aria-label="Descartar sugestão Jairo Nepomuceno"]') as HTMLButtonElement).click();
+      fixture.detectChanges();
+
+      expect(chips('Sugeridos')).toEqual(['Filippa Martins · sugerido']);
+
+      (el().querySelector('[aria-label="Descartar sugestão Filippa Martins"]') as HTMLButtonElement).click();
+      fixture.detectChanges();
+
+      expect(el().querySelector('.assistant-form__confirm')).toBeNull();
+      expect(submit().disabled).toBeTrue();
+    });
+
+    it('com a IA indisponível avisa discretamente e o fluxo manual continua', async () => {
+      suggest = (): Promise<readonly DirectoryUser[]> => Promise.reject(new Error('fora do ar'));
+      await blurMessage('Aviso');
+
+      expect(el().textContent).toContain('Sugestão automática indisponível');
+
+      await type(0, '@jai');
+      await pick();
+
+      expect(submit().disabled).toBeFalse();
+    });
+
+    it('não sugere quando já há destinatário marcado ou o texto está vazio', async () => {
+      const suggestSpy = jasmine.createSpy('suggestSpy').and.callFake(() => Promise.resolve([USERS[0]]));
+
+      suggest = suggestSpy;
+      await blurMessage('  ');
+      await type(0, '@jai');
+      await pick();
+      await blurMessage('Aviso');
+
+      expect(suggestSpy).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('conteúdo pré-preenchido', () => {
+    it('mostra o texto inicial editável, o aviso e já pede sugestão de destinatários', async () => {
+      const run = jasmine.createSpy('run').and.resolveTo([USERS[0]]);
+      const base = definition();
+
+      fixture = TestBed.createComponent(AssistantFormComponent);
+      fixture.componentRef.setInput('definition', {
+        ...base,
+        fields: [{ ...base.fields[0], suggest: { from: 'text', run } }, ...base.fields.slice(1)],
+        initialValues: { text: 'Estoque baixo' },
+        notice: 'Aviso de teste',
+      });
+      fixture.detectChanges();
+      await fixture.whenStable();
+      fixture.detectChanges();
+
+      expect(el().textContent).toContain('Aviso de teste');
+      expect(input(1).value).toBe('Estoque baixo');
+      expect(run).toHaveBeenCalledWith('Estoque baixo');
+      expect(el().textContent).toContain('sugerido');
+    });
   });
 });

@@ -49,6 +49,10 @@ export class CardNotifyComponent {
   readonly time = input.required<string>();
   readonly actionAriaLabel = input.required<string>();
   readonly actionDisabled = input<boolean>(false);
+  /** Quando falso, o indicador de resolução não é oferecido (quem não participa da thread). */
+  readonly canResolve = input<boolean>(true);
+  /** Indicador de resolução visível porém indisponível (ex.: sem conexão). */
+  readonly resolveDisabled = input<boolean>(false);
 
   // Obrigatórios apenas quando `type !== 'resume'` — ver DS-component-card-notify §
   // Variantes & Props. `input()` (não `.required()`) porque o `resume` legado (Home)
@@ -58,6 +62,10 @@ export class CardNotifyComponent {
   readonly resolved = input<boolean>(false);
   /** v2: ponto vermelho de 8px no card não lido (Figma v2/CardNotify Read=false). */
   readonly unread = input<boolean>(false);
+  /** Tipo do conteúdo em texto (ex.: "Comunicado interno"); vazio = sem etiqueta. */
+  readonly kindLabel = input<string>('');
+  /** Pendência de reavaliação vencida. */
+  readonly overdue = input<boolean>(false);
   readonly patientAriaLabel = input<string>('Paciente');
   readonly replies = input<readonly CardNotifyReply[]>([]);
   readonly draftText = input<string>('');
@@ -105,7 +113,7 @@ export class CardNotifyComponent {
   // Figma v2/NotificationThread: pendente mostra responder + resolver, também com as
   // respostas abertas; resolvida não tem ações.
   // Figma v2/NotificationThread: o Resolver fica no cabeçalho de todo card pendente (não-Home).
-  protected readonly showResolveButton = computed(() => !this.isResume() && !this.resolved());
+  protected readonly showResolveButton = computed(() => !this.isResume() && !this.resolved() && this.canResolve());
   protected readonly showActionButton = computed(
     () => (this.isDetail() || this.isAnswerOpen() || this.isDraft()) && !this.resolved(),
   );

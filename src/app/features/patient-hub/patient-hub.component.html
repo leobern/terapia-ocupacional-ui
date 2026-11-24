@@ -232,7 +232,11 @@
                 [patientId]="p.id"
                 [canReopen]="hospitalId() !== null"
               />
-              <app-patient-threads class="hub__o-9" [patientId]="p.id" />
+              <app-patient-threads
+                class="hub__o-9"
+                [patientId]="p.id"
+                [refreshKey]="messagesVersion()"
+              />
             }
           </div>
           <div class="hub__col">

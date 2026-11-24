@@ -1,14 +1,14 @@
-import { ChangeDetectionStrategy, Component, effect, inject, input, signal, untracked } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, input, signal, untracked } from '@angular/core';
 
 import { formatRecordTime, PatientRecord } from './patient-message.models';
 import { PatientMessageSource } from './patient-message-source';
 
-export const MESSAGES_EMPTY_TEXT = 'Nenhum registro ainda. Use as ações da tela para registrar uma observação.';
 export const MESSAGES_LOAD_FAILED_HINT = 'Não foi possível carregar os registros. Os já exibidos foram mantidos.';
 
 /**
- * Cards dos registros do paciente no Hub (FT-005-1): um card por observação ou mensagem, do mais recente
- * ao mais antigo, só leitura (imutáveis). Responder e resolver pertencem a outras histórias.
+ * Observações do paciente no Hub (FT-005-1): um card por observação (registro sem destinatário), do mais
+ * recente ao mais antigo, só leitura (imutáveis). As mensagens direcionadas são threads e aparecem em
+ * "Mensagens" (`app-patient-threads`); a seção some enquanto não há observação.
  */
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -21,9 +21,9 @@ export class PatientMessagesComponent {
   /** Muda a cada registro gravado; faz a lista recarregar. */
   readonly refreshKey = input(0);
 
-  protected readonly records = signal<readonly PatientRecord[]>([]);
+  protected readonly loaded = signal<readonly PatientRecord[]>([]);
+  protected readonly records = computed(() => this.loaded().filter(record => record.recipients.length === 0));
   protected readonly loadFailed = signal(false);
-  protected readonly emptyText = MESSAGES_EMPTY_TEXT;
   protected readonly loadFailedHint = MESSAGES_LOAD_FAILED_HINT;
 
   private readonly source = inject(PatientMessageSource);
@@ -42,10 +42,6 @@ export class PatientMessagesComponent {
     return formatRecordTime(iso);
   }
 
-  protected names(record: PatientRecord): string {
-    return record.recipients.map(r => r.name).join(', ');
-  }
-
   private async load(patientId: string): Promise<void> {
     const token = ++this.token;
 
@@ -53,7 +49,7 @@ export class PatientMessagesComponent {
       const loaded = await this.source.list(patientId);
 
       if (token === this.token) {
-        this.records.set(loaded);
+        this.loaded.set(loaded);
         this.loadFailed.set(false);
       }
     } catch {

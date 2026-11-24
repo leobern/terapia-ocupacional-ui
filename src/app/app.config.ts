@@ -36,7 +36,9 @@ import {
   ProvisionalHospitalInvite,
   ProvisionalManagerAccess,
 } from './features/hospital-team/provisional-hospital-invite';
+import { AnnouncementAssistant } from './features/notifications/assistant/announcement-assistant';
 import { PendingNotificationsQueryResolver } from './features/notifications/assistant/pending-notifications-query.resolver';
+import { ProvisionalAnnouncementAssistant } from './features/notifications/assistant/provisional-announcement-assistant';
 import { NotificationsApiService } from './features/notifications/data-access/notifications-api.service';
 import { ProvisionalNotificationsApiService } from './features/notifications/data-access/provisional-notifications-api.service';
 import { HttpPasswordResetGateway } from './features/password-recovery/http-password-reset-gateway';
@@ -186,6 +188,7 @@ export const appConfig: ApplicationConfig = {
     { provide: HospitalInvitePort, useClass: ProvisionalHospitalInvite },
     { provide: ManagerAccessReader, useClass: ProvisionalManagerAccess },
     { provide: UserDirectory, useClass: ProvisionalUserDirectory },
+    { provide: AnnouncementAssistant, useClass: ProvisionalAnnouncementAssistant },
     { provide: SessionRoleReader, useClass: ProvisionalSessionRoleReader },
     { provide: FormulasApi, useClass: ProvisionalFormulasApi },
     // Consultas de leitura do assistente (um resolvedor por intenção).
