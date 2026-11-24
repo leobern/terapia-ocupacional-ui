@@ -50,6 +50,8 @@ describe('AppComponent', () => {
   }
 
   beforeEach(async () => {
+    // O I18nService escolhe o idioma ao ser criado: fixa pt-BR antes de criar o AppComponent.
+    spyOnProperty(navigator, 'language', 'get').and.returnValue('pt-BR');
     originalMatchMedia = Object.getOwnPropertyDescriptor(window, 'matchMedia');
     installMatchMedia(false);
 
@@ -389,7 +391,6 @@ describe('AppComponent', () => {
         HTMLButtonElement | undefined;
 
     beforeEach(async () => {
-      spyOnProperty(navigator, 'language', 'get').and.returnValue('pt-BR');
       logout = jasmine.createSpy('logout').and.resolveTo();
       TestBed.inject(LogoutService).logout = logout as unknown as LogoutService['logout'];
       router = TestBed.inject(Router);
