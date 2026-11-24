@@ -17,6 +17,7 @@ describe('InternacoesApiService', () => {
     healthInsurance: null,
     hospitalAdmissionDate: null,
     id: 1,
+    locations: [],
     nutritionalTherapyStartDate: null,
     pacienteId: 5,
   };
@@ -64,6 +65,35 @@ describe('InternacoesApiService', () => {
 
     await expectAsync(result).toBeRejectedWith(new InternacaoFieldError('hospitalAdmissionDate', 'MSG-08', 'texto'));
   });
+
+  const one = { locationType: 'UNIDADE', locationValue: 'UTI' } as const;
+  const two = { locationType: 'ALA', locationValue: 'Ala Norte' } as const;
+
+  for (const [count, locations, expected] of [
+    [0, [], {}],
+    [1, [one], { locations: [one] }],
+    [2, [one, two], { locations: [one, two] }],
+  ] as const) {
+    it(`sends ${count} location(s) (empty list is omitted) and returns them`, async () => {
+      const result = service.create(5, { locations });
+      const req = http.expectOne(url);
+
+      expect(req.request.body).toEqual(expected);
+      req.flush({ ...created, locations }, { status: 201, statusText: 'Created' });
+
+      expect((await result).locations).toEqual(locations);
+    });
+  }
+
+  for (const code of ['MSG-09', 'MSG-10']) {
+    it(`422 ${code} on locations rejects with InternacaoFieldError`, async () => {
+      const result = service.create(5, { locations: [{ locationType: 'ALA', locationValue: ' ' }] });
+
+      http.expectOne(url).flush({ code, field: 'locations', message: 'texto' }, { status: 422, statusText: 'err' });
+
+      await expectAsync(result).toBeRejectedWith(new InternacaoFieldError('locations', code, 'texto'));
+    });
+  }
 
   it('422 with an unknown field or without body is passed through', async () => {
     const unknown = service.create(5, {});

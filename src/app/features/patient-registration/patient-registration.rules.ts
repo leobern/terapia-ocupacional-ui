@@ -8,6 +8,11 @@ export const SAME_MAX = 30;
 export const BED_NUMBER_MAX = 20;
 export const HEALTH_INSURANCE_MAX = 100;
 export const ADMISSION_NUMBER_MAX = 30;
+export const LOCATION_VALUE_MAX = 100;
+export const LOCATION_LIMIT = 2;
+
+export type LocationKind = 'UNIDADE' | 'ALA';
+export const LOCATION_KINDS: readonly LocationKind[] = ['UNIDADE', 'ALA'];
 
 /** Códigos das mensagens do sistema usados nas validações. */
 export type PatientMessageCode =
@@ -16,11 +21,17 @@ export type PatientMessageCode =
   | 'MSG-03'
   | 'MSG-05'
   | 'MSG-08'
+  | 'MSG-09'
+  | 'MSG-10'
   | 'admissionNumberTooLong'
   | 'admitChoice'
   | 'bedTooLong'
   | 'insuranceTooLong'
   | 'invalidDate'
+  | 'locationLimit'
+  | 'locationNotInformed'
+  | 'locationTooLong'
+  | 'locationTypeRepeated'
   | 'sameTooLong';
 
 export type RuleResult<T> = { readonly value: T } | { readonly code: PatientMessageCode };
@@ -163,4 +174,26 @@ export function validateNutritionalTherapyStartDate(raw: string): RuleResult<str
   const parsed = parseBrDate(raw);
 
   return parsed ? { value: parsed.iso } : { code: 'invalidDate' };
+}
+
+/** Tipo da localização: aceita o rótulo (`labels`) ou o valor do contrato; outra coisa é MSG-09 (US-002-1-07). */
+export function validateLocationType(
+  raw: string,
+  labels: Readonly<Record<LocationKind, string>>,
+): RuleResult<LocationKind> {
+  const answer = normalize(raw);
+  const found = LOCATION_KINDS.find(kind => answer === normalize(labels[kind]) || answer === normalize(kind));
+
+  return found ? { value: found } : { code: 'MSG-09' };
+}
+
+/** Valor da localização: não vazio (MSG-10) e até 100 caracteres. */
+export function validateLocationValue(raw: string): RuleResult<string> {
+  const text = raw.trim();
+
+  if (text === '') {
+    return { code: 'MSG-10' };
+  }
+
+  return text.length > LOCATION_VALUE_MAX ? { code: 'locationTooLong' } : { value: text };
 }

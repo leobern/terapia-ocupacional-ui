@@ -9,6 +9,10 @@ info:
     esta API recebe os campos já coletados. Todos os campos são opcionais (RN-01): o
     usuário pode pular qualquer pergunta e a internação é criada com campos vazios.
     Edição da internação e movimentação de leito estão fora de escopo.
+
+    US-002-1-07: a internação aceita ainda `locations`, lista opcional de até 2 localizações
+    (Unidade e/ou Ala), uma de cada tipo. Desistir de uma linha antes de concluir (RN-04)
+    é feito no cliente: a linha simplesmente não é enviada.
 servers:
   - url: /
 security:
@@ -27,6 +31,13 @@ paths:
         message "A data de internação hospitalar não pode ser uma data futura." (o chatbot
         pergunta a data novamente e nada é salvo). Datas malformadas ou textos acima dos
         limites resultam em 400.
+
+        US-002-1-07: `locations` é opcional (ausente, nulo ou [] = sem localização). Cada
+        item exige locationType (UNIDADE|ALA) e locationValue. Tipo ausente ou fora do enum
+        => 422 field=locations, code=MSG-09, "Selecione o tipo: Unidade ou Ala."; valor
+        vazio/em branco => 422 field=locations, code=MSG-10, "Preencha o valor da
+        localização."; valor acima de 100 caracteres, mais de 2 itens ou tipo repetido
+        (RN-03, limite verificado também pelo chatbot) => 400. Nada é salvo em caso de erro.
       parameters:
         - name: pacienteId
           in: path
@@ -64,7 +75,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
         "422":
-          description: MSG-08 (hospitalAdmissionDate futura)
+          description: MSG-08 (hospitalAdmissionDate futura), MSG-09 (tipo de localização não identificado) ou MSG-10 (valor de localização vazio)
           content:
             application/json:
               schema:
@@ -100,10 +111,10 @@ components:
           properties:
             field:
               type: string
-              enum: [hospitalAdmissionDate]
+              enum: [hospitalAdmissionDate, locations]
             code:
               type: string
-              enum: [MSG-08]
+              enum: [MSG-08, MSG-09, MSG-10]
     CreateInternacaoRequest:
       type: object
       properties:
@@ -130,6 +141,25 @@ components:
           format: date
           nullable: true
           description: Data válida
+        locations:
+          type: array
+          nullable: true
+          maxItems: 2
+          description: Até 2 localizações, sem repetir locationType (RN-03)
+          items:
+            $ref: "#/components/schemas/InternacaoLocation"
+    InternacaoLocation:
+      type: object
+      required: [locationType, locationValue]
+      properties:
+        locationType:
+          type: string
+          enum: [UNIDADE, ALA]
+          description: Fora do enum ou ausente => MSG-09
+        locationValue:
+          type: string
+          maxLength: 100
+          description: Não vazio (MSG-10), máx. 100 caracteres
     Internacao:
       type: object
       required: [id, pacienteId, createdAt]
@@ -157,6 +187,12 @@ components:
           type: string
           format: date
           nullable: true
+        locations:
+          type: array
+          description: Vazio quando nenhuma localização foi informada
+          maxItems: 2
+          items:
+            $ref: "#/components/schemas/InternacaoLocation"
         createdAt:
           type: string
           format: date-time

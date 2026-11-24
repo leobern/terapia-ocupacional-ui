@@ -89,6 +89,14 @@
       "yes": "Sim, é o mesmo paciente",
       "yesThis": "Sim, é este paciente"
     },
+    "locationKind": {
+      "ALA": "Ala",
+      "UNIDADE": "Unidade"
+    },
+    "locationRemove": {
+      "ALA": "Remover Ala",
+      "UNIDADE": "Remover Unidade"
+    },
     "messages": {
       "MSG-01": "Informe o nome completo do paciente.",
       "MSG-02": "Informe uma data de nascimento válida.",
@@ -96,15 +104,22 @@
       "MSG-04": "Paciente cadastrado com sucesso.",
       "MSG-05": "O nome completo deve ter no máximo 150 caracteres.",
       "MSG-08": "A data de internação hospitalar não pode ser uma data futura.",
+      "MSG-09": "Selecione o tipo: Unidade ou Ala.",
+      "MSG-10": "Preencha o valor da localização.",
       "admissionNumberTooLong": "O número de atendimento deve ter no máximo 30 caracteres.",
       "admitChoice": "Responda sim ou não.",
       "bedTooLong": "O leito deve ter no máximo 20 caracteres.",
       "error": "Não foi possível cadastrar o paciente. Tente novamente.",
       "insuranceTooLong": "O convênio deve ter no máximo 100 caracteres.",
       "invalidDate": "Informe uma data válida (dd/mm/aaaa).",
+      "locationLimit": "O limite de 2 localizações foi atingido.",
+      "locationNotInformed": "Essa localização não foi informada.",
+      "locationTooLong": "O valor da localização deve ter no máximo 100 caracteres.",
+      "locationTypeRepeated": "Esse tipo já foi informado. Selecione o outro tipo.",
       "sameTooLong": "O SAME deve ter no máximo 30 caracteres."
     },
     "prompts": {
+      "addLocation": "Deseja adicionar Unidade e/ou Ala à internação?",
       "admissionNumber": "Qual o número de atendimento? (opcional)",
       "admit": "Deseja internar o paciente agora?",
       "bedNumber": "Qual o leito do paciente? (opcional)",
@@ -112,6 +127,13 @@
       "fullName": "Me fale o nome completo do paciente",
       "healthInsurance": "Qual o convênio? (opcional)",
       "hospitalAdmissionDate": "Qual a data de internação hospitalar? (dd/mm/aaaa, opcional)",
+      "location1More": "Deseja adicionar outra localização?",
+      "location1Type": "Qual o tipo da localização? (Unidade ou Ala)",
+      "location1Value": "Qual o valor da localização?",
+      "location2More": "Deseja adicionar mais uma localização?",
+      "location2Type": "Qual o tipo da outra localização? (Unidade ou Ala)",
+      "location2Value": "Qual o valor da outra localização?",
+      "locationRemove": "Deseja remover alguma localização antes de concluir?",
       "medicalRecordNumber": "Qual o SAME do paciente? (opcional)",
       "nutritionalTherapyStartDate": "Qual a data de início da terapia nutricional? (dd/mm/aaaa, opcional)",
       "sex": "Qual o sexo do paciente?"

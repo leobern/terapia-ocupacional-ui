@@ -88,7 +88,7 @@ export class AssistantConversationService {
 
       return;
     }
-    const result = step.parse(text);
+    const result = step.parse(text, this.values);
 
     if ('error' in result) {
       this.push({ role: 'assistant', text: result.error, tone: 'error' });

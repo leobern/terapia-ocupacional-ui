@@ -72,7 +72,8 @@ export interface ConversationStep {
   readonly optional?: boolean;
   /** Etapa condicional: só é perguntada quando devolve `true` para as respostas já dadas (ex.: internação só se "sim"). */
   readonly when?: (values: Readonly<Record<string, string>>) => boolean;
-  readonly parse: (answer: string) => ConversationParseResult;
+  /** `values` são as respostas já aceitas (para regras que dependem de etapas anteriores). */
+  readonly parse: (answer: string, values: Readonly<Record<string, string>>) => ConversationParseResult;
 }
 
 /** Erro de envio ligado a uma etapa (ex.: 422 do servidor): a conversa volta para ela exibindo `message`. */

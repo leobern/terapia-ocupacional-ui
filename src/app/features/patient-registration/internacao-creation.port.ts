@@ -1,3 +1,11 @@
+export type LocationType = 'UNIDADE' | 'ALA';
+
+/** Localização da internação (US-002-1-07): no máximo 2, uma de cada tipo (RN-03). */
+export interface InternacaoLocation {
+  readonly locationType: LocationType;
+  readonly locationValue: string;
+}
+
 /** Dados da internação coletados pelo chatbot (US-002-1-06). Todos opcionais (RN-01): campo vazio não é enviado. */
 export interface CreateInternacaoRequest {
   readonly bedNumber?: string;
@@ -7,6 +15,8 @@ export interface CreateInternacaoRequest {
   readonly hospitalAdmissionDate?: string;
   /** `aaaa-mm-dd`. */
   readonly nutritionalTherapyStartDate?: string;
+  /** Opcional; ausente ou vazia não é enviada. */
+  readonly locations?: readonly InternacaoLocation[];
 }
 
 export interface CreatedInternacao {
@@ -17,11 +27,12 @@ export interface CreatedInternacao {
   readonly admissionNumber: string | null;
   readonly hospitalAdmissionDate: string | null;
   readonly nutritionalTherapyStartDate: string | null;
+  readonly locations: readonly InternacaoLocation[];
   readonly createdAt: string;
 }
 
-/** Único campo que o servidor rejeita com 422 (MSG-08: data de internação futura). */
-export type InternacaoField = 'hospitalAdmissionDate';
+/** Campos que o servidor rejeita com 422 (MSG-08: data futura; MSG-09/MSG-10: localização). */
+export type InternacaoField = 'hospitalAdmissionDate' | 'locations';
 
 /** Validação rejeitada pelo servidor: `field` indica a pergunta a repetir e `message` (se houver) o texto a exibir. */
 export class InternacaoFieldError extends Error {
