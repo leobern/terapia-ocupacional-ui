@@ -32,10 +32,15 @@ import { ProfessionalProfileReader } from './features/home/professional-profile'
 import { ProvisionalDailyPatientsSource } from './features/home/provisional-daily-patients';
 import { UnreadNotificationsReader } from './features/home/unread-notifications-reader';
 import { HospitalInvitePort, ManagerAccessReader } from './features/hospital-team/hospital-invite-port';
+import { ProfessionalAccessRevoker, ProfessionalAccessSource } from './features/hospital-team/professional-access-port';
 import {
   ProvisionalHospitalInvite,
   ProvisionalManagerAccess,
 } from './features/hospital-team/provisional-hospital-invite';
+import {
+  ProvisionalProfessionalAccess,
+  ProvisionalProfessionalRevoker,
+} from './features/hospital-team/provisional-professional-access';
 import { AnnouncementAssistant } from './features/notifications/assistant/announcement-assistant';
 import { PendingNotificationsQueryResolver } from './features/notifications/assistant/pending-notifications-query.resolver';
 import { ProvisionalAnnouncementAssistant } from './features/notifications/assistant/provisional-announcement-assistant';
@@ -180,6 +185,9 @@ export const appConfig: ApplicationConfig = {
     // Provisórios (sem backend ainda): notificações em memória e usuários de exemplo.
     { provide: NotificationsApiService, useClass: ProvisionalNotificationsApiService },
     { provide: HospitalInvitePort, useClass: ProvisionalHospitalInvite },
+    ProvisionalProfessionalAccess,
+    { provide: ProfessionalAccessSource, useExisting: ProvisionalProfessionalAccess },
+    { provide: ProfessionalAccessRevoker, useClass: ProvisionalProfessionalRevoker },
     { provide: ManagerAccessReader, useClass: ProvisionalManagerAccess },
     { provide: UserDirectory, useClass: ProvisionalUserDirectory },
     { provide: AnnouncementAssistant, useClass: ProvisionalAnnouncementAssistant },

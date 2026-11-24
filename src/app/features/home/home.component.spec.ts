@@ -888,6 +888,14 @@ describe('HomeComponent', () => {
 
       expect(action?.label).toBe('Convidar profissional');
       expect(router.navigate).toHaveBeenCalledWith(['/hospital-team', 'invite']);
+
+      const revoke = TestBed.inject(ScreenActionsService)
+        .actions()
+        .find(a => a.id === 'revoke-professional-access');
+
+      revoke?.navigate?.();
+
+      expect(router.navigate).toHaveBeenCalledWith(['/hospital-team', 'access']);
     });
   });
 });

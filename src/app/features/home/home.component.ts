@@ -158,6 +158,11 @@ export class HomeComponent implements OnInit, OnDestroy {
               label: 'Convidar profissional',
               navigate: (): void => void this.router.navigate(['/hospital-team', 'invite']),
             },
+            {
+              id: 'revoke-professional-access',
+              label: 'Revogar acesso de profissional',
+              navigate: (): void => void this.router.navigate(['/hospital-team', 'access']),
+            },
           ]),
         );
       });

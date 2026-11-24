@@ -1,0 +1,107 @@
+@use '../../shared/styles/breakpoints';
+@use '../../shared/styles/tokens';
+@use '../../shared/styles/typography';
+
+:host {
+  --page-container-margin: var(--layout-page-margin, 16px);
+}
+
+.access {
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$space-16;
+  min-height: calc(100dvh - var(--bottom-nav-bar-height));
+  padding-top: tokens.$space-8;
+  padding-bottom: tokens.$space-24;
+
+  @include breakpoints.md {
+    max-width: 578px;
+    min-height: 100dvh;
+    padding: tokens.$space-24 tokens.$space-32 tokens.$space-32;
+  }
+}
+
+.access__header {
+  display: flex;
+  align-items: center;
+  gap: tokens.$space-8;
+}
+
+.access__heading {
+  display: flex;
+  flex: 1 0 0;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.access__title {
+  margin: 0;
+  color: tokens.c(content-1);
+
+  @include typography.headline;
+}
+
+.access__subtitle {
+  margin: 0;
+  color: tokens.c(content-4);
+
+  @include typography.caption;
+}
+
+.access__card {
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$space-12;
+  padding: tokens.$space-16;
+  border-radius: tokens.$radius-md;
+  background: tokens.c(surface);
+}
+
+.access__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: tokens.$space-8;
+}
+
+.access__status {
+  margin: 0;
+  color: tokens.c(content-1);
+
+  @include typography.body-md;
+}
+
+.access__list {
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$space-12;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.access__item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: tokens.$space-12;
+  min-height: 44px;
+}
+
+.access__person {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.access__name {
+  color: tokens.c(content-1);
+
+  @include typography.body-lg;
+}
+
+.access__specialty,
+.access__badge {
+  color: tokens.c(content-4);
+
+  @include typography.caption;
+}
