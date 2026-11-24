@@ -468,6 +468,121 @@ describe('NotificationsComponent', () => {
     });
   });
 
+  // --- US-001-2-03: mudança de status do vínculo com o hospital ---
+
+  describe('mudança de status de vínculo', () => {
+    const link = (id: number, linkStatus: 'approved' | 'rejected' | 'revoked', hospitalId = 1): Notification =>
+      notification(id, {
+        author: undefined,
+        description: `Texto ${linkStatus} do hospital`,
+        hospital: { id: hospitalId, name: 'Hospital Vila Nova Star' },
+        linkStatus,
+        mentioned: undefined,
+        patient: undefined,
+        type: 'hospital_link_status_change',
+      });
+
+    async function open(items: Notification[]): Promise<HTMLElement[]> {
+      await configureStore({ status: 'success', pendingItems: items });
+      createComponent();
+      // eslint-disable-next-line jasmine/no-unsafe-spy
+      spyOn(router, 'navigate').and.resolveTo(true);
+
+      return Array.from(fixture.nativeElement.querySelectorAll('app-card-notify')) as HTMLElement[];
+    }
+
+    it('card identifica o hospital e mostra o status em texto, sem paciente nem resolver', async () => {
+      const cards = await open([link(1, 'approved'), link(2, 'rejected'), link(3, 'revoked')]);
+
+      expect(cards.map(c => c.querySelector('.card-notify__name')?.textContent?.trim())).toEqual([
+        'Hospital Vila Nova Star',
+        'Hospital Vila Nova Star',
+        'Hospital Vila Nova Star',
+      ]);
+
+      expect(cards.map(c => c.querySelector('.card-notify__specialty')?.textContent?.trim())).toEqual([
+        jasmine.stringMatching(/^Vínculo aprovado/),
+        jasmine.stringMatching(/^Vínculo recusado/),
+        jasmine.stringMatching(/^Vínculo revogado/),
+      ] as unknown as string[]);
+
+      expect(cards[0].querySelector('.card-notify__kind-label')?.textContent?.trim()).toBe('Vínculo com hospital');
+      expect(cards[0].querySelector('.card-notify__patient')).toBeNull();
+
+      expect(cards[0].textContent).toContain('Texto approved do hospital');
+      expect(fixture.componentInstance.isParticipant(link(1, 'approved'))).toBeFalse();
+    });
+
+    it('aprovado: seleciona o hospital e abre o Painel (Home)', async () => {
+      const cards = await open([link(1, 'approved')]);
+      const context = TestBed.inject(HospitalContextService);
+
+      spyOn(context, 'select');
+      (cards[0].querySelector('article') as HTMLElement).click();
+      await fixture.whenStable();
+
+      expect(context.select).toHaveBeenCalledWith(1);
+      expect(router.navigate).toHaveBeenCalledWith(['/home']);
+    });
+
+    it('aprovado em hospital ainda não carregado: recarrega os vínculos antes de selecionar', async () => {
+      await open([link(1, 'approved', 7)]);
+      const context = TestBed.inject(HospitalContextService);
+
+      spyOn(context, 'load').and.resolveTo();
+      spyOn(context, 'select');
+      await (
+        fixture.componentInstance as unknown as { onNotificationClick(n: Notification): Promise<void> }
+      ).onNotificationClick(link(1, 'approved', 7));
+
+      expect(context.load).toHaveBeenCalledWith();
+      expect(context.select).toHaveBeenCalledWith(7);
+      expect(router.navigate).toHaveBeenCalledWith(['/home']);
+    });
+
+    it('tolera aviso sem respostas, sem hospital e sem status', async () => {
+      const bare = { ...link(1, 'approved'), hospital: undefined, linkStatus: undefined, replies: undefined };
+      const cards = await open([bare as unknown as Notification]);
+
+      expect(cards[0].querySelector('.card-notify__name')?.textContent?.trim()).toBe('');
+      expect(fixture.componentInstance.isParticipant(bare as unknown as Notification)).toBeFalse();
+
+      (cards[0].querySelector('article') as HTMLElement).click();
+      await fixture.whenStable();
+
+      expect(router.navigate).toHaveBeenCalledWith(['/hospital-links']);
+    });
+
+    it('mensagem de paciente sem respostas informadas não quebra o card', async () => {
+      const cards = await open([{ ...notification(5), replies: undefined } as unknown as Notification]);
+
+      expect(cards.length).toBe(1);
+      expect(
+        fixture.componentInstance.isParticipant({ ...notification(5), replies: undefined } as unknown as Notification),
+      ).toBeTrue();
+    });
+
+    it('mensagem sem autor mostra subtítulo vazio e toque vai ao paciente', async () => {
+      const cards = await open([notification(6, { author: undefined })]);
+
+      expect(cards[0].querySelector('.card-notify__name')?.textContent?.trim()).toBe('');
+      (cards[0].querySelector('article') as HTMLElement).click();
+
+      expect(router.navigate).toHaveBeenCalledWith(['/patients', 106]);
+    });
+
+    for (const status of ['rejected', 'revoked'] as const) {
+      it(`${status}: abre a tela de vínculos`, async () => {
+        const cards = await open([link(1, status)]);
+
+        (cards[0].querySelector('article') as HTMLElement).click();
+        await fixture.whenStable();
+
+        expect(router.navigate).toHaveBeenCalledWith(['/hospital-links']);
+      });
+    }
+  });
+
   // --- US2: navegação ao paciente (FR-006) ---
 
   it('onCardClick navega para /patients/:id com o patientId correto', async () => {

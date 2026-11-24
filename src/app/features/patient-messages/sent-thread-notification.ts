@@ -1,7 +1,7 @@
-import { Notification } from '../notifications/notifications.models';
+import { Notification, ProfessionalRef } from '../notifications/notifications.models';
 import { MessageThread } from './patient-messages.models';
 
-const ref = (name: string): Notification['author'] => ({ id: 0, name, photoUrl: null, specialty: '' });
+const ref = (name: string): ProfessionalRef => ({ id: 0, name, photoUrl: null, specialty: '' });
 
 /** Estado em texto para o remetente acompanhar a mensagem (resposta e ativa/resolvida), além da cor. */
 export const sentThreadStatusText = (thread: MessageThread): string => {

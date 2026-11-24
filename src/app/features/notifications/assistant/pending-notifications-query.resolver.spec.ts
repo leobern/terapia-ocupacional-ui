@@ -97,6 +97,17 @@ describe('PendingNotificationsQueryResolver', () => {
     expect((await resolver.resolve()).summary).toBe('Você tem 1 pendência:');
   });
 
+  it('titles a hospital link notice (no author) with the hospital name, or a generic title', async () => {
+    const link = { ...note(1, 'x', 'Você foi aprovado'), author: undefined, hospital: { id: 7, name: 'Hospital X' } };
+
+    pages = [{ items: [link, { ...link, hospital: undefined, id: 2 }], nextCursor: null, totalCount: 2 }];
+
+    expect((await resolver.resolve()).items?.map(i => (typeof i === 'string' ? i : i.title))).toEqual([
+      'Hospital X',
+      'Notificação',
+    ]);
+  });
+
   it('says there are no pending notifications when the list is empty', async () => {
     pages = [{ items: [], nextCursor: null, totalCount: 0 }];
 

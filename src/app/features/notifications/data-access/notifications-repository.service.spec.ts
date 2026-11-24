@@ -32,7 +32,7 @@ describe('NotificationsRepository', () => {
 
     expect(created.patient).toBeNull();
     expect(created.recipients?.map(r => r.name)).toEqual(['Jairo']);
-    expect(created.author.name).toBe('Michelle Franklin');
+    expect(created.author?.name).toBe('Michelle Franklin');
     expect(repository.list('pending', null, 50).totalCount).toBe(before + 1);
     expect(repository.list('pending', null, 1).items[0].id).toBe(created.id);
     expect(repository.version()).toBe(version + 1);

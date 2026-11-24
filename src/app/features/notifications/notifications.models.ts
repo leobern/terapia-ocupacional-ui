@@ -22,14 +22,28 @@ export interface NotificationReply {
   createdAt: string;
 }
 
-export type NotificationType = 'patient_message' | 'reevaluation_pending' | 'internal_notice';
+export type NotificationType =
+  'patient_message' | 'reevaluation_pending' | 'internal_notice' | 'hospital_link_status_change';
+
+/** Novo status do vínculo do médico com o hospital (US-001-2-03). */
+export type HospitalLinkStatus = 'approved' | 'rejected' | 'revoked';
+
+export interface HospitalRef {
+  id: number;
+  name: string;
+}
 
 export interface Notification {
   id: number;
   type: NotificationType;
   /** Pendência de reavaliação vencida (indicador da FT-005-1). */
   overdue?: boolean;
-  author: ProfessionalRef;
+  /** Ausente nas notificações geradas pelo sistema (mudança de status de vínculo). */
+  author?: ProfessionalRef;
+  /** Hospital da mudança de status de vínculo (RN02); só em `hospital_link_status_change`. */
+  hospital?: HospitalRef;
+  /** Novo status do vínculo; só em `hospital_link_status_change`. */
+  linkStatus?: HospitalLinkStatus;
   /** Ausente em comunicados internos e nas notificações criadas pelo formulário. */
   patient?: PatientRef | null;
   description: string;

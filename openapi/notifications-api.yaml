@@ -56,7 +56,9 @@ paths:
         "200":
           description: >
             Lote de até 10 notificações daquele status, ordenadas da mais recente para a
-            mais antiga (FR-004a).
+            mais antiga (FR-004a). Inclui notificações hospital_link_status_change
+            (US-001-2-03), criadas no momento em que o gestor aprova, recusa ou revoga o
+            vínculo; o texto (`description`) identifica o hospital (RN02).
           content:
             application/json:
               schema:
@@ -68,7 +70,12 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
         "403":
-          description: Profissional sem vínculo com o hospital informado
+          description: >
+            Profissional sem vínculo com o hospital informado. Exceção: se houver
+            notificação hospital_link_status_change para o profissional naquele hospital
+            (vínculo recusado ou revogado), a listagem continua permitida, mas retorna
+            somente essas notificações — a revogação tem efeito imediato sobre o acesso
+            (RN03), não sobre o aviso.
           content:
             application/json:
               schema:
@@ -232,10 +239,30 @@ components:
 
     NotificationType:
       type: string
-      enum: [patient_message, reevaluation_pending, internal_notice]
+      enum: [patient_message, reevaluation_pending, internal_notice, hospital_link_status_change]
       description: >
         patient_message e reevaluation_pending vêm da FT-005-1 (somente exibidos aqui);
-        internal_notice é o comunicado interno, sem paciente.
+        internal_notice é o comunicado interno, sem paciente;
+        hospital_link_status_change (US-001-2-03) é gerada pelo servidor quando o gestor
+        aprova, recusa ou revoga o vínculo do médico com um hospital; traz `hospital` e
+        `linkStatus` e não tem paciente.
+    HospitalLinkStatus:
+      type: string
+      enum: [approved, rejected, revoked]
+      description: >
+        Novo status do vínculo que originou a notificação. Navegação ao tocar (UI):
+        approved → Painel Metabólico do hospital; rejected → tela de vínculos;
+        revoked → tela de vínculos (hospital aparece como "Revogado" na listagem).
+    HospitalRef:
+      type: object
+      required: [id, name]
+      description: Hospital ao qual a notificação se refere (RN02).
+      properties:
+        id:
+          type: integer
+          format: int64
+        name:
+          type: string
     NotificationStatus:
       type: string
       enum: [pending, resolved]
@@ -266,8 +293,11 @@ components:
 
     Notification:
       type: object
-      required: [id, type, author, description, createdAt, read, replyCount]
+      required: [id, type, description, createdAt, read, replyCount]
       description: >
+        `author` é opcional: ausente em notificações geradas pelo sistema
+        (type = hospital_link_status_change). `hospital` e `linkStatus` só são enviados
+        quando type = hospital_link_status_change.
         `patient` é opcional: ausente quando type = internal_notice. Antes era required porque o único `tipoEvento` suportado hoje é
         relacionado a paciente (spec.md FR-006) — mas a coluna correspondente no banco
         (`notificacao.paciente_id`) já é nullable, de propósito, para permitir tipos de
@@ -285,6 +315,10 @@ components:
           $ref: "#/components/schemas/NotificationType"
         patient:
           $ref: "#/components/schemas/PatientRef"
+        hospital:
+          $ref: "#/components/schemas/HospitalRef"
+        linkStatus:
+          $ref: "#/components/schemas/HospitalLinkStatus"
         overdue:
           type: boolean
           description: true para pendência de reavaliação vencida (indicador definido na FT-005-1)

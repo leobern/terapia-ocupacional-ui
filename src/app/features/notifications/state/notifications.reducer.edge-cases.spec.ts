@@ -19,7 +19,12 @@ function notification(id: number, createdAt = new Date().toISOString()): Notific
 }
 
 describe('notificationsFeature reducer — casos de borda', () => {
-  const reply = { author: notification(1).author, createdAt: new Date().toISOString(), id: 1, text: 'ok' };
+  const reply = {
+    author: { id: 1, name: 'Jairo', photoUrl: null, specialty: 'Enfermeiro' },
+    createdAt: new Date().toISOString(),
+    id: 1,
+    text: 'ok',
+  };
 
   it('resposta a uma notificação que não está nas pendentes não altera o estado', () => {
     const state = { ...initialNotificationsState, answeringId: 99, pendingItems: [notification(1)] };
