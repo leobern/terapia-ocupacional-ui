@@ -109,6 +109,8 @@ import {
   ProvisionalPatientMessages,
   ProvisionalReplyTranscriber,
 } from './features/patient-messages/provisional-patient-messages';
+import { PatientRegistrationApiService } from './features/patient-registration/patient-registration-api.service';
+import { PatientRegistrationPort } from './features/patient-registration/patient-registration-port';
 import {
   NutritionAddedCards,
   NutritionHiddenCards,
@@ -154,6 +156,7 @@ export const appConfig: ApplicationConfig = {
     ProvisionalFollowUpClosureSource,
     { provide: FollowUpClosureSource, useExisting: ProvisionalFollowUpClosureSource },
     { provide: FollowUpClosureWriter, useExisting: ProvisionalFollowUpClosureSource },
+    { provide: PatientRegistrationPort, useClass: PatientRegistrationApiService },
     { provide: PatientListSource, useClass: ProvisionalPatientListSource },
     { provide: PatientHubSource, useClass: ProvisionalPatientHubSource },
     { provide: HypothesisSynthesizer, useClass: ProvisionalHypothesisSynthesizer },

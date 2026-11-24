@@ -61,6 +61,10 @@
       "title": "Set new password"
     }
   },
+  "patientRegistration": {
+    "msg07": "This SAME number is already in use by another patient in this hospital: {name}.",
+    "noHospital": "Select a hospital to register the patient."
+  },
   "settings": {
     "reviewTutorial": "Review tutorial",
     "title": "Settings"

@@ -1,0 +1,164 @@
+openapi: 3.0.3
+info:
+  title: Pacientes API
+  version: 1.0.0
+  description: >
+    Contrato da US-002-1-04 (Bloquear cadastro quando SAME já existe no hospital).
+    O paciente é registro mestre exclusivo do hospital. Se `medicalRecordNumber`
+    (SAME) for informado e já existir outro paciente no mesmo hospital com o mesmo
+    valor, o cadastro é bloqueado com 409 (MSG-07), independentemente de nome ou
+    data de nascimento, e a resposta traz o nome do paciente existente (RN-03).
+    A comparação de SAME é restrita ao hospital da rota. Internação, detecção de
+    duplicidade por nome+nascimento e demais campos ficam em outras stories.
+servers:
+  - url: /
+security:
+  - bearerAuth: []
+paths:
+  /api/v1/hospitais/{hospitalId}/pacientes:
+    post:
+      operationId: criarPaciente
+      x-implemented: true
+      summary: Cadastra um paciente no hospital, bloqueando SAME já usado
+      description: >
+        O usuário autenticado deve estar vinculado ao hospital. Quando o SAME já
+        existe em outro paciente do mesmo hospital, nada é salvo e retorna 409 com
+        `medicalRecordNumber` e `existingPatientName`. A UI/chatbot monta a MSG-07:
+        "Este número de SAME já está em uso por outro paciente neste hospital:
+        {existingPatientName}."
+      parameters:
+        - name: hospitalId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PacienteCreateRequest"
+      responses:
+        "201":
+          description: Paciente cadastrado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Paciente"
+        "400":
+          description: Corpo inválido
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Não autenticado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Usuário sem vínculo ativo com o hospital
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Hospital não encontrado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
+          description: SAME já em uso por outro paciente neste hospital (MSG-07)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SameDuplicadoError"
+        "422":
+          description: Dados semanticamente inválidos
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    PacienteCreateRequest:
+      type: object
+      required: [fullName, birthDate, sex]
+      properties:
+        fullName:
+          type: string
+        birthDate:
+          type: string
+          format: date
+        sex:
+          type: string
+          enum: [MALE, FEMALE, NOT_INFORMED]
+        medicalRecordNumber:
+          type: string
+          nullable: true
+          description: SAME (opcional). Se preenchido, deve ser único no hospital.
+    Paciente:
+      type: object
+      required: [id, hospitalId, fullName, birthDate, sex]
+      properties:
+        id:
+          type: string
+          format: uuid
+        hospitalId:
+          type: integer
+          format: int64
+        fullName:
+          type: string
+        birthDate:
+          type: string
+          format: date
+        sex:
+          type: string
+          enum: [MALE, FEMALE, NOT_INFORMED]
+        medicalRecordNumber:
+          type: string
+          nullable: true
+    SameDuplicadoError:
+      type: object
+      required: [message, timestamp, code, medicalRecordNumber, existingPatientName]
+      properties:
+        message:
+          type: string
+          description: MSG-07 já formatada com o nome do paciente existente
+        timestamp:
+          type: string
+          format: date-time
+        detalhes:
+          type: array
+          nullable: true
+          items:
+            type: string
+        code:
+          type: string
+          enum: [SAME_DUPLICADO]
+        medicalRecordNumber:
+          type: string
+        existingPatientName:
+          type: string
+    ErrorResponse:
+      type: object
+      required: [message, timestamp]
+      properties:
+        message:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+        detalhes:
+          type: array
+          nullable: true
+          items:
+            type: string

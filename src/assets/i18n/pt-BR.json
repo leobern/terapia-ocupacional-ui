@@ -61,6 +61,10 @@
       "title": "Definir nova senha"
     }
   },
+  "patientRegistration": {
+    "msg07": "Este número de SAME já está em uso por outro paciente neste hospital: {name}.",
+    "noHospital": "Selecione um hospital para cadastrar o paciente."
+  },
   "settings": {
     "reviewTutorial": "Rever tutorial",
     "title": "Configurações"
