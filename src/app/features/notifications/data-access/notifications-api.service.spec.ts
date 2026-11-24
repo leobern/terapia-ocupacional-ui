@@ -18,21 +18,25 @@ describe('NotificationsApiService', () => {
   afterEach(() => http.verify());
 
   it('getNotifications: hospital, status e limite; cursor só quando informado', () => {
-    api.getNotifications(3, 'pending', null).subscribe();
+    let page: { items: { replies: unknown[] }[] } | undefined;
+
+    api.getNotifications(3, 'pending', null).subscribe(result => (page = result as never));
     const first = http.expectOne(r => r.url.endsWith('/v1/notifications'));
 
     expect(first.request.params.get('hospitalId')).toBe('3');
     expect(first.request.params.get('status')).toBe('pending');
     expect(first.request.params.get('limit')).toBe('10');
     expect(first.request.params.has('cursor')).toBeFalse();
-    first.flush({});
+    first.flush({ items: [{ id: 1 }, { id: 2, replies: [{ id: 7 }] }], nextCursor: null });
+    // O servidor omite `replies` vazio: a tela sempre recebe uma lista.
+    expect(page?.items.map(item => item.replies.length)).toEqual([0, 1]);
 
     api.getNotifications(3, 'resolved', 'xyz', 20).subscribe();
     const second = http.expectOne(r => r.url.endsWith('/v1/notifications'));
 
     expect(second.request.params.get('cursor')).toBe('xyz');
     expect(second.request.params.get('limit')).toBe('20');
-    second.flush({});
+    second.flush({ items: [], nextCursor: null });
   });
 
   it('getNotifications: repassa hospital e status do vínculo, sem autor', () => {

@@ -198,6 +198,26 @@ describe('NotificationsComponent', () => {
       expect(el.querySelector('.card-notify--resolved')).not.toBeNull();
     });
 
+    it('na aba Resolvidas o card oferece responder (sem Resolver) e acioná-lo inicia a resposta', async () => {
+      await configureStore({
+        activeTab: 'resolved',
+        resolvedItems: [notification(2)],
+        resolvedLoaded: true,
+        status: 'success',
+      });
+      createComponent();
+      spyOn(store, 'dispatch');
+      const el: HTMLElement = fixture.nativeElement;
+      const answer = el.querySelector('.card-notify__actions app-icon-button button') as HTMLButtonElement;
+
+      expect(answer).not.toBeNull();
+      expect(el.querySelector('.card-notify__row app-icon-button')).toBeNull();
+
+      answer.click();
+
+      expect(store.dispatch).toHaveBeenCalledWith(NotificationsActions.answerStarted({ notificationId: 2 }));
+    });
+
     it('acionar a aba Resolvidas despacha tabSelected; acionar a aba atual não faz nada', async () => {
       await configureStore({ status: 'success' });
       createComponent();
@@ -680,16 +700,12 @@ describe('NotificationsComponent', () => {
     const resolveButtons = (): NodeListOf<HTMLElement> =>
       (fixture.nativeElement as HTMLElement).querySelectorAll('button[aria-label="Resolver"]');
 
-    it('participante (remetente, mencionado ou que respondeu) vê o indicador; quem não participa não vê', async () => {
+    it('todo card listado tem o indicador (a API só lista as notificações do próprio profissional)', async () => {
       await configureStore({
         status: 'success',
         pendingItems: [
           notification(1, { author: me, mentioned: [] }),
           notification(2),
-          notification(3, {
-            mentioned: undefined,
-            replies: [{ id: 1, author: me, text: 'ok', createdAt: new Date().toISOString() }],
-          }),
           notification(4, { mentioned: [other] }),
         ],
       });

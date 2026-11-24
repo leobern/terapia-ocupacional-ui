@@ -6,7 +6,7 @@ import { firstValueFrom } from 'rxjs';
 import { ProfessionalProfileReader } from '../../home/professional-profile';
 import { PatientMessagesSource, PatientMessagesWriter } from '../../patient-messages/patient-messages-source';
 import { ProvisionalPatientMessages } from '../../patient-messages/provisional-patient-messages';
-import { NotificationsRepository } from './notifications-repository.service';
+import { type NotificationPage } from '../notifications.models';
 import { ProvisionalNotificationsApiService } from './provisional-notifications-api.service';
 
 const PROVIDERS = [
@@ -22,13 +22,46 @@ const PROVIDERS = [
   },
 ];
 
+const REAL = {
+  author: { id: 1, name: 'Gestor', photoUrl: null, specialty: 'Médico' },
+  createdAt: '2026-11-24T13:15:01.000Z',
+  description: 'Reunião amanhã',
+  id: 3,
+  read: true,
+  replyCount: 0,
+  type: 'internal_notice',
+};
+
+/** Chama `getNotifications` e responde a requisição HTTP com os itens dados (a API real não manda `replies` vazio). */
+async function list(
+  status: 'pending' | 'resolved',
+  cursor: string | null = null,
+  items: object[] = [REAL],
+): Promise<NotificationPage> {
+  const api = TestBed.inject(ProvisionalNotificationsApiService);
+  const done = firstValueFrom(api.getNotifications(1, status, cursor, 50));
+  const req = TestBed.inject(HttpTestingController).expectOne(r => r.url.endsWith('/v1/notifications'));
+
+  expect(req.request.params.get('status')).toBe(status);
+  req.flush({ items, nextCursor: null, unreadCount: 0 });
+
+  return done;
+}
+
 describe('Provisional notification APIs', () => {
+  beforeEach(() => TestBed.configureTestingModule({ providers: [...PROVIDERS] }));
+
+  it('a lista vem da API real; `replies` ausente vira lista vazia', async () => {
+    const page = await list('pending');
+
+    expect(page.items.filter(n => n.id > 0).map(n => n.id)).toEqual([3]);
+    expect(page.items.find(n => n.id === 3)?.replies).toEqual([]);
+  });
+
   it('remetente vê a mensagem que enviou no Hub, com estado e respostas; reflete resposta e reabertura', async () => {
-    TestBed.configureTestingModule({ providers: [...PROVIDERS] });
-    const api = TestBed.inject(ProvisionalNotificationsApiService);
     const store = TestBed.inject(ProvisionalPatientMessages);
     const mine = async (status: 'pending' | 'resolved'): Promise<{ description: string }[]> =>
-      (await firstValueFrom(api.getNotifications(1, status, null, 50))).items.filter(n => n.id < 0);
+      (await list(status)).items.filter(n => n.id < 0);
 
     expect((await mine('pending'))[0].description).toContain('Ativa · sem resposta');
     expect(await mine('resolved')).toEqual([]);
@@ -45,7 +78,6 @@ describe('Provisional notification APIs', () => {
   });
 
   it('resolver a mensagem enviada grava no registro único da thread, visível no Hub e nas notificações', async () => {
-    TestBed.configureTestingModule({ providers: [...PROVIDERS] });
     const api = TestBed.inject(ProvisionalNotificationsApiService);
     const store = TestBed.inject(ProvisionalPatientMessages);
 
@@ -55,23 +87,21 @@ describe('Provisional notification APIs', () => {
 
     expect(thread?.resolved).toBeTrue();
     expect(thread?.statusChanges[0].author).toBe('Michelle Franklin');
-    const resolved = (await firstValueFrom(api.getNotifications(1, 'resolved', null, 50))).items;
-
-    expect(resolved.some(n => n.id === -2)).toBeTrue();
+    expect((await list('resolved', null, [])).items.some(n => n.id === -2)).toBeTrue();
+    TestBed.inject(HttpTestingController).expectNone(r => r.url.endsWith('/resolve'));
   });
 
-  it('páginas seguintes não repetem as mensagens do remetente, mas mantêm o total', async () => {
-    TestBed.configureTestingModule({ providers: [...PROVIDERS] });
-    const api = TestBed.inject(ProvisionalNotificationsApiService);
-    const first = await firstValueFrom(api.getNotifications(1, 'pending', null, 1));
-    const next = await firstValueFrom(api.getNotifications(1, 'pending', '1', 1));
+  it('páginas seguintes não repetem as mensagens do remetente', async () => {
+    const first = await list('pending');
+    const next = await list('pending', '1');
 
     expect(first.items.some(n => n.id < 0)).toBeTrue();
     expect(next.items.some(n => n.id < 0)).toBeFalse();
-    expect(next.totalCount).toBe(first.totalCount);
+    expect(next.items.map(n => n.id)).toEqual([3]);
   });
 
   it('quem não é o remetente não recebe a entrada', async () => {
+    TestBed.resetTestingModule();
     TestBed.configureTestingModule({
       providers: [
         ...PROVIDERS.slice(0, 5),
@@ -82,75 +112,24 @@ describe('Provisional notification APIs', () => {
         },
       ],
     });
-    const page = await firstValueFrom(
-      TestBed.inject(ProvisionalNotificationsApiService).getNotifications(1, 'pending', null, 50),
-    );
 
-    expect(page.items.some(n => n.id < 0)).toBeFalse();
+    expect((await list('pending')).items.some(n => n.id < 0)).toBeFalse();
   });
 
-  it('reads pages from the in-memory repository', async () => {
-    TestBed.configureTestingModule({ providers: [...PROVIDERS] });
+  it('createReply chama a API real e devolve a resposta', async () => {
     const api = TestBed.inject(ProvisionalNotificationsApiService);
 
-    const page = await firstValueFrom(api.getNotifications(1, 'pending', null, 2));
-
-    // A mensagem enviada no Hub entra além do limite da página do repositório (provisório), sem perder itens.
-    expect(page.items.filter(n => n.id > 0).length).toBe(2);
-    // +1: a mensagem enviada pelo profissional no Hub (provisório).
-    expect(page.totalCount).toBe(TestBed.inject(NotificationsRepository).list('pending', null, 50).totalCount + 1);
-  });
-
-  it('usa o tamanho de lote padrão (10) quando o limite não é informado', async () => {
-    TestBed.configureTestingModule({ providers: [...PROVIDERS] });
-    const api = TestBed.inject(ProvisionalNotificationsApiService);
-    const repository = TestBed.inject(NotificationsRepository);
-    const page = await firstValueFrom(api.getNotifications(1, 'resolved', null));
-
-    expect(page.items.length).toBe(Math.min(10, repository.list('resolved', null, 50).totalCount));
-  });
-
-  it('createReply records the reply', async () => {
-    TestBed.configureTestingModule({ providers: [...PROVIDERS] });
-    const api = TestBed.inject(ProvisionalNotificationsApiService);
-    const target = TestBed.inject(NotificationsRepository).list('pending', null, 1).items[0];
-
-    const done = firstValueFrom(api.createReply(target.id, 'feito'));
-    const req = TestBed.inject(HttpTestingController).expectOne(r =>
-      r.url.endsWith(`/notifications/${target.id}/replies`),
-    );
+    const done = firstValueFrom(api.createReply(3, 'feito'));
+    const req = TestBed.inject(HttpTestingController).expectOne(r => r.url.endsWith('/notifications/3/replies'));
 
     expect(req.request.method).toBe('POST');
     expect(req.request.body).toEqual({ text: 'feito' });
-    req.flush({ author: target.author, createdAt: '2026-11-24T10:00:00.000Z', id: 99, text: 'feito' });
+    req.flush({ author: REAL.author, createdAt: '2026-11-24T10:00:00.000Z', id: 99, text: 'feito' });
 
     expect((await done).text).toBe('feito');
-    expect(
-      TestBed.inject(NotificationsRepository)
-        .list('pending', null, 50)
-        .items.find(n => n.id === target.id)?.replyCount,
-    ).toBe(target.replyCount + 1);
-  });
-
-  it('createReply reabre no espelho local a notificação resolvida', async () => {
-    TestBed.configureTestingModule({ providers: [...PROVIDERS] });
-    const api = TestBed.inject(ProvisionalNotificationsApiService);
-    const repository = TestBed.inject(NotificationsRepository);
-    const target = repository.list('resolved', null, 1).items[0];
-
-    const done = firstValueFrom(api.createReply(target.id, 'voltei'));
-
-    TestBed.inject(HttpTestingController)
-      .expectOne(r => r.url.endsWith(`/notifications/${target.id}/replies`))
-      .flush({ author: target.author, createdAt: '2026-11-24T10:00:00.000Z', id: 100, text: 'voltei' });
-    await done;
-
-    expect(repository.list('pending', null, 50).items.some(n => n.id === target.id)).toBeTrue();
-    expect(repository.list('resolved', null, 50).items.some(n => n.id === target.id)).toBeFalse();
   });
 
   it('createReply de thread enviada pelo Hub (id negativo) não chama a API', async () => {
-    TestBed.configureTestingModule({ providers: [...PROVIDERS] });
     const api = TestBed.inject(ProvisionalNotificationsApiService);
 
     const reply = await firstValueFrom(api.createReply(-1, 'ok'));
@@ -159,23 +138,14 @@ describe('Provisional notification APIs', () => {
     TestBed.inject(HttpTestingController).expectNone(r => r.url.includes('/replies'));
   });
 
-  it('resolve move a notificação para Resolvidas', async () => {
-    TestBed.configureTestingModule({ providers: [...PROVIDERS] });
+  it('resolve chama a API real', async () => {
     const api = TestBed.inject(ProvisionalNotificationsApiService);
-    const repository = TestBed.inject(NotificationsRepository);
-    const target = repository.list('pending', null, 1).items[0];
-    const resolvedBefore = repository.list('resolved', null, 50).totalCount;
 
-    const done = firstValueFrom(api.resolve(target.id));
-    const req = TestBed.inject(HttpTestingController).expectOne(r =>
-      r.url.endsWith(`/notifications/${target.id}/resolve`),
-    );
+    const done = firstValueFrom(api.resolve(3));
+    const req = TestBed.inject(HttpTestingController).expectOne(r => r.url.endsWith('/notifications/3/resolve'));
 
     expect(req.request.method).toBe('POST');
     req.flush(null);
     await done;
-
-    expect(repository.list('resolved', null, 50).totalCount).toBe(resolvedBefore + 1);
-    expect(repository.list('pending', null, 50).items.some(n => n.id === target.id)).toBeFalse();
   });
 });

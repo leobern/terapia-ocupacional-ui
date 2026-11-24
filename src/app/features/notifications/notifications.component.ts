@@ -41,7 +41,6 @@ import {
 import { type DirectoryUser } from '../../shared/services/user-directory';
 import { formatRelativeTime } from '../../shared/utils/relative-time';
 import { HospitalContextService } from '../home/hospital-context.service';
-import { isSentThreadNotification } from '../patient-messages/sent-thread-notification';
 import { AnnouncementAssistant } from './assistant/announcement-assistant';
 import { type ComunicadoRecipientSpec, ComunicadosApiService } from './data-access/comunicados-api.service';
 import { NotificationsRepository } from './data-access/notifications-repository.service';
@@ -199,7 +198,6 @@ export class NotificationsComponent implements OnDestroy {
   });
 
   /** Id do profissional logado (sem serviço de sessão ainda — mesmo usuário de exemplo acima). */
-  private readonly currentUserId = 4;
   private readonly actions$ = inject(Actions);
   private readonly location = inject(Location);
   private readonly hospitalContext = inject(HospitalContextService);
@@ -337,20 +335,13 @@ export class NotificationsComponent implements OnDestroy {
     this.expandedIds.set(next);
   }
 
-  /** Participante da thread: remetente, destinatário mencionado ou quem já respondeu (FR-012). */
+  /**
+   * Participante da thread (FR-012). A API só lista as notificações do próprio profissional (remetente ou
+   * destinatário), então todo card listado é dele; quem decide é o servidor (403 se não for participante).
+   * Mudança de status de vínculo hospitalar é aviso do sistema: não aceita resposta.
+   */
   isParticipant(notification: Notification): boolean {
-    const me = this.currentUserId;
-
-    if (notification.type === 'hospital_link_status_change') {
-      return false;
-    }
-
-    return (
-      isSentThreadNotification(notification) ||
-      notification.author?.id === me ||
-      (notification.mentioned ?? []).some(person => person.id === me) ||
-      (notification.replies ?? []).some(reply => reply.author.id === me)
-    );
+    return notification.type !== 'hospital_link_status_change';
   }
 
   /** Botão ✓ do card (Figma v2/NotificationThread): marca como resolvida. */

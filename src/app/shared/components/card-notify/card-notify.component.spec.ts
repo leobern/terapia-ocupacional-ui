@@ -208,13 +208,12 @@ describe('CardNotifyComponent', () => {
       expect(getComputedStyle(dot).right).toBe('-4px');
     });
 
-    it('card resolvido não tem ações nem botão Resolver; com as respostas abertas o balão continua no rodapé', async () => {
+    it('card resolvido não tem o botão Resolver, mas mantém o de responder (detail e answer-open)', async () => {
       await createDetail({ resolved: true });
 
-      expect(fixture.nativeElement.querySelector('.card-notify__actions')).toBeNull();
       expect(fixture.nativeElement.querySelector('.card-notify__row app-icon-button')).toBeNull();
+      expect(fixture.nativeElement.querySelectorAll('.card-notify__actions app-icon-button').length).toBe(1);
 
-      fixture.componentRef.setInput('resolved', false);
       fixture.componentRef.setInput('type', 'answer-open');
       fixture.detectChanges();
 

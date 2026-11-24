@@ -21,13 +21,13 @@ import { ProvisionalDiagnosisDecisionSource } from './features/diagnosis/provisi
 import { ProvisionalDiagnosisSource } from './features/diagnosis/provisional-diagnosis-source';
 import { FollowUpClosureSource, FollowUpClosureWriter } from './features/follow-up-closure/follow-up-closure-source';
 import { ProvisionalFollowUpClosureSource } from './features/follow-up-closure/provisional-follow-up-closure';
+import { ApiUnreadNotificationsReader } from './features/home/api-unread-notifications-reader';
 import { DailyPatientsSource } from './features/home/daily-patients';
 import { HomeHospitalsApiService } from './features/home/data-access/home-hospitals-api.service';
 import { HomeNotificationsApiService } from './features/home/data-access/home-notifications-api.service';
 import { HomeNotificationsSource } from './features/home/home-notifications-source';
 import { LinkedHospitalsReader } from './features/home/linked-hospitals';
 import { LocalProfessionalProfileReader } from './features/home/local-professional-profile-reader';
-import { LocalUnreadNotificationsReader } from './features/home/local-unread-notifications-reader';
 import { ProfessionalProfileReader } from './features/home/professional-profile';
 import { ProvisionalDailyPatientsSource } from './features/home/provisional-daily-patients';
 import { UnreadNotificationsReader } from './features/home/unread-notifications-reader';
@@ -141,7 +141,7 @@ export const appConfig: ApplicationConfig = {
     { provide: WelcomeSource, useClass: WelcomeApiService },
     { provide: TutorialStateStore, useClass: TutorialApiService },
     { provide: LinkedHospitalsReader, useClass: HomeHospitalsApiService },
-    { provide: UnreadNotificationsReader, useClass: LocalUnreadNotificationsReader },
+    { provide: UnreadNotificationsReader, useClass: ApiUnreadNotificationsReader },
     { provide: DailyPatientsSource, useClass: ProvisionalDailyPatientsSource },
     { provide: PatientListAiCommandPort, useClass: ProvisionalPatientListAiCommand },
     ProvisionalPatientMessages,
