@@ -105,7 +105,7 @@
 .hub__tile-value {
   color: tokens.c(content-1);
 
-  @include typography.title-md;
+  @include typography.headline;
 
   small {
     color: tokens.c(content-4);
