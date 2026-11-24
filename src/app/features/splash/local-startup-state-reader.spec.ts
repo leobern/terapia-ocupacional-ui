@@ -33,7 +33,9 @@ describe('LocalStartupStateReader', () => {
   it('reads hasApprovedLink from GET /v1/vinculos and caches it', async () => {
     const done = reader.initialize();
 
-    http.expectOne(r => r.method === 'GET' && r.url.endsWith('/v1/vinculos')).flush({ hasApprovedLink: true, items: [] });
+    http
+      .expectOne(r => r.method === 'GET' && r.url.endsWith('/v1/vinculos'))
+      .flush({ hasApprovedLink: true, items: [] });
     await done;
 
     expect(reader.readLocal().hasApprovedHospitalLink).toBeTrue();
@@ -57,15 +59,19 @@ describe('LocalStartupStateReader', () => {
     http.expectOne(r => r.url.endsWith('/v1/vinculos')).error(new ProgressEvent('error'));
 
     await expectAsync(done).toBeResolved();
+
     expect(reader.readLocal().hasApprovedHospitalLink).toBeTrue();
   });
 
   it('resolves and stays false on 401', async () => {
     const done = reader.initialize();
 
-    http.expectOne(r => r.url.endsWith('/v1/vinculos')).flush({ message: 'x' }, { status: 401, statusText: 'Unauthorized' });
+    http
+      .expectOne(r => r.url.endsWith('/v1/vinculos'))
+      .flush({ message: 'x' }, { status: 401, statusText: 'Unauthorized' });
 
     await expectAsync(done).toBeResolved();
+
     expect(reader.readLocal().hasApprovedHospitalLink).toBeFalse();
   });
 
@@ -77,6 +83,7 @@ describe('LocalStartupStateReader', () => {
     http.expectOne(r => r.url.endsWith('/v1/vinculos')).flush({ hasApprovedLink: true, items: [] });
 
     await expectAsync(done).toBeResolved();
+
     expect(reader.readLocal().hasApprovedHospitalLink).toBeFalse();
   });
 });
