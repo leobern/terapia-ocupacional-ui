@@ -18,5 +18,8 @@ export interface DuplicateCheckInput {
 export type DuplicateCheckOutcome =
   | { readonly kind: 'invalid-name'; readonly message: string }
   | { readonly kind: 'invalid-date'; readonly message: string }
+  | { readonly kind: 'access-denied'; readonly message: string }
+  | { readonly kind: 'session-expired'; readonly message: string }
+  | { readonly kind: 'unavailable'; readonly message: string }
   | { readonly kind: 'no-match'; readonly next: 'sex' }
   | { readonly kind: 'matches'; readonly lines: readonly string[]; readonly next: 'sex' };

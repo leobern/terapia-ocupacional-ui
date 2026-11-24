@@ -1,0 +1,126 @@
+openapi: 3.0.3
+info:
+  title: Pacientes API
+  version: 1.0.0
+  description: >
+    Contrato da US-002-1-01 (FT-002-1 Cadastro de Paciente): verificação automática de
+    duplicidade por nome + data de nascimento, disparada pelo chatbot assim que ambos são
+    coletados. A extração de nome/data a partir de linguagem natural pertence à camada de IA;
+    esta API recebe os valores já extraídos. Só considera pacientes do hospital informado,
+    ao qual o profissional autenticado precisa ter vínculo aprovado (RN-01).
+servers:
+  - url: /
+security:
+  - bearerAuth: []
+paths:
+  /api/v1/pacientes/duplicidade:
+    get:
+      operationId: checkPatientDuplicate
+      x-implemented: true
+      summary: Busca pacientes do hospital com o mesmo nome e data de nascimento
+      description: >
+        Compara fullNameQuery ignorando acentuação e caixa (RN-02) e birthDateQuery de forma
+        exata, apenas entre pacientes do hospital informado (RN-01). Lista vazia (RN-03) =
+        o chatbot segue para o sexo; um ou mais itens (RN-04) = o chatbot exibe nome,
+        data de nascimento e SAME antes de prosseguir.
+      parameters:
+        - name: hospitalId
+          in: query
+          required: true
+          description: Hospital ativo na sessão do usuário
+          schema:
+            type: integer
+            format: int64
+        - name: fullNameQuery
+          in: query
+          required: true
+          description: Nome completo informado; mínimo 3 caracteres
+          schema:
+            type: string
+            minLength: 3
+        - name: birthDateQuery
+          in: query
+          required: true
+          description: Data de nascimento (yyyy-MM-dd); válida e não futura
+          schema:
+            type: string
+            format: date
+      responses:
+        "200":
+          description: Pacientes correspondentes (lista vazia quando não há correspondência)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PatientDuplicateResult"
+        "400":
+          description: Parâmetro ausente ou com formato malformado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Não autenticado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Profissional sem vínculo aprovado com o hospital informado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "422":
+          description: >
+            Validação de campo. message = MSG-01 "Digite pelo menos 3 caracteres para buscar."
+            (nome com menos de 3 caracteres) ou MSG-02 "Informe uma data de nascimento válida."
+            (data inválida ou futura);
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    ErrorResponse:
+      type: object
+      required: [message, timestamp]
+      properties:
+        message:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+        detalhes:
+          type: array
+          nullable: true
+          items:
+            type: string
+    PatientDuplicateResult:
+      type: object
+      required: [matches]
+      properties:
+        matches:
+          type: array
+          items:
+            $ref: "#/components/schemas/PatientMatch"
+    PatientMatch:
+      type: object
+      required: [id, fullName, birthDate]
+      properties:
+        id:
+          type: integer
+          format: int64
+        fullName:
+          type: string
+        birthDate:
+          type: string
+          format: date
+        medicalRecordNumber:
+          type: string
+          nullable: true
+          description: SAME, quando preenchido

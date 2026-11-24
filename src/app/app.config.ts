@@ -109,8 +109,8 @@ import {
   ProvisionalPatientMessages,
   ProvisionalReplyTranscriber,
 } from './features/patient-messages/provisional-patient-messages';
+import { PatientDuplicateApiService } from './features/patient-registration/patient-duplicate-api.service';
 import { PatientDuplicateSource } from './features/patient-registration/patient-duplicate-source';
-import { ProvisionalPatientDuplicateSource } from './features/patient-registration/provisional-patient-duplicate-source';
 import {
   NutritionAddedCards,
   NutritionHiddenCards,
@@ -201,7 +201,7 @@ export const appConfig: ApplicationConfig = {
     { provide: UserDirectory, useClass: ProvisionalUserDirectory },
     { provide: AnnouncementAssistant, useClass: ProvisionalAnnouncementAssistant },
     { provide: SessionRoleReader, useClass: ProvisionalSessionRoleReader },
-    { provide: PatientDuplicateSource, useClass: ProvisionalPatientDuplicateSource },
+    { provide: PatientDuplicateSource, useClass: PatientDuplicateApiService },
     { provide: FormulasApi, useClass: ProvisionalFormulasApi },
     // Consultas de leitura do assistente (um resolvedor por intenção).
     { multi: true, provide: ASSISTANT_QUERY_RESOLVERS, useClass: PendingNotificationsQueryResolver },

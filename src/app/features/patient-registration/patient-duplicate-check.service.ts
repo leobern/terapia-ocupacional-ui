@@ -1,8 +1,11 @@
 import { inject, Injectable } from '@angular/core';
 
 import { I18nService } from '../../shared/services/i18n.service';
+import { HospitalContextService } from '../home/hospital-context.service';
+import { LinkRevocationChecker } from '../home/link-revocation-checker';
 import { formatBirthDate, parseBirthDate } from './parse-birth-date';
 import { DuplicateCheckInput, DuplicateCheckOutcome, PatientMatch } from './patient-duplicate.models';
+import { PatientDuplicateError, PatientDuplicateFailure } from './patient-duplicate-error';
 import { PatientDuplicateSource } from './patient-duplicate-source';
 
 const MIN_NAME_LENGTH = 3;
@@ -14,7 +17,9 @@ const MIN_NAME_LENGTH = 3;
  */
 @Injectable({ providedIn: 'root' })
 export class PatientDuplicateCheckService {
+  private readonly context = inject(HospitalContextService);
   private readonly i18n = inject(I18nService);
+  private readonly revocation = inject(LinkRevocationChecker);
   private readonly source = inject(PatientDuplicateSource);
 
   async check(input: DuplicateCheckInput): Promise<DuplicateCheckOutcome> {
@@ -28,11 +33,42 @@ export class PatientDuplicateCheckService {
     if (birthDate === null) {
       return { kind: 'invalid-date', message: this.i18n.t('patientRegistration.duplicate.invalidBirthDate') };
     }
-    const matches = await this.source.find(input.hospitalId, fullName, birthDate);
+    let matches: readonly PatientMatch[];
+
+    try {
+      matches = await this.source.find(input.hospitalId, fullName, birthDate);
+    } catch (failure) {
+      if (failure instanceof PatientDuplicateError) {
+        return this.failed(failure.failure, input.hospitalId);
+      }
+      throw failure;
+    }
 
     return matches.length === 0
       ? { kind: 'no-match', next: 'sex' }
       : { kind: 'matches', lines: matches.map(match => this.describe(match)), next: 'sex' };
+  }
+
+  /** Falhas da API: 422 volta às mensagens do contrato; 403 só vira revogação se o vínculo constar REVOGADO. */
+  private async failed(failure: PatientDuplicateFailure, hospitalId: number): Promise<DuplicateCheckOutcome> {
+    const t = (key: string): string => this.i18n.t(`patientRegistration.duplicate.${key}`);
+
+    switch (failure) {
+      case 'invalid-name':
+        return { kind: 'invalid-name', message: t('nameTooShort') };
+      case 'invalid-date':
+        return { kind: 'invalid-date', message: t('invalidBirthDate') };
+      case 'session-expired':
+        return { kind: 'session-expired', message: t('sessionExpired') };
+      case 'access-denied':
+        if (await this.revocation.isRevoked(hospitalId)) {
+          this.context.revokeAccess(hospitalId);
+        }
+
+        return { kind: 'access-denied', message: t('accessDenied') };
+      default:
+        return { kind: 'unavailable', message: t('unavailable') };
+    }
   }
 
   private describe(match: PatientMatch): string {

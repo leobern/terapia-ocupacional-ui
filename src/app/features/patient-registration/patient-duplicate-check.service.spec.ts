@@ -1,6 +1,10 @@
 import { TestBed } from '@angular/core/testing';
 
+import { HospitalContextService } from '../home/hospital-context.service';
+import { LinkRevocationChecker } from '../home/link-revocation-checker';
+import { LinkedHospitalsReader } from '../home/linked-hospitals';
 import { PatientDuplicateCheckService } from './patient-duplicate-check.service';
+import { PatientDuplicateError } from './patient-duplicate-error';
 import { PatientDuplicateSource } from './patient-duplicate-source';
 import { ProvisionalPatientDuplicateSource } from './provisional-patient-duplicate-source';
 
@@ -11,7 +15,11 @@ describe('PatientDuplicateCheckService (fonte provisória)', () => {
   beforeEach(() => {
     spyOnProperty(navigator, 'language', 'get').and.returnValue('pt-BR');
     TestBed.configureTestingModule({
-      providers: [{ provide: PatientDuplicateSource, useClass: ProvisionalPatientDuplicateSource }],
+      providers: [
+        { provide: PatientDuplicateSource, useClass: ProvisionalPatientDuplicateSource },
+        { provide: LinkRevocationChecker, useValue: { isRevoked: (): Promise<boolean> => Promise.resolve(false) } },
+        { provide: LinkedHospitalsReader, useValue: { read: (): Promise<[]> => Promise.resolve([]) } },
+      ],
     });
     const source = TestBed.inject(PatientDuplicateSource);
 
@@ -95,5 +103,58 @@ describe('PatientDuplicateCheckService (fonte provisória)', () => {
     find.and.rejectWith(new Error('boom'));
 
     await expectAsync(service.check({ birthDate: '01/01/2000', fullName: 'A B C', hospitalId: 1 })).toBeRejected();
+  });
+
+  describe('falhas da API', () => {
+    const input = { birthDate: '01/01/2000', fullName: 'A B C', hospitalId: 1 };
+    let revoked: boolean;
+    let revokeAccess: jasmine.Spy;
+
+    beforeEach(() => {
+      revoked = true;
+      const context = TestBed.inject(HospitalContextService);
+
+      spyOn(context, 'revokeAccess');
+      revokeAccess = context.revokeAccess as jasmine.Spy;
+      TestBed.inject(LinkRevocationChecker).isRevoked = (): Promise<boolean> => Promise.resolve(revoked);
+    });
+
+    it('422 volta às mensagens MSG-01/MSG-02', async () => {
+      find.and.rejectWith(new PatientDuplicateError('invalid-name'));
+
+      expect((await service.check(input)).kind).toBe('invalid-name');
+
+      find.and.rejectWith(new PatientDuplicateError('invalid-date'));
+
+      expect((await service.check(input)).kind).toBe('invalid-date');
+    });
+
+    it('403 com vínculo revogado revoga o acesso e não continua', async () => {
+      find.and.rejectWith(new PatientDuplicateError('access-denied'));
+
+      expect((await service.check(input)).kind).toBe('access-denied');
+      expect(revokeAccess).toHaveBeenCalledWith(1);
+    });
+
+    it('403 sem revogação confirmada só nega', async () => {
+      revoked = false;
+      find.and.rejectWith(new PatientDuplicateError('access-denied'));
+
+      expect((await service.check(input)).kind).toBe('access-denied');
+      expect(revokeAccess).not.toHaveBeenCalled();
+    });
+
+    it('401 e indisponibilidade têm mensagem própria', async () => {
+      find.and.rejectWith(new PatientDuplicateError('session-expired'));
+
+      expect(await service.check(input)).toEqual({
+        kind: 'session-expired',
+        message: 'Sua sessão expirou. Entre novamente.',
+      });
+
+      find.and.rejectWith(new PatientDuplicateError('unavailable'));
+
+      expect((await service.check(input)).kind).toBe('unavailable');
+    });
   });
 });

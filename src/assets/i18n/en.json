@@ -63,11 +63,14 @@
   },
   "patientRegistration": {
     "duplicate": {
+      "accessDenied": "You do not have access to this hospital.",
       "birthDate": "Date of birth",
       "invalidBirthDate": "Enter a valid date of birth.",
       "name": "Name",
       "nameTooShort": "Enter at least 3 characters to search.",
-      "same": "SAME"
+      "same": "SAME",
+      "sessionExpired": "Your session has expired. Sign in again.",
+      "unavailable": "Could not check the patient right now. Try again."
     }
   },
   "settings": {
