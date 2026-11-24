@@ -392,7 +392,7 @@ describe('DiagnosisComponent', () => {
       await click(el, 'Excluir');
 
       expect(el.querySelector('app-confirm-dialog')?.textContent).toContain('Excluir diagnóstico?');
-      el.querySelector<HTMLElement>('app-confirm-dialog app-button button')?.click();
+      el.querySelectorAll<HTMLElement>('app-confirm-dialog app-button button')[1]?.click();
       fixture.detectChanges();
 
       expect((await decisions.load('p1')).audit).toEqual([]);
@@ -403,7 +403,7 @@ describe('DiagnosisComponent', () => {
       const el = await render();
 
       await click(el, 'Excluir');
-      el.querySelectorAll<HTMLElement>('app-confirm-dialog app-button button')[1]?.click();
+      el.querySelectorAll<HTMLElement>('app-confirm-dialog app-button button')[0]?.click();
       await fixture.whenStable();
       fixture.detectChanges();
 

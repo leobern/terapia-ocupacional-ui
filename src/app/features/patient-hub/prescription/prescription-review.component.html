@@ -110,15 +110,15 @@
                 />
                 <div class="review__actions">
                   <app-button
+                    label="Salvar meta"
+                    [disabled]="savingTargets() || !online()"
+                    (click)="saveTargets()"
+                  />
+                  <app-button
                     kind="secondary"
                     label="Cancelar"
                     [disabled]="savingTargets()"
                     (click)="cancelTargets()"
-                  />
-                  <app-button
-                    label="Salvar meta"
-                    [disabled]="savingTargets() || !online()"
-                    (click)="saveTargets()"
                   />
                 </div>
               } @else {

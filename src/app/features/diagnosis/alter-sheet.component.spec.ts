@@ -48,7 +48,7 @@ describe('AlterSheetComponent', () => {
     fixture.detectChanges();
   };
   const save = (): void => {
-    fixture.nativeElement.querySelector('.alter__actions app-button:last-child button').click();
+    fixture.nativeElement.querySelector('.alter__actions app-button:first-child button').click();
   };
   const dialog = (): HTMLDialogElement => fixture.nativeElement.querySelector('dialog');
   const open = (): void => {

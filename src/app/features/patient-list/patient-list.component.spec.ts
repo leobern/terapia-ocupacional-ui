@@ -150,7 +150,7 @@ describe('PatientListComponent', () => {
     ).toContain('date-strip__day--selected');
     q('[aria-label="Dia anterior"]')?.click();
     fixture.detectChanges();
-    (document.querySelectorAll('.confirm-dialog__actions button')[1] as HTMLElement).click();
+    (document.querySelectorAll('.confirm-dialog__actions button')[0] as HTMLElement).click();
     await fixture.whenStable();
     fixture.detectChanges();
 
@@ -910,7 +910,7 @@ describe('PatientListComponent', () => {
       await create();
       fixture.componentInstance.selectDate(yesterday());
       await settle();
-      buttons()[1].click();
+      buttons()[0].click();
       await settle();
 
       expect(days.at(-1)?.getDate()).toBe(yesterday().getDate());
@@ -938,7 +938,7 @@ describe('PatientListComponent', () => {
       await create();
       fixture.componentInstance.selectDate(yesterday());
       await settle();
-      buttons()[0].click();
+      buttons()[1].click();
       await settle();
 
       expect(dialog()).toBeNull();

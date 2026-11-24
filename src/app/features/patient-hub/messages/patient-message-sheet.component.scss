@@ -223,3 +223,12 @@
 
   @include typography.label-sm;
 }
+
+// Padrão dos modais: primária à esquerda, secundária à direita, mesma linha, alinhadas à direita, gap 16.
+// O rótulo da primária é longo; só nesse caso a linha quebra (as duas ações continuam alinhadas à direita).
+.msg__confirm-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: tokens.$space-16;
+  justify-content: flex-end;
+}

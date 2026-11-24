@@ -1,4 +1,12 @@
-<div class="input-chat">
+<!--
+  Figma v2/InputChat: a borda é do CONTÊINER e o botão principal (círculo de 40px) fica DENTRO dela, com 4px de
+  folga, colado na base enquanto o texto cresce.
+-->
+<div
+  class="input-chat"
+  [class.input-chat--disabled]="disabled()"
+  [class.keyboard-focus]="keyboardFocused()"
+>
   @if (mode() === 'audio') {
     <!--
       Barra de ondas (nó 4054:3382). O botão de cancelar é posicionado
@@ -30,12 +38,7 @@
       (FR-002): é isso que faz a barra de rolagem aparecer dentro da borda
       arredondada, com folga em cima/embaixo, sem passar por cima do texto.
     -->
-    <div
-      class="input-chat__shell"
-      [class.input-chat__shell--disabled]="disabled()"
-      [class.keyboard-focus]="keyboardFocused()"
-      [style.max-height.px]="maxHeight()"
-    >
+    <div class="input-chat__shell" [style.max-height.px]="maxHeight()">
       <div class="input-chat__content">
         <textarea
           class="input-chat__field"
@@ -62,6 +65,7 @@
     teclado no meio de uma transição (SC-004).
   -->
   <app-icon-button
+    size="small"
     [kind]="mainButtonFace().kind"
     [appearance]="mainButtonFace().appearance"
     [icon]="mainButtonFace().icon"

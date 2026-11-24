@@ -106,20 +106,20 @@
         {{ patient().name }}: {{ summary() }}. Esta ação fica registrada com
         autor e data/hora.
       </p>
-      <app-button
-        label="Confirmar encerramento"
-        [fullWidth]="true"
-        [disabled]="saving() || !online()"
-        (click)="confirm()"
-      />
-      <app-button
-        kind="primary"
-        appearance="outlined"
-        label="Voltar"
-        [fullWidth]="true"
-        [disabled]="saving()"
-        (click)="backToEdit()"
-      />
+      <div class="closure__confirm-actions">
+        <app-button
+          label="Confirmar encerramento"
+          [disabled]="saving() || !online()"
+          (click)="confirm()"
+        />
+        <app-button
+          kind="primary"
+          appearance="outlined"
+          label="Voltar"
+          [disabled]="saving()"
+          (click)="backToEdit()"
+        />
+      </div>
     </section>
   } @else {
     <app-button

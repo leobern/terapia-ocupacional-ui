@@ -40,9 +40,10 @@
   @include typography.body-md;
 }
 
+// Padrão dos modais: primária à esquerda, secundária à direita, mesma linha, alinhadas à direita, gap 16.
 .confirm-dialog__actions {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   justify-content: flex-end;
-  gap: tokens.$space-8;
+  gap: tokens.$space-16;
 }
