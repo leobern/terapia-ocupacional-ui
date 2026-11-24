@@ -58,5 +58,11 @@
     "noConnection": "No connection",
     "noConnectionHint": "Check your internet and try again.",
     "retry": "Try again"
+  },
+  "welcome": {
+    "greeting": "Hello, {name}!",
+    "hint": "Your access was approved and Conductia is ready for you. Would you like a quick tutorial or to go straight to the Metabolic Panel?",
+    "startTutorial": "Start tutorial",
+    "goToApp": "Go straight to the app"
   }
 }

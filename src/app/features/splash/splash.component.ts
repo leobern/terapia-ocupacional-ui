@@ -4,6 +4,7 @@ import { Router } from '@angular/router';
 import { ButtonComponent } from '../../shared/components/button/button.component';
 import { IconLogoComponent } from '../../shared/components/icon-logo/icon-logo.component';
 import { I18nService } from '../../shared/services/i18n.service';
+import { WelcomeSource } from '../welcome/welcome-source';
 import { decideDestination } from './splash-destination';
 import { StartupStateReader } from './startup-state';
 
@@ -31,6 +32,7 @@ export class SplashComponent implements OnInit {
 
   private readonly reader = inject(StartupStateReader);
   private readonly router = inject(Router);
+  private readonly welcome = inject(WelcomeSource);
   private attempt = 0;
   private timers: ReturnType<typeof setTimeout>[] = [];
 
@@ -60,7 +62,7 @@ export class SplashComponent implements OnInit {
     const tryNavigate = (): void => {
       if (isCurrent() && minElapsed && ready) {
         this.clearTimers();
-        void this.router.navigateByUrl(decideDestination(this.reader.readLocal()), { replaceUrl: true });
+        void this.navigateToDestination(attempt);
       }
     };
 
@@ -94,6 +96,22 @@ export class SplashComponent implements OnInit {
         }
       },
     );
+  }
+
+  /** Com destino `/home`, as boas-vindas ainda não vistas têm prioridade; falha segue ao Painel. */
+  private async navigateToDestination(attempt: number): Promise<void> {
+    let destination: string = decideDestination(this.reader.readLocal());
+
+    if (destination === '/home') {
+      try {
+        destination = (await this.welcome.getStatus()).shouldShow ? '/welcome' : '/home';
+      } catch {
+        destination = '/home';
+      }
+    }
+    if (attempt === this.attempt) {
+      await this.router.navigateByUrl(destination, { replaceUrl: true });
+    }
   }
 
   private fail(): void {

@@ -58,5 +58,11 @@
     "noConnection": "Sem conexão",
     "noConnectionHint": "Verifique sua internet e tente novamente.",
     "retry": "Tentar novamente"
+  },
+  "welcome": {
+    "greeting": "Olá, {name}!",
+    "hint": "Seu acesso foi aprovado e o Conductia já está pronto para você. Quer conhecer o app com um tutorial rápido ou ir direto ao Painel Metabólico?",
+    "startTutorial": "Iniciar tutorial",
+    "goToApp": "Ir direto ao app"
   }
 }
