@@ -16,10 +16,11 @@ paths:
   /api/v1/notifications:
     get:
       operationId: getNotifications
-      x-implemented: false
+      x-implemented: true
       summary: >
-        Lista paginada de notificações do profissional autenticado, filtrada por status
-        (pendente/resolvida — FR-004a). Cada seção da tela pagina de forma independente.
+        Lista paginada (mensagens/pendências de paciente + comunicados internos) do profissional
+        autenticado, filtrada por status (pending = aba Ativas, resolved = aba Resolvidas).
+        Cada aba pagina de forma independente; também devolve o contador de não lidas.
       parameters:
         - name: hospitalId
           in: query
@@ -46,6 +47,12 @@ paths:
             default: 10
             maximum: 10
       responses:
+        "400":
+          description: Cursor inválido ou limit fora de 1..10
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
         "200":
           description: >
             Lote de até 10 notificações daquele status, ordenadas da mais recente para a
@@ -56,8 +63,16 @@ paths:
                 $ref: "#/components/schemas/NotificationPage"
         "401":
           description: Não autenticado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
         "403":
           description: Profissional sem vínculo com o hospital informado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 
   /api/v1/notifications/{notificationId}/replies:
     post:
@@ -88,14 +103,63 @@ paths:
                 $ref: "#/components/schemas/NotificationReply"
         "401":
           description: Não autenticado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
         "403":
           description: >
             Profissional sem vínculo com o hospital da notificação, ou notificação não
             direcionada a este profissional (destinatarioId ≠ subject do JWT)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
         "404":
           description: Notificação não encontrada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
         "422":
           description: "Corpo inválido (ex.: texto vazio)"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/v1/notifications/{notificationId}/read:
+    put:
+      operationId: markNotificationAsRead
+      x-implemented: true
+      summary: Marca a notificação como lida para o profissional autenticado (idempotente)
+      parameters:
+        - name: notificationId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        "204":
+          description: Notificação marcada como lida (ou já estava lida)
+        "401":
+          description: Não autenticado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Notificação não direcionada a este profissional
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Notificação não encontrada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 
   /api/v1/notifications/{notificationId}/resolve:
     post:
@@ -166,6 +230,12 @@ components:
           items:
             type: string
 
+    NotificationType:
+      type: string
+      enum: [patient_message, reevaluation_pending, internal_notice]
+      description: >
+        patient_message e reevaluation_pending vêm da FT-005-1 (somente exibidos aqui);
+        internal_notice é o comunicado interno, sem paciente.
     NotificationStatus:
       type: string
       enum: [pending, resolved]
@@ -177,8 +247,14 @@ components:
 
     NotificationPage:
       type: object
-      required: [items, nextCursor]
+      required: [items, nextCursor, unreadCount]
       properties:
+        unreadCount:
+          type: integer
+          minimum: 0
+          description: >
+            Total de notificações não lidas do profissional neste hospital, somando mensagens/pendências
+            de paciente e comunicados internos (independe de status/cursor).
         items:
           type: array
           items:
@@ -190,12 +266,9 @@ components:
 
     Notification:
       type: object
-      required: [id, author, description, createdAt, read, replyCount]
+      required: [id, type, author, description, createdAt, read, replyCount]
       description: >
-        REVISÃO US-005-1-03: `patient` deixou de ser required porque o backend ainda não tem
-        entidade/vínculo de paciente em `notificacao` (nem as respostas — `replyCount` é 0 e
-        `replies` é omitido até a US-005-1-02); a UI deve tratar `patient` ausente.
-        Texto original: `patient` era required nesta v1 porque o único `tipoEvento` suportado hoje é
+        `patient` é opcional: ausente quando type = internal_notice. Antes era required porque o único `tipoEvento` suportado hoje é
         relacionado a paciente (spec.md FR-006) — mas a coluna correspondente no banco
         (`notificacao.paciente_id`) já é nullable, de propósito, para permitir tipos de
         notificação futuros sem paciente associado (research.md §4, spec.md § Assumptions).
@@ -208,8 +281,13 @@ components:
           format: int64
         author:
           $ref: "#/components/schemas/ProfessionalRef"
+        type:
+          $ref: "#/components/schemas/NotificationType"
         patient:
           $ref: "#/components/schemas/PatientRef"
+        overdue:
+          type: boolean
+          description: true para pendência de reavaliação vencida (indicador definido na FT-005-1)
         description:
           type: string
         createdAt:
@@ -217,21 +295,6 @@ components:
           format: date-time
         read:
           type: boolean
-        mentioned:
-          type: array
-          description: Destinatários mencionados (pessoas); usado pela UI para decidir se o profissional é participante
-          items:
-            $ref: "#/components/schemas/ProfessionalRef"
-        resolvedAt:
-          type: string
-          format: date-time
-          nullable: true
-          description: Data/hora em que a thread foi resolvida; null quando ativa
-        resolvedBy:
-          allOf:
-            - $ref: "#/components/schemas/ProfessionalRef"
-          nullable: true
-          description: Autor da resolução; null quando ativa
         replyCount:
           type: integer
           description: >
