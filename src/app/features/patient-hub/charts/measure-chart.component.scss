@@ -1,0 +1,108 @@
+@use '../../../shared/styles/tokens';
+@use '../../../shared/styles/typography';
+
+:host {
+  display: block;
+}
+
+.measure {
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$space-8;
+  padding: tokens.$space-16;
+  border-radius: tokens.$radius-md;
+  background: tokens.c(surface);
+}
+
+.measure__title,
+.measure__value,
+.measure__caption {
+  margin: 0;
+}
+
+.measure__title {
+  color: tokens.c(content-4);
+
+  @include typography.label-md;
+}
+
+.measure__value {
+  color: tokens.c(content-1);
+
+  @include typography.title-lg;
+}
+
+.measure__unit {
+  color: tokens.c(content-4);
+
+  @include typography.caption;
+}
+
+.measure__caption {
+  color: tokens.c(content-4);
+
+  @include typography.caption;
+}
+
+.measure__svg {
+  width: 100%;
+  height: 110px;
+}
+
+.measure__ideal {
+  fill: tokens.c(content-3);
+  opacity: 0.2;
+}
+
+.measure__area {
+  fill: tokens.c(secondary);
+  opacity: 0.12;
+}
+
+.measure__line {
+  fill: none;
+  stroke: tokens.c(secondary);
+  stroke-width: 2;
+  vector-effect: non-scaling-stroke;
+}
+
+.measure__dot {
+  fill: tokens.c(surface);
+  stroke: tokens.c(secondary);
+  stroke-width: 1.5;
+}
+
+.measure__axis {
+  display: flex;
+  justify-content: space-between;
+  color: tokens.c(content-4);
+
+  @include typography.caption;
+}
+
+.measure__periods {
+  display: flex;
+  gap: tokens.$space-8;
+}
+
+.measure__period {
+  height: 32px;
+  padding-inline: tokens.$space-12;
+  border: 0;
+  border-radius: tokens.$radius-pill;
+  background: transparent;
+  color: tokens.c(content-1);
+  cursor: pointer;
+
+  @include typography.label-md;
+
+  &--active {
+    background: tokens.c(secondary);
+    color: tokens.c(content-6);
+  }
+
+  &:focus-visible {
+    outline: var(--focus-ring-width) solid tokens.c(focus-ring);
+    outline-offset: var(--focus-ring-offset);
+  }
+}

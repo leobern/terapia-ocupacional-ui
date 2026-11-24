@@ -16,11 +16,37 @@
   padding-bottom: tokens.$space-24;
 
   @include breakpoints.md {
-    // Coluna de 578px do Figma (identificação + hipótese).
-    max-width: 578px;
     min-height: 100dvh;
     padding: tokens.$space-24 tokens.$space-32 tokens.$space-32;
   }
+}
+
+// Figma 4608:4845: 3 colunas no desktop (paciente | diagnóstico | metas e prescrição); no mobile, 1 coluna (4608:4375).
+.hub__grid {
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$space-16;
+
+  @include breakpoints.md {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    align-items: start;
+    gap: tokens.$space-32;
+  }
+}
+
+.hub__col {
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$space-16;
+  min-width: 0;
+}
+
+.hub__section-title {
+  margin: 0 tokens.$space-16;
+  color: tokens.c(content-1);
+
+  @include typography.title-md;
 }
 
 .hub__identity {

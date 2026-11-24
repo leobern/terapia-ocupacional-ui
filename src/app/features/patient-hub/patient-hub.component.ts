@@ -47,6 +47,7 @@ import {
 } from '../patients/nutrition-panel/nutrition-panel.models';
 import { NutritionResultsSource } from '../patients/nutrition-panel/nutrition-results-source';
 import { AssessmentSectionComponent } from './assessment/assessment-section.component';
+import { MeasureChartComponent } from './charts/measure-chart.component';
 import { DailyRecordSheetComponent } from './daily-record/daily-record-sheet.component';
 import { PatientMessageSheetComponent } from './messages/patient-message-sheet.component';
 import { PatientMessagesComponent } from './messages/patient-messages.component';
@@ -59,6 +60,7 @@ import { PrescriptionSheetComponent } from './prescription/prescription-sheet.co
 import { PrescriptionSource } from './prescription/prescription-source';
 import { PrescriptionSummaryComponent } from './prescription/prescription-summary.component';
 import { PriorStaysBoxComponent } from './prior-stays-box/prior-stays-box.component';
+import { PROVISIONAL_BMI, PROVISIONAL_WEIGHT } from './provisional-measures';
 
 type HubStatus = 'loading' | 'ready' | 'not-found' | 'error';
 
@@ -88,6 +90,7 @@ export const DIAGNOSIS_FAILED_HINT =
   imports: [
     PageHeaderComponent,
     AssessmentSectionComponent,
+    MeasureChartComponent,
     ButtonComponent,
     DailyRecordSheetComponent,
     FollowUpStatusComponent,
@@ -189,6 +192,8 @@ export class PatientHubComponent implements OnInit {
   protected readonly offline = computed(() => !this.connectivity.online());
 
   protected readonly hospitalId = computed(() => this.context.selected()?.id ?? null);
+  protected readonly weightSeries = PROVISIONAL_WEIGHT;
+  protected readonly bmiSeries = PROVISIONAL_BMI;
   protected readonly hospitalName = computed(() => this.context.selected()?.name ?? '');
   protected readonly todayLabel = computed(() => {
     const label = this.now().toLocaleDateString('pt-BR', { day: 'numeric', month: 'long', weekday: 'long' });

@@ -1,0 +1,60 @@
+<section class="measure" [attr.aria-label]="title()">
+  <header class="measure__head">
+    <div>
+      <p class="measure__title">{{ title() }}</p>
+      <p class="measure__value">
+        {{ current() }} <span class="measure__unit">{{ unit() }}</span>
+      </p>
+      @if (caption()) {
+        <p class="measure__caption">{{ caption() }}</p>
+      }
+    </div>
+  </header>
+
+  <svg
+    class="measure__svg"
+    role="img"
+    preserveAspectRatio="none"
+    [attr.viewBox]="'0 0 ' + width + ' ' + height"
+    [attr.aria-label]="summary()"
+  >
+    @if (ideal(); as band) {
+      <rect
+        class="measure__ideal"
+        x="0"
+        [attr.y]="band.y"
+        [attr.width]="width"
+        [attr.height]="band.height"
+      />
+    }
+    <polygon class="measure__area" [attr.points]="area()" />
+    <polyline class="measure__line" [attr.points]="line()" />
+    @for (point of points(); track point.label) {
+      <circle
+        class="measure__dot"
+        r="3"
+        [attr.cx]="point.x"
+        [attr.cy]="point.y"
+      />
+    }
+  </svg>
+  <div class="measure__axis" aria-hidden="true">
+    @for (point of points(); track point.label) {
+      <span>{{ point.label }}</span>
+    }
+  </div>
+
+  <div class="measure__periods" role="group" aria-label="Período">
+    @for (item of periods; track item.key) {
+      <button
+        type="button"
+        class="measure__period"
+        [class.measure__period--active]="period() === item.key"
+        [attr.aria-pressed]="period() === item.key"
+        (click)="select(item.key)"
+      >
+        {{ item.label }}
+      </button>
+    }
+  </div>
+</section>

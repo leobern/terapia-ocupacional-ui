@@ -1329,12 +1329,12 @@ describe('PatientHubComponent', () => {
       plus().click();
       await flush();
 
-      expect(el().querySelector('dialog')?.open).toBe(true);
+      expect(el().querySelector<HTMLDialogElement>('app-nutrition-add-card-sheet dialog')?.open).toBe(true);
       expect(option()?.textContent).toContain('Calorimetria indireta');
       option()?.click();
       await flush();
 
-      expect(el().querySelector('dialog')?.open).toBe(false);
+      expect(el().querySelector<HTMLDialogElement>('app-nutrition-add-card-sheet dialog')?.open).toBe(false);
       expect(cardLabels().at(-1)).toBe('Calorimetria indireta');
       expect(cardLabels().length).toBe(9);
       expect(Array.from(el().querySelectorAll('.nutrition-panel__card')).at(-1)?.textContent).toContain('Sem dados');
