@@ -220,6 +220,8 @@ export class NotificationsRepository {
       item.notification.id === notificationId
         ? {
             ...item,
+            // Responder não resolve; se estava resolvida, a resposta reabre a thread.
+            status: 'pending',
             notification: {
               ...item.notification,
               replies: [...item.notification.replies, reply],

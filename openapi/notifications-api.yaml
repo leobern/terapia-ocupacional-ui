@@ -77,10 +77,18 @@ paths:
   /api/v1/notifications/{notificationId}/replies:
     post:
       operationId: createNotificationReply
-      x-implemented: false
-      summary: >
-        Registra a resposta do profissional autenticado a uma notificação (FR-009); move a
-        notificação da seção Pendentes para Resolvidas.
+      x-implemented: true
+      summary: Registra a resposta do participante a uma notificação e reabre se estava resolvida
+      description: >
+        Revisão da US-005-2-03: responder NÃO resolve a notificação (resolver é a ação
+        explícita POST .../resolve). Para comunicado interno (type = internal_notice),
+        podem responder o remetente e qualquer destinatário (pessoa, membro de grupo ou
+        vinculado ao hospital); a resposta fica visível a todos os participantes
+        (replies/replyCount em getNotifications). Se o comunicado estava resolvido, é
+        reaberto automaticamente (status volta a pending). Resposta por áudio: o cliente
+        envia somente o texto já transcrito e confirmado. Autor e data/hora ficam em
+        trilha de auditoria. Para mensagens/pendências de paciente aplicam-se as regras
+        da FT-005-1, sem redefinição aqui.
       parameters:
         - name: notificationId
           in: path
@@ -109,8 +117,8 @@ paths:
                 $ref: "#/components/schemas/ErrorResponse"
         "403":
           description: >
-            Profissional sem vínculo com o hospital da notificação, ou notificação não
-            direcionada a este profissional (destinatarioId ≠ subject do JWT)
+            Profissional sem vínculo com o hospital da notificação, ou não é participante
+            (remetente ou destinatário) da notificação
           content:
             application/json:
               schema:
