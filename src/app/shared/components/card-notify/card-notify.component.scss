@@ -117,6 +117,24 @@
   }
 }
 
+// --- tipo do conteúdo (texto, nunca só cor) ---------------------------------------
+.card-notify__kind {
+  display: flex;
+  flex-wrap: wrap;
+  gap: tokens.$space-8;
+}
+
+.card-notify__kind-label {
+  color: tokens.c(content-4);
+
+  @include typography.label-sm;
+
+  &--overdue {
+    color: tokens.c(comm-alert);
+    font-weight: tokens.$font-weight-semibold;
+  }
+}
+
 // --- paciente (Figma v2/NotificationThread: chip só com texto, sem foto) ----------
 .card-notify__patient {
   box-sizing: border-box;

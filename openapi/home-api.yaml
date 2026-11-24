@@ -211,6 +211,24 @@ components:
           format: date-time
         read:
           type: boolean
+        mentioned:
+          type: array
+          description: Destinatários mencionados (US-005-1-03); campo aditivo
+          items:
+            $ref: "#/components/schemas/ProfessionalRef"
+        resolvedAt:
+          type: string
+          format: date-time
+          nullable: true
+          description: Data/hora da resolução da thread; null quando ativa (US-005-1-03)
+        resolvedBy:
+          allOf:
+            - $ref: "#/components/schemas/ProfessionalRef"
+          nullable: true
+          description: Autor da resolução; null quando ativa (US-005-1-03)
+        replyCount:
+          type: integer
+          description: Quantidade de respostas (0 até a US-005-1-02)
 
     ProfessionalRef:
       type: object

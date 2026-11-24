@@ -1,0 +1,24 @@
+<section class="records" aria-labelledby="records-title">
+  <h2 id="records-title" class="records__title">Observações e mensagens</h2>
+  @if (loadFailed()) {
+    <p class="records__status" role="alert">{{ loadFailedHint }}</p>
+  }
+  @for (record of records(); track record.id) {
+    <article class="records__card" data-testid="record-card">
+      <header class="records__meta">
+        <span class="records__tag">{{
+          record.recipients.length > 0 ? 'Mensagem' : 'Observação'
+        }}</span>
+        <span class="records__author"
+          >{{ record.author }} · {{ time(record.at) }}</span
+        >
+      </header>
+      <p class="records__content">{{ record.content }}</p>
+      @if (record.recipients.length > 0) {
+        <p class="records__to">Para: {{ names(record) }}</p>
+      }
+    </article>
+  } @empty {
+    <p class="records__status" data-testid="records-empty">{{ emptyText }}</p>
+  }
+</section>

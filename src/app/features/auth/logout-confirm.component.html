@@ -1,0 +1,46 @@
+<ng-template #body>
+  <div class="logout-confirm">
+    <h2 class="logout-confirm__title">{{ i18n.t('logout.title') }}</h2>
+    <p class="logout-confirm__message">{{ i18n.t('logout.message') }}</p>
+    <div class="logout-confirm__actions">
+      <app-button
+        kind="secondary"
+        appearance="outlined"
+        [fullWidth]="true"
+        [label]="i18n.t('logout.cancel')"
+        (click)="cancelled.emit()"
+      />
+      <app-button
+        kind="primary"
+        [fullWidth]="true"
+        [disabled]="busy()"
+        [label]="i18n.t('logout.confirm')"
+        (click)="!busy() && confirmed.emit()"
+      />
+    </div>
+  </div>
+</ng-template>
+
+@if (!viewport.isDesktop()) {
+  <app-bottom-sheet
+    [open]="open()"
+    [showLogo]="false"
+    [ariaLabel]="i18n.t('logout.dialogLabel')"
+    (closed)="cancelled.emit()"
+  >
+    <div bottomSheetContent>
+      <ng-container [ngTemplateOutlet]="body" />
+    </div>
+  </app-bottom-sheet>
+} @else {
+  <app-drawer
+    [open]="open()"
+    [showLogo]="false"
+    [ariaLabel]="i18n.t('logout.dialogLabel')"
+    (closed)="cancelled.emit()"
+  >
+    <div drawerContent>
+      <ng-container [ngTemplateOutlet]="body" />
+    </div>
+  </app-drawer>
+}

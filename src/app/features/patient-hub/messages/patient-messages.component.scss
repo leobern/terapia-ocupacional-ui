@@ -1,0 +1,78 @@
+@use '../../../shared/styles/tokens';
+@use '../../../shared/styles/typography';
+
+:host {
+  display: block;
+}
+
+.records {
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$space-8;
+}
+
+.records__title {
+  margin: 0;
+  padding: tokens.$space-8 tokens.$space-16;
+  color: tokens.c(content-1);
+
+  @include typography.title-md;
+}
+
+.records__card {
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$space-8;
+  padding: tokens.$space-16;
+  border: 1px solid tokens.c(border);
+  border-radius: tokens.$radius-md;
+  background: tokens.c(surface);
+}
+
+.records__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: tokens.$space-8;
+}
+
+.records__tag {
+  display: inline-flex;
+  align-items: center;
+  height: 24px;
+  padding-inline: tokens.$space-8;
+  border-radius: tokens.$radius-pill;
+  background: tokens.c(surface-2);
+  color: tokens.c(secondary);
+
+  @include typography.label-sm;
+}
+
+.records__author {
+  color: tokens.c(content-4);
+
+  @include typography.caption;
+}
+
+.records__content {
+  margin: 0;
+  color: tokens.c(content-1);
+  white-space: pre-wrap;
+
+  @include typography.body-lg;
+}
+
+.records__to {
+  margin: 0;
+  color: tokens.c(content-4);
+
+  @include typography.body-md;
+}
+
+.records__status {
+  margin: 0;
+  padding-inline: tokens.$space-16;
+  color: tokens.c(content-4);
+
+  @include typography.body-md;
+}

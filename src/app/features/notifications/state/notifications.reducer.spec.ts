@@ -19,6 +19,7 @@ function notification(id: number, overrides: Partial<Notification> = {}): Notifi
     read: false,
     replyCount: 0,
     replies: [],
+    type: 'patient_message',
     ...overrides,
   };
 }
@@ -139,17 +140,42 @@ describe('notificationsFeature reducer', () => {
     expect(state.status).toBe('loading-more-pending');
   });
 
-  it('loadNextBatchRequested marca loading-more-resolved quando pendingCursor já esgotou (FR-004a)', () => {
-    const comPendentesEsgotados = reducer(
-      initialNotificationsState,
-      NotificationsActions.loadPendingPageSuccess({
-        page: { items: [notification(1)], nextCursor: null, totalCount: 1 },
+  it('loadNextBatchRequested marca loading-more-resolved quando a aba Resolvidas está selecionada', () => {
+    const naAbaResolvidas = reducer(initialNotificationsState, NotificationsActions.tabSelected({ tab: 'resolved' }));
+
+    const state = reducer(naAbaResolvidas, NotificationsActions.loadNextBatchRequested());
+
+    expect(state.activeTab).toBe('resolved');
+    expect(state.status).toBe('loading-more-resolved');
+  });
+
+  it('a aba Ativas é a padrão e pageOpened volta para ela', () => {
+    expect(initialNotificationsState.activeTab).toBe('pending');
+
+    const state = reducer(
+      { ...initialNotificationsState, activeTab: 'resolved' },
+      NotificationsActions.pageOpened({ hospitalId: 1 }),
+    );
+
+    expect(state.activeTab).toBe('pending');
+  });
+
+  it('loadResolvedPageSuccess mantém Resolvidas da mais recente para a mais antiga', () => {
+    const state = reducer(
+      {
+        ...initialNotificationsState,
+        resolvedItems: [notification(1, { createdAt: '2020-01-01T10:00:00.000Z' })],
+      },
+      NotificationsActions.loadResolvedPageSuccess({
+        page: {
+          items: [notification(2, { createdAt: '2030-01-01T10:00:00.000Z' })],
+          nextCursor: null,
+          totalCount: 2,
+        },
       }),
     );
 
-    const state = reducer(comPendentesEsgotados, NotificationsActions.loadNextBatchRequested());
-
-    expect(state.status).toBe('loading-more-resolved');
+    expect(state.resolvedItems.map(n => n.id)).toEqual([2, 1]);
   });
 
   it('refreshRequested marca o status refreshing (pull-to-refresh, FR-004b)', () => {
@@ -158,28 +184,15 @@ describe('notificationsFeature reducer', () => {
     expect(state.status).toBe('refreshing');
   });
 
-  it('selectHasMore continua true quando Pendentes esgota mas Resolvidas ainda não foi buscada (bug fixado)', () => {
-    const pendentesEsgotados = reducer(
-      initialNotificationsState,
-      NotificationsActions.loadPendingPageSuccess({
-        page: { items: [notification(1)], nextCursor: null, totalCount: 1 },
-      }),
-    );
-
-    // Antes da correção, `resolvedCursor` e `pendingCursor` nulos eram
-    // indistinguíveis de "nada mais a carregar" — `resolvedLoaded` desambigua.
-    expect(selectHasMore.projector(null, null, pendentesEsgotados.resolvedLoaded)).toBeTrue();
+  it('selectHasMore em Ativas depende só do cursor de Ativas (cada aba pagina sozinha)', () => {
+    expect(selectHasMore.projector('pending', 'c1', null, false)).toBeTrue();
+    expect(selectHasMore.projector('pending', null, null, false)).toBeFalse();
   });
 
-  it('selectHasMore vira false só depois que Resolvidas também esgota', () => {
-    const comResolvidasEsgotadas = reducer(
-      initialNotificationsState,
-      NotificationsActions.loadResolvedPageSuccess({
-        page: { items: [notification(1)], nextCursor: null, totalCount: 1 },
-      }),
-    );
-
-    expect(selectHasMore.projector(null, null, comResolvidasEsgotadas.resolvedLoaded)).toBeFalse();
+  it('selectHasMore em Resolvidas é true antes da 1ª página e enquanto houver cursor', () => {
+    expect(selectHasMore.projector('resolved', null, null, false)).toBeTrue();
+    expect(selectHasMore.projector('resolved', null, 'c2', true)).toBeTrue();
+    expect(selectHasMore.projector('resolved', 'c1', null, true)).toBeFalse();
   });
 
   it('answerStarted troca o rascunho ao iniciar resposta em outro card (FR-011)', () => {
@@ -315,6 +328,22 @@ describe('notificationsFeature reducer', () => {
     expect(state.resolvedTotalCount).toBe(1);
   });
 
+  it('resolveFailure mantém a thread pendente e guarda a mensagem; novo pedido limpa o erro', () => {
+    const loaded = reducer(
+      initialNotificationsState,
+      NotificationsActions.loadPendingPageSuccess({
+        page: { items: [notification(1)], nextCursor: null, totalCount: 1 },
+      }),
+    );
+    const failed = reducer(loaded, NotificationsActions.resolveFailure({ notificationId: 1, message: 'erro' }));
+
+    expect(failed.pendingItems.length).toBe(1);
+    expect(failed.resolveErrorMessage).toBe('erro');
+    expect(
+      reducer(failed, NotificationsActions.resolveRequested({ notificationId: 1 })).resolveErrorMessage,
+    ).toBeNull();
+  });
+
   it('resolveSuccess de uma notificação desconhecida não altera o estado', () => {
     const state = reducer(initialNotificationsState, NotificationsActions.resolveSuccess({ notificationId: 99 }));
 
@@ -323,5 +352,19 @@ describe('notificationsFeature reducer', () => {
 
   it('selectTotalCount soma pendentes e resolvidas', () => {
     expect(selectTotalCount.projector(3, 4)).toBe(7);
+  });
+
+  it('markAsReadRequested marca como lidas as notificações informadas, em ambas as abas', () => {
+    const state = reducer(
+      {
+        ...initialNotificationsState,
+        pendingItems: [notification(1), notification(2)],
+        resolvedItems: [notification(3)],
+      },
+      NotificationsActions.markAsReadRequested({ notificationIds: [1, 3] }),
+    );
+
+    expect(state.pendingItems.map(n => n.read)).toEqual([true, false]);
+    expect(state.resolvedItems[0].read).toBeTrue();
   });
 });

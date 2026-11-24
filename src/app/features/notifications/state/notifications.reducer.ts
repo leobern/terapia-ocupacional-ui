@@ -6,7 +6,12 @@ import { NotificationsActions } from './notifications.actions';
 export type NotificationsStatus =
   'idle' | 'loading-initial' | 'success' | 'error' | 'loading-more-pending' | 'loading-more-resolved' | 'refreshing';
 
+/** Aba (visão) da tela: Ativas (padrão) ou Resolvidas — FR-003. */
+export type NotificationsTab = 'pending' | 'resolved';
+
 export interface NotificationsState {
+  /** Aba selecionada; cada aba pagina de forma independente. */
+  activeTab: NotificationsTab;
   hospitalId: number | null;
   pendingItems: Notification[];
   pendingCursor: string | null;
@@ -33,11 +38,14 @@ export interface NotificationsState {
   submitting: boolean;
   /** Erro do último envio, se houver — exibido no bottom sheet (não a tela cheia). */
   answerErrorMessage: string | null;
+  /** Falha ao resolver a thread (texto; a thread permanece pendente). */
+  resolveErrorMessage: string | null;
   /** Diálogo "Descartar resposta não enviada?" pendente (FR-010a/FR-004b). */
   discardConfirmPending: boolean;
 }
 
 export const initialNotificationsState: NotificationsState = {
+  activeTab: 'pending',
   hospitalId: null,
   pendingItems: [],
   pendingCursor: null,
@@ -55,6 +63,7 @@ export const initialNotificationsState: NotificationsState = {
   draftText: '',
   submitting: false,
   answerErrorMessage: null,
+  resolveErrorMessage: null,
   discardConfirmPending: false,
 };
 
@@ -69,6 +78,10 @@ function appendWithoutDuplicates(existing: Notification[], incoming: Notificatio
   const existingIds = new Set(existing.map(item => item.id));
 
   return [...existing, ...incoming.filter(item => !existingIds.has(item.id))];
+}
+
+function sortNewestFirst(items: Notification[]): Notification[] {
+  return [...items].sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt) || b.id - a.id);
 }
 
 /** `true` quando há um rascunho em edição que seria perdido se descartado agora. */
@@ -159,7 +172,7 @@ export const notificationsFeature = createFeature({
       ...state,
       pendingItems: appendWithoutDuplicates(state.pendingItems, page.items),
       pendingCursor: page.nextCursor,
-      pendingTotalCount: page.totalCount,
+      pendingTotalCount: page.totalCount ?? 0,
       status: 'success',
       stale: false,
       errorMessage: null,
@@ -178,9 +191,9 @@ export const notificationsFeature = createFeature({
     // Mesma correção de acréscimo (não substituição) do `loadPendingPageSuccess` acima.
     on(NotificationsActions.loadResolvedPageSuccess, (state, { page }): NotificationsState => ({
       ...state,
-      resolvedItems: appendWithoutDuplicates(state.resolvedItems, page.items),
+      resolvedItems: sortNewestFirst(appendWithoutDuplicates(state.resolvedItems, page.items)),
       resolvedCursor: page.nextCursor,
-      resolvedTotalCount: page.totalCount,
+      resolvedTotalCount: page.totalCount ?? 0,
       resolvedLoaded: true,
       status: 'success',
       stale: false,
@@ -195,12 +208,18 @@ export const notificationsFeature = createFeature({
 
     on(NotificationsActions.loadNextBatchRequested, (state): NotificationsState => ({
       ...state,
-      // A fase (pendente/resolvida) é decidida pelo effect a partir de `pendingCursor`/
-      // `resolvedLoaded` (FR-004a: só carrega Resolvidas depois que Pendentes esgota,
-      // incluindo a 1ª página de Resolvidas) — o reducer só reflete visualmente qual
-      // seção está carregando o próximo lote.
-      status: state.pendingCursor != null ? 'loading-more-pending' : 'loading-more-resolved',
+      // Cada aba pagina sozinha: o lote pedido é sempre o da aba selecionada.
+      status: state.activeTab === 'pending' ? 'loading-more-pending' : 'loading-more-resolved',
     })),
+
+    on(NotificationsActions.markAsReadRequested, (state, { notificationIds }): NotificationsState => {
+      const markRead = (items: Notification[]): Notification[] =>
+        items.map(item => (notificationIds.includes(item.id) && !item.read ? { ...item, read: true } : item));
+
+      return { ...state, pendingItems: markRead(state.pendingItems), resolvedItems: markRead(state.resolvedItems) };
+    }),
+
+    on(NotificationsActions.tabSelected, (state, { tab }): NotificationsState => ({ ...state, activeTab: tab })),
 
     on(NotificationsActions.refreshRequested, (state): NotificationsState => ({
       ...state,
@@ -260,9 +279,16 @@ export const notificationsFeature = createFeature({
       discardConfirmPending: false,
     })),
 
-    on(NotificationsActions.resolveSuccess, (state, { notificationId }): NotificationsState =>
-      resolveNotification(state, notificationId),
-    ),
+    on(NotificationsActions.resolveRequested, (state): NotificationsState => ({ ...state, resolveErrorMessage: null })),
+    on(NotificationsActions.resolveSuccess, (state, { notificationId }): NotificationsState => {
+      const next = resolveNotification(state, notificationId);
+
+      return next === state ? state : { ...next, resolveErrorMessage: null };
+    }),
+    on(NotificationsActions.resolveFailure, (state, { message }): NotificationsState => ({
+      ...state,
+      resolveErrorMessage: message,
+    })),
     on(NotificationsActions.discardConfirmationRequested, (state): NotificationsState => ({
       ...state,
       discardConfirmPending: hasUnsavedDraft(state),
@@ -278,6 +304,7 @@ export const notificationsFeature = createFeature({
 export const {
   name: notificationsFeatureKey,
   reducer: notificationsReducer,
+  selectActiveTab,
   selectHospitalId,
   selectPendingItems,
   selectPendingCursor,
@@ -293,19 +320,21 @@ export const {
   selectDraftText,
   selectSubmitting,
   selectAnswerErrorMessage,
+  selectResolveErrorMessage,
   selectDiscardConfirmPending,
 } = notificationsFeature;
 
 /**
- * Há mais algum lote a carregar (pendente OU resolvida, incluindo a 1ª página
- * de Resolvidas ainda não buscada) — FR-004a. Centraliza a regra usada tanto
- * pelo effect de infinite scroll quanto pelo componente (sentinel).
+ * Há mais algum lote a carregar na aba selecionada (FR-002). Em Resolvidas, a 1ª
+ * página ainda não buscada (`resolvedLoaded` falso) também conta como "há mais".
  */
 export const selectHasMore = createSelector(
+  selectActiveTab,
   selectPendingCursor,
   selectResolvedCursor,
   selectResolvedLoaded,
-  (pendingCursor, resolvedCursor, resolvedLoaded) => pendingCursor != null || !resolvedLoaded || resolvedCursor != null,
+  (tab, pendingCursor, resolvedCursor, resolvedLoaded) =>
+    tab === 'pending' ? pendingCursor != null : !resolvedLoaded || resolvedCursor != null,
 );
 
 /**

@@ -27,6 +27,7 @@ interface Internals {
 }
 
 const notification = (id: number): Notification => ({
+  type: 'patient_message',
   author: { id: 1, name: 'Jairo', photoUrl: null, specialty: 'Enfermeiro' },
   createdAt: '2026-11-17T10:30:00',
   description: 'Descrição ' + id,

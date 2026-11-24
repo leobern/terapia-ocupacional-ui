@@ -42,12 +42,14 @@ import { type DirectoryUser } from '../../shared/services/user-directory';
 import { formatRelativeTime } from '../../shared/utils/relative-time';
 import { HospitalContextService } from '../home/hospital-context.service';
 import { AnnouncementAssistant } from './assistant/announcement-assistant';
-import { NotificationSectionTitleComponent } from './components/notification-section-title/notification-section-title.component';
 import { type ComunicadoRecipientSpec, ComunicadosApiService } from './data-access/comunicados-api.service';
+import { isSentThreadNotification } from '../patient-messages/sent-thread-notification';
 import { NotificationsRepository } from './data-access/notifications-repository.service';
-import { Notification } from './notifications.models';
+import { Notification, NotificationType } from './notifications.models';
 import { NotificationsActions } from './state/notifications.actions';
 import {
+  type NotificationsTab,
+  selectActiveTab,
   selectAnswerErrorMessage,
   selectAnsweringId,
   selectDiscardConfirmPending,
@@ -57,7 +59,8 @@ import {
   selectPendingItems,
   selectPendingTotalCount,
   selectResolvedItems,
-  selectResolvedTotalCount,
+  selectResolvedLoaded,
+  selectResolveErrorMessage,
   selectStatus,
   selectSubmitting,
 } from './state/notifications.reducer';
@@ -75,12 +78,17 @@ function formatTodayLabel(): string {
 /** Distância mínima de arraste, em px, para disparar o pull-to-refresh (FR-004b). */
 const PULL_TO_REFRESH_THRESHOLD = 80;
 
+const KIND_LABELS: Record<NotificationType, string> = {
+  internal_notice: 'Comunicado interno',
+  patient_message: 'Mensagem de paciente',
+  reevaluation_pending: 'Pendência de reavaliação',
+};
+
 /**
  * Tela "Notificações" (specs/004-notificacoes) — cabeçalho (sino + contagem, sem botão
  * de voltar — FR-002, saída só via Menu, guardada por `canDeactivateNotifications`),
  * fundo decorativo com 1 blob oculto e cor diferente da Home (FR-015), tag de hospital
- * somente leitura (FR-003), lista em duas seções (Pendentes sem título / Resolvidas com
- * título — FR-004a), infinite scroll e pull-to-refresh (FR-004b), e o fluxo de resposta
+ * somente leitura (FR-003), lista em duas abas (Ativas / Resolvidas — FR-003), infinite scroll e pull-to-refresh (FR-004b), e o fluxo de resposta
  * via IA (US3: bottom sheet + rascunho ao vivo no card + diálogo de descarte).
  * Figma: 4495:8526 (pendentes) / 4496:11857 (com Resolvidas) / 4495:10551 (answering).
  *
@@ -96,7 +104,6 @@ const PULL_TO_REFRESH_THRESHOLD = 80;
     ConfirmDialogComponent,
     IconButtonComponent,
     InputChatComponent,
-    NotificationSectionTitleComponent,
     PageContainerComponent,
     PhIconComponent,
   ],
@@ -116,6 +123,12 @@ export class NotificationsComponent implements OnDestroy {
   protected readonly hospitalId = toSignal(this.store.select(selectHospitalId), { initialValue: null });
   protected readonly pendingItems = toSignal(this.store.select(selectPendingItems), { initialValue: [] });
   protected readonly resolvedItems = toSignal(this.store.select(selectResolvedItems), { initialValue: [] });
+  protected readonly activeTab = toSignal(this.store.select(selectActiveTab), { initialValue: 'pending' as const });
+  protected readonly resolvedLoaded = toSignal(this.store.select(selectResolvedLoaded), { initialValue: false });
+  protected readonly tabs: readonly { id: NotificationsTab; label: string }[] = [
+    { id: 'pending', label: 'Ativas' },
+    { id: 'resolved', label: 'Resolvidas' },
+  ];
   protected readonly hasMore = toSignal(this.store.select(selectHasMore), { initialValue: true });
 
   protected readonly answeringId = toSignal(this.store.select(selectAnsweringId), { initialValue: null });
@@ -135,13 +148,33 @@ export class NotificationsComponent implements OnDestroy {
   // de toda a paginação carregar).
   // Figma (seção 07): o título conta as pendentes; cada seção mostra o próprio total.
   protected readonly pendingCount = toSignal(this.store.select(selectPendingTotalCount), { initialValue: 0 });
-  protected readonly resolvedCount = toSignal(this.store.select(selectResolvedTotalCount), { initialValue: 0 });
-  protected readonly isEmpty = computed(
-    () => this.status() === 'success' && this.pendingItems().length === 0 && this.resolvedItems().length === 0,
+  /** Itens da aba selecionada, da mais recente para a mais antiga. */
+  protected readonly visibleItems = computed(() =>
+    this.activeTab() === 'pending' ? this.pendingItems() : this.resolvedItems(),
+  );
+  /** Vazio só depois de carregar a aba (Resolvidas ainda não buscada não é "vazia"). */
+  protected readonly isEmpty = computed(() => {
+    if (this.status() !== 'success' || this.visibleItems().length > 0) {
+      return false;
+    }
+
+    return this.activeTab() === 'pending' || this.resolvedLoaded();
+  });
+  protected readonly emptyTitle = computed(() =>
+    this.activeTab() === 'pending' ? 'Nenhuma notificação pendente no momento' : 'Nenhuma notificação resolvida',
+  );
+  protected readonly emptyText = computed(() =>
+    this.activeTab() === 'pending'
+      ? 'Quando alguém da equipe mencionar você ou um paciente seu, a notificação aparece aqui.'
+      : 'As notificações marcadas como resolvidas aparecem aqui.',
   );
 
   // Sem serviço de sessão no frontend ainda — mesmo valor de exemplo de home.component.ts.
   protected readonly professionalName = 'Michelle Franklin';
+  protected readonly online = inject(ConnectivityService).online;
+  protected readonly resolveErrorMessage = toSignal(this.store.select(selectResolveErrorMessage), {
+    initialValue: null,
+  });
   protected readonly professionalSpecialty = 'Nutróloga';
 
   protected readonly hospitalName = computed(() => this.hospitalContext.selected()?.name ?? '');
@@ -158,6 +191,8 @@ export class NotificationsComponent implements OnDestroy {
     return `${total} ${total === 1 ? 'notificação' : 'notificações'}`;
   });
 
+  /** Id do profissional logado (sem serviço de sessão ainda — mesmo usuário de exemplo acima). */
+  private readonly currentUserId = 4;
   private readonly actions$ = inject(Actions);
   private readonly location = inject(Location);
   private readonly hospitalContext = inject(HospitalContextService);
@@ -208,6 +243,17 @@ export class NotificationsComponent implements OnDestroy {
       }
     });
 
+    // FR-005: toda notificação não lida exibida na lista passa a lida (já lidas não disparam nada).
+    effect(() => {
+      const unreadIds = this.visibleItems()
+        .filter(item => !item.read)
+        .map(item => item.id);
+
+      if (unreadIds.length > 0) {
+        this.store.dispatch(NotificationsActions.markAsReadRequested({ notificationIds: unreadIds }));
+      }
+    });
+
     // Observa o sentinel de fim de lista (FR-004a), mesmo padrão de home.component.ts.
     effect(
       () => {
@@ -243,6 +289,10 @@ export class NotificationsComponent implements OnDestroy {
   }
 
   /** `type` a passar para `app-card-notify` — usado no template para as 2 seções. */
+  kindLabel(type: NotificationType): string {
+    return KIND_LABELS[type];
+  }
+
   cardType(id: number): CardNotifyType {
     if (this.answeringId() === id) {
       return 'answering';
@@ -253,7 +303,7 @@ export class NotificationsComponent implements OnDestroy {
 
   /** FR-006 (US2) — navega para o paciente relacionado; `app-card-notify` já suprime
    *  `cardClick` sozinho quando `type="answering"` (Acceptance Scenario 2). */
-  onCardClick(patientId: number | undefined): void {
+  onCardClick(patientId: number | string | undefined): void {
     if (patientId !== undefined) {
       void this.router.navigate(['/patients', patientId]);
     }
@@ -280,8 +330,23 @@ export class NotificationsComponent implements OnDestroy {
     this.expandedIds.set(next);
   }
 
+  /** Participante da thread: remetente, destinatário mencionado ou quem já respondeu (FR-012). */
+  isParticipant(notification: Notification): boolean {
+    const me = this.currentUserId;
+
+    return (
+      isSentThreadNotification(notification) ||
+      notification.author.id === me ||
+      (notification.mentioned ?? []).some(person => person.id === me) ||
+      notification.replies.some(reply => reply.author.id === me)
+    );
+  }
+
   /** Botão ✓ do card (Figma v2/NotificationThread): marca como resolvida. */
   onResolveClick(id: number): void {
+    if (!this.online()) {
+      return;
+    }
     this.resolveConfirmId.set(id);
   }
 
@@ -290,7 +355,7 @@ export class NotificationsComponent implements OnDestroy {
     const id = this.resolveConfirmId();
 
     this.resolveConfirmId.set(null);
-    if (id !== null) {
+    if (id !== null && this.online()) {
       this.store.dispatch(NotificationsActions.resolveRequested({ notificationId: id }));
     }
   }
@@ -324,6 +389,12 @@ export class NotificationsComponent implements OnDestroy {
   onBottomSheetClosed(): void {
     if (this.answeringId() != null) {
       this.store.dispatch(NotificationsActions.answerDiscarded());
+    }
+  }
+
+  protected onSelectTab(tab: NotificationsTab): void {
+    if (tab !== this.activeTab()) {
+      this.store.dispatch(NotificationsActions.tabSelected({ tab }));
     }
   }
 
