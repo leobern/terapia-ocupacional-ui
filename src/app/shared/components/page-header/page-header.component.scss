@@ -2,7 +2,7 @@
 @use '../../styles/tokens';
 @use '../../styles/typography';
 
-// Figma `v2/PageHeader` (4598:1584): gap 8, padding 8 / 0 / 16 / 0. No desktop, telas iniciais recuam 16px
+// Figma `v2/PageHeader` (4598:1584): gap 16 entre o voltar (48px) e o texto, padding 8 / 0 / 16 / 0, ícone de título de 24px. No desktop, telas iniciais recuam 16px
 // à esquerda; com voltar o botão fica alinhado ao conteúdo (a margem já vem do container da página).
 :host {
   display: block;
@@ -11,23 +11,20 @@
 .page-header {
   display: flex;
   align-items: center;
-  gap: tokens.$space-8;
+  gap: tokens.$space-16;
 
-  // Mobile (Figma 4601:1790): padding 16 em cima e embaixo e nenhum lateral — o recuo de 16px vem da margem
+  // Padding 8 em cima e 16 embaixo, nenhum lateral (Figma 4598:1584 / 4601:1644) — o recuo de 16px vem da margem
   // da página (`--page-container-margin`), então o voltar fica alinhado aos cards.
-  padding: tokens.$space-16 0;
+  padding: tokens.$space-8 0 tokens.$space-16;
 
   @include breakpoints.md {
-    min-height: 88px;
-    padding: tokens.$space-16 0 tokens.$space-16 tokens.$space-16;
+    padding: tokens.$space-8 0 tokens.$space-16 tokens.$space-16;
   }
 }
 
 :host(.page-header--back) .page-header {
-  // Desktop, tela interna (Figma v2/PageHeader, 4722:10983): 84px de altura = padding 8 em cima e 16 embaixo, sem recuo
-  // à esquerda (o voltar alinha com o conteúdo).
+  // Desktop, tela interna (Figma v2/PageHeader, 4722:10983): sem recuo à esquerda (o voltar alinha com o conteúdo).
   @include breakpoints.md {
-    min-height: 0;
     padding: tokens.$space-8 0 tokens.$space-16;
   }
 }
@@ -58,6 +55,23 @@
   ph-icon {
     flex-shrink: 0;
     color: tokens.c(secondary);
+  }
+}
+
+// Mobile: hospital e data em duas linhas (Figma 4601:1644); desktop: uma linha com " · ".
+.page-header__subtitle-part {
+  display: block;
+
+  @include breakpoints.md {
+    display: inline;
+  }
+}
+
+.page-header__subtitle-sep {
+  display: none;
+
+  @include breakpoints.md {
+    display: inline;
   }
 }
 

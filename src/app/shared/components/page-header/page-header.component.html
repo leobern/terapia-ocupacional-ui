@@ -13,12 +13,19 @@
   <div class="page-header__text">
     <h1 class="page-header__title">
       @if (icon(); as name) {
-        <ph-icon weight="fill" [name]="name" [size]="40" />
+        <ph-icon weight="fill" [name]="name" [size]="24" />
       }
       <span class="page-header__title-text">{{ title() }}</span>
     </h1>
     @if (subtitle(); as text) {
-      <p class="page-header__subtitle">{{ text }}</p>
+      <p class="page-header__subtitle">
+        @for (part of subtitleParts(); track $index) {
+          @if (!$first) {
+            <span class="page-header__subtitle-sep"> · </span>
+          }
+          <span class="page-header__subtitle-part">{{ part }}</span>
+        }
+      </p>
     }
   </div>
   <!-- Ações próprias da tela (ex.: "Cadastrar paciente"); somem no mobile se a tela esconder. -->

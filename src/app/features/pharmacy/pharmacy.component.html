@@ -7,6 +7,10 @@
         (hospital()?.name ?? '') +
         ' · Fórmulas padronizadas ficam disponíveis na prescrição deste hospital.'
       "
+      [showBell]="true"
+      [unreadCount]="unreadCount()"
+      [bellLabel]="bellLabel()"
+      (bellClick)="openNotifications()"
     />
 
     @if (!online()) {

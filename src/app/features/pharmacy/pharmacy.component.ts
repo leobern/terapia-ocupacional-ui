@@ -1,10 +1,21 @@
-import { ChangeDetectionStrategy, Component, computed, DestroyRef, effect, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  DestroyRef,
+  effect,
+  inject,
+  type OnInit,
+  signal,
+} from '@angular/core';
+import { Router } from '@angular/router';
 
 import { PageContainerComponent } from '../../shared/components/page-container/page-container.component';
 import { PageHeaderComponent } from '../../shared/components/page-header/page-header.component';
 import { type FormValues, type ScreenAction, ScreenActionsService } from '../../shared/services/screen-actions.service';
 import { PHARMACY_CONTEXT } from '../../shared/services/screen-contexts';
 import { HospitalContextService } from '../home/hospital-context.service';
+import { UnreadNotificationsReader } from '../home/unread-notifications-reader';
 import { Formula, FORMULA_CATEGORIES } from './formulas.models';
 import { FormulasApi } from './formulas-api';
 
@@ -22,8 +33,9 @@ type LoadStatus = 'loading' | 'ready' | 'error';
   styleUrl: './pharmacy.component.scss',
   templateUrl: './pharmacy.component.html',
 })
-export class PharmacyComponent {
+export class PharmacyComponent implements OnInit {
   protected readonly hospital = inject(HospitalContextService).selected;
+  protected readonly unreadCount = signal(0);
   protected readonly status = signal<LoadStatus>('loading');
   protected readonly formulas = signal<readonly Formula[]>([]);
   protected readonly online = signal(navigator.onLine);
@@ -38,6 +50,8 @@ export class PharmacyComponent {
   );
 
   private readonly api = inject(FormulasApi);
+  private readonly router = inject(Router);
+  private readonly unread = inject(UnreadNotificationsReader);
   private readonly screenActions = inject(ScreenActionsService);
 
   constructor() {
@@ -91,6 +105,20 @@ export class PharmacyComponent {
         void this.load(hospitalId);
       }
     });
+  }
+
+  async ngOnInit(): Promise<void> {
+    this.unreadCount.set(await this.unread.countUnread());
+  }
+
+  protected openNotifications(): void {
+    void this.router.navigate(['/notifications']);
+  }
+
+  protected bellLabel(): string {
+    const count = this.unreadCount();
+
+    return count > 0 ? `Notificações, ${count} não lidas` : 'Notificações';
   }
 
   protected async load(hospitalId = this.hospital()?.id): Promise<void> {

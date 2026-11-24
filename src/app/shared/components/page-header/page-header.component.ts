@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, input, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input, output } from '@angular/core';
 
 import { PhIconComponent } from '../../icons/ph-icon/ph-icon.component';
 import { AiAssistantService } from '../../services/ai-assistant.service';
@@ -26,7 +26,7 @@ import { IconButtonComponent } from '../icon-button/icon-button.component';
 export class PageHeaderComponent {
   readonly title = input.required<string>();
   readonly subtitle = input<string | null>(null);
-  /** Nome do ícone Phosphor de título (40px, bold, cor secundária); `null` = sem ícone. */
+  /** Nome do ícone Phosphor de título (24px, sólido, cor secundária); `null` = sem ícone. */
   readonly icon = input<string | null>(null);
   readonly back = input(false);
   readonly backLabel = input('Voltar');
@@ -37,4 +37,7 @@ export class PageHeaderComponent {
   readonly bellClick = output();
 
   protected readonly assistant = inject(AiAssistantService);
+
+  /** Partes do subtítulo ("Hospital · data"): no mobile cada parte ocupa uma linha (Figma 4601:1644). */
+  protected readonly subtitleParts = computed(() => (this.subtitle() ?? '').split(' · '));
 }
