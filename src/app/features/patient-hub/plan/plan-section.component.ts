@@ -13,6 +13,7 @@ import {
 
 import { ButtonComponent } from '../../../shared/components/button/button.component';
 import { IconButtonComponent } from '../../../shared/components/icon-button/icon-button.component';
+import { IconLogoComponent } from '../../../shared/components/icon-logo/icon-logo.component';
 import { PhIconComponent } from '../../../shared/icons/ph-icon/ph-icon.component';
 import { ConnectivityService } from '../../../shared/services/connectivity.service';
 import { NOW, ProfessionalProfileReader } from '../../home/professional-profile';
@@ -89,7 +90,7 @@ function shortDate(iso: string): string {
  */
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ButtonComponent, IconButtonComponent, PhIconComponent, TargetsEditorComponent],
+  imports: [IconLogoComponent, ButtonComponent, IconButtonComponent, PhIconComponent, TargetsEditorComponent],
   selector: 'app-plan-section',
   styleUrl: './plan-section.component.scss',
   templateUrl: './plan-section.component.html',

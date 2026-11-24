@@ -14,6 +14,7 @@ import {
 
 import { ButtonComponent } from '../../../shared/components/button/button.component';
 import { IconButtonComponent } from '../../../shared/components/icon-button/icon-button.component';
+import { IconLogoComponent } from '../../../shared/components/icon-logo/icon-logo.component';
 import { InputChatAudioError, InputChatComponent } from '../../../shared/components/input-chat/input-chat.component';
 import { ConnectivityService } from '../../../shared/services/connectivity.service';
 import { NOW, ProfessionalProfileReader } from '../../home/professional-profile';
@@ -71,6 +72,7 @@ interface ExtraParameter {
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
+    IconLogoComponent,
     ButtonComponent,
     DailyEvolutionComponent,
     IconButtonComponent,

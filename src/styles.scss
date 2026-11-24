@@ -111,3 +111,18 @@ body::after {
     display: none;
   }
 }
+
+// Logo do cabeçalho dos cadastros em sidebar/bottom sheet (logo + título + fechar).
+.sheet-logo {
+  // Logo de 40px numa caixa de 70px (o brilho ocupa 15px de folga); a margem negativa devolve o espaço.
+  --icon-logo-size: 40px;
+
+  flex-shrink: 0;
+  margin: -15px -3px -15px -15px;
+  inline-size: 70px;
+  block-size: 70px;
+}
+
+.sheet-logo + h2 {
+  flex: 1;
+}

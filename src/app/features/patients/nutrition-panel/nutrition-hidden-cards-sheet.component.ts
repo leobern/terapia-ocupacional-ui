@@ -10,6 +10,7 @@ import {
 } from '@angular/core';
 
 import { IconButtonComponent } from '../../../shared/components/icon-button/icon-button.component';
+import { IconLogoComponent } from '../../../shared/components/icon-logo/icon-logo.component';
 import { NutritionIndicatorId, nutritionIndicatorLabel } from './nutrition-panel.models';
 
 export const OFFLINE_SHOW_HINT = 'Conexão necessária para reexibir um card.';
@@ -21,7 +22,7 @@ export const SHOW_FAILED_HINT = 'Não foi possível reexibir o card. Tente novam
  */
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [IconButtonComponent],
+  imports: [IconLogoComponent, IconButtonComponent],
   selector: 'app-nutrition-hidden-cards-sheet',
   styleUrl: './nutrition-add-card-sheet.component.scss',
   templateUrl: './nutrition-hidden-cards-sheet.component.html',
