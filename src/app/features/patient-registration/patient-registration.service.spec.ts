@@ -54,7 +54,7 @@ describe('PatientRegistrationService', () => {
     const service = TestBed.inject(PatientRegistrationService);
 
     await expectAsync(service.register(PATIENT)).toBeRejected();
-    const created = { ...PATIENT, hospitalId: 7, id: 'abc', medicalRecordNumber: null };
+    const created = { ...PATIENT, hospitalId: 7, id: 42, medicalRecordNumber: null };
 
     result = { kind: 'created', patient: created };
 

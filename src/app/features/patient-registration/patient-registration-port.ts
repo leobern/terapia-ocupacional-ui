@@ -10,7 +10,7 @@ export interface NewPatient {
 
 /** Schema `Paciente` do contrato (`openapi/pacientes-api.yaml`). */
 export interface RegisteredPatient {
-  readonly id: string;
+  readonly id: number;
   readonly hospitalId: number;
   readonly fullName: string;
   readonly birthDate: string;
@@ -24,6 +24,6 @@ export type PatientRegistrationResult =
   | { readonly kind: 'same-duplicate'; readonly medicalRecordNumber: string; readonly existingPatientName: string };
 
 export abstract class PatientRegistrationPort {
-  /** Rejeita (HttpErrorResponse) nos demais erros: 400, 401, 403, 404, 422, rede e 409 sem `SAME_DUPLICADO`. */
+  /** Rejeita (HttpErrorResponse) nos demais erros: 400, 401, 403, 404, 422, rede e 409 sem `MSG-07`. */
   abstract create(hospitalId: number, patient: NewPatient): Promise<PatientRegistrationResult>;
 }

@@ -4,7 +4,7 @@ import { TestBed } from '@angular/core/testing';
 
 import { PatientRegistrationApiService } from './patient-registration-api.service';
 
-const URL = '/api/v1/hospitais/7/pacientes';
+const URL = '/api/v1/pacientes';
 const NEW_PATIENT = {
   birthDate: '1950-03-02',
   fullName: 'Antônio Ferreira Dias',
@@ -12,7 +12,7 @@ const NEW_PATIENT = {
   sex: 'MALE',
 } as const;
 const DUPLICATE = {
-  code: 'SAME_DUPLICADO',
+  code: 'MSG-07',
   existingPatientName: 'Rita de Cássia Nunes',
   medicalRecordNumber: 'SAME-4521',
   message: 'x',
@@ -37,15 +37,15 @@ describe('PatientRegistrationApiService', () => {
     const result = service.create(7, NEW_PATIENT);
     const req = http.expectOne({ method: 'POST', url: URL });
 
-    expect(req.request.body).toEqual(NEW_PATIENT);
-    const created = { ...NEW_PATIENT, hospitalId: 7, id: 'abc' };
+    expect(req.request.body).toEqual({ ...NEW_PATIENT, hospitalId: 7 });
+    const created = { ...NEW_PATIENT, hospitalId: 7, id: 42 };
 
     req.flush(created, { status: 201, statusText: 'Created' });
 
     expect(await result).toEqual({ kind: 'created', patient: created });
   });
 
-  it('409 SAME_DUPLICADO vira resultado tipado com o nome do paciente existente (RN-01/RN-02/RN-03)', async () => {
+  it('409 MSG-07 vira resultado tipado com o nome do paciente existente (RN-01/RN-02/RN-03)', async () => {
     const result = service.create(7, NEW_PATIENT);
 
     http.expectOne(URL).flush(DUPLICATE, { status: 409, statusText: 'Conflict' });

@@ -24,27 +24,25 @@ function isSameDuplicate(error: unknown): error is HttpErrorResponse & { error: 
   const body = error.error as SameDuplicadoError | null;
 
   return (
-    body?.code === 'SAME_DUPLICADO' &&
+    body?.code === 'MSG-07' &&
     typeof body.medicalRecordNumber === 'string' &&
     typeof body.existingPatientName === 'string'
   );
 }
 
 /**
- * Cadastro de paciente via API real: `POST /api/v1/hospitais/{hospitalId}/pacientes`
- * (`openapi/pacientes-api.yaml`). O 409 `SAME_DUPLICADO` vira resultado tipado; os demais
+ * Cadastro de paciente via API real: `POST /api/v1/pacientes (hospitalId no corpo)`
+ * (`openapi/pacientes-api.yaml`). O 409 `MSG-07` vira resultado tipado; os demais
  * erros chegam como `HttpErrorResponse` rejeitado, como no resto do app.
  */
 @Injectable()
 export class PatientRegistrationApiService extends PatientRegistrationPort {
   private readonly http = inject(HttpClient);
-  private readonly baseUrl = `${environment.apiBaseUrl}/v1/hospitais`;
+  private readonly url = `${environment.apiBaseUrl}/v1/pacientes`;
 
   async create(hospitalId: number, patient: NewPatient): Promise<PatientRegistrationResult> {
     try {
-      const created = await firstValueFrom(
-        this.http.post<RegisteredPatient>(`${this.baseUrl}/${hospitalId}/pacientes`, patient),
-      );
+      const created = await firstValueFrom(this.http.post<RegisteredPatient>(this.url, { ...patient, hospitalId }));
 
       return { kind: 'created', patient: created };
     } catch (error) {
