@@ -3,7 +3,7 @@ info:
   title: Pacientes API
   version: 1.0.0
   description: >
-    Contrato das US-002-1-02 e US-002-1-03 (FT-002-1 Cadastro de Paciente): criação do registro mestre do
+    Contrato das US-002-1-02, US-002-1-03 e US-002-1-04 (FT-002-1 Cadastro de Paciente): criação do registro mestre do
     paciente com os dados fixos coletados pelo chatbot, um dado por vez. A coleta
     conversacional e a interpretação das respostas em linguagem natural pertencem à camada
     de IA/chatbot (fora de escopo); esta API recebe os quatro campos já coletados e os
@@ -27,6 +27,13 @@ paths:
         hospital informado. Em sucesso, o chatbot exibe MSG-04 ("Paciente cadastrado com
         sucesso."). Em erro de validação (422) o campo inválido é indicado em `field` e
         `message` traz o texto da mensagem do sistema correspondente.
+
+        US-002-1-04: se medicalRecordNumber for preenchido e já existir outro paciente no
+        mesmo hospital com o mesmo SAME (RN-01), o cadastro é bloqueado e nada é salvo
+        (409). A verificação independe de nome e data de nascimento (RN-02) e é restrita ao
+        hospital informado. A resposta traz o nome do paciente existente (RN-03) e a MSG-07
+        já formatada: "Este número de SAME já está em uso por outro paciente neste hospital:
+        {nome do paciente existente}."
       requestBody:
         required: true
         content:
@@ -50,6 +57,12 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+        "409":
+          description: SAME já em uso por outro paciente neste hospital (MSG-07)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SameDuplicadoError"
         "422":
           description: >
             Validação de campo. MSG-01 (fullName vazio), MSG-05 (fullName > 150),
@@ -172,6 +185,21 @@ components:
             code:
               type: string
               enum: [MSG-01, MSG-02, MSG-03, MSG-05]
+    SameDuplicadoError:
+      allOf:
+        - $ref: "#/components/schemas/ErrorResponse"
+        - type: object
+          required: [code, medicalRecordNumber, existingPatientName]
+          properties:
+            code:
+              type: string
+              enum: [MSG-07]
+            medicalRecordNumber:
+              type: string
+              description: SAME informado, já em uso no hospital
+            existingPatientName:
+              type: string
+              description: Nome do paciente já cadastrado com o SAME (RN-03); também presente em `message`
     Sex:
       type: string
       enum: [MALE, FEMALE, NOT_INFORMED]
