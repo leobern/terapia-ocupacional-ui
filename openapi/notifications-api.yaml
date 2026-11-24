@@ -12,6 +12,7 @@ paths:
   /api/v1/notifications:
     get:
       operationId: getNotifications
+      x-implemented: false
       summary: >
         Lista paginada de notificações do profissional autenticado, filtrada por status
         (pendente/resolvida — FR-004a). Cada seção da tela pagina de forma independente.
@@ -57,6 +58,7 @@ paths:
   /api/v1/notifications/{notificationId}/replies:
     post:
       operationId: createNotificationReply
+      x-implemented: false
       summary: >
         Registra a resposta do profissional autenticado a uma notificação (FR-009); move a
         notificação da seção Pendentes para Resolvidas.
@@ -90,62 +92,6 @@ paths:
           description: Notificação não encontrada
         "422":
           description: "Corpo inválido (ex.: texto vazio)"
-
-  /api/v1/notifications/announcements:
-    post:
-      operationId: createAnnouncement
-      summary: >
-        Cria um comunicado interno (sem paciente) do profissional autenticado, endereçado a
-        pessoas (spec 015-notificacoes, FR-006 a FR-010). Destinatário é obrigatório. O backend
-        registra autor, data/hora, destinatários e conteúdo em trilha de auditoria imutável.
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [hospitalId, content]
-              description: Ao menos uma pessoa em recipientIds ou um grupo em groups é obrigatório.
-              properties:
-                hospitalId:
-                  type: integer
-                  format: int64
-                content:
-                  type: string
-                  minLength: 1
-                recipientIds:
-                  type: array
-                  items:
-                    type: integer
-                    format: int64
-                groups:
-                  type: array
-                  description: >
-                    Grupos resolvidos pelo backend para todos os profissionais do perfil (ou todos, em
-                    type=all) vinculados e aprovados ao hospital. Grupo sem ninguém é rejeitado (422).
-                  items:
-                    type: object
-                    required: [type]
-                    properties:
-                      type:
-                        type: string
-                        enum: [profile, all]
-                      profile:
-                        type: string
-                        description: Perfil (ex. medicos); obrigatório quando type=profile
-      responses:
-        "201":
-          description: Comunicado criado (status ativo, sem paciente)
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Notification"
-        "400":
-          description: Sem destinatário ou conteúdo vazio
-        "401":
-          description: Não autenticado
-        "403":
-          description: Autor ou destinatário sem vínculo aprovado com o hospital informado
 
 components:
   schemas:

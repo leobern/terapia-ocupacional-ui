@@ -1,0 +1,207 @@
+openapi: 3.0.3
+info:
+  title: Comunicados Internos API
+  version: 1.0.0
+  description: >
+    Contrato da US-005-2-02 (FT-005-2 Notificações): criação de comunicado interno, sem
+    paciente, via assistente central. A interpretação de texto/áudio (transcrição, sugestão
+    de destinatários) pertence à camada de IA (FT-003-4); esta API recebe o conteúdo já
+    final e os destinatários já confirmados pelo profissional. Destinatário é sempre
+    obrigatório (FR-007). Comunicados criados aparecem na lista de notificações
+    (notifications-api.yaml) do remetente e dos destinatários resolvidos.
+servers:
+  - url: /
+security:
+  - bearerAuth: []
+paths:
+  /api/v1/comunicados/destinatarios/resolver:
+    post:
+      operationId: resolveComunicadoRecipients
+      x-implemented: true
+      summary: Resolve destinatários (pessoa, grupo por perfil ou todos) em profissionais vinculados, para confirmação
+      description: >
+        Expande cada destinatário em profissionais vinculados e aprovados ao hospital
+        (FR-009), sem criar nada. Usado para exibir quem receberá o comunicado antes da
+        confirmação (cenários 1, 2 e 4). Duplicados são removidos; o remetente é excluído.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ResolveRecipientsRequest"
+      responses:
+        "200":
+          description: Profissionais resolvidos
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResolvedRecipients"
+        "400":
+          $ref: "#/components/responses/Error"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "422":
+          description: Grupo sem nenhum profissional vinculado e aprovado, ou lista vazia
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/v1/comunicados:
+    post:
+      operationId: createComunicado
+      x-implemented: true
+      summary: Cria e envia um comunicado interno aos destinatários confirmados
+      description: >
+        Registra o comunicado (autor, data/hora, destinatários, conteúdo) em trilha de
+        auditoria imutável (FR-010) e gera a notificação para remetente e destinatários
+        resolvidos. Requer que o remetente tenha vínculo aprovado com o hospital.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateComunicadoRequest"
+      responses:
+        "201":
+          description: Comunicado enviado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Comunicado"
+        "400":
+          $ref: "#/components/responses/Error"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          description: Profissional sem vínculo aprovado com o hospital informado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "422":
+          description: Sem destinatário confirmado, conteúdo vazio, ou grupo que resolve para ninguém
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  responses:
+    Error:
+      description: Erro
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+  schemas:
+    ErrorResponse:
+      type: object
+      required: [message, timestamp]
+      properties:
+        message:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+    RecipientType:
+      type: string
+      enum: [PESSOA, GRUPO, TODOS]
+    RecipientSpec:
+      type: object
+      required: [type]
+      description: >
+        PESSOA exige professionalId; GRUPO exige perfil (especialidade do profissional,
+        ex.: "Médico", mesmo valor exibido em ProfessionalRef.specialty); TODOS não
+        leva outros campos e atinge todos os vinculados e aprovados ao hospital.
+      properties:
+        type:
+          $ref: "#/components/schemas/RecipientType"
+        professionalId:
+          type: integer
+          format: int64
+        perfil:
+          type: string
+    ResolveRecipientsRequest:
+      type: object
+      required: [hospitalId, recipients]
+      properties:
+        hospitalId:
+          type: integer
+          format: int64
+        recipients:
+          type: array
+          minItems: 1
+          items:
+            $ref: "#/components/schemas/RecipientSpec"
+    ResolvedRecipients:
+      type: object
+      required: [professionals]
+      properties:
+        professionals:
+          type: array
+          items:
+            $ref: "#/components/schemas/ProfessionalRef"
+    CreateComunicadoRequest:
+      type: object
+      required: [hospitalId, content, recipients]
+      properties:
+        hospitalId:
+          type: integer
+          format: int64
+        content:
+          type: string
+          minLength: 1
+          description: Texto final do comunicado (digitado ou transcrito de áudio e confirmado)
+        recipients:
+          type: array
+          minItems: 1
+          description: Destinatários confirmados explicitamente pelo profissional (FR-007)
+          items:
+            $ref: "#/components/schemas/RecipientSpec"
+    Comunicado:
+      type: object
+      required: [id, author, content, createdAt, recipients, status]
+      properties:
+        id:
+          type: integer
+          format: int64
+        author:
+          $ref: "#/components/schemas/ProfessionalRef"
+        content:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        recipients:
+          type: array
+          description: Destinatários como confirmados (pessoa/grupo/todos)
+          items:
+            $ref: "#/components/schemas/RecipientSpec"
+        resolvedRecipients:
+          type: array
+          description: Profissionais efetivamente atingidos no momento do envio
+          items:
+            $ref: "#/components/schemas/ProfessionalRef"
+        status:
+          type: string
+          enum: [ACTIVE, RESOLVED]
+    ProfessionalRef:
+      type: object
+      required: [id, name, specialty]
+      properties:
+        id:
+          type: integer
+          format: int64
+        name:
+          type: string
+        specialty:
+          type: string
+        photoUrl:
+          type: string
+          nullable: true

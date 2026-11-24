@@ -54,21 +54,4 @@ describe('NotificationsApiService', () => {
 
     expect(done).toBeTrue();
   });
-
-  it('createAnnouncement: POST /v1/notifications/announcements com hospital, conteúdo e destinatários', () => {
-    api.createAnnouncement(1, 'Aviso', [2, 3]).subscribe();
-    const req = http.expectOne(r => r.url.endsWith('/v1/notifications/announcements'));
-
-    expect(req.request.method).toBe('POST');
-    expect(req.request.body).toEqual({ content: 'Aviso', groups: [], hospitalId: 1, recipientIds: [2, 3] });
-    req.flush({});
-  });
-
-  it('createAnnouncement: envia grupos por perfil e @todos para o backend resolver', () => {
-    api.createAnnouncement(1, 'Aviso', [], ['medicos', null]).subscribe();
-    const req = http.expectOne(r => r.url.endsWith('/v1/notifications/announcements'));
-
-    expect(req.request.body.groups).toEqual([{ profile: 'medicos', type: 'profile' }, { type: 'all' }]);
-    req.flush({});
-  });
 });

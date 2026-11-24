@@ -35,15 +35,15 @@ import {
   FormSubmitError,
   type FormValues,
   type ScreenAction,
-  type ScreenCommand,
   ScreenActionsService,
+  type ScreenCommand,
 } from '../../shared/services/screen-actions.service';
 import { type DirectoryUser } from '../../shared/services/user-directory';
 import { formatRelativeTime } from '../../shared/utils/relative-time';
 import { HospitalContextService } from '../home/hospital-context.service';
-import { NotificationSectionTitleComponent } from './components/notification-section-title/notification-section-title.component';
 import { AnnouncementAssistant } from './assistant/announcement-assistant';
-import { NotificationsApiService } from './data-access/notifications-api.service';
+import { NotificationSectionTitleComponent } from './components/notification-section-title/notification-section-title.component';
+import { type ComunicadoRecipientSpec, ComunicadosApiService } from './data-access/comunicados-api.service';
 import { NotificationsRepository } from './data-access/notifications-repository.service';
 import { Notification } from './notifications.models';
 import { NotificationsActions } from './state/notifications.actions';
@@ -162,7 +162,7 @@ export class NotificationsComponent implements OnDestroy {
   private readonly location = inject(Location);
   private readonly hospitalContext = inject(HospitalContextService);
   private readonly repository = inject(NotificationsRepository);
-  private readonly api = inject(NotificationsApiService);
+  private readonly comunicados = inject(ComunicadosApiService);
   private readonly announcementAssistant = inject(AnnouncementAssistant);
   private readonly connectivity = inject(ConnectivityService);
   private readonly screenActions = inject(ScreenActionsService);
@@ -418,17 +418,15 @@ export class NotificationsComponent implements OnDestroy {
       throw new FormSubmitError('Selecione um hospital para enviar o comunicado.');
     }
     const selected = values['recipients'] as readonly DirectoryUser[];
-    const people = selected.filter(user => !user.group);
-    const groups = selected.flatMap(user => (user.group ? [user.group.profile] : []));
+    const recipients = selected.map((user): ComunicadoRecipientSpec => {
+      if (!user.group) {
+        return { professionalId: user.id, type: 'PESSOA' };
+      }
 
-    await firstValueFrom(
-      this.api.createAnnouncement(
-        hospitalId,
-        values['message'] as string,
-        people.map(user => user.id),
-        groups,
-      ),
-    );
+      return user.group.profile === null ? { type: 'TODOS' } : { perfil: user.group.profile, type: 'GRUPO' };
+    });
+
+    await firstValueFrom(this.comunicados.create(hospitalId, values['message'] as string, recipients));
     this.store.dispatch(NotificationsActions.refreshRequested());
   }
 

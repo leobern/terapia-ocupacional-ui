@@ -2,8 +2,6 @@ import { provideHttpClient } from '@angular/common/http';
 import { TestBed } from '@angular/core/testing';
 import { firstValueFrom } from 'rxjs';
 
-import { ProvisionalUserDirectory } from '../../../shared/services/provisional-user-directory';
-import { UserDirectory } from '../../../shared/services/user-directory';
 import { NotificationsRepository } from './notifications-repository.service';
 import { ProvisionalNotificationsApiService } from './provisional-notifications-api.service';
 
@@ -48,39 +46,5 @@ describe('Provisional notification APIs', () => {
 
     expect(repository.list('resolved', null, 50).totalCount).toBe(resolvedBefore + 1);
     expect(repository.list('pending', null, 50).items.some(n => n.id === target.id)).toBeFalse();
-  });
-
-  it('createAnnouncement cria o comunicado com os destinatários resolvidos pelos ids', async () => {
-    TestBed.configureTestingModule({
-      providers: [
-        provideHttpClient(),
-        ProvisionalNotificationsApiService,
-        { provide: UserDirectory, useClass: ProvisionalUserDirectory },
-      ],
-    });
-    const api = TestBed.inject(ProvisionalNotificationsApiService);
-
-    const created = await firstValueFrom(api.createAnnouncement(1, 'Aviso', [2, 3]));
-
-    expect(created.description).toBe('Aviso');
-    expect(created.patient).toBeNull();
-    expect(created.recipients?.map(r => r.id)).toEqual([2, 3]);
-  });
-
-  it('createAnnouncement resolve grupo por perfil e @todos sem duplicar pessoas', async () => {
-    TestBed.configureTestingModule({
-      providers: [
-        provideHttpClient(),
-        ProvisionalNotificationsApiService,
-        { provide: UserDirectory, useClass: ProvisionalUserDirectory },
-      ],
-    });
-    const api = TestBed.inject(ProvisionalNotificationsApiService);
-
-    const medicos = await firstValueFrom(api.createAnnouncement(1, 'Aviso', [1], ['medicos']));
-    const todos = await firstValueFrom(api.createAnnouncement(1, 'Aviso', [], [null]));
-
-    expect(medicos.recipients?.map(r => r.id)).toEqual([1, 4]);
-    expect(todos.recipients?.length).toBe(6);
   });
 });

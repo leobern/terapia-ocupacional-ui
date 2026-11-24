@@ -1,5 +1,3 @@
-import { AnnouncementAssistant } from './assistant/announcement-assistant';
-import { ProvisionalAnnouncementAssistant } from './assistant/provisional-announcement-assistant';
 import { Location } from '@angular/common';
 import { provideHttpClient } from '@angular/common/http';
 import { signal } from '@angular/core';
@@ -7,7 +5,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Actions } from '@ngrx/effects';
 import { MockStore, provideMockStore } from '@ngrx/store/testing';
-import { Subject, throwError } from 'rxjs';
+import { of, Subject, throwError } from 'rxjs';
 
 import { AiAssistantService } from '../../shared/services/ai-assistant.service';
 import { ConnectivityService } from '../../shared/services/connectivity.service';
@@ -15,15 +13,17 @@ import { ProvisionalUserDirectory } from '../../shared/services/provisional-user
 import {
   FormSubmitError,
   type ScreenAction,
-  type ScreenCommand,
   ScreenActionsService,
+  type ScreenCommand,
 } from '../../shared/services/screen-actions.service';
 import { UserDirectory } from '../../shared/services/user-directory';
 import { ViewportBreakpointService } from '../../shared/services/viewport-breakpoint.service';
 import { HospitalContextService } from '../home/hospital-context.service';
 import { LinkedHospitalsReader } from '../home/linked-hospitals';
+import { AnnouncementAssistant } from './assistant/announcement-assistant';
+import { ProvisionalAnnouncementAssistant } from './assistant/provisional-announcement-assistant';
+import { type Comunicado, ComunicadosApiService } from './data-access/comunicados-api.service';
 import { NotificationsApiService } from './data-access/notifications-api.service';
-import { NotificationsRepository } from './data-access/notifications-repository.service';
 import { ProvisionalNotificationsApiService } from './data-access/provisional-notifications-api.service';
 import { NotificationsComponent } from './notifications.component';
 import { Notification } from './notifications.models';
@@ -237,11 +237,13 @@ describe('NotificationsComponent', () => {
         spyOn(TestBed.inject(AnnouncementAssistant), 'transcribe').and.callFake(() =>
           transcript instanceof Error ? Promise.reject(transcript) : Promise.resolve(transcript),
         );
-        const openAction = spyOn(TestBed.inject(AiAssistantService), 'openAction');
+        const assistant = TestBed.inject(AiAssistantService);
+
+        spyOn(assistant, 'openAction');
 
         await TestBed.inject(ScreenActionsService).commandHandler()?.(command);
 
-        return openAction.calls.mostRecent().args[0];
+        return (assistant.openAction as jasmine.Spy).calls.mostRecent().args[0];
       };
 
       it('texto abre o formulário do comunicado com o conteúdo preenchido', async () => {
@@ -267,31 +269,23 @@ describe('NotificationsComponent', () => {
 
     const jairo = { id: 3, name: 'Jairo Nepomuceno', photoUrl: null, specialty: 'Farmacêutico' };
 
-    it('o formulário envia o comunicado pela API com os ids dos destinatários e recarrega a lista', async () => {
+    it('o formulário envia o comunicado pela API de comunicados e recarrega a lista', async () => {
       await configureStore({ hospitalId: 1, status: 'success' });
       createComponent();
-      const api = TestBed.inject(NotificationsApiService);
-      const send = spyOn(api, 'createAnnouncement').and.callThrough();
+      const send = spyOn(TestBed.inject(ComunicadosApiService), 'create').and.returnValue(of({} as Comunicado));
       const dispatch = spyOn(store, 'dispatch').and.callThrough();
       const create = TestBed.inject(ScreenActionsService).actions()[0].form;
 
       await create?.submit({ message: 'Revisar', recipients: [jairo] });
-      fixture.detectChanges();
 
-      expect(send).toHaveBeenCalledWith(1, 'Revisar', [3], []);
-      expect(
-        TestBed.inject(NotificationsRepository)
-          .list('pending', null, 50)
-          .items.find(n => n.description === 'Revisar')?.recipients?.[0].name,
-      ).toBe('Jairo Nepomuceno');
-
+      expect(send).toHaveBeenCalledWith(1, 'Revisar', [{ professionalId: 3, type: 'PESSOA' }]);
       expect(dispatch).toHaveBeenCalledWith(NotificationsActions.refreshRequested());
     });
 
-    it('grupos e @todos vão separados das pessoas e chegam à lista dos destinatários resolvidos', async () => {
+    it('grupos por perfil e @todos vão como GRUPO e TODOS, junto das pessoas', async () => {
       await configureStore({ hospitalId: 1, status: 'success' });
       createComponent();
-      const send = spyOn(TestBed.inject(NotificationsApiService), 'createAnnouncement').and.callThrough();
+      const send = spyOn(TestBed.inject(ComunicadosApiService), 'create').and.returnValue(of({} as Comunicado));
       const create = TestBed.inject(ScreenActionsService).actions()[0].form;
       const medicos = {
         group: { memberCount: 2, profile: 'medicos' },
@@ -304,36 +298,33 @@ describe('NotificationsComponent', () => {
 
       await create?.submit({ message: 'Reunião', recipients: [jairo, medicos, todos] });
 
-      expect(send).toHaveBeenCalledWith(1, 'Reunião', [3], ['medicos', null]);
-      expect(
-        TestBed.inject(NotificationsRepository)
-          .list('pending', null, 50)
-          .items.find(n => n.description === 'Reunião')?.recipients?.length,
-      ).toBe(6);
+      expect(send).toHaveBeenCalledWith(1, 'Reunião', [
+        { professionalId: 3, type: 'PESSOA' },
+        { perfil: 'medicos', type: 'GRUPO' },
+        { type: 'TODOS' },
+      ]);
     });
 
     it('sem conexão o envio fica indisponível, avisa e não chama a API', async () => {
       await configureStore({ hospitalId: 1, status: 'success' });
       createComponent();
       TestBed.inject(ConnectivityService).online.set(false);
-      const api = TestBed.inject(NotificationsApiService);
+      const api = TestBed.inject(ComunicadosApiService);
 
-      spyOn(api, 'createAnnouncement');
+      spyOn(api, 'create');
       const create = TestBed.inject(ScreenActionsService).actions()[0].form;
 
       await expectAsync(
         create?.submit({ message: 'Revisar', recipients: [jairo] }) as Promise<void>,
       ).toBeRejectedWithError(FormSubmitError, /Sem conexão/u);
 
-      expect(api.createAnnouncement).not.toHaveBeenCalled();
+      expect(api.create).not.toHaveBeenCalled();
     });
 
     it('falha da API propaga o erro (o formulário mantém as respostas)', async () => {
       await configureStore({ hospitalId: 1, status: 'success' });
       createComponent();
-      spyOn(TestBed.inject(NotificationsApiService), 'createAnnouncement').and.returnValue(
-        throwError(() => new Error('x')),
-      );
+      spyOn(TestBed.inject(ComunicadosApiService), 'create').and.returnValue(throwError(() => new Error('x')));
       const create = TestBed.inject(ScreenActionsService).actions()[0].form;
 
       await expectAsync(create?.submit({ message: 'x', recipients: [jairo] }) as Promise<void>).toBeRejected();
