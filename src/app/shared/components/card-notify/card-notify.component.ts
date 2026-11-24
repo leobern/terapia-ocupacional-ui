@@ -87,13 +87,12 @@ export class CardNotifyComponent {
   protected readonly isAnswering = computed(() => this.type() === 'answering');
   protected readonly showPatientHeader = computed(() => !this.isResume() && this.patientName() !== '');
   protected readonly showReplyTag = computed(() => this.isDetail() && this.replies().length > 0);
-  // Figma 4506:9462: só o card pendente tem a coluna do balão (responder). Aberto com as respostas
-  // (4496:11888) e resolvido (4506:9755) não têm.
   // Figma v2/NotificationThread: pendente mostra responder + resolver, também com as
-  // respostas abertas; resolvida não tem ações.
+  // respostas abertas. A resolvida mantém só o responder (o servidor a reabre ao receber a resposta);
+  // não tem o Resolver. Variação ainda sem desenho próprio no Figma.
   // Figma v2/NotificationThread: o Resolver fica no cabeçalho de todo card pendente (não-Home).
   protected readonly showResolveButton = computed(() => !this.isResume() && !this.resolved() && this.canResolve());
-  protected readonly showActionButton = computed(() => (this.isDetail() || this.isAnswerOpen()) && !this.resolved());
+  protected readonly showActionButton = computed(() => this.isDetail() || this.isAnswerOpen());
   protected readonly repliesLabel = computed(() => {
     const total = this.replies().length;
 
