@@ -48,6 +48,27 @@
   }
 }
 
+// Embutido no card do Diagnóstico: título pequeno, tiles em 3 colunas sobre o próprio card.
+.nutrition-panel--embedded {
+  .nutrition-panel__header {
+    min-height: 28px;
+  }
+
+  .nutrition-panel__title {
+    min-height: 0;
+    padding-inline: 0;
+    color: tokens.c(content-4);
+
+    @include typography.label-md;
+  }
+
+  .nutrition-panel__grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    padding: 0;
+    background: transparent;
+  }
+}
+
 .nutrition-panel__item {
   display: flex;
 }

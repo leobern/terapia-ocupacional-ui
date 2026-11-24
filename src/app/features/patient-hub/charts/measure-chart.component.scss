@@ -1,103 +1,261 @@
 @use '../../../shared/styles/tokens';
 @use '../../../shared/styles/typography';
 
+// v2/TrendChart (Figma 4623:5273 e 4623:5322): card surface-2, raio 16, padding 16, gap 12; gráfico de 148px de altura.
 :host {
   display: block;
 }
 
-.measure {
+.trend {
   display: flex;
   flex-direction: column;
-  gap: tokens.$space-8;
+  gap: tokens.$space-12;
   padding: tokens.$space-16;
-  border-radius: tokens.$radius-md;
-  background: tokens.c(surface);
+  border-radius: tokens.$radius-sm;
+  background: tokens.c(surface-2);
 }
 
-.measure__title,
-.measure__value,
-.measure__caption {
+.trend__head {
+  display: flex;
+  gap: tokens.$space-8;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+.trend__text {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.trend__title,
+.trend__value,
+.trend__caption {
   margin: 0;
 }
 
-.measure__title {
+.trend__title {
   color: tokens.c(content-4);
 
   @include typography.label-md;
 }
 
-.measure__value {
+.trend__value {
+  display: flex;
+  gap: tokens.$space-4;
+  align-items: baseline;
   color: tokens.c(content-1);
 
-  @include typography.title-lg;
+  @include typography.headline;
 }
 
-.measure__unit {
+.trend__unit,
+.trend__caption {
   color: tokens.c(content-4);
 
   @include typography.caption;
 }
 
-.measure__caption {
+// Selo de variação: pílula branca de 28px com ícone verde.
+.trend__badge {
+  display: inline-flex;
+  flex-shrink: 0;
+  gap: tokens.$space-4;
+  align-items: center;
+  height: 28px;
+  padding: 0 10px 0 tokens.$space-8;
+  border-radius: tokens.$radius-pill;
+  background: tokens.c(surface);
+  color: tokens.c(content-1);
+
+  @include typography.label-sm;
+}
+
+.trend__badge-icon {
+  color: tokens.c(comm-success);
+}
+
+// Quadro "grafico": 148px; a grade começa 32px à direita (rótulos do eixo Y) e passa 5px da borda direita.
+.trend__chart {
+  position: relative;
+  height: 148px;
+}
+
+.trend__grid {
+  position: absolute;
+  right: -5px;
+  left: 32px;
+  height: 1px;
+  background: tokens.c(border-2);
+}
+
+.trend__tick {
+  position: absolute;
+  left: 0;
   color: tokens.c(content-4);
 
   @include typography.caption;
 }
 
-.measure__svg {
+.trend__plot {
+  position: absolute;
+  inset: 0 -5px 0 32px;
+}
+
+.trend__ideal {
+  position: absolute;
+  right: 0;
+  left: 0;
+  background: tokens.c(comm-success);
+  opacity: 0.6;
+}
+
+.trend__svg {
+  position: absolute;
+  inset: 0;
   width: 100%;
-  height: 110px;
+  height: 100%;
+  overflow: visible;
 }
 
-.measure__ideal {
-  fill: tokens.c(content-3);
-  opacity: 0.2;
-}
-
-.measure__area {
+.trend__area {
   fill: tokens.c(secondary);
   opacity: 0.12;
 }
 
-.measure__line {
+.trend__line {
   fill: none;
   stroke: tokens.c(secondary);
-  stroke-width: 2;
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
   vector-effect: non-scaling-stroke;
 }
 
-.measure__dot {
-  fill: tokens.c(surface);
-  stroke: tokens.c(secondary);
-  stroke-width: 1.5;
+.trend__reference {
+  stroke: tokens.c(content-4);
+  stroke-dasharray: 4 4;
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
 }
 
-.measure__axis {
-  display: flex;
-  justify-content: space-between;
+.trend__reference-label {
+  position: absolute;
+  right: 0;
   color: tokens.c(content-4);
 
   @include typography.caption;
 }
 
-.measure__periods {
+.trend__guide {
+  position: absolute;
+  width: 1px;
+  background: tokens.c(secondary);
+  opacity: 0.5;
+  transform: translateX(-50%);
+}
+
+// Ponto: alvo de toque de 44px (transparente); o ponto visível tem 9px, branco com contorno secundário de 2px.
+.trend__point {
+  position: absolute;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  cursor: pointer;
+  transform: translate(-50%, -50%);
+
+  &:focus-visible {
+    outline: var(--focus-ring-width) solid tokens.c(focus-ring);
+    outline-offset: -2px;
+  }
+
+  &--selected {
+    background: color-mix(in srgb, tokens.c(secondary) 14%, transparent);
+  }
+}
+
+.trend__dot {
+  box-sizing: border-box;
+  width: 9px;
+  height: 9px;
+  border: 2px solid tokens.c(secondary);
+  border-radius: 50%;
+  background: tokens.c(surface);
+}
+
+.trend__point--selected .trend__dot {
+  width: 14px;
+  height: 14px;
+  background: tokens.c(secondary);
+}
+
+// Tooltip: pílula escura (raio 8, padding 6/10) no topo, centrada no ponto escolhido sem sair do gráfico.
+.trend__tooltip {
+  position: absolute;
+  top: 0;
+  left: clamp(55px, calc(32px + var(--x) * (100% - 27px)), calc(100% - 55px));
+  display: flex;
+  flex-direction: column;
+  padding: 6px 10px;
+  border-radius: tokens.$radius-xs;
+  background: tokens.c(content-1);
+  color: tokens.c(surface);
+  white-space: nowrap;
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+
+.trend__tooltip-value {
+  @include typography.label-md;
+}
+
+.trend__tooltip-note {
+  @include typography.caption;
+}
+
+.trend__axis {
+  position: absolute;
+  top: 132px;
+  left: clamp(18px, calc(32px + var(--x) * (100% - 27px)), calc(100% - 12px));
+  color: tokens.c(content-4);
+  transform: translateX(-50%);
+
+  @include typography.caption;
+
+  &--selected {
+    color: tokens.c(content-1);
+  }
+}
+
+.trend__periods {
   display: flex;
   gap: tokens.$space-8;
 }
 
-.measure__period {
+// v2/FilterChip: 32px, pílula, padding 12, gap 6; ativo = primário com texto claro e check.
+.trend__chip {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
   height: 32px;
-  padding-inline: tokens.$space-12;
+  padding: 0 tokens.$space-12;
   border: 0;
   border-radius: tokens.$radius-pill;
-  background: transparent;
+  background: tokens.c(surface-2);
   color: tokens.c(content-1);
   cursor: pointer;
 
   @include typography.label-md;
 
   &--active {
-    background: tokens.c(secondary);
+    background: tokens.c(primary);
     color: tokens.c(content-6);
   }
 

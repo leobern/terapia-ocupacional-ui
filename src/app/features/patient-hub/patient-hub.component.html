@@ -238,32 +238,41 @@
           <div class="hub__col">
             @if (profile(); as p) {
               <h2 class="hub__section-title hub__o-4">Diagnóstico</h2>
-              <app-measure-chart
-                class="hub__o-4"
-                title="Peso"
-                unit="kg"
-                caption="Medido hoje, 28/05 · 6 medições"
-                [series]="weightSeries"
-              />
-              <app-measure-chart
-                class="hub__o-4"
-                title="IMC"
-                unit="kg/m²"
-                caption="Altura 1,63 m · faixa ideal 18,5–24,9"
-                [series]="bmiSeries"
-                [idealRange]="[18.5, 24.9]"
-              />
-              <!-- Painel Nutricional (FT-004-3): paciente novo mostra todos os cards em "Sem dados". -->
-              <app-nutrition-panel
-                class="hub__o-5"
-                title="Avaliações"
-                [values]="values()"
-                [addedCards]="addedCards()"
-                [hiddenCards]="hiddenCards()"
-                (cardSelect)="openCardModal($event)"
-                (addRequest)="openAddSheet()"
-                (hiddenRequest)="openHiddenSheet()"
-              />
+              <div class="hub__diag hub__o-4">
+                <app-measure-chart
+                  title="Peso"
+                  unit="kg"
+                  caption="Medido hoje, 28/05 · 6 medições"
+                  [series]="weightSeries"
+                  [badge]="{ icon: 'arrow-up', text: '+2,5 kg desde 01/05' }"
+                  [reference]="{ label: 'Internação · 48,5 kg', value: 48.5 }"
+                />
+                <app-measure-chart
+                  title="IMC"
+                  unit="kg/m²"
+                  caption="Altura 1,63 m · faixa ideal 18,5–24,9"
+                  [series]="bmiSeries"
+                  [badge]="{
+                    icon: 'check',
+                    text: 'Na faixa ideal desde 10/05',
+                  }"
+                  [idealRange]="[18.5, 24.9]"
+                  [reference]="{
+                    label: '18,5 · início da faixa ideal',
+                    value: 18.5,
+                  }"
+                />
+                <app-nutrition-panel
+                  title="Avaliações"
+                  [embedded]="true"
+                  [values]="values()"
+                  [addedCards]="addedCards()"
+                  [hiddenCards]="hiddenCards()"
+                  (cardSelect)="openCardModal($event)"
+                  (addRequest)="openAddSheet()"
+                  (hiddenRequest)="openHiddenSheet()"
+                />
+              </div>
               <app-assessment-section
                 class="hub__o-6"
                 [patientId]="p.id"
@@ -295,6 +304,26 @@
           </div>
           <div class="hub__col">
             @if (profile(); as p) {
+              @if (targetTiles(); as tiles) {
+                <section
+                  class="hub__targets hub__o-7"
+                  aria-labelledby="targets-title"
+                >
+                  <h2 id="targets-title" class="hub__section-title">
+                    Metas nutricionais
+                  </h2>
+                  <ul class="hub__tiles">
+                    @for (tile of tiles; track tile.label) {
+                      <li class="hub__tile">
+                        <span class="hub__tile-label">{{ tile.label }}</span>
+                        <span class="hub__tile-value"
+                          >{{ tile.value }} <small>{{ tile.unit }}</small></span
+                        >
+                      </li>
+                    }
+                  </ul>
+                </section>
+              }
               @if (adequacy(); as a) {
                 <app-adequacy-summary class="hub__o-7" [adequacy]="a" />
               }

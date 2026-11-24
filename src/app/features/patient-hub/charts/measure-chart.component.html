@@ -1,58 +1,123 @@
-<section class="measure" [attr.aria-label]="title()">
-  <header class="measure__head">
-    <div>
-      <p class="measure__title">{{ title() }}</p>
-      <p class="measure__value">
-        {{ current() }} <span class="measure__unit">{{ unit() }}</span>
+<section class="trend" [attr.aria-label]="title()">
+  <header class="trend__head">
+    <div class="trend__text">
+      <p class="trend__title">{{ title() }}</p>
+      <p class="trend__value">
+        {{ current() }} <span class="trend__unit">{{ unit() }}</span>
       </p>
       @if (caption()) {
-        <p class="measure__caption">{{ caption() }}</p>
+        <p class="trend__caption">{{ caption() }}</p>
       }
     </div>
+    @if (badge(); as b) {
+      <span class="trend__badge">
+        <ph-icon
+          class="trend__badge-icon"
+          weight="bold"
+          [name]="b.icon"
+          [size]="16"
+        />
+        {{ b.text }}
+      </span>
+    }
   </header>
 
-  <svg
-    class="measure__svg"
-    role="img"
-    preserveAspectRatio="none"
-    [attr.viewBox]="'0 0 ' + width + ' ' + height"
-    [attr.aria-label]="summary()"
-  >
-    @if (ideal(); as band) {
-      <rect
-        class="measure__ideal"
-        x="0"
-        [attr.y]="band.y"
-        [attr.width]="width"
-        [attr.height]="band.height"
-      />
+  <div class="trend__chart" role="group" [attr.aria-label]="summary()">
+    @for (tick of ticks().rows; track tick.v) {
+      <span class="trend__grid" [style.top.px]="tick.y"></span>
+      <span class="trend__tick" [style.top.px]="tick.y - 8">{{
+        tick.label
+      }}</span>
     }
-    <polygon class="measure__area" [attr.points]="area()" />
-    <polyline class="measure__line" [attr.points]="line()" />
-    @for (point of points(); track point.label) {
-      <circle
-        class="measure__dot"
-        r="3"
-        [attr.cx]="point.x"
-        [attr.cy]="point.y"
-      />
+
+    <div class="trend__plot">
+      @if (ideal(); as band) {
+        <span
+          class="trend__ideal"
+          [style.top.px]="band.y"
+          [style.height.px]="band.height"
+        ></span>
+      }
+      <svg
+        class="trend__svg"
+        viewBox="0 0 100 148"
+        preserveAspectRatio="none"
+        aria-hidden="true"
+      >
+        <polygon class="trend__area" [attr.points]="areaPolygon()" />
+        @if (referenceLine(); as ref) {
+          <line
+            class="trend__reference"
+            x1="0"
+            x2="100"
+            [attr.y1]="ref.y"
+            [attr.y2]="ref.y"
+          />
+        }
+        <polyline class="trend__line" [attr.points]="line()" />
+      </svg>
+      @if (referenceLine(); as ref) {
+        <span class="trend__reference-label" [style.top.px]="ref.y + 4">{{
+          ref.label
+        }}</span>
+      }
+      @if (selected(); as sel) {
+        <span
+          class="trend__guide"
+          [style.left.%]="sel.frac * 100"
+          [style.top.px]="sel.y"
+          [style.height.px]="areaBase - sel.y"
+        ></span>
+      }
+      @for (point of points(); track point.index) {
+        <button
+          type="button"
+          class="trend__point"
+          [class.trend__point--selected]="point.index === selectedIndex()"
+          [style.left.%]="point.frac * 100"
+          [style.top.px]="point.y"
+          [attr.aria-label]="
+            point.note + ': ' + format(point.value) + ' ' + unit()
+          "
+          [attr.aria-pressed]="point.index === selectedIndex()"
+          (click)="pick(point.index)"
+        >
+          <span class="trend__dot"></span>
+        </button>
+      }
+    </div>
+
+    @if (selected(); as sel) {
+      <div class="trend__tooltip" role="status" [style.--x]="sel.frac">
+        <span class="trend__tooltip-value"
+          >{{ format(sel.value) }} {{ unit() }}</span
+        >
+        <span class="trend__tooltip-note">{{ sel.note }}</span>
+      </div>
     }
-  </svg>
-  <div class="measure__axis" aria-hidden="true">
-    @for (point of points(); track point.label) {
-      <span>{{ point.label }}</span>
+
+    @for (label of axisLabels(); track label.index) {
+      <span
+        class="trend__axis"
+        [class.trend__axis--selected]="label.index === selectedIndex()"
+        [style.--x]="label.frac"
+        >{{ label.label }}</span
+      >
     }
   </div>
 
-  <div class="measure__periods" role="group" aria-label="Período">
+  <div class="trend__periods" role="group" aria-label="Período">
     @for (item of periods; track item.key) {
       <button
         type="button"
-        class="measure__period"
-        [class.measure__period--active]="period() === item.key"
+        class="trend__chip"
+        [class.trend__chip--active]="period() === item.key"
         [attr.aria-pressed]="period() === item.key"
         (click)="select(item.key)"
       >
+        @if (period() === item.key) {
+          <ph-icon name="check" weight="bold" [size]="16" />
+        }
         {{ item.label }}
       </button>
     }

@@ -192,6 +192,22 @@ export class PatientHubComponent implements OnInit {
   protected readonly offline = computed(() => !this.connectivity.online());
 
   protected readonly hospitalId = computed(() => this.context.selected()?.id ?? null);
+  /** Tiles de "Metas nutricionais" (Figma 4608:4845), calculados da meta vigente quando há aporte calculado. */
+  protected readonly targetTiles = computed(() => {
+    const a = this.adequacy();
+
+    if (a?.status !== 'available') {
+      return null;
+    }
+    const n = (v: number): string => v.toLocaleString('pt-BR', { maximumFractionDigits: 1 });
+
+    return [
+      { label: 'Calorias', unit: 'kcal/kg', value: n(a.targets.kcalPerKg) },
+      { label: 'Meta calórica', unit: 'kcal/dia', value: n(a.targets.kcalPerDay) },
+      { label: 'Proteína', unit: 'g/kg', value: n(a.targets.proteinPerKg) },
+      { label: 'Meta proteica', unit: 'g/dia', value: n(a.targets.proteinPerDay) },
+    ];
+  });
   protected readonly weightSeries = PROVISIONAL_WEIGHT;
   protected readonly bmiSeries = PROVISIONAL_BMI;
   protected readonly hospitalName = computed(() => this.context.selected()?.name ?? '');
