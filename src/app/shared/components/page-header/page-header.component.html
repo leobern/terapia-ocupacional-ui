@@ -13,7 +13,7 @@
   <div class="page-header__text">
     <h1 class="page-header__title">
       @if (icon(); as name) {
-        <ph-icon weight="bold" [name]="name" [size]="40" />
+        <ph-icon weight="fill" [name]="name" [size]="40" />
       }
       <span class="page-header__title-text">{{ title() }}</span>
     </h1>
@@ -29,6 +29,7 @@
         kind="primary"
         appearance="icon"
         icon="bell"
+        [solid]="true"
         [ariaLabel]="bellLabel()"
         (click)="bellClick.emit()"
       />
@@ -47,6 +48,7 @@
       appearance="icon"
       icon="squares-four"
       ariaLabel="Ações da tela"
+      [solid]="true"
       [disabled]="assistant.shortcutsOpen()"
       (click)="assistant.openShortcuts()"
     />

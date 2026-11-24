@@ -169,7 +169,7 @@ describe('PatientListComponent', () => {
     q('[aria-label^="Notificações"]')?.click();
 
     expect(router.navigate).toHaveBeenCalledWith(['/notifications']);
-    expect(q('.page-header__title ph-icon i')?.className).toContain('ph-bold');
+    expect(q('.page-header__title ph-icon i')?.className).toContain('ph-fill');
     q('[aria-label="Ações da tela"]')?.click();
 
     expect(TestBed.inject(AiAssistantService).view()).toBe('shortcuts');

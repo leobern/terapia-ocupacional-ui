@@ -45,38 +45,41 @@
     (o contorno por dentro é o traço de 3px recortado pela própria forma). Cores por token (claro e escuro).
     É um `<svg>` simples, sem transform/filter, então não cria stacking context para as luzes.
   -->
-  <svg
-    class="icon-logo__sparkle"
-    viewBox="0 0 24 25"
-    aria-hidden="true"
-    focusable="false"
-    xmlns="http://www.w3.org/2000/svg"
-  >
-    <defs>
-      @for (d of sparklePaths; track $index) {
-        <path [attr.id]="sparkleId + '-' + $index" [attr.d]="d" />
-      }
-      <clipPath [attr.id]="sparkleId + '-clip'">
+  @if (sparkle() !== 'none') {
+    <svg
+      class="icon-logo__sparkle"
+      viewBox="0 0 24 25"
+      aria-hidden="true"
+      focusable="false"
+      xmlns="http://www.w3.org/2000/svg"
+      [class.icon-logo__sparkle--solid]="sparkle() === 'solid'"
+    >
+      <defs>
         @for (d of sparklePaths; track $index) {
-          <use [attr.xlink:href]="'#' + sparkleId + '-' + $index" />
+          <path [attr.id]="sparkleId + '-' + $index" [attr.d]="d" />
         }
-      </clipPath>
-    </defs>
-    @for (d of sparklePaths; track $index) {
-      <use
-        class="icon-logo__sparkle-fill"
-        [attr.xlink:href]="'#' + sparkleId + '-' + $index"
-      />
-    }
-    <g [attr.clip-path]="'url(#' + sparkleId + '-clip)'">
+        <clipPath [attr.id]="sparkleId + '-clip'">
+          @for (d of sparklePaths; track $index) {
+            <use [attr.xlink:href]="'#' + sparkleId + '-' + $index" />
+          }
+        </clipPath>
+      </defs>
       @for (d of sparklePaths; track $index) {
         <use
-          class="icon-logo__sparkle-stroke"
+          class="icon-logo__sparkle-fill"
           [attr.xlink:href]="'#' + sparkleId + '-' + $index"
         />
       }
-    </g>
-  </svg>
+      <g [attr.clip-path]="'url(#' + sparkleId + '-clip)'">
+        @for (d of sparklePaths; track $index) {
+          <use
+            class="icon-logo__sparkle-stroke"
+            [attr.xlink:href]="'#' + sparkleId + '-' + $index"
+          />
+        }
+      </g>
+    </svg>
+  }
 
   <!--
     As 3 luzes ficam SEMPRE no DOM (visibilidade por `opacity`, não por `@if`): FR-011 exige

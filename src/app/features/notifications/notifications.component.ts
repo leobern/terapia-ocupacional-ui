@@ -27,6 +27,7 @@ import { ConfirmDialogComponent } from '../../shared/components/confirm-dialog/c
 import { IconButtonComponent } from '../../shared/components/icon-button/icon-button.component';
 import { PageContainerComponent } from '../../shared/components/page-container/page-container.component';
 import { PageHeaderComponent } from '../../shared/components/page-header/page-header.component';
+import { ScrollRevealDirective } from '../../shared/directives/scroll-reveal.directive';
 import { PhIconComponent } from '../../shared/icons/ph-icon/ph-icon.component';
 import { AudioTranscriber } from '../../shared/services/audio-transcriber';
 import { type ScreenAction, ScreenActionsService } from '../../shared/services/screen-actions.service';
@@ -89,6 +90,7 @@ const NO_DRAFTS: Readonly<Record<number, string>> = {};
     ConfirmDialogComponent,
     IconButtonComponent,
     PageHeaderComponent,
+    ScrollRevealDirective,
     NotificationSectionTitleComponent,
     PageContainerComponent,
     PhIconComponent,

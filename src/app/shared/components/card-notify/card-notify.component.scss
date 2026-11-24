@@ -207,6 +207,8 @@
 
 // State=write: o bloco do campo de resposta ganha contorno (border-2) e o campo cai dentro dele.
 .card-notify__reply--writing {
+  // Figma 4722:10991: o bloco de escrita é só contorno, SEM fundo (o card aparece por trás).
+  background: transparent;
   border: 1px solid tokens.c(border-2);
 
   // Figma Frame 10: o aviso de rascunho/erro tem 16px de recuo lateral, alinhado ao texto do campo.

@@ -75,7 +75,27 @@
   @include breakpoints.md {
     height: 100%;
     overflow-y: auto;
+    // A barra de rolagem fica a 4px do card (esta folga) e só aparece enquanto se rola (`appScrollReveal`).
     padding-bottom: tokens.$space-32;
+    padding-right: tokens.$space-4;
+
+    // `auto` devolve o controle ao ::-webkit-scrollbar (o `*` global com scrollbar-color/width o desativaria).
+    scrollbar-color: auto;
+    scrollbar-width: auto;
+
+    &::-webkit-scrollbar-thumb {
+      background: transparent;
+    }
+
+    &[data-scrolling='true']::-webkit-scrollbar-thumb {
+      background: var(--color-border-2);
+      background-clip: content-box;
+    }
+
+    // 8px de folga no topo, para a barra não começar colada no título da coluna.
+    &::-webkit-scrollbar-track-piece:start {
+      margin-top: tokens.$space-8;
+    }
   }
 }
 

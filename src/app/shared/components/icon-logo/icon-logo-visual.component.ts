@@ -17,6 +17,12 @@ let nextSparkleId = 0;
  */
 export type IconLogoVisualState = 'default' | 'anim' | 'button' | 'disabled';
 
+/**
+ * Ícone Sparkling dentro do logo: `outline` (padrão: preenchido com surface e contornado), `solid` (preenchido com
+ * `secondary`, aba ativa do menu) ou `none` (o logo do menu, sem o ícone).
+ */
+export type IconLogoSparkle = 'outline' | 'solid' | 'none';
+
 /** Subconjunto exposto pelo componente decorativo público — `button` não faz sentido nele. */
 export type IconLogoState = 'default' | 'anim' | 'disabled';
 
@@ -49,6 +55,8 @@ export class IconLogoVisualComponent {
 
   /** Revela as luzes sem animá-las (hover do botão). Ignorado quando `state === 'anim'`. */
   readonly lightsVisible = input<boolean>(false);
+
+  readonly sparkle = input<IconLogoSparkle>('outline');
 
   protected readonly sparklePaths = SPARKLE_PATHS;
   protected readonly sparkleId = 'icon-logo-sparkle-' + nextSparkleId++;

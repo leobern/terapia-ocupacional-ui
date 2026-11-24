@@ -47,7 +47,11 @@
           }
 
           <!-- Figma (seção 07): no desktop, Pendentes e Resolvidas lado a lado. -->
-          <section class="notifications__column" aria-label="Pendentes">
+          <section
+            appScrollReveal
+            class="notifications__column"
+            aria-label="Pendentes"
+          >
             @if (pendingItems().length > 0) {
               <app-notification-section-title
                 class="notifications__section-title"
@@ -86,7 +90,11 @@
             <div #scrollSentinel class="notifications__scroll-sentinel"></div>
           </section>
 
-          <section class="notifications__column" aria-label="Resolvidas">
+          <section
+            appScrollReveal
+            class="notifications__column"
+            aria-label="Resolvidas"
+          >
             @if (resolvedItems().length > 0) {
               <app-notification-section-title
                 class="notifications__section-title"

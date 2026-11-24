@@ -377,6 +377,11 @@ $mesh-fade-mask: radial-gradient(
   fill: tokens.c(surface);
 }
 
+// Aba ativa do menu: Sparkling SÓLIDO (preenchido com `secondary`, sem o contorno separado).
+.icon-logo__sparkle--solid .icon-logo__sparkle-fill {
+  fill: tokens.c(secondary);
+}
+
 .icon-logo__sparkle-stroke {
   fill: none;
   stroke: tokens.c(secondary);

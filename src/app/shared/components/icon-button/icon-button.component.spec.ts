@@ -57,11 +57,18 @@ describe('IconButtonComponent', () => {
       expect(weight()).toBe('regular');
     });
 
-    it('bold quando active, disabled ou com aria-expanded=true', () => {
+    it('fill (sólido) quando active, solid ou com aria-expanded=true; bold quando disabled', () => {
       fixture.componentRef.setInput('active', true);
       fixture.detectChanges();
 
-      expect(weight()).toBe('bold');
+      expect(weight()).toBe('fill');
+
+      fixture.componentRef.setInput('active', false);
+      fixture.componentRef.setInput('solid', true);
+      fixture.detectChanges();
+
+      expect(weight()).toBe('fill');
+      fixture.componentRef.setInput('solid', false);
 
       fixture.componentRef.setInput('active', false);
       fixture.componentRef.setInput('disabled', true);
@@ -73,7 +80,7 @@ describe('IconButtonComponent', () => {
       fixture.componentRef.setInput('ariaExpanded', true);
       fixture.detectChanges();
 
-      expect(weight()).toBe('bold');
+      expect(weight()).toBe('fill');
     });
   });
 

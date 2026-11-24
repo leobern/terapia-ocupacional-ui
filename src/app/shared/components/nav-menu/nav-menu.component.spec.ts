@@ -36,19 +36,18 @@ describe('NavMenuComponent', () => {
     fixture.detectChanges();
   });
 
-  it('renders the 6 navigation items with the expected icons, all in "regular" weight and 24px', () => {
+  it('renders the 5 navigation items with the expected icons, all in "regular" weight and 24px', () => {
     const expected: { label: string; icon: string }[] = [
       { icon: 'house', label: 'Home' },
+      { icon: 'users-three', label: 'Pacientes' },
       { icon: 'hospital', label: 'Hospitais' },
       { icon: 'pill', label: 'Farmácia' },
-      { icon: 'users-four', label: 'Pacientes' },
-      { icon: 'squares-four', label: 'Ações da tela' },
       { icon: 'bell', label: 'Notificações' },
     ];
 
     const links = navLinks();
 
-    expect(links.length).toBe(6);
+    expect(links.length).toBe(5);
 
     expected.forEach(({ label, icon }) => {
       const link = linkByLabel(label);
@@ -86,7 +85,6 @@ describe('NavMenuComponent', () => {
     { label: 'Hospitais', output: 'hospitaisClick' },
     { label: 'Farmácia', output: 'farmaciaClick' },
     { label: 'Pacientes', output: 'pacientesClick' },
-    { label: 'Ações da tela', output: 'acoesTelaClick' },
     { label: 'Notificações', output: 'notificacoesClick' },
   ];
 
@@ -154,7 +152,7 @@ describe('NavMenuComponent', () => {
     }
   });
 
-  const activeCases: NavMenuItemKey[] = ['home', 'hospitais', 'farmacia', 'pacientes', 'acoes-tela', 'notificacoes'];
+  const activeCases: NavMenuItemKey[] = ['home', 'hospitais', 'farmacia', 'pacientes', 'notificacoes'];
 
   for (const key of activeCases) {
     it(`marks only the "${key}" item as active when activeItem is set to it`, () => {
@@ -214,11 +212,11 @@ describe('NavMenuComponent', () => {
       return el?.componentInstance.weight();
     }
 
-    it('usa bold só no item ativo', () => {
+    it('usa fill (sólido) só no item ativo', () => {
       fixture.componentRef.setInput('activeItem', 'hospitais');
       fixture.detectChanges();
 
-      expect(weightOf('Hospitais')).toBe('bold');
+      expect(weightOf('Hospitais')).toBe('fill');
       expect(weightOf('Home')).toBe('regular');
     });
   });

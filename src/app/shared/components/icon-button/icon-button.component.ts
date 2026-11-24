@@ -57,9 +57,17 @@ export class IconButtonComponent {
    */
   readonly ariaExpanded = input<boolean | null>(null);
 
-  protected readonly iconWeight = computed<'bold' | 'regular'>(() =>
-    this.active() || this.disabled() || this.ariaExpanded() === true ? 'bold' : 'regular',
-  );
+  /** Ícone sempre sólido (`fill`): cabeçalhos de tela (sino e atalhos) — Figma v2/PageHeader. */
+  readonly solid = input<boolean>(false);
+
+  // Ativo/aberto/`solid` = sólido (Figma); desabilitado = bold; o resto é regular.
+  protected readonly iconWeight = computed<'bold' | 'fill' | 'regular'>(() => {
+    if (this.disabled()) {
+      return 'bold';
+    }
+
+    return this.solid() || this.active() || this.ariaExpanded() === true ? 'fill' : 'regular';
+  });
 
   protected readonly variantClass = computed(
     () => `icon-button--${this.kind()} icon-button--${this.appearance()} icon-button--${this.size()}`,
