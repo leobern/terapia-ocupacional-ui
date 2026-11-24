@@ -554,6 +554,7 @@ describe('PatientRegistrationAction locations (US-002-1-07)', () => {
       'Qual o tipo da localização? (Unidade ou Ala)',
     ]);
     answers('ala', 'x'.repeat(101));
+
     expect(texts().at(-2)).toBe('O valor da localização deve ter no máximo 100 caracteres.');
   });
 
@@ -603,8 +604,10 @@ describe('PatientRegistrationAction locations (US-002-1-07)', () => {
 
   it('removing a location that was not informed or an unknown option is rejected', () => {
     answers('sim', 'unidade', 'UTI', 'não', 'remover ala');
+
     expect(texts().at(-2)).toBe('Essa localização não foi informada.');
     answers('xyz');
+
     expect(texts().at(-2)).toBe('Selecione o tipo: Unidade ou Ala.');
   });
 
