@@ -6,7 +6,7 @@ export type TutorialResult = Exclude<TutorialStatus, 'PENDENTE'>;
 
 /**
  * Fronteira de leitura e registro do estado do tutorial (US-001-3-02).
- * Provisória (`LocalTutorialStateStore`) até o serviço HTTP do contrato entrar em `app.config.ts`.
+ * Implementada por `TutorialApiService` (contrato `tutorial-api.yaml`), ligada em `app.config.ts`.
  */
 export abstract class TutorialStateStore {
   abstract read(): Promise<TutorialStatus>;
