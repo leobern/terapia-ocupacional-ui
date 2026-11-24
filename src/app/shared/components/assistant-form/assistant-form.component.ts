@@ -1,4 +1,16 @@
-import { ChangeDetectionStrategy, Component, computed, DestroyRef, inject, input, output, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  DestroyRef,
+  effect,
+  inject,
+  input,
+  linkedSignal,
+  output,
+  signal,
+  untracked,
+} from '@angular/core';
 
 import { AutoResizeTextareaDirective } from '../../directives/auto-resize-textarea.directive';
 import { PhIconComponent } from '../../icons/ph-icon/ph-icon.component';
@@ -73,13 +85,27 @@ export class AssistantFormComponent {
 
   private readonly directory = inject(UserDirectory);
   private readonly controller = inject(AssistantFormController);
-  private readonly texts = signal<Readonly<Record<string, string>>>({});
+  private readonly texts = linkedSignal<Readonly<Record<string, string>>>(() => ({
+    ...this.definition().initialValues,
+  }));
   private readonly mentions = signal<Readonly<Record<string, readonly DirectoryUser[]>>>({});
   private readonly collapsed = signal<ReadonlySet<string>>(new Set());
   /** Descarta respostas de busca que chegam depois de uma digitação mais nova. */
   private searchToken = 0;
 
   constructor() {
+    // Texto já preenchido (ex.: áudio transcrito) segue o mesmo fluxo de sugestão de destinatários.
+    effect(() => {
+      const definition = this.definition();
+
+      untracked(() => {
+        for (const field of definition.fields) {
+          if (definition.initialValues?.[field.id]) {
+            void this.onBlur(field);
+          }
+        }
+      });
+    });
     // O botão de envio mora no rodapé do painel: o formulário se registra para ele acioná-lo.
     inject(DestroyRef).onDestroy(
       this.controller.attach({

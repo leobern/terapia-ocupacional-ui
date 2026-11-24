@@ -12,7 +12,12 @@ import { Subject, throwError } from 'rxjs';
 import { AiAssistantService } from '../../shared/services/ai-assistant.service';
 import { ConnectivityService } from '../../shared/services/connectivity.service';
 import { ProvisionalUserDirectory } from '../../shared/services/provisional-user-directory';
-import { FormSubmitError, ScreenActionsService } from '../../shared/services/screen-actions.service';
+import {
+  FormSubmitError,
+  type ScreenAction,
+  type ScreenCommand,
+  ScreenActionsService,
+} from '../../shared/services/screen-actions.service';
 import { UserDirectory } from '../../shared/services/user-directory';
 import { ViewportBreakpointService } from '../../shared/services/viewport-breakpoint.service';
 import { HospitalContextService } from '../home/hospital-context.service';
@@ -223,6 +228,41 @@ describe('NotificationsComponent', () => {
       expect(field?.suggest?.from).toBe('message');
       expect((await field?.suggest?.run('Estoque de medicamento baixo'))?.map(u => u.name)).toEqual(['farmaceuticos']);
       expect(spy).toHaveBeenCalledWith('Estoque de medicamento baixo');
+    });
+
+    describe('comando por texto ou áudio', () => {
+      const open = async (command: ScreenCommand, transcript: string | Error): Promise<ScreenAction> => {
+        await configureStore({ status: 'success' });
+        createComponent();
+        spyOn(TestBed.inject(AnnouncementAssistant), 'transcribe').and.callFake(() =>
+          transcript instanceof Error ? Promise.reject(transcript) : Promise.resolve(transcript),
+        );
+        const openAction = spyOn(TestBed.inject(AiAssistantService), 'openAction');
+
+        await TestBed.inject(ScreenActionsService).commandHandler()?.(command);
+
+        return openAction.calls.mostRecent().args[0];
+      };
+
+      it('texto abre o formulário do comunicado com o conteúdo preenchido', async () => {
+        const action = await open({ kind: 'text', text: 'Reunião às 10h' }, '');
+
+        expect(action.form?.initialValues).toEqual({ message: 'Reunião às 10h' });
+        expect(action.form?.notice).toBeUndefined();
+      });
+
+      it('áudio transcrito preenche o conteúdo editável', async () => {
+        const action = await open({ audio: new Blob(['x']), kind: 'audio' }, 'Estoque baixo');
+
+        expect(action.form?.initialValues).toEqual({ message: 'Estoque baixo' });
+      });
+
+      it('falha na transcrição abre o formulário vazio com aviso para digitar', async () => {
+        const action = await open({ audio: new Blob(['x']), kind: 'audio' }, new Error('falha'));
+
+        expect(action.form?.initialValues).toBeUndefined();
+        expect(action.form?.notice).toContain('Digite o comunicado');
+      });
     });
 
     const jairo = { id: 3, name: 'Jairo Nepomuceno', photoUrl: null, specialty: 'Farmacêutico' };

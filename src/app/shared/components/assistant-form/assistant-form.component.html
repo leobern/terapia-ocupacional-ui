@@ -1,4 +1,7 @@
 <div class="assistant-form">
+  @if (definition().notice; as notice) {
+    <p class="assistant-form__hint" role="status">{{ notice }}</p>
+  }
   @for (field of definition().fields; track field.id) {
     <app-accordion
       [title]="field.label"

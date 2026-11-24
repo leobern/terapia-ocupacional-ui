@@ -45,6 +45,10 @@ export interface FormActionDefinition {
   readonly title: string;
   readonly submitLabel: string;
   readonly fields: readonly FormFieldDefinition[];
+  /** Respostas de texto já preenchidas (por id de campo), ex.: conteúdo ditado por áudio; continuam editáveis. */
+  readonly initialValues?: Readonly<Record<string, string>>;
+  /** Aviso discreto exibido no topo do formulário (ex.: falha na transcrição do áudio). */
+  readonly notice?: string;
   /** Persiste o cadastro. Lançar erro mantém o formulário aberto com os dados. */
   readonly submit: (values: FormValues) => Promise<void> | void;
 }

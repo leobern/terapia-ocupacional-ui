@@ -35,6 +35,7 @@ import {
   FormSubmitError,
   type FormValues,
   type ScreenAction,
+  type ScreenCommand,
   ScreenActionsService,
 } from '../../shared/services/screen-actions.service';
 import { type DirectoryUser } from '../../shared/services/user-directory';
@@ -190,6 +191,10 @@ export class NotificationsComponent implements OnDestroy {
     // Ações da tela no assistente (padrão de cadastro): "Criar notificação" abre o formulário;
     // Editar e Responder já aparecem nos atalhos mas ainda não têm fluxo.
     this.destroyRef.onDestroy(this.screenActions.register(this.screenActionsList()));
+    // Comando por texto/áudio fora do contexto de paciente: abre o mesmo formulário de comunicado, pré-preenchido.
+    this.destroyRef.onDestroy(
+      this.screenActions.registerCommandHandler(command => this.openAnnouncementFromCommand(command)),
+    );
 
     // Uma notificação criada/respondida muda o repositório: recarrega a lista.
     let seenVersion = this.repository.version();
@@ -425,6 +430,33 @@ export class NotificationsComponent implements OnDestroy {
       ),
     );
     this.store.dispatch(NotificationsActions.refreshRequested());
+  }
+
+  /** Texto vira o conteúdo; áudio é transcrito. Falha na transcrição abre o formulário vazio, com aviso, para digitar. */
+  private async openAnnouncementFromCommand(command: ScreenCommand): Promise<void> {
+    let content: string;
+    let notice: string | undefined;
+
+    if (command.kind === 'text') {
+      content = command.text;
+    } else {
+      try {
+        content = await this.announcementAssistant.transcribe(command.audio);
+      } catch {
+        content = '';
+        notice = 'Não foi possível transcrever o áudio. Digite o comunicado manualmente.';
+      }
+    }
+    const action = this.announcementAction();
+
+    this.assistant.openAction({
+      ...action,
+      form: action.form && { ...action.form, initialValues: content ? { message: content } : undefined, notice },
+    });
+  }
+
+  private announcementAction(): ScreenAction {
+    return this.screenActionsList()[0];
   }
 
   private screenActionsList(): readonly ScreenAction[] {

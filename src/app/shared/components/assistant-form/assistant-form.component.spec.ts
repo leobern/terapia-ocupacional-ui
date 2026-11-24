@@ -374,4 +374,27 @@ describe('AssistantFormComponent', () => {
       expect(suggestSpy).not.toHaveBeenCalled();
     });
   });
+
+  describe('conteúdo pré-preenchido', () => {
+    it('mostra o texto inicial editável, o aviso e já pede sugestão de destinatários', async () => {
+      const run = jasmine.createSpy('run').and.resolveTo([USERS[0]]);
+      const base = definition();
+
+      fixture = TestBed.createComponent(AssistantFormComponent);
+      fixture.componentRef.setInput('definition', {
+        ...base,
+        fields: [{ ...base.fields[0], suggest: { from: 'text', run } }, ...base.fields.slice(1)],
+        initialValues: { text: 'Estoque baixo' },
+        notice: 'Aviso de teste',
+      });
+      fixture.detectChanges();
+      await fixture.whenStable();
+      fixture.detectChanges();
+
+      expect(el().textContent).toContain('Aviso de teste');
+      expect(input(1).value).toBe('Estoque baixo');
+      expect(run).toHaveBeenCalledWith('Estoque baixo');
+      expect(el().textContent).toContain('sugerido');
+    });
+  });
 });
