@@ -26,6 +26,7 @@ export const sentThreadToNotification = (thread: MessageThread): Notification =>
   read: true,
   replies: thread.replies.map((r, i) => ({ author: ref(r.author), createdAt: r.at, id: i, text: r.text })),
   replyCount: thread.replies.length,
+  type: 'patient_message',
 });
 
 /** Notificação gerada a partir de uma thread enviada pelo próprio profissional (id negativo). */
