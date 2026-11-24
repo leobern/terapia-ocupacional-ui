@@ -34,7 +34,9 @@ import {
   ProvisionalHospitalInvite,
   ProvisionalManagerAccess,
 } from './features/hospital-team/provisional-hospital-invite';
+import { AnnouncementAssistant } from './features/notifications/assistant/announcement-assistant';
 import { PendingNotificationsQueryResolver } from './features/notifications/assistant/pending-notifications-query.resolver';
+import { ProvisionalAnnouncementAssistant } from './features/notifications/assistant/provisional-announcement-assistant';
 import { NotificationsApiService } from './features/notifications/data-access/notifications-api.service';
 import { ProvisionalNotificationsApiService } from './features/notifications/data-access/provisional-notifications-api.service';
 import { AssessmentAiStructurer } from './features/patient-hub/assessment/assessment-ai-structurer';
@@ -97,8 +99,6 @@ import { SessionRoleReader } from './shared/auth/session-role';
 import { DEV_BACKEND_PROVIDERS } from './shared/dev-backend/dev-backend.providers';
 import { devTokenInterceptor } from './shared/dev-backend/dev-token.interceptor';
 import { ASSISTANT_QUERY_RESOLVERS } from './shared/services/assistant-query-resolver';
-import { AnnouncementAssistant } from './features/notifications/assistant/announcement-assistant';
-import { ProvisionalAnnouncementAssistant } from './features/notifications/assistant/provisional-announcement-assistant';
 import { ProvisionalUserDirectory } from './shared/services/provisional-user-directory';
 import { UserDirectory } from './shared/services/user-directory';
 
