@@ -50,6 +50,7 @@ import { AssessmentSectionComponent } from './assessment/assessment-section.comp
 import { DailyRecordSheetComponent } from './daily-record/daily-record-sheet.component';
 import { PatientMessageSheetComponent } from './messages/patient-message-sheet.component';
 import { PatientMessagesComponent } from './messages/patient-messages.component';
+import { MoveBedAction } from './move-bed/move-bed.action';
 import { HypothesisOrigin, PatientHubProfile } from './patient-hub.models';
 import { HypothesisSynthesizer, HypothesisWriter, PatientHubSource } from './patient-hub-source';
 import { PlanSectionComponent } from './plan/plan-section.component';
@@ -227,6 +228,7 @@ export class PatientHubComponent implements OnInit {
   private readonly cardWriter = inject(NutritionValueWriter);
   private readonly editing = signal<'paste' | 'edit' | null>(null);
   private readonly screenActions = inject(ScreenActionsService);
+  private readonly moveBed = inject(MoveBedAction);
   private readonly source = inject(PatientHubSource);
   private readonly prescriptions = inject(PrescriptionSource);
   private readonly results = inject(NutritionResultsSource);
@@ -251,6 +253,7 @@ export class PatientHubComponent implements OnInit {
     // A ação só existe com o paciente carregado e hospital com vínculo aprovado em contexto.
     effect(onCleanup => {
       if (this.status() === 'ready' && this.hospitalId() !== null) {
+        const profile = this.profile();
         const actions: ScreenAction[] = [
           { id: 'daily-record', label: 'Registro diário', navigate: (): void => this.dailyRecordOpen.set(true) },
           {
@@ -260,6 +263,10 @@ export class PatientHubComponent implements OnInit {
           },
         ];
 
+        // US-002-2-01: o paciente em contexto é o da tela; o pedido vai para a internação mais recente dele.
+        if (profile) {
+          actions.push(this.moveBed.build({ id: profile.id, name: profile.name }));
+        }
         if (this.professional.read().role === 'doctor') {
           actions.push(
             {

@@ -117,7 +117,13 @@ export class AiAssistantService {
 
     if (known) {
       this.conversationSignal.set(null);
-      this.openAction(resolveAction(known, this.screenActions.actions()));
+      const action = resolveAction(known, this.screenActions.actions());
+
+      this.openAction(action);
+      // O pedido já traz a resposta da primeira pergunta (ex.: o leito): responde-a sem perguntar de novo.
+      if (action.conversation?.seedFromMessage) {
+        this.flow.answer(action.conversation.seedFromMessage(question), question);
+      }
 
       return;
     }

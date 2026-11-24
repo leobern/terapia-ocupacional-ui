@@ -89,13 +89,24 @@ export class ConversationStepError extends Error {
  * Cadastro conduzido por conversa, um dado por vez (ex.: paciente, FT-002-1). `submit` recebe os valores
  * validados por `id` de etapa; lançar `ConversationStepError` volta à etapa, qualquer outro erro mostra `errorMessage`.
  */
+export interface ConversationOutcome {
+  readonly message: string;
+  readonly tone: 'error' | 'success';
+}
+
 export interface ConversationDefinition {
   readonly title: string;
   readonly steps: readonly ConversationStep[];
   readonly skipLabel: string;
   readonly successMessage: string;
   readonly errorMessage: string;
-  readonly submit: (values: Readonly<Record<string, string>>) => Promise<void>;
+  /** Resolver com `ConversationOutcome` substitui `successMessage` (ex.: resultado dinâmico ou bloqueio sem retentativa). */
+  readonly submit: (values: Readonly<Record<string, string>>) => Promise<ConversationOutcome> | Promise<void>;
+  /**
+   * Pedido feito por mensagem livre (ex.: "mudar para o leito 412"): devolve a resposta da primeira etapa
+   * extraída da própria mensagem (vazia se não achou), que é respondida automaticamente ao abrir a conversa.
+   */
+  readonly seedFromMessage?: (message: string) => string;
 }
 
 export interface ScreenAction {

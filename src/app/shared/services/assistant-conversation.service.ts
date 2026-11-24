@@ -3,6 +3,7 @@ import { computed, Injectable, type Signal, signal } from '@angular/core';
 import {
   type ConversationDefinition,
   type ConversationOption,
+  type ConversationOutcome,
   type ConversationStep,
   ConversationStepError,
 } from './screen-actions.service';
@@ -142,12 +143,17 @@ export class AssistantConversationService {
 
     this.submittingSignal.set(true);
     try {
-      await definition.submit({ ...this.values });
+      const outcome = (await definition.submit({ ...this.values })) as ConversationOutcome | undefined;
+
       if (generation !== this.generation) {
         return;
       }
       this.finishedSignal.set(true);
-      this.push({ role: 'assistant', text: definition.successMessage, tone: 'success' });
+      this.push({
+        role: 'assistant',
+        text: outcome?.message ?? definition.successMessage,
+        tone: outcome?.tone ?? 'success',
+      });
     } catch (error) {
       if (generation !== this.generation) {
         return;

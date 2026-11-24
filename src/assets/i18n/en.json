@@ -24,6 +24,19 @@
     "signOut": "Sign out",
     "title": "Sign out of your account?"
   },
+  "moveBed": {
+    "messages": {
+      "MSG-11": "This patient has no registered hospital stay yet. You must admit the patient before moving the bed.",
+      "MSG-12": "I couldn't identify the new bed. Can you tell me the bed number?",
+      "error": "Couldn't process the bed move. Please try again.",
+      "noCurrentBed": "not set",
+      "resolved": "Request linked to the most recent stay of {patient}. Current bed: {current}. New bed: {new}. The change has not been applied yet."
+    },
+    "prompts": {
+      "bedNumber": "Which bed should the patient be moved to?"
+    },
+    "title": "Move bed"
+  },
   "notifications": {
     "fallbackTitle": "Notification",
     "linkStatus": {
