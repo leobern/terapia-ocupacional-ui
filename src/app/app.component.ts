@@ -114,7 +114,9 @@ export class AppComponent {
 
   /** Faixa de botões do painel: perguntas rápidas só no chat; as ações da tela aparecem no próprio conteúdo. */
   /** Ação aberta (formulário ou aviso): o cabeçalho do painel mostra título + voltar no lugar da logo. */
-  protected readonly showAssistantHeading = computed(() => ['form', 'unavailable'].includes(this.aiAssistant.view()));
+  protected readonly showAssistantHeading = computed(() =>
+    ['form', 'conversation', 'unavailable'].includes(this.aiAssistant.view()),
+  );
 
   // Figma (seção 09): os chips ficam junto do campo de mensagem e somem quando a
   // resposta já foi exibida (tela A2); continuam durante a busca e no aviso de falha.

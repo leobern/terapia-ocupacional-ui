@@ -1,6 +1,7 @@
 import { computed, inject, Injectable, type Signal, signal } from '@angular/core';
 
 import { recognizeAction, resolveAction } from './assistant-action-router';
+import { AssistantConversationService } from './assistant-conversation.service';
 import {
   ASSISTANT_QUERY_RESOLVERS,
   type AssistantAnswer,
@@ -15,10 +16,11 @@ import { type ScreenAction, ScreenActionsService, type ScreenCommand } from './s
  * O que o painel do assistente está mostrando:
  * - `chat`: saudação e perguntas rápidas (botão da logo / "Como eu posso te ajudar?");
  * - `shortcuts`: "Atalhos" — as ações da tela atual (botão de ações da tela);
+ * - `conversation`: cadastro conduzido por conversa, um dado por vez (ex.: paciente);
  * - `form`: formulário em cards de uma ação de cadastro (padrão de cadastro);
  * - `unavailable`: ação listada que ainda não existe.
  */
-export type AssistantView = 'chat' | 'shortcuts' | 'form' | 'unavailable';
+export type AssistantView = 'chat' | 'shortcuts' | 'form' | 'conversation' | 'unavailable';
 
 /** Pergunta do profissional e o andamento da resposta (sem histórico entre aberturas do painel). */
 export interface AssistantConversation {
@@ -65,6 +67,7 @@ export class AiAssistantService {
 
   private readonly screenActions = inject(ScreenActionsService);
   private readonly connectivity = inject(ConnectivityService);
+  private readonly flow = inject(AssistantConversationService);
   private lastCommand: ScreenCommand | null = null;
   private readonly resolvers = inject(ASSISTANT_QUERY_RESOLVERS);
   private readonly conversationSignal = signal<AssistantConversation | null>(null);
@@ -89,6 +92,12 @@ export class AiAssistantService {
    * não sabe. O motor de IA é outro escopo.
    */
   ask(question: string): void {
+    // Cadastro por conversa aberto: a mensagem é a resposta à pergunta atual, não uma consulta.
+    if (this.viewSignal() === 'conversation') {
+      this.flow.answer(question);
+
+      return;
+    }
     // Tela com camada de IA própria (ex.: lista, FT-003-4): só encaminha, não interpreta.
     // Pedidos de ação já especificados (cadastro/leito) seguem o fluxo de formulário, que não é filtro/ordenação.
     if (this.screenActions.commandHandler() && !recognizeAction(question)) {
@@ -155,16 +164,24 @@ export class AiAssistantService {
 
       return;
     }
+    if (action.conversation) {
+      this.flow.start(action.conversation);
+      this.show('conversation', action);
+
+      return;
+    }
     this.show(action.form ? 'form' : 'unavailable', action);
   }
 
   /** Volta de um formulário/aviso para as ações da tela. */
   back(): void {
+    this.flow.reset();
     this.show('shortcuts', null);
   }
 
   closePanel(): void {
     this.requestId++;
+    this.flow.reset();
     this.lastQuestionSignal.set(null);
     this.conversationSignal.set(null);
     this.isOpenSignal.set(false);

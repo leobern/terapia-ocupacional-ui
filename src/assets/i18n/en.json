@@ -79,7 +79,29 @@
       "unavailable": "Could not check the patient right now. Try again.",
       "yes": "Yes, it is the same patient",
       "yesThis": "Yes, it is this patient"
-    }
+    },
+    "messages": {
+      "MSG-01": "Enter the patient's full name.",
+      "MSG-02": "Enter a valid date of birth.",
+      "MSG-03": "Select the patient's sex.",
+      "MSG-04": "Patient registered successfully.",
+      "MSG-05": "The full name must have at most 150 characters.",
+      "error": "Could not register the patient. Try again.",
+      "sameTooLong": "The medical record number must have at most 30 characters."
+    },
+    "prompts": {
+      "birthDate": "What is the date of birth? (dd/mm/yyyy)",
+      "fullName": "Tell me the patient's full name",
+      "medicalRecordNumber": "What is the patient's medical record number (SAME)? (optional)",
+      "sex": "What is the patient's sex?"
+    },
+    "sex": {
+      "FEMALE": "Female",
+      "MALE": "Male",
+      "NOT_INFORMED": "Not informed"
+    },
+    "skip": "Skip",
+    "title": "Register patient"
   },
   "settings": {
     "reviewTutorial": "Review tutorial",

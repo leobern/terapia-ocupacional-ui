@@ -21,6 +21,6 @@ export class AssistantHeadingComponent {
   protected readonly title = computed(() => {
     const action = this.assistant.activeAction();
 
-    return action?.form?.title ?? action?.label ?? '';
+    return action?.conversation?.title ?? action?.form?.title ?? action?.label ?? '';
   });
 }

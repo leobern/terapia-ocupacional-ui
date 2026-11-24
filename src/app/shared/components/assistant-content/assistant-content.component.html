@@ -53,6 +53,54 @@
       <app-assistant-form [definition]="form" (submitted)="onSubmitted()" />
     }
   }
+  @case ('conversation') {
+    <!-- Cadastro por conversa: uma pergunta por vez; as respostas entram pelo campo de mensagem do rodapé. -->
+    <div class="assistant-content" aria-live="polite">
+      @for (message of flow.messages(); track $index) {
+        @if (message.role === 'user') {
+          <p class="assistant-content__question">{{ message.text }}</p>
+        } @else if (message.tone === 'error') {
+          <div class="assistant-content__error" role="alert">
+            <ph-icon name="warning-diamond" [size]="20" />
+            <p>{{ message.text }}</p>
+          </div>
+        } @else {
+          <p class="assistant-content__body">{{ message.text }}</p>
+        }
+      }
+      @if (flow.options().length || flow.canSkip()) {
+        <div class="assistant-content__actions">
+          @for (option of flow.options(); track option.value) {
+            <app-button
+              kind="primary"
+              appearance="outlined"
+              [fullWidth]="true"
+              [label]="option.label"
+              (click)="flow.choose(option)"
+            />
+          }
+          @if (flow.canSkip()) {
+            <app-button
+              kind="secondary"
+              appearance="outlined"
+              [fullWidth]="true"
+              [label]="flow.skipLabel()"
+              (click)="flow.skip()"
+            />
+          }
+        </div>
+      }
+      @if (flow.canRetry()) {
+        <app-button
+          kind="primary"
+          appearance="outlined"
+          [fullWidth]="true"
+          [label]="t('assistant.conversation.retry')"
+          (click)="flow.retry()"
+        />
+      }
+    </div>
+  }
   @case ('unavailable') {
     <p class="assistant-content__body">Esta ação ainda não está disponível.</p>
   }
