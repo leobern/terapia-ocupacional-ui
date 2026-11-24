@@ -4,7 +4,9 @@ import { Router } from '@angular/router';
 
 import { PhIconComponent } from '../../icons/ph-icon/ph-icon.component';
 import { AiAssistantService } from '../../services/ai-assistant.service';
+import { AssistantConversationService } from '../../services/assistant-conversation.service';
 import { type AssistantAnswerItem } from '../../services/assistant-query-resolver';
+import { I18nService } from '../../services/i18n.service';
 import { ScreenActionsService, type ScreenContext } from '../../services/screen-actions.service';
 import { AssistantFormComponent } from '../assistant-form/assistant-form.component';
 import { ButtonComponent } from '../button/button.component';
@@ -67,7 +69,9 @@ export class AssistantContentComponent {
     () => this.descriptionDoneKey() !== null && this.descriptionDoneKey() === this.typingKey(),
   );
   protected readonly hintVisible = computed(() => this.hintKey() !== null && this.hintKey() === this.typingKey());
+  protected readonly flow = inject(AssistantConversationService);
 
+  private readonly i18n = inject(I18nService);
   private readonly router = inject(Router);
   private readonly titleDoneKey = signal<object | null>(null);
   private readonly descriptionDoneKey = signal<object | null>(null);
@@ -93,6 +97,10 @@ export class AssistantContentComponent {
 
   protected onDescriptionFinished(): void {
     this.descriptionDoneKey.set(this.typingKey());
+  }
+
+  protected t(key: string): string {
+    return this.i18n.t(key);
   }
 
   protected itemText(item: AssistantAnswerItem): string {

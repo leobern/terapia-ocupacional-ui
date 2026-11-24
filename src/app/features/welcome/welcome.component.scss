@@ -1,0 +1,50 @@
+@use '../../shared/styles/tokens';
+@use '../../shared/styles/typography';
+
+.welcome {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: tokens.$space-24;
+  min-height: 100vh;
+  padding: tokens.$space-16;
+  color: tokens.c(content-1);
+  text-align: center;
+}
+
+.welcome__logo {
+  --icon-logo-size: 96px;
+
+  display: flex;
+}
+
+.welcome__message {
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$space-8;
+  max-width: 480px;
+}
+
+.welcome__title {
+  margin: 0;
+  color: tokens.c(content-1);
+
+  @include typography.title-lg;
+}
+
+.welcome__hint {
+  margin: 0;
+  color: tokens.c(content-4);
+
+  @include typography.body-lg;
+}
+
+.welcome__actions {
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$space-12;
+  width: 100%;
+  max-width: 320px;
+}

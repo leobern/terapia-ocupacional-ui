@@ -1,6 +1,8 @@
 import { Injectable, type Signal, signal } from '@angular/core';
 
 import {
+  type HospitalLinkStatus,
+  type HospitalRef,
   type Notification,
   type NotificationPage,
   type NotificationReply,
@@ -73,7 +75,56 @@ function seed(): StoredNotification[] {
     type: 'reevaluation_pending',
   });
 
+  // US-001-2-03: avisos do sistema (sem autor nem paciente) sobre o vínculo do médico com um hospital.
+  const linkChange = (
+    id: number,
+    hospital: HospitalRef,
+    linkStatus: HospitalLinkStatus,
+    description: string,
+    minutes: number,
+  ): Notification => ({
+    createdAt: minutesAgo(minutes),
+    description,
+    hospital,
+    id,
+    linkStatus,
+    read: false,
+    replies: [],
+    replyCount: 0,
+    type: 'hospital_link_status_change',
+  });
+
   return [
+    {
+      notification: linkChange(
+        31,
+        { id: 1, name: 'Hospital Vila Nova Star' },
+        'approved',
+        'Você foi aprovado no Hospital Vila Nova Star.',
+        5,
+      ),
+      status: 'pending',
+    },
+    {
+      notification: linkChange(
+        32,
+        { id: 2, name: 'Hospital Santa Aurora' },
+        'rejected',
+        'Sua solicitação ao Hospital Santa Aurora foi recusada.',
+        8,
+      ),
+      status: 'pending',
+    },
+    {
+      notification: linkChange(
+        33,
+        { id: 3, name: 'Hospital São Gabriel' },
+        'revoked',
+        'Seu acesso ao Hospital São Gabriel foi revogado.',
+        12,
+      ),
+      status: 'pending',
+    },
     { notification: notice(14, RAFAEL, 'Reunião de equipe amanhã às 8h na sala 3.', 10), status: 'pending' },
     {
       notification: reevaluation(15, 'Almira Borges Pereira', 'Reavaliação nutricional vencida há 2 dias.', 30, true),
@@ -220,6 +271,8 @@ export class NotificationsRepository {
       item.notification.id === notificationId
         ? {
             ...item,
+            // Responder não resolve; se estava resolvida, a resposta reabre a thread.
+            status: 'pending',
             notification: {
               ...item.notification,
               replies: [...item.notification.replies, reply],

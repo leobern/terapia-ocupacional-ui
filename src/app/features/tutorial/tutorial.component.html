@@ -1,0 +1,51 @@
+<main class="tutorial">
+  <div class="tutorial__top">
+    <app-button
+      kind="tertiary"
+      appearance="ghost"
+      size="md"
+      [label]="i18n.t('tutorial.skip')"
+      (click)="skip()"
+    />
+  </div>
+
+  <section class="tutorial__card" aria-live="polite">
+    <span class="tutorial__icon"
+      ><ph-icon [name]="step().icon" [size]="40"
+    /></span>
+    <h1 class="tutorial__title">{{ i18n.t(step().titleKey) }}</h1>
+    <p class="tutorial__description">{{ i18n.t(step().descriptionKey) }}</p>
+  </section>
+
+  <p class="tutorial__progress">
+    {{
+      i18n
+        .t('tutorial.progress')
+        .replace('{current}', '' + (index() + 1))
+        .replace('{total}', '' + steps.length)
+    }}
+  </p>
+  <div class="tutorial__dots" aria-hidden="true">
+    @for (s of steps; track s.titleKey; let i = $index) {
+      <span
+        class="tutorial__dot"
+        [class.tutorial__dot--active]="i === index()"
+      ></span>
+    }
+  </div>
+
+  <div class="tutorial__actions">
+    @if (!isFirst()) {
+      <app-button
+        kind="secondary"
+        appearance="outlined"
+        [label]="i18n.t('tutorial.back')"
+        (click)="back()"
+      />
+    }
+    <app-button
+      [label]="isLast() ? i18n.t('tutorial.finish') : i18n.t('tutorial.next')"
+      (click)="next()"
+    />
+  </div>
+</main>

@@ -428,6 +428,32 @@ describe('AppComponent', () => {
     expect(fixture.componentInstance.menuOpen()).toBeFalse();
   });
 
+  it('navigates to /settings and closes the mobile menu when Configurações is clicked', () => {
+    const router = TestBed.inject(Router);
+
+    spyOn(router, 'navigate').and.resolveTo(true);
+    fixture.componentInstance.menuOpen.set(true);
+    fixture.detectChanges();
+    const item = Array.from<HTMLButtonElement>(
+      fixture.nativeElement.querySelectorAll('app-nav-menu .nav-menu__links .nav-menu__link'),
+    ).find(el => el.textContent?.includes('Configurações'));
+
+    item?.click();
+    fixture.detectChanges();
+
+    expect(router.navigate).toHaveBeenCalledWith(['/settings']);
+    expect(fixture.componentInstance.menuOpen()).toBeFalse();
+  });
+
+  it('marca Configurações como item ativo do menu em /settings', async () => {
+    const component = fixture.componentInstance as unknown as { activeNavItem(): string | null };
+
+    TestBed.inject(Router).resetConfig([{ children: [], path: 'settings' }]);
+    await TestBed.inject(Router).navigateByUrl('/settings');
+
+    expect(component.activeNavItem()).toBe('configuracoes');
+  });
+
   it('navigates to /pharmacy and closes the mobile menu when Farmácia is clicked', () => {
     const router = TestBed.inject(Router);
 

@@ -18,6 +18,7 @@ import { DailyAdequacyService } from '../daily-evolution/adequacy/daily-adequacy
 import { DiagnosisSource } from '../diagnosis/diagnosis-source';
 import { FollowUpStatusComponent } from '../follow-up-closure/follow-up-status.component';
 import { HospitalContextService } from '../home/hospital-context.service';
+import { LinkRevocationChecker } from '../home/link-revocation-checker';
 import { NOW, ProfessionalProfileReader } from '../home/professional-profile';
 import { PatientThreadsComponent } from '../patient-messages/patient-messages.component';
 import {
@@ -51,6 +52,7 @@ import { MeasureChartComponent } from './charts/measure-chart.component';
 import { DailyRecordSheetComponent } from './daily-record/daily-record-sheet.component';
 import { PatientMessageSheetComponent } from './messages/patient-message-sheet.component';
 import { PatientMessagesComponent } from './messages/patient-messages.component';
+import { MoveBedAction } from './move-bed/move-bed.action';
 import { HypothesisOrigin, PatientHubProfile } from './patient-hub.models';
 import { HypothesisSynthesizer, HypothesisWriter, PatientHubSource } from './patient-hub-source';
 import { PlanSectionComponent } from './plan/plan-section.component';
@@ -62,7 +64,7 @@ import { PrescriptionSummaryComponent } from './prescription/prescription-summar
 import { PriorStaysBoxComponent } from './prior-stays-box/prior-stays-box.component';
 import { PROVISIONAL_BMI, PROVISIONAL_WEIGHT } from './provisional-measures';
 
-type HubStatus = 'loading' | 'ready' | 'not-found' | 'error';
+type HubStatus = 'loading' | 'ready' | 'not-found' | 'error' | 'revoked';
 
 /** Etapa do preenchimento da Hipótese: colar → carregando → revisão (IA) ou falha (manual). */
 type FillPhase = 'input' | 'loading' | 'review' | 'failed';
@@ -125,6 +127,7 @@ export class PatientHubComponent implements OnInit {
   protected readonly connectivity = inject(ConnectivityService);
 
   protected readonly status = signal<HubStatus>('loading');
+  protected readonly revokedName = signal('');
   protected readonly profile = signal<PatientHubProfile | null>(null);
   /** Hipótese confirmada; `null` = ainda não preenchida. */
   protected readonly hypothesis = signal<string | null>(null);
@@ -247,12 +250,14 @@ export class PatientHubComponent implements OnInit {
   private readonly cardWriter = inject(NutritionValueWriter);
   private readonly editing = signal<'paste' | 'edit' | null>(null);
   private readonly screenActions = inject(ScreenActionsService);
+  private readonly moveBed = inject(MoveBedAction);
   private readonly source = inject(PatientHubSource);
   private readonly prescriptions = inject(PrescriptionSource);
   private readonly results = inject(NutritionResultsSource);
   private readonly adequacyService = inject(DailyAdequacyService);
   private pullFrom: number | null = null;
   private readonly context = inject(HospitalContextService);
+  private readonly revocation = inject(LinkRevocationChecker);
   private readonly location = inject(Location);
   private readonly router = inject(Router);
   private readonly diagnosisSource = inject(DiagnosisSource);
@@ -274,6 +279,7 @@ export class PatientHubComponent implements OnInit {
     // A ação só existe com o paciente carregado e hospital com vínculo aprovado em contexto.
     effect(onCleanup => {
       if (this.status() === 'ready' && this.hospitalId() !== null) {
+        const profile = this.profile();
         const actions: ScreenAction[] = [
           { id: 'daily-record', label: 'Registro diário', navigate: (): void => this.dailyRecordOpen.set(true) },
           {
@@ -283,6 +289,10 @@ export class PatientHubComponent implements OnInit {
           },
         ];
 
+        // US-002-2-01: o paciente em contexto é o da tela; o pedido vai para a internação mais recente dele.
+        if (profile) {
+          actions.push(this.moveBed.build({ id: profile.id, name: profile.name }));
+        }
         if (this.professional.read().role === 'doctor') {
           actions.push(
             {
@@ -628,8 +638,21 @@ export class PatientHubComponent implements OnInit {
       this.profile.set(profile);
       this.hypothesis.set(hypothesis);
       this.status.set(profile === null ? 'not-found' : 'ready');
-    } catch {
-      this.status.set('error');
+    } catch (failure) {
+      const hospital = this.context.selected();
+
+      // 403 também é "sem permissão": só vira revogação se o vínculo constar como REVOGADO (US-001-2-04, Cenário 2).
+      if (
+        (failure as { status?: number }).status === 403 &&
+        hospital !== null &&
+        (await this.revocation.isRevoked(hospital.id))
+      ) {
+        this.revokedName.set(hospital.name);
+        this.context.revokeAccess(hospital.id);
+        this.status.set('revoked');
+      } else {
+        this.status.set('error');
+      }
     }
   }
 

@@ -59,6 +59,16 @@
       </p>
     }
 
+    @if (context.revoked(); as revoked) {
+      <p class="home__stale-banner" role="status">
+        <ph-icon name="prohibit" [size]="20" />
+        <span
+          >Seu acesso a {{ revoked.name }} foi revogado pelo gestor. Os dados
+          desse hospital não estão mais disponíveis.</span
+        >
+      </p>
+    }
+
     @switch (loadState()) {
       @case ('loading') {
         <app-home-skeleton />

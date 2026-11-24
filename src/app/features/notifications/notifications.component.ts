@@ -32,6 +32,7 @@ import { PhIconComponent } from '../../shared/icons/ph-icon/ph-icon.component';
 import { AiAssistantService } from '../../shared/services/ai-assistant.service';
 import { AudioTranscriber } from '../../shared/services/audio-transcriber';
 import { ConnectivityService } from '../../shared/services/connectivity.service';
+import { I18nService } from '../../shared/services/i18n.service';
 import {
   FormSubmitError,
   type FormValues,
@@ -43,7 +44,6 @@ import { NOTIFICATIONS_CONTEXT } from '../../shared/services/screen-contexts';
 import { type DirectoryUser } from '../../shared/services/user-directory';
 import { formatRelativeTime } from '../../shared/utils/relative-time';
 import { HospitalContextService } from '../home/hospital-context.service';
-import { isSentThreadNotification } from '../patient-messages/sent-thread-notification';
 import { AnnouncementAssistant } from './assistant/announcement-assistant';
 import { NotificationSectionTitleComponent } from './components/notification-section-title/notification-section-title.component';
 import { type ComunicadoRecipientSpec, ComunicadosApiService } from './data-access/comunicados-api.service';
@@ -83,6 +83,7 @@ function formatTodayLabel(): string {
 const PULL_TO_REFRESH_THRESHOLD = 80;
 
 const KIND_LABELS: Record<NotificationType, string> = {
+  hospital_link_status_change: 'Vínculo com hospital',
   internal_notice: 'Comunicado interno',
   patient_message: 'Mensagem de paciente',
   reevaluation_pending: 'Pendência de reavaliação',
@@ -126,6 +127,7 @@ export class NotificationsComponent implements OnDestroy {
   // arquivo, e não na ordem de accessibility exigida pelo lint (mesmo
   // padrão de home.component.ts).
   protected readonly store = inject(Store);
+  protected readonly i18n = inject(I18nService);
 
   protected readonly status = toSignal(this.store.select(selectStatus), { initialValue: 'loading-initial' as const });
   protected readonly hospitalId = toSignal(this.store.select(selectHospitalId), { initialValue: null });
@@ -194,7 +196,6 @@ export class NotificationsComponent implements OnDestroy {
   });
 
   /** Id do profissional logado (sem serviço de sessão ainda — mesmo usuário de exemplo acima). */
-  private readonly currentUserId = 4;
   private readonly actions$ = inject(Actions);
   private readonly location = inject(Location);
   private readonly hospitalContext = inject(HospitalContextService);
@@ -350,16 +351,13 @@ export class NotificationsComponent implements OnDestroy {
     this.expandedIds.set(next);
   }
 
-  /** Participante da thread: remetente, destinatário mencionado ou quem já respondeu (FR-012). */
+  /**
+   * Participante da thread (FR-012). A API só lista as notificações do próprio profissional (remetente ou
+   * destinatário), então todo card listado é dele; quem decide é o servidor (403 se não for participante).
+   * Mudança de status de vínculo hospitalar é aviso do sistema: não aceita resposta.
+   */
   isParticipant(notification: Notification): boolean {
-    const me = this.currentUserId;
-
-    return (
-      isSentThreadNotification(notification) ||
-      notification.author.id === me ||
-      (notification.mentioned ?? []).some(person => person.id === me) ||
-      notification.replies.some(reply => reply.author.id === me)
-    );
+    return notification.type !== 'hospital_link_status_change';
   }
 
   /** Botão ✓ do card (Figma v2/NotificationThread): marca como resolvida. */
@@ -440,6 +438,40 @@ export class NotificationsComponent implements OnDestroy {
     return this.answeringId() === id ? (this.answerErrorMessage() ?? this.transcribeError()) : null;
   }
 
+  /** Nome exibido no cabeçalho do card: o hospital, nas mudanças de vínculo (RN02); senão o autor. */
+  protected cardName(notification: Notification): string {
+    return notification.hospital?.name ?? notification.author?.name ?? '';
+  }
+
+  /** Linha abaixo do nome: o status do vínculo em texto (nunca só cor); senão a especialidade do autor. */
+  protected cardSubtitle(notification: Notification): string {
+    return notification.linkStatus
+      ? this.i18n.t(`notifications.linkStatus.${notification.linkStatus}`)
+      : (notification.author?.specialty ?? '');
+  }
+
+  /** Toque no card: mudança de vínculo vai ao Painel (aprovado) ou à tela de vínculos; as demais, ao paciente. */
+  protected async onNotificationClick(notification: Notification): Promise<void> {
+    if (notification.type !== 'hospital_link_status_change') {
+      this.onCardClick(notification.patient?.id);
+
+      return;
+    }
+    const hospitalId = notification.hospital?.id;
+
+    if (notification.linkStatus === 'approved' && hospitalId !== undefined) {
+      // O hospital recém-aprovado pode ainda não estar na lista de vínculos carregada.
+      if (!this.hospitalContext.hospitals().some(h => h.id === hospitalId)) {
+        await this.hospitalContext.load();
+      }
+      this.hospitalContext.select(hospitalId);
+      await this.router.navigate(['/home']);
+
+      return;
+    }
+    await this.router.navigate(['/hospital-links']);
+  }
+
   protected onRetry(): void {
     const hospitalId = this.hospitalId();
 
@@ -465,7 +497,7 @@ export class NotificationsComponent implements OnDestroy {
   }
 
   protected toReplies(notification: Notification): CardNotifyReply[] {
-    return notification.replies.map(reply => ({
+    return (notification.replies ?? []).map(reply => ({
       authorName: reply.author.name,
       authorSpecialty: reply.author.specialty,
       authorPhotoUrl: reply.author.photoUrl,

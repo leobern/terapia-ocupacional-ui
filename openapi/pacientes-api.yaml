@@ -1,0 +1,274 @@
+openapi: 3.0.3
+info:
+  title: Pacientes API
+  version: 1.0.0
+  description: >
+    Contrato das US-002-1-02, US-002-1-03 e US-002-1-04 (FT-002-1 Cadastro de Paciente): criação do registro mestre do
+    paciente com os dados fixos coletados pelo chatbot, um dado por vez. A coleta
+    conversacional e a interpretação das respostas em linguagem natural pertencem à camada
+    de IA/chatbot (fora de escopo); esta API recebe os quatro campos já coletados e os
+    valida de forma definitiva. O paciente é exclusivo do hospital informado (RN-04), sem
+    partilha entre hospitais. A verificação automática de duplicidade (US-002-1-01) é a operação
+    checkPatientDuplicate; a edição está fora desta story.
+servers:
+  - url: /
+security:
+  - bearerAuth: []
+paths:
+  /api/v1/pacientes:
+    post:
+      operationId: createPaciente
+      x-implemented: true
+      summary: Cria o paciente com os dados fixos, vinculado exclusivamente ao hospital informado
+      description: >
+        Valida fullName (obrigatório, máx. 150), birthDate (obrigatória, não futura em
+        relação à data do sistema), sex (um dos 3 valores) e medicalRecordNumber
+        (opcional, máx. 30). Requer que o profissional tenha vínculo aprovado com o
+        hospital informado. Em sucesso, o chatbot exibe MSG-04 ("Paciente cadastrado com
+        sucesso."). Em erro de validação (422) o campo inválido é indicado em `field` e
+        `message` traz o texto da mensagem do sistema correspondente.
+
+        US-002-1-04: se medicalRecordNumber for preenchido e já existir outro paciente no
+        mesmo hospital com o mesmo SAME (RN-01), o cadastro é bloqueado e nada é salvo
+        (409). A verificação independe de nome e data de nascimento (RN-02) e é restrita ao
+        hospital informado. A resposta traz o nome do paciente existente (RN-03) e a MSG-07
+        já formatada: "Este número de SAME já está em uso por outro paciente neste hospital:
+        {nome do paciente existente}."
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreatePacienteRequest"
+      responses:
+        "201":
+          description: Paciente criado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Paciente"
+        "400":
+          $ref: "#/components/responses/Error"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          description: Profissional sem vínculo aprovado com o hospital informado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
+          description: SAME já em uso por outro paciente neste hospital (MSG-07)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SameDuplicadoError"
+        "422":
+          description: >
+            Validação de campo. MSG-01 (fullName vazio), MSG-05 (fullName > 150),
+            MSG-02 (birthDate vazia ou futura), MSG-03 (sex não reconhecido).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationErrorResponse"
+  /api/v1/pacientes/duplicidade:
+    get:
+      operationId: checkPatientDuplicate
+      x-implemented: true
+      summary: Busca pacientes do hospital com o mesmo nome e data de nascimento (US-002-1-01)
+      description: >
+        Disparada pelo chatbot assim que nome e data de nascimento são coletados. Compara
+        fullNameQuery ignorando acentuação, caixa e espaços repetidos (RN-02) e birthDateQuery
+        de forma exata, apenas entre pacientes do hospital informado (RN-01). Lista vazia
+        (RN-03) = o chatbot segue para o sexo; um ou mais itens (RN-04) = o chatbot exibe nome,
+        data de nascimento e SAME antes de prosseguir. Requer vínculo aprovado com o hospital.
+
+        US-002-1-03: com medicalRecordNumberQuery (SAME já informado para o novo paciente), um
+        paciente existente só é retornado se o SAME dele for diferente ou vazio, ou se o SAME
+        informado for vazio/ausente (RN-01); se ambos tiverem o mesmo SAME preenchido, ele não
+        entra na lista. Cada item traz id, nome, nascimento e SAME (RN-02) e o id serve para
+        direcionar ao registro existente (RN-03). A resposta "sim" (cancelar e direcionar) ou
+        "não" (prosseguir com createPaciente, RN-04) é conduzida pelo chatbot e não gera
+        chamada adicional; a pergunta é a MSG-06.
+      parameters:
+        - name: hospitalId
+          in: query
+          required: true
+          description: Hospital ativo na sessão do usuário
+          schema:
+            type: integer
+            format: int64
+        - name: fullNameQuery
+          in: query
+          required: true
+          description: Nome completo informado; mínimo 3 caracteres (MSG-01)
+          schema:
+            type: string
+            minLength: 3
+        - name: birthDateQuery
+          in: query
+          required: true
+          description: Data de nascimento (yyyy-MM-dd); válida e não futura (MSG-02)
+          schema:
+            type: string
+            format: date
+        - name: medicalRecordNumberQuery
+          in: query
+          required: false
+          description: SAME já informado para o novo paciente (opcional); ver regra RN-01 acima
+          schema:
+            type: string
+            maxLength: 30
+      responses:
+        "200":
+          description: Pacientes correspondentes (lista vazia quando não há correspondência)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PatientDuplicateResult"
+        "400":
+          description: Parâmetro ausente ou com formato malformado (por exemplo, data fora do formato yyyy-MM-dd)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          description: Profissional sem vínculo aprovado com o hospital informado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "422":
+          description: >
+            Validação de campo. field=fullNameQuery, code=MSG-01, message "Digite pelo menos 3
+            caracteres para buscar."; ou field=birthDateQuery, code=MSG-02, message "Informe uma
+            data de nascimento válida." (data inexistente ou futura). Os códigos MSG-01/MSG-02
+            têm o texto desta operação, distinto do de createPaciente.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationErrorResponse"
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  responses:
+    Error:
+      description: Erro
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+  schemas:
+    ErrorResponse:
+      type: object
+      required: [message, timestamp]
+      properties:
+        message:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+    ValidationErrorResponse:
+      allOf:
+        - $ref: "#/components/schemas/ErrorResponse"
+        - type: object
+          required: [field, code]
+          properties:
+            field:
+              type: string
+              enum: [fullName, birthDate, sex, fullNameQuery, birthDateQuery]
+            code:
+              type: string
+              enum: [MSG-01, MSG-02, MSG-03, MSG-05]
+    SameDuplicadoError:
+      allOf:
+        - $ref: "#/components/schemas/ErrorResponse"
+        - type: object
+          required: [code, medicalRecordNumber, existingPatientName]
+          properties:
+            code:
+              type: string
+              enum: [MSG-07]
+            medicalRecordNumber:
+              type: string
+              description: SAME informado, já em uso no hospital
+            existingPatientName:
+              type: string
+              description: Nome do paciente já cadastrado com o SAME (RN-03); também presente em `message`
+    Sex:
+      type: string
+      enum: [MALE, FEMALE, NOT_INFORMED]
+    CreatePacienteRequest:
+      type: object
+      required: [hospitalId, fullName, birthDate, sex]
+      properties:
+        hospitalId:
+          type: integer
+          format: int64
+          description: Hospital ativo na sessão do usuário; o paciente fica vinculado só a ele (RN-04)
+        fullName:
+          type: string
+          maxLength: 150
+          description: Não vazio (MSG-01); acima de 150 caracteres gera MSG-05
+        birthDate:
+          type: string
+          format: date
+          description: Data válida, não futura (MSG-02)
+        sex:
+          $ref: "#/components/schemas/Sex"
+        medicalRecordNumber:
+          type: string
+          maxLength: 30
+          description: SAME, opcional, sem formato fixo
+    Paciente:
+      type: object
+      required: [id, hospitalId, fullName, birthDate, sex, createdAt]
+      properties:
+        id:
+          type: integer
+          format: int64
+        hospitalId:
+          type: integer
+          format: int64
+        fullName:
+          type: string
+        birthDate:
+          type: string
+          format: date
+        sex:
+          $ref: "#/components/schemas/Sex"
+        medicalRecordNumber:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+    PatientDuplicateResult:
+      type: object
+      required: [matches]
+      properties:
+        matches:
+          type: array
+          items:
+            $ref: "#/components/schemas/PatientMatch"
+    PatientMatch:
+      type: object
+      required: [id, fullName, birthDate]
+      properties:
+        id:
+          type: integer
+          format: int64
+        fullName:
+          type: string
+        birthDate:
+          type: string
+          format: date
+        medicalRecordNumber:
+          type: string
+          nullable: true
+          description: SAME, quando preenchido

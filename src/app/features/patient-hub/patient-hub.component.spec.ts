@@ -13,6 +13,7 @@ import { DiagnosisSource } from '../diagnosis/diagnosis-source';
 import { FollowUpClosureSource, FollowUpClosureWriter } from '../follow-up-closure/follow-up-closure-source';
 import { ProvisionalFollowUpClosureSource } from '../follow-up-closure/provisional-follow-up-closure';
 import { HospitalContextService } from '../home/hospital-context.service';
+import { LinkRevocationChecker } from '../home/link-revocation-checker';
 import { LinkedHospitalsReader } from '../home/linked-hospitals';
 import { NOW, ProfessionalProfileReader } from '../home/professional-profile';
 import {
@@ -43,6 +44,8 @@ import { DailyRecordWriter } from './daily-record/daily-record-writer';
 import { EvolutionAiStructurer } from './daily-record/evolution-ai-structurer';
 import { ParameterAiStructurer } from './daily-record/parameter-ai-structurer';
 import { MessageAiAssistant, PatientMessageSource, PatientTeamSource } from './messages/patient-message-source';
+import { BedMovementPort } from './move-bed/bed-movement.port';
+import { BedNumberExtractor } from './move-bed/bed-number-extractor';
 import {
   DIAGNOSIS_FAILED_HINT,
   DIAGNOSIS_OFFLINE_HINT,
@@ -74,14 +77,20 @@ const PROFILE: PatientHubProfile = {
   ward: 'Ala 2',
 };
 
+const revocation = { revoked: true, isRevoked: (): Promise<boolean> => Promise.resolve(revocation.revoked) };
 const locationMock = { back: jasmine.createSpy('back') };
 
 class FakeSource extends PatientHubSource {
   profile: PatientHubProfile | null = PROFILE;
   hypothesis: string | null = 'Insuficiência respiratória aguda.';
   fail = false;
+  denied = false;
 
   loadProfile(): Promise<PatientHubProfile | null> {
+    if (this.denied) {
+      return Promise.reject({ status: 403 });
+    }
+
     return this.fail ? Promise.reject(new Error('x')) : Promise.resolve(this.profile);
   }
 
@@ -228,12 +237,18 @@ async function setup(
   hospitals: unknown[] = [{ id: 1, name: 'Hospital Vila Nova Star' }],
   role = 'doctor',
 ): Promise<ComponentFixture<PatientHubComponent>> {
+  if (!jasmine.isSpy(Object.getOwnPropertyDescriptor(navigator, 'language')?.get as () => string)) {
+    spyOnProperty(navigator, 'language').and.returnValue('pt-BR');
+  }
   TestBed.configureTestingModule({
     providers: [
       provideRouter([]),
       { provide: Location, useValue: locationMock },
       { provide: ActivatedRoute, useValue: { paramMap: of(convertToParamMap(id === null ? {} : { id })) } },
       { provide: PatientHubSource, useValue: source },
+      { provide: BedMovementPort, useValue: { resolve: (): Promise<never> => Promise.reject(new Error('x')) } },
+      { provide: BedNumberExtractor, useValue: { extract: (): null => null } },
+      { provide: LinkRevocationChecker, useValue: revocation },
       { provide: NutritionResultsSource, useValue: results },
       { provide: DailyAdequacyService, useValue: adequacy },
       { provide: NutritionHistorySource, useFactory: (): ProvisionalNutritionCardStore => store },
@@ -342,6 +357,7 @@ const cards = (f: ComponentFixture<unknown>): string[] =>
 
 describe('PatientHubComponent', () => {
   beforeEach(() => {
+    revocation.revoked = true;
     prescriptionStore.fail = false;
     prescriptionStore.value = null;
     store = new ProvisionalNutritionCardStore();
@@ -365,6 +381,37 @@ describe('PatientHubComponent', () => {
     expect(priorStays.calls).toEqual(['1:p1']);
     expect(text(f)).toContain('Internações anteriores');
     expect(f.nativeElement.querySelector('.stays__header').getAttribute('aria-expanded')).toBe('false');
+  });
+
+  it('403 sem vínculo revogado (ex.: sem permissão) mostra erro comum e mantém o hospital no contexto', async () => {
+    const source = new FakeSource();
+
+    source.denied = true;
+    revocation.revoked = false;
+    const f = await setup(source, 'p1', [{ id: 1, name: 'Hospital Vila Nova Star' }]);
+
+    await f.whenStable();
+    f.detectChanges();
+
+    expect(text(f)).not.toContain('foi revogado');
+    expect(TestBed.inject(HospitalContextService).selected()?.id).toBe(1);
+  });
+
+  it('acesso negado (403) bloqueia os dados, avisa em texto e tira o hospital do contexto (US-001-2-04)', async () => {
+    const source = new FakeSource();
+
+    source.denied = true;
+    const f = await setup(source, 'p1', [
+      { id: 1, name: 'Hospital Vila Nova Star' },
+      { id: 2, name: 'Hospital B' },
+    ]);
+
+    await f.whenStable();
+    f.detectChanges();
+
+    expect(text(f)).toContain('Seu acesso a Hospital Vila Nova Star foi revogado');
+    expect(text(f)).not.toContain('José Raimundo');
+    expect(TestBed.inject(HospitalContextService).selected()?.id).toBe(2);
   });
 
   describe('Prescrição ativa', () => {
@@ -411,6 +458,7 @@ describe('PatientHubComponent', () => {
       expect(actions.map(a => a.label)).toEqual([
         'Registro diário',
         'Observação ou mensagem',
+        'Movimentar leito',
         'Ajustar a prescrição',
         'Revisão da prescrição',
       ]);
@@ -454,7 +502,7 @@ describe('PatientHubComponent', () => {
         TestBed.inject(ScreenActionsService)
           .actions()
           .map(a => a.label),
-      ).toEqual(['Registro diário', 'Observação ou mensagem']);
+      ).toEqual(['Registro diário', 'Observação ou mensagem', 'Movimentar leito']);
     });
 
     it('médico abre a revisão da prescrição pelos atalhos e fecha com Esc', async () => {

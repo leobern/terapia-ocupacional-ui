@@ -12,8 +12,7 @@ export const REGISTER_PATIENT_ACTION_ID = 'register-patient';
 export const MOVE_BED_ACTION_ID = 'move-bed';
 
 const REGISTER_PATIENT = /\b(cadastr\w*|registr\w*|criar|adicionar|incluir)\b.*\bpaciente\b/;
-const MOVE_BED =
-  /\b(mov\w+|trocar|transferir)\b.*\b(leito|paciente)\b.*\bleito\b|\b(mov\w+|trocar|transferir)\b.*\bleito\b/;
+const MOVE_BED = /\b(mov\w+|trocar|transferir|mudar|mudanca|alterar)\b.*\bleito\b|\bmudar\b.*\b(coisa|aqui|algo)\b/;
 
 /** Ações conhecidas, em ordem de prioridade. Roteamento simples e substituível pelo motor de IA. */
 export const KNOWN_ASSISTANT_ACTIONS: readonly KnownAssistantAction[] = [

@@ -2,6 +2,11 @@
   "app": {
     "title": "Terapia Nutricional"
   },
+  "assistant": {
+    "conversation": {
+      "retry": "Tentar novamente"
+    }
+  },
   "home": {
     "error": {
       "description": "Verifique sua conexão de internet e tente novamente em alguns instantes.",
@@ -18,6 +23,27 @@
     "message": "Sua sessão neste dispositivo será encerrada e os dados salvos nele serão removidos.",
     "signOut": "Sair",
     "title": "Deseja sair da conta?"
+  },
+  "moveBed": {
+    "messages": {
+      "MSG-11": "Este paciente ainda não possui internação registrada. É necessário internar o paciente antes de movimentar o leito.",
+      "MSG-12": "Não consegui identificar o novo leito. Pode informar o número do leito?",
+      "error": "Não foi possível processar a movimentação de leito. Tente novamente.",
+      "noCurrentBed": "não informado",
+      "resolved": "Pedido associado à internação mais recente de {patient}. Leito atual: {current}. Novo leito: {new}. A mudança ainda não foi aplicada."
+    },
+    "prompts": {
+      "bedNumber": "Para qual leito deseja movimentar o paciente?"
+    },
+    "title": "Movimentar leito"
+  },
+  "notifications": {
+    "fallbackTitle": "Notificação",
+    "linkStatus": {
+      "approved": "Vínculo aprovado",
+      "rejected": "Vínculo recusado",
+      "revoked": "Vínculo revogado"
+    }
   },
   "passwordRecovery": {
     "backToLogin": "Voltar ao login",
@@ -53,10 +79,125 @@
       "title": "Definir nova senha"
     }
   },
+  "patientRegistration": {
+    "admit": {
+      "no": "Não",
+      "yes": "Sim"
+    },
+    "duplicate": {
+      "accessDenied": "Você não tem acesso a este hospital.",
+      "birthDate": "Data de nascimento",
+      "checking": "Verificando se o paciente já está cadastrado…",
+      "hospitalNotFound": "Hospital não encontrado.",
+      "invalidBirthDate": "Informe uma data de nascimento válida.",
+      "name": "Nome",
+      "nameTooShort": "Digite pelo menos 3 caracteres para buscar.",
+      "no": "Não, é outro paciente",
+      "question": "Já existe um paciente com este nome e data de nascimento neste hospital. É o mesmo paciente?",
+      "retry": "Tentar novamente",
+      "same": "SAME",
+      "sameMissing": "não preenchido",
+      "sessionExpired": "Sua sessão expirou. Entre novamente.",
+      "unavailable": "Não foi possível verificar o paciente agora. Tente novamente.",
+      "yes": "Sim, é o mesmo paciente",
+      "yesThis": "Sim, é este paciente"
+    },
+    "locationKind": {
+      "ALA": "Ala",
+      "UNIDADE": "Unidade"
+    },
+    "locationRemove": {
+      "ALA": "Remover Ala",
+      "UNIDADE": "Remover Unidade"
+    },
+    "messages": {
+      "MSG-01": "Informe o nome completo do paciente.",
+      "MSG-02": "Informe uma data de nascimento válida.",
+      "MSG-03": "Selecione o sexo do paciente.",
+      "MSG-04": "Paciente cadastrado com sucesso.",
+      "MSG-05": "O nome completo deve ter no máximo 150 caracteres.",
+      "MSG-08": "A data de internação hospitalar não pode ser uma data futura.",
+      "MSG-09": "Selecione o tipo: Unidade ou Ala.",
+      "MSG-10": "Preencha o valor da localização.",
+      "admissionNumberTooLong": "O número de atendimento deve ter no máximo 30 caracteres.",
+      "admitChoice": "Responda sim ou não.",
+      "bedTooLong": "O leito deve ter no máximo 20 caracteres.",
+      "error": "Não foi possível cadastrar o paciente. Tente novamente.",
+      "insuranceTooLong": "O convênio deve ter no máximo 100 caracteres.",
+      "invalidDate": "Informe uma data válida (dd/mm/aaaa).",
+      "locationLimit": "O limite de 2 localizações foi atingido.",
+      "locationNotInformed": "Essa localização não foi informada.",
+      "locationTooLong": "O valor da localização deve ter no máximo 100 caracteres.",
+      "locationTypeRepeated": "Esse tipo já foi informado. Selecione o outro tipo.",
+      "sameTooLong": "O SAME deve ter no máximo 30 caracteres."
+    },
+    "prompts": {
+      "addLocation": "Deseja adicionar Unidade e/ou Ala à internação?",
+      "admissionNumber": "Qual o número de atendimento? (opcional)",
+      "admit": "Deseja internar o paciente agora?",
+      "bedNumber": "Qual o leito do paciente? (opcional)",
+      "birthDate": "Qual a data de nascimento? (dd/mm/aaaa)",
+      "fullName": "Me fale o nome completo do paciente",
+      "healthInsurance": "Qual o convênio? (opcional)",
+      "hospitalAdmissionDate": "Qual a data de internação hospitalar? (dd/mm/aaaa, opcional)",
+      "location1More": "Deseja adicionar outra localização?",
+      "location1Type": "Qual o tipo da localização? (Unidade ou Ala)",
+      "location1Value": "Qual o valor da localização?",
+      "location2More": "Deseja adicionar mais uma localização?",
+      "location2Type": "Qual o tipo da outra localização? (Unidade ou Ala)",
+      "location2Value": "Qual o valor da outra localização?",
+      "locationRemove": "Deseja remover alguma localização antes de concluir?",
+      "medicalRecordNumber": "Qual o SAME do paciente? (opcional)",
+      "nutritionalTherapyStartDate": "Qual a data de início da terapia nutricional? (dd/mm/aaaa, opcional)",
+      "sex": "Qual o sexo do paciente?"
+    },
+    "sex": {
+      "FEMALE": "Feminino",
+      "MALE": "Masculino",
+      "NOT_INFORMED": "Não informado"
+    },
+    "skip": "Pular",
+    "title": "Cadastrar paciente"
+  },
+  "settings": {
+    "reviewTutorial": "Rever tutorial",
+    "title": "Configurações"
+  },
   "splash": {
     "logoLabel": "Conductia",
     "noConnection": "Sem conexão",
     "noConnectionHint": "Verifique sua internet e tente novamente.",
     "retry": "Tentar novamente"
+  },
+  "tutorial": {
+    "back": "Voltar",
+    "finish": "Concluir",
+    "next": "Avançar",
+    "progress": "Passo {current} de {total}",
+    "skip": "Pular",
+    "steps": {
+      "assistant": {
+        "description": "Pergunte ou peça ações pelo assistente: ele também reúne os atalhos da tela.",
+        "title": "Assistente de IA"
+      },
+      "home": {
+        "description": "Veja em um só lugar a situação dos seus pacientes e o que precisa da sua atenção hoje.",
+        "title": "Painel Metabólico"
+      },
+      "notifications": {
+        "description": "Receba avisos e comunicados da equipe e responda sem sair do app.",
+        "title": "Notificações"
+      },
+      "patients": {
+        "description": "Acompanhe cada paciente, com diagnóstico, plano nutricional e evolução diária.",
+        "title": "Pacientes"
+      }
+    }
+  },
+  "welcome": {
+    "goToApp": "Ir direto ao app",
+    "greeting": "Olá, {name}!",
+    "hint": "Seu acesso foi aprovado e o Conductia já está pronto para você. Quer conhecer o app com um tutorial rápido ou ir direto ao Painel Metabólico?",
+    "startTutorial": "Iniciar tutorial"
   }
 }

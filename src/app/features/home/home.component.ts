@@ -39,6 +39,7 @@ import {
 } from './home-notifications-source';
 import { type HomeLoadStatus, HomeStateService } from './home-state.service';
 import { HospitalContextService } from './hospital-context.service';
+import { LinkRevocationChecker } from './link-revocation-checker';
 import { ProfessionalProfileReader } from './professional-profile';
 import { UnreadNotificationsReader } from './unread-notifications-reader';
 
@@ -137,6 +138,7 @@ export class HomeComponent implements OnInit, OnDestroy {
   private readonly injector = inject(Injector);
   private readonly screenActions = inject(ScreenActionsService);
   private readonly managerAccess = inject(ManagerAccessReader, { optional: true });
+  private readonly revocation = inject(LinkRevocationChecker);
   private readonly scrollSentinel = viewChild<ElementRef<HTMLElement>>('scrollSentinel');
   private intersectionObserver?: IntersectionObserver;
   private feedGeneration = 0;
@@ -162,6 +164,11 @@ export class HomeComponent implements OnInit, OnDestroy {
               id: 'invite-professional',
               label: 'Convidar profissional',
               navigate: (): void => void this.router.navigate(['/hospital-team', 'invite']),
+            },
+            {
+              id: 'revoke-professional-access',
+              label: 'Revogar acesso de profissional',
+              navigate: (): void => void this.router.navigate(['/hospital-team', 'access']),
             },
           ]),
         );
@@ -346,9 +353,12 @@ export class HomeComponent implements OnInit, OnDestroy {
         this.feedLoaded.set(true);
         this.nextCursor.set(page.nextCursor);
       }
-    } catch {
-      // Falha do primeiro lote: sem erro genérico (isso é do `refresh()`); sinaliza dados desatualizados.
-      if (generation === this.feedGeneration) {
+    } catch (failure) {
+      // 403 também é "sem permissão": só vira revogação se o vínculo constar como REVOGADO (US-001-2-04, Cenário 2).
+      if ((failure as { status?: number }).status === 403 && (await this.revocation.isRevoked(hospitalId))) {
+        this.context.revokeAccess(hospitalId);
+      } else if (generation === this.feedGeneration) {
+        // Falha do primeiro lote: sem erro genérico (isso é do `refresh()`); sinaliza dados desatualizados.
         this.stale.set(true);
       }
     }

@@ -1,0 +1,85 @@
+<app-page-container>
+  <div class="access">
+    <header class="access__header">
+      <app-icon-button
+        kind="primary"
+        appearance="icon"
+        icon="arrow-left"
+        ariaLabel="Voltar"
+        (click)="back()"
+      />
+      <div class="access__heading">
+        <h1 class="access__title">Acessos dos profissionais</h1>
+        <p class="access__subtitle">{{ hospitalName() }}</p>
+      </div>
+    </header>
+
+    @if (offline()) {
+      <p class="access__status" role="status">
+        Sem conexão. Conecte-se para revogar o acesso de um profissional.
+      </p>
+    }
+    @if (error(); as message) {
+      <p class="access__status" role="alert">{{ message }}</p>
+    }
+
+    <section class="access__card" aria-label="Profissionais do hospital">
+      @switch (state()) {
+        @case ('loading') {
+          <p class="access__status" role="status">Carregando profissionais…</p>
+        }
+        @case ('error') {
+          <p class="access__status" role="alert">
+            Não foi possível carregar os profissionais.
+          </p>
+          <div class="access__actions">
+            <app-button size="md" label="Tentar novamente" (click)="load()" />
+          </div>
+        }
+        @default {
+          @if (professionals().length === 0) {
+            <p class="access__status" role="status">
+              Nenhum profissional com acesso aprovado neste hospital.
+            </p>
+          } @else {
+            <ul class="access__list">
+              @for (professional of professionals(); track professional.id) {
+                <li class="access__item">
+                  <div class="access__person">
+                    <span class="access__name">{{ professional.name }}</span>
+                    <span class="access__specialty">{{
+                      professional.specialty
+                    }}</span>
+                    <span class="access__badge"
+                      >Status: {{ statusLabel(professional) }}</span
+                    >
+                  </div>
+                  @if (professional.status === 'approved') {
+                    <app-button
+                      size="md"
+                      kind="primary"
+                      appearance="outlined"
+                      label="Revogar"
+                      [disabled]="offline() || revoking()"
+                      (click)="askRevoke(professional)"
+                    />
+                  }
+                </li>
+              }
+            </ul>
+          }
+        }
+      }
+    </section>
+  </div>
+</app-page-container>
+
+<app-confirm-dialog
+  title="Revogar acesso?"
+  confirmLabel="Revogar"
+  cancelLabel="Cancelar"
+  [open]="pending() !== null"
+  [message]="dialogMessage()"
+  (confirmed)="confirmRevoke()"
+  (cancelled)="cancelRevoke()"
+/>

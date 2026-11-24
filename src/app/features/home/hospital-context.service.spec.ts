@@ -125,4 +125,45 @@ describe('HospitalContextService', () => {
 
     expect(service.selected()).toEqual(B);
   });
+
+  it('revokeAccess tira o hospital das opções e muda o contexto para outro vínculo ativo', async () => {
+    const service = await create(hospitals([A, B]));
+
+    service.revokeAccess(1);
+
+    expect(service.hospitals()).toEqual([B]);
+    expect(service.selected()).toEqual(B);
+    expect(service.revoked()).toEqual(A);
+    expect(service.canSwitch()).toBeFalse();
+  });
+
+  it('revokeAccess do hospital não selecionado mantém o contexto', async () => {
+    const service = await create(hospitals([A, B]));
+
+    service.revokeAccess(2);
+
+    expect(service.selected()).toEqual(A);
+    expect(service.hospitals()).toEqual([A]);
+  });
+
+  it('revokeAccess do último vínculo leva ao estado sem hospital; id desconhecido é ignorado', async () => {
+    const service = await create(hospitals([A]));
+
+    service.revokeAccess(99);
+
+    expect(service.revoked()).toBeNull();
+    service.revokeAccess(1);
+
+    expect(service.selected()).toBeNull();
+    expect(service.hospitals()).toEqual([]);
+  });
+
+  it('recarregar os hospitais limpa o aviso de revogação', async () => {
+    const service = await create(hospitals([A, B]));
+
+    service.revokeAccess(1);
+    await service.load();
+
+    expect(service.revoked()).toBeNull();
+  });
 });

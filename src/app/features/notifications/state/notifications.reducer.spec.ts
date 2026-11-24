@@ -230,13 +230,14 @@ describe('notificationsFeature reducer', () => {
       }),
     );
 
-    expect(state.pendingItems.length).toBe(0);
-    expect(state.resolvedItems.length).toBe(1);
-    expect(state.resolvedItems[0].replyCount).toBe(1);
+    expect(state.pendingItems.length).toBe(1);
+    expect(state.pendingItems[0].replyCount).toBe(1);
+    expect(state.pendingItems[0].replies.length).toBe(1);
+    expect(state.resolvedItems.length).toBe(0);
     expect(state.answeringId).toBeNull();
   });
 
-  it('answerSubmitSuccess numa notificação já resolvida só incrementa a contagem (2ª resposta)', () => {
+  it('answerSubmitSuccess numa notificação já resolvida a reabre e a devolve para Ativas', () => {
     const comResolvida = reducer(
       initialNotificationsState,
       NotificationsActions.loadResolvedPageSuccess({
@@ -257,8 +258,11 @@ describe('notificationsFeature reducer', () => {
       }),
     );
 
-    expect(state.resolvedItems.length).toBe(1);
-    expect(state.resolvedItems[0].replyCount).toBe(2);
+    expect(state.resolvedItems.length).toBe(0);
+    expect(state.pendingItems.length).toBe(1);
+    expect(state.pendingItems[0].replyCount).toBe(2);
+    expect(state.pendingTotalCount).toBe(1);
+    expect(state.resolvedTotalCount).toBe(0);
   });
 
   it('answerSubmitFailure preserva o rascunho e não altera a notificação (Acceptance Scenario 6)', () => {

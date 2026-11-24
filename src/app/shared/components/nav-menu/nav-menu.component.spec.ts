@@ -36,18 +36,19 @@ describe('NavMenuComponent', () => {
     fixture.detectChanges();
   });
 
-  it('renders the 5 navigation items with the expected icons, all in "regular" weight and 24px', () => {
+  it('renders the 6 navigation items with the expected icons, all in "regular" weight and 24px', () => {
     const expected: { label: string; icon: string }[] = [
       { icon: 'house', label: 'Home' },
       { icon: 'users-three', label: 'Pacientes' },
       { icon: 'hospital', label: 'Hospitais' },
       { icon: 'pill', label: 'Farmácia' },
       { icon: 'bell', label: 'Notificações' },
+      { icon: 'gear', label: 'Configurações' },
     ];
 
     const links = navLinks();
 
-    expect(links.length).toBe(5);
+    expect(links.length).toBe(6);
 
     expected.forEach(({ label, icon }) => {
       const link = linkByLabel(label);
@@ -86,6 +87,7 @@ describe('NavMenuComponent', () => {
     { label: 'Farmácia', output: 'farmaciaClick' },
     { label: 'Pacientes', output: 'pacientesClick' },
     { label: 'Notificações', output: 'notificacoesClick' },
+    { label: 'Configurações', output: 'configuracoesClick' },
   ];
 
   for (const { label, output } of clickCases) {
@@ -152,7 +154,7 @@ describe('NavMenuComponent', () => {
     }
   });
 
-  const activeCases: NavMenuItemKey[] = ['home', 'hospitais', 'farmacia', 'pacientes', 'notificacoes'];
+  const activeCases: NavMenuItemKey[] = ['home', 'hospitais', 'farmacia', 'pacientes', 'notificacoes', 'configuracoes'];
 
   for (const key of activeCases) {
     it(`marks only the "${key}" item as active when activeItem is set to it`, () => {

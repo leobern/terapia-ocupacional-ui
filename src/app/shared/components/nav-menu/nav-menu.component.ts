@@ -23,7 +23,7 @@ import { IconButtonComponent } from '../icon-button/icon-button.component';
 import { IconLogoButtonComponent } from '../icon-logo/icon-logo-button.component';
 
 /** Mapeia as 6 chaves fixas dos itens de navegação (spec.md § Clarifications + Home). */
-export type NavMenuItemKey = 'home' | 'hospitais' | 'farmacia' | 'pacientes' | 'notificacoes';
+export type NavMenuItemKey = 'home' | 'hospitais' | 'farmacia' | 'pacientes' | 'notificacoes' | 'configuracoes';
 
 interface NavMenuItem {
   readonly key: NavMenuItemKey;
@@ -88,6 +88,7 @@ export class NavMenuComponent {
   readonly farmaciaClick = output();
   readonly pacientesClick = output();
   readonly notificacoesClick = output();
+  readonly configuracoesClick = output();
   readonly logoutClick = output();
 
   protected readonly professionalName = 'Michelle Franklin';
@@ -112,6 +113,7 @@ export class NavMenuComponent {
     { icon: 'hospital', key: 'hospitais', label: 'Hospitais' },
     { icon: 'pill', key: 'farmacia', label: 'Farmácia' },
     { icon: 'bell', key: 'notificacoes', label: 'Notificações' },
+    { icon: 'gear', key: 'configuracoes', label: 'Configurações' },
   ];
 
   // Anel de foco sistêmico compartilhado por todos os controles clicáveis do
@@ -148,6 +150,9 @@ export class NavMenuComponent {
         break;
       case 'notificacoes':
         this.notificacoesClick.emit();
+        break;
+      case 'configuracoes':
+        this.configuracoesClick.emit();
         break;
     }
   }

@@ -1,0 +1,48 @@
+@use '../../shared/styles/tokens';
+@use '../../shared/styles/typography';
+
+.settings {
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$space-16;
+  padding-block: tokens.$space-24;
+  color: tokens.c(content-1);
+}
+
+.settings__title {
+  margin: 0;
+
+  @include typography.headline;
+}
+
+.settings__list {
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$space-8;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.settings__item {
+  display: flex;
+  gap: tokens.$space-12;
+  align-items: center;
+  box-sizing: border-box;
+  width: 100%;
+  // Área de toque mínima de 44px.
+  min-height: 48px;
+  padding: tokens.$space-12 tokens.$space-16;
+  border: 0;
+  border-radius: tokens.$radius-12;
+  background: tokens.c(surface);
+  color: tokens.c(content-1);
+  text-align: start;
+  cursor: pointer;
+
+  @include typography.label-lg;
+}
+
+.settings__label {
+  flex: 1;
+}

@@ -1,0 +1,57 @@
+@use '../../../shared/styles/tokens';
+@use '../../../shared/styles/typography';
+
+.duplicate-step {
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$space-16;
+}
+
+.duplicate-step__text {
+  margin: 0;
+  color: tokens.c(content-1);
+
+  @include typography.body-md;
+
+  &--error {
+    color: tokens.c(content-1);
+  }
+}
+
+.duplicate-step__list {
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$space-12;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.duplicate-step__card {
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$space-12;
+  padding: tokens.$space-16;
+  border-radius: tokens.$radius-md;
+  background: tokens.c(surface);
+}
+
+.duplicate-step__data {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: tokens.$space-4 tokens.$space-12;
+  margin: 0;
+
+  dt {
+    color: tokens.c(content-4);
+
+    @include typography.body-md;
+  }
+
+  dd {
+    margin: 0;
+    color: tokens.c(content-1);
+
+    @include typography.body-md;
+  }
+}

@@ -1,0 +1,315 @@
+openapi: 3.0.3
+info:
+  title: Vínculos com Hospitais API
+  version: 1.0.0
+  description: >
+    Contratos da US-001-2-01 (Solicitar acesso a um hospital) e US-001-2-02 (listar vínculos). Hospitais são
+    cadastrados pela equipe Conductia (fora do produto); o médico busca por nome.
+    Sem justificativa na solicitação (não há campo no critério de aceite).
+servers:
+  - url: /
+security:
+  - bearerAuth: []
+paths:
+  /api/v1/vinculos:
+    get:
+      operationId: listVinculos
+      x-implemented: true
+      summary: Lista todos os vínculos do profissional autenticado com seus status
+      description: >
+        Retorna todos os vínculos (aprovado, aguardando aprovação, recusado,
+        revogado), ordenados pelo nome do hospital. Lista vazia indica primeiro
+        acesso (estado vazio na UI). Sem paginação. `hasApprovedLink` permite à UI
+        redirecionar o profissional sem vínculo aprovado para esta tela (RN02).
+      responses:
+        "200":
+          description: Vínculos do profissional (possivelmente vazia)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VinculoList"
+        "401":
+          description: Não autenticado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Usuário autenticado não é profissional
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /api/v1/vinculos/hospitais:
+    get:
+      operationId: buscarHospitaisParaVinculo
+      x-implemented: true
+      summary: Busca hospitais por nome para solicitar acesso
+      parameters:
+        - name: nome
+          in: query
+          required: true
+          description: Trecho do nome (sem distinção de maiúsculas/acentos); mínimo 2 caracteres
+          schema:
+            type: string
+            minLength: 2
+        - name: cursor
+          in: query
+          required: false
+          description: Cursor opaco do último item carregado (ausente = primeiro lote)
+          schema:
+            type: string
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 10
+            minimum: 1
+            maximum: 20
+      responses:
+        "200":
+          description: >
+            Lote de hospitais ordenados por nome. Lista vazia = "Hospital não encontrado"
+            (a UI exibe a orientação de verificar o nome ou contatar o suporte).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HospitalSearchPage"
+        "400":
+          description: Nome ausente/curto, cursor inválido ou limit fora de 1..20
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Não autenticado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Usuário autenticado não é profissional
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /api/v1/vinculos/solicitacoes:
+    post:
+      operationId: solicitarAcessoHospital
+      x-implemented: true
+      summary: Solicita acesso do profissional autenticado a um hospital
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SolicitacaoAcessoRequest"
+      responses:
+        "201":
+          description: Solicitação criada com status AGUARDANDO_APROVACAO e origem SOLICITACAO
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VinculoSolicitacao"
+        "400":
+          description: Corpo inválido
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Não autenticado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Usuário autenticado não é profissional
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Hospital não encontrado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
+          description: Já existe solicitação pendente ou vínculo aprovado com o hospital (RN03)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /api/v1/hospitais/{hospitalId}/profissionais/{usuarioId}/revogacao:
+    post:
+      operationId: revogarAcessoProfissional
+      x-implemented: true
+      summary: Revoga o acesso aprovado de um profissional ao hospital (apenas GESTOR)
+      tags: [Vínculos]
+      parameters:
+        - name: hospitalId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: usuarioId
+          in: path
+          required: true
+          description: Identificador do profissional cujo acesso será revogado
+          schema:
+            type: integer
+            format: int64
+      responses:
+        "200":
+          description: Vínculo revogado com efeito imediato; o profissional é notificado (US-001-2-03)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VinculoRevogado"
+        "401":
+          description: Não autenticado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Usuário autenticado não é GESTOR
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Hospital, profissional ou vínculo inexistente
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
+          description: Vínculo não está APROVADO (pendente ou já revogado)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    ErrorResponse:
+      type: object
+      required: [message, timestamp]
+      properties:
+        message:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+        detalhes:
+          type: array
+          nullable: true
+          items:
+            type: string
+    Hospital:
+      type: object
+      required: [id, name]
+      properties:
+        id:
+          type: integer
+          format: int64
+        name:
+          type: string
+    HospitalSearchPage:
+      type: object
+      required: [items, nextCursor]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/Hospital"
+        nextCursor:
+          type: string
+          nullable: true
+          description: null quando não há mais resultados. Ordenação por nome, desempate por id.
+    SolicitacaoAcessoRequest:
+      type: object
+      required: [hospitalId]
+      properties:
+        hospitalId:
+          type: integer
+          format: int64
+    VinculoStatus:
+      type: string
+      description: RN01 — status possíveis do vínculo (RECUSADO só aparece na listagem)
+      enum: [AGUARDANDO_APROVACAO, APROVADO, RECUSADO, REVOGADO]
+    VinculoSolicitacao:
+      type: object
+      required: [id, hospital, status, createdAt]
+      properties:
+        id:
+          type: integer
+          format: int64
+        hospital:
+          $ref: "#/components/schemas/Hospital"
+        status:
+          $ref: "#/components/schemas/VinculoStatus"
+        createdAt:
+          type: string
+          format: date-time
+    VinculoItem:
+      type: object
+      required: [id, hospitalId, hospitalName, status, updatedAt]
+      properties:
+        id:
+          type: integer
+          format: int64
+        hospitalId:
+          type: integer
+          format: int64
+        hospitalName:
+          type: string
+        status:
+          $ref: "#/components/schemas/VinculoStatus"
+        updatedAt:
+          type: string
+          format: date-time
+          description: Data da última mudança de status
+    VinculoList:
+      type: object
+      required: [items, hasApprovedLink]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/VinculoItem"
+        hasApprovedLink:
+          type: boolean
+          description: true se existe ao menos um vínculo APROVADO
+
+    VinculoRevogado:
+      type: object
+      required: [vinculoId, hospitalId, usuarioId, status, updatedAt]
+      properties:
+        vinculoId:
+          type: integer
+          format: int64
+        hospitalId:
+          type: integer
+          format: int64
+        usuarioId:
+          type: integer
+          format: int64
+        status:
+          $ref: "#/components/schemas/VinculoStatus"
+          description: Sempre REVOGADO nesta resposta
+        updatedAt:
+          type: string
+          format: date-time

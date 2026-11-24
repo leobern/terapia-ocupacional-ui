@@ -4,6 +4,8 @@ import { Router } from '@angular/router';
 import { ButtonComponent } from '../../shared/components/button/button.component';
 import { IconLogoComponent } from '../../shared/components/icon-logo/icon-logo.component';
 import { I18nService } from '../../shared/services/i18n.service';
+import { TutorialStateStore } from '../tutorial/tutorial-state';
+import { WelcomeSource } from '../welcome/welcome-source';
 import { decideDestination } from './splash-destination';
 import { StartupStateReader } from './startup-state';
 
@@ -30,7 +32,9 @@ export class SplashComponent implements OnInit {
   protected readonly i18n = inject(I18nService);
 
   private readonly reader = inject(StartupStateReader);
+  private readonly tutorial = inject(TutorialStateStore);
   private readonly router = inject(Router);
+  private readonly welcome = inject(WelcomeSource);
   private attempt = 0;
   private timers: ReturnType<typeof setTimeout>[] = [];
 
@@ -60,7 +64,7 @@ export class SplashComponent implements OnInit {
     const tryNavigate = (): void => {
       if (isCurrent() && minElapsed && ready) {
         this.clearTimers();
-        void this.router.navigateByUrl(decideDestination(this.reader.readLocal()), { replaceUrl: true });
+        void this.navigate(attempt);
       }
     };
 
@@ -93,6 +97,41 @@ export class SplashComponent implements OnInit {
           this.fail();
         }
       },
+    );
+  }
+
+  /**
+   * Resolve o destino. Com destino `/home`, as boas-vindas ainda não vistas (US-001-3-01) têm
+   * prioridade; depois, o tutorial pendente (US-001-3-02). Falha em qualquer leitura nunca
+   * bloqueia o médico: segue ao Painel.
+   */
+  private async navigate(attempt: number): Promise<void> {
+    const state = this.reader.readLocal();
+    let destination: string = decideDestination(state);
+
+    if (destination === '/home') {
+      if (await this.welcomePending()) {
+        destination = '/welcome';
+      } else if (await this.tutorialPending()) {
+        destination = decideDestination(state, true);
+      }
+    }
+    if (attempt === this.attempt) {
+      await this.router.navigateByUrl(destination, { replaceUrl: true });
+    }
+  }
+
+  private welcomePending(): Promise<boolean> {
+    return this.welcome.getStatus().then(
+      status => status.shouldShow,
+      () => false,
+    );
+  }
+
+  private tutorialPending(): Promise<boolean> {
+    return this.tutorial.read().then(
+      status => status === 'PENDENTE',
+      () => false,
     );
   }
 

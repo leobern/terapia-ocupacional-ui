@@ -1,0 +1,293 @@
+openapi: 3.0.3
+info:
+  title: Internações API
+  version: 1.0.0
+  description: >
+    Contrato da US-002-1-06 (FT-002-1 Cadastro de Paciente): criação da internação
+    (registro variável, 1:N em relação ao Paciente) com os dados coletados pelo chatbot,
+    um por vez. A coleta conversacional pertence à camada de IA/chatbot (fora de escopo);
+    esta API recebe os campos já coletados. Todos os campos são opcionais (RN-01): o
+    usuário pode pular qualquer pergunta e a internação é criada com campos vazios.
+    Edição da internação e movimentação de leito estão fora de escopo.
+
+    US-002-1-07: a internação aceita ainda `locations`, lista opcional de até 2 localizações
+    (Unidade e/ou Ala), uma de cada tipo. Desistir de uma linha antes de concluir (RN-04)
+    é feito no cliente: a linha simplesmente não é enviada.
+servers:
+  - url: /
+security:
+  - bearerAuth: []
+paths:
+  /api/v1/pacientes/{pacienteId}/internacoes:
+    post:
+      operationId: createInternacao
+      x-implemented: true
+      summary: Cria a internação vinculada ao paciente com os dados informados (todos opcionais)
+      description: >
+        Requer que o profissional tenha vínculo aprovado com o hospital do paciente.
+        RN-01: corpo pode ser vazio ({}); campos ausentes ou nulos ficam vazios.
+        RN-02: hospitalAdmissionDate, quando informada, não pode ser futura em relação à
+        data do sistema; caso contrário 422 com field=hospitalAdmissionDate, code=MSG-08 e
+        message "A data de internação hospitalar não pode ser uma data futura." (o chatbot
+        pergunta a data novamente e nada é salvo). Datas malformadas ou textos acima dos
+        limites resultam em 400.
+
+        US-002-1-07: `locations` é opcional (ausente, nulo ou [] = sem localização). Cada
+        item exige locationType (UNIDADE|ALA) e locationValue. Tipo ausente ou fora do enum
+        => 422 field=locations, code=MSG-09, "Selecione o tipo: Unidade ou Ala."; valor
+        vazio/em branco => 422 field=locations, code=MSG-10, "Preencha o valor da
+        localização."; valor acima de 100 caracteres, mais de 2 itens ou tipo repetido
+        (RN-03, limite verificado também pelo chatbot) => 400. Nada é salvo em caso de erro.
+      parameters:
+        - name: pacienteId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateInternacaoRequest"
+      responses:
+        "201":
+          description: Internação criada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Internacao"
+        "400":
+          $ref: "#/components/responses/Error"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          description: Profissional sem vínculo aprovado com o hospital do paciente
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Paciente não encontrado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "422":
+          description: MSG-08 (hospitalAdmissionDate futura), MSG-09 (tipo de localização não identificado) ou MSG-10 (valor de localização vazio)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationErrorResponse"
+  /api/v1/pacientes/{pacienteId}/internacoes/movimentacao-leito/resolver:
+    post:
+      operationId: resolverMovimentacaoLeito
+      x-implemented: true
+      summary: Associa o pedido de mudança de leito à internação mais recente do paciente
+      description: >
+        US-002-2-01. Operação sem efeito colateral: não grava nada (confirmação e aplicação
+        da mudança são da US-002-2-03). A extração do leito da mensagem é feita pelo
+        chatbot (fora de escopo); o cliente envia o leito já extraído em newBedNumber,
+        ausente/nulo/em branco quando não conseguiu extrair.
+        Requer vínculo aprovado do profissional com o hospital do paciente.
+        RN-03: newBedNumber ausente, nulo ou em branco, 422 com field=newBedNumber,
+        code=MSG-12 e message "Não consegui identificar o novo leito. Pode informar o número do leito?".
+        RN-02: paciente sem nenhuma internação, 422 com code=MSG-11 e message
+        "Este paciente ainda não possui internação registrada. É necessário internar o paciente antes de movimentar o leito."
+        (field ausente). Se ambos ocorrerem, vale MSG-11 (sem internação não há o que movimentar).
+        RN-01: a internação mais recente é a de maior createdAt (desempate por maior id).
+      parameters:
+        - name: pacienteId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ResolverMovimentacaoLeitoRequest"
+      responses:
+        "200":
+          description: Pedido associado à internação mais recente
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MovimentacaoLeitoResolvida"
+        "400":
+          $ref: "#/components/responses/Error"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          description: Profissional sem vínculo aprovado com o hospital do paciente
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Paciente não encontrado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "422":
+          description: MSG-11 (paciente sem internação) ou MSG-12 (leito não identificado)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MovimentacaoLeitoErrorResponse"
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  responses:
+    Error:
+      description: Erro
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+  schemas:
+    ErrorResponse:
+      type: object
+      required: [message, timestamp]
+      properties:
+        message:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+    ValidationErrorResponse:
+      allOf:
+        - $ref: "#/components/schemas/ErrorResponse"
+        - type: object
+          required: [field, code]
+          properties:
+            field:
+              type: string
+              enum: [hospitalAdmissionDate, locations]
+            code:
+              type: string
+              enum: [MSG-08, MSG-09, MSG-10]
+    CreateInternacaoRequest:
+      type: object
+      properties:
+        bedNumber:
+          type: string
+          nullable: true
+          maxLength: 20
+        healthInsurance:
+          type: string
+          nullable: true
+          maxLength: 100
+        admissionNumber:
+          type: string
+          nullable: true
+          maxLength: 30
+          description: Sem formato fixo
+        hospitalAdmissionDate:
+          type: string
+          format: date
+          nullable: true
+          description: Data válida, não futura (MSG-08)
+        nutritionalTherapyStartDate:
+          type: string
+          format: date
+          nullable: true
+          description: Data válida
+        locations:
+          type: array
+          nullable: true
+          maxItems: 2
+          description: Até 2 localizações, sem repetir locationType (RN-03)
+          items:
+            $ref: "#/components/schemas/InternacaoLocation"
+    InternacaoLocation:
+      type: object
+      required: [locationType, locationValue]
+      properties:
+        locationType:
+          type: string
+          enum: [UNIDADE, ALA]
+          description: Fora do enum ou ausente => MSG-09
+        locationValue:
+          type: string
+          maxLength: 100
+          description: Não vazio (MSG-10), máx. 100 caracteres
+    Internacao:
+      type: object
+      required: [id, pacienteId, createdAt]
+      properties:
+        id:
+          type: integer
+          format: int64
+        pacienteId:
+          type: integer
+          format: int64
+        bedNumber:
+          type: string
+          nullable: true
+        healthInsurance:
+          type: string
+          nullable: true
+        admissionNumber:
+          type: string
+          nullable: true
+        hospitalAdmissionDate:
+          type: string
+          format: date
+          nullable: true
+        nutritionalTherapyStartDate:
+          type: string
+          format: date
+          nullable: true
+        locations:
+          type: array
+          description: Vazio quando nenhuma localização foi informada
+          maxItems: 2
+          items:
+            $ref: "#/components/schemas/InternacaoLocation"
+        createdAt:
+          type: string
+          format: date-time
+    ResolverMovimentacaoLeitoRequest:
+      type: object
+      properties:
+        newBedNumber:
+          type: string
+          nullable: true
+          maxLength: 20
+          description: Leito extraído pelo chatbot; ausente/nulo/em branco quando não identificado (MSG-12)
+    MovimentacaoLeitoResolvida:
+      type: object
+      required: [pacienteId, internacaoId, newBedNumber]
+      properties:
+        pacienteId:
+          type: integer
+          format: int64
+        internacaoId:
+          type: integer
+          format: int64
+        currentBedNumber:
+          type: string
+          nullable: true
+        newBedNumber:
+          type: string
+    MovimentacaoLeitoErrorResponse:
+      allOf:
+        - $ref: "#/components/schemas/ErrorResponse"
+        - type: object
+          required: [code]
+          properties:
+            field:
+              type: string
+              enum: [newBedNumber]
+              description: Presente apenas em MSG-12
+            code:
+              type: string
+              enum: [MSG-11, MSG-12]

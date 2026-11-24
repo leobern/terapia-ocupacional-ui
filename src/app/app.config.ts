@@ -21,21 +21,26 @@ import { ProvisionalDiagnosisDecisionSource } from './features/diagnosis/provisi
 import { ProvisionalDiagnosisSource } from './features/diagnosis/provisional-diagnosis-source';
 import { FollowUpClosureSource, FollowUpClosureWriter } from './features/follow-up-closure/follow-up-closure-source';
 import { ProvisionalFollowUpClosureSource } from './features/follow-up-closure/provisional-follow-up-closure';
+import { ApiLinkRevocationChecker } from './features/home/api-link-revocation-checker';
+import { ApiUnreadNotificationsReader } from './features/home/api-unread-notifications-reader';
 import { DailyPatientsSource } from './features/home/daily-patients';
 import { HomeHospitalsApiService } from './features/home/data-access/home-hospitals-api.service';
 import { HomeNotificationsApiService } from './features/home/data-access/home-notifications-api.service';
 import { HomeNotificationsSource } from './features/home/home-notifications-source';
+import { LinkRevocationChecker } from './features/home/link-revocation-checker';
 import { LinkedHospitalsReader } from './features/home/linked-hospitals';
 import { LocalProfessionalProfileReader } from './features/home/local-professional-profile-reader';
-import { LocalUnreadNotificationsReader } from './features/home/local-unread-notifications-reader';
 import { ProfessionalProfileReader } from './features/home/professional-profile';
 import { ProvisionalDailyPatientsSource } from './features/home/provisional-daily-patients';
 import { UnreadNotificationsReader } from './features/home/unread-notifications-reader';
 import { HospitalInvitePort, ManagerAccessReader } from './features/hospital-team/hospital-invite-port';
+import { ProfessionalAccessApiService } from './features/hospital-team/professional-access-api.service';
+import { ProfessionalAccessRevoker, ProfessionalAccessSource } from './features/hospital-team/professional-access-port';
 import {
   ProvisionalHospitalInvite,
   ProvisionalManagerAccess,
 } from './features/hospital-team/provisional-hospital-invite';
+import { ProvisionalProfessionalAccess } from './features/hospital-team/provisional-professional-access';
 import { AnnouncementAssistant } from './features/notifications/assistant/announcement-assistant';
 import { PendingNotificationsQueryResolver } from './features/notifications/assistant/pending-notifications-query.resolver';
 import { ProvisionalAnnouncementAssistant } from './features/notifications/assistant/provisional-announcement-assistant';
@@ -67,6 +72,10 @@ import {
   ProvisionalPatientMessageSource,
   ProvisionalPatientTeamSource,
 } from './features/patient-hub/messages/provisional-patient-message';
+import { BedMovementPort } from './features/patient-hub/move-bed/bed-movement.port';
+import { BedMovementApiService } from './features/patient-hub/move-bed/bed-movement-api.service';
+import { BedNumberExtractor } from './features/patient-hub/move-bed/bed-number-extractor';
+import { ProvisionalBedNumberExtractor } from './features/patient-hub/move-bed/provisional-bed-number-extractor';
 import {
   HypothesisSynthesizer,
   HypothesisWriter,
@@ -104,6 +113,12 @@ import {
   ProvisionalPatientMessages,
   ProvisionalReplyTranscriber,
 } from './features/patient-messages/provisional-patient-messages';
+import { InternacaoCreationPort } from './features/patient-registration/internacao-creation.port';
+import { InternacoesApiService } from './features/patient-registration/internacoes-api.service';
+import { PacientesApiService } from './features/patient-registration/pacientes-api.service';
+import { PatientCreationPort } from './features/patient-registration/patient-creation.port';
+import { PatientDuplicateApiService } from './features/patient-registration/patient-duplicate-api.service';
+import { PatientDuplicateSource } from './features/patient-registration/patient-duplicate-source';
 import {
   NutritionAddedCards,
   NutritionHiddenCards,
@@ -117,6 +132,10 @@ import { FormulasApi } from './features/pharmacy/formulas-api';
 import { ProvisionalFormulasApi } from './features/pharmacy/provisional-formulas-api';
 import { LocalStartupStateReader } from './features/splash/local-startup-state-reader';
 import { StartupStateReader } from './features/splash/startup-state';
+import { TutorialApiService } from './features/tutorial/tutorial-api.service';
+import { TutorialStateStore } from './features/tutorial/tutorial-state';
+import { WelcomeApiService } from './features/welcome/welcome-api.service';
+import { WelcomeSource } from './features/welcome/welcome-source';
 import { ProvisionalSessionRoleReader } from './shared/auth/provisional-session-role-reader';
 import { SessionRoleReader } from './shared/auth/session-role';
 import { DEV_BACKEND_PROVIDERS } from './shared/dev-backend/dev-backend.providers';
@@ -135,9 +154,16 @@ export const appConfig: ApplicationConfig = {
     { provide: PasswordResetGateway, useClass: HttpPasswordResetGateway },
     { provide: SessionRevoker, useClass: NoopSessionRevoker },
     { provide: StartupStateReader, useClass: LocalStartupStateReader },
+    { provide: WelcomeSource, useClass: WelcomeApiService },
+    { provide: TutorialStateStore, useClass: TutorialApiService },
     { provide: LinkedHospitalsReader, useClass: HomeHospitalsApiService },
-    { provide: UnreadNotificationsReader, useClass: LocalUnreadNotificationsReader },
+    { provide: LinkRevocationChecker, useClass: ApiLinkRevocationChecker },
+    { provide: UnreadNotificationsReader, useClass: ApiUnreadNotificationsReader },
     { provide: DailyPatientsSource, useClass: ProvisionalDailyPatientsSource },
+    { provide: PatientCreationPort, useClass: PacientesApiService },
+    { provide: InternacaoCreationPort, useClass: InternacoesApiService },
+    { provide: BedMovementPort, useClass: BedMovementApiService },
+    { provide: BedNumberExtractor, useClass: ProvisionalBedNumberExtractor },
     { provide: PatientListAiCommandPort, useClass: ProvisionalPatientListAiCommand },
     ProvisionalPatientMessages,
     { provide: PatientMessagesSource, useExisting: ProvisionalPatientMessages },
@@ -186,10 +212,14 @@ export const appConfig: ApplicationConfig = {
     // Provisórios (sem backend ainda): notificações em memória e usuários de exemplo.
     { provide: NotificationsApiService, useClass: ProvisionalNotificationsApiService },
     { provide: HospitalInvitePort, useClass: ProvisionalHospitalInvite },
+    ProvisionalProfessionalAccess,
+    { provide: ProfessionalAccessSource, useExisting: ProvisionalProfessionalAccess },
+    { provide: ProfessionalAccessRevoker, useClass: ProfessionalAccessApiService },
     { provide: ManagerAccessReader, useClass: ProvisionalManagerAccess },
     { provide: UserDirectory, useClass: ProvisionalUserDirectory },
     { provide: AnnouncementAssistant, useClass: ProvisionalAnnouncementAssistant },
     { provide: SessionRoleReader, useClass: ProvisionalSessionRoleReader },
+    { provide: PatientDuplicateSource, useClass: PatientDuplicateApiService },
     { provide: FormulasApi, useClass: ProvisionalFormulasApi },
     // Consultas de leitura do assistente (um resolvedor por intenção).
     { multi: true, provide: ASSISTANT_QUERY_RESOLVERS, useClass: PendingNotificationsQueryResolver },

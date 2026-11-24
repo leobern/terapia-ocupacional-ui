@@ -19,7 +19,12 @@ function notification(id: number, createdAt = new Date().toISOString()): Notific
 }
 
 describe('notificationsFeature reducer — casos de borda', () => {
-  const reply = { author: notification(1).author, createdAt: new Date().toISOString(), id: 1, text: 'ok' };
+  const reply = {
+    author: { id: 1, name: 'Jairo', photoUrl: null, specialty: 'Enfermeiro' },
+    createdAt: new Date().toISOString(),
+    id: 1,
+    text: 'ok',
+  };
 
   it('resposta a uma notificação que não está nas pendentes não altera o estado', () => {
     const state = { ...initialNotificationsState, answeringId: 99, pendingItems: [notification(1)] };
@@ -29,15 +34,15 @@ describe('notificationsFeature reducer — casos de borda', () => {
     );
   });
 
-  it('resposta move a notificação para as resolvidas, mantendo a ordem da mais recente para a mais antiga', () => {
+  it('resposta a uma notificação resolvida a reabre, mantendo a ordem da mais recente para a mais antiga', () => {
     const older = notification(2, '2020-01-01T10:00:00.000Z');
     const newer = notification(1, '2030-01-01T10:00:00.000Z');
-    const state = { ...initialNotificationsState, answeringId: 1, pendingItems: [newer], resolvedItems: [older] };
+    const state = { ...initialNotificationsState, answeringId: 1, pendingItems: [older], resolvedItems: [newer] };
     const next = reducer(state, NotificationsActions.answerSubmitSuccess({ notificationId: 1, reply }));
 
-    expect(next.pendingItems.length).toBe(0);
-    expect(next.resolvedItems.map(n => n.id)).toEqual([1, 2]);
-    expect(next.resolvedItems[0].replyCount).toBe(1);
+    expect(next.resolvedItems.length).toBe(0);
+    expect(next.pendingItems.map(n => n.id)).toEqual([1, 2]);
+    expect(next.pendingItems[0].replyCount).toBe(1);
   });
 
   it('loadResolvedPageFailure mantém o que já há e volta para success', () => {

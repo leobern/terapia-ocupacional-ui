@@ -6,6 +6,7 @@ import {
   type AssistantQueryResolver,
   normalizeQuestion,
 } from '../../../shared/services/assistant-query-resolver';
+import { I18nService } from '../../../shared/services/i18n.service';
 import { HospitalContextService } from '../../home/hospital-context.service';
 import { NotificationsApiService } from '../data-access/notifications-api.service';
 import { type Notification, type NotificationPage } from '../notifications.models';
@@ -23,6 +24,7 @@ const MAX_PAGES = 10;
 export class PendingNotificationsQueryResolver implements AssistantQueryResolver {
   private readonly api = inject(NotificationsApiService);
   private readonly hospitalContext = inject(HospitalContextService);
+  private readonly i18n = inject(I18nService);
 
   matches(question: string): boolean {
     return normalizeQuestion(question).includes('pendencias');
@@ -57,7 +59,9 @@ export class PendingNotificationsQueryResolver implements AssistantQueryResolver
       items: notifications.map(n => ({
         route: `/notifications/${n.id}`,
         text: n.description,
-        title: `${n.author.name} (${n.author.specialty})`,
+        title: n.author
+          ? `${n.author.name} (${n.author.specialty})`
+          : (n.hospital?.name ?? this.i18n.t('notifications.fallbackTitle')),
       })),
       link: { label: 'Ver todas em Notificações', route: '/notifications' },
       summary: notifications.length === 1 ? 'Você tem 1 pendência:' : `Você tem ${notifications.length} pendências:`,

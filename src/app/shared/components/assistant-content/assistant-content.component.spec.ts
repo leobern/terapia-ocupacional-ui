@@ -366,4 +366,68 @@ describe('AssistantContentComponent', () => {
       expect(hint().classList).not.toContain('assistant-content__hint--visible');
     });
   });
+
+  describe('conversation (cadastro um dado por vez)', () => {
+    const submit = jasmine.createSpy('submit');
+    const chat: ScreenAction = {
+      conversation: {
+        errorMessage: 'Falhou',
+        skipLabel: 'Pular',
+        steps: [
+          { id: 'name', parse: raw => (raw ? { value: raw } : { error: 'Informe o nome.' }), prompt: 'Qual o nome?' },
+          {
+            id: 'sex',
+            options: [{ label: 'Masculino', value: 'MALE' }],
+            optional: true,
+            parse: raw => ({ value: raw }),
+            prompt: 'Qual o sexo?',
+          },
+        ],
+        submit: () => submit(),
+        successMessage: 'Feito',
+        title: 'Cadastrar',
+      },
+      id: 'chat',
+      label: 'Cadastrar',
+    };
+    const buttons = (): string[] =>
+      Array.from(el().querySelectorAll<HTMLButtonElement>('button')).map(b => b.textContent?.trim() ?? '');
+
+    it('shows the question, answers, errors and the options/skip buttons', () => {
+      assistant.openAction(chat);
+      fixture.detectChanges();
+
+      expect(text('.assistant-content__body')).toBe('Qual o nome?');
+      assistant.ask('');
+      assistant.ask('Ana');
+      fixture.detectChanges();
+
+      expect(text('.assistant-content__question')).toBe('—');
+      expect(text('[role="alert"]')).toBe('Informe o nome.');
+      expect(buttons()).toEqual(['Masculino', 'Pular']);
+      el().querySelectorAll('button')[0].click();
+      el().querySelectorAll('button')[1]?.click();
+      fixture.detectChanges();
+
+      expect(submit).toHaveBeenCalledWith();
+    });
+
+    it('offers a retry button after a failed submit', async () => {
+      expect(el().querySelector('app-button')).toBeNull();
+      submit.and.rejectWith(new Error('x'));
+      assistant.openAction(chat);
+      assistant.ask('Ana');
+      assistant.ask('');
+      await new Promise(resolve => setTimeout(resolve));
+      fixture.detectChanges();
+      submit.and.resolveTo();
+
+      expect(buttons()).toEqual([jasmine.stringMatching(/Tentar novamente|Try again/)]);
+      el().querySelector('button')?.click();
+      await new Promise(resolve => setTimeout(resolve));
+      fixture.detectChanges();
+
+      expect(text('.assistant-content__body:last-of-type')).toBe('Feito');
+    });
+  });
 });

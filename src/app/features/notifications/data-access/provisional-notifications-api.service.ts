@@ -1,5 +1,5 @@
 import { inject, Injectable } from '@angular/core';
-import { forkJoin, from, map, Observable, of, tap } from 'rxjs';
+import { forkJoin, from, map, Observable, of } from 'rxjs';
 
 import { NOW, ProfessionalProfileReader } from '../../home/professional-profile';
 import { PatientMessagesSource, PatientMessagesWriter } from '../../patient-messages/patient-messages-source';
@@ -9,9 +9,10 @@ import { NotificationsApiService } from './notifications-api.service';
 import { NotificationsRepository } from './notifications-repository.service';
 
 /**
- * Provisório: lê/grava no `NotificationsRepository` (memória) em vez de chamar a API HTTP,
- * que ainda não existe. Substituído por `NotificationsApiService` em `app.config.ts` quando
- * o backend estiver pronto.
+ * Lista, responder, resolver e marcar como lida usam a API real (comunicados internos). O que ainda não
+ * tem backend é a mensagem de paciente enviada pelo Hub (FT-005-1): ela entra aqui a partir do registro
+ * provisório de threads. Substituído por `NotificationsApiService` em `app.config.ts` quando o Hub
+ * também for para o backend.
  */
 @Injectable()
 export class ProvisionalNotificationsApiService extends NotificationsApiService {
@@ -22,31 +23,36 @@ export class ProvisionalNotificationsApiService extends NotificationsApiService 
   private readonly profile = inject(ProfessionalProfileReader);
 
   override getNotifications(
-    _: number,
+    hospitalId: number,
     status: NotificationStatus,
     cursor: string | null,
     limit = 10,
   ): Observable<NotificationPage> {
-    const page = this.repository.list(status, cursor, limit);
+    // Lista real (`getNotifications` é x-implemented): comunicados internos vindos do backend.
+    const page$ = super.getNotifications(hospitalId, status, cursor, limit);
 
     // Mensagens que o profissional enviou a partir do Hub (FR-010): entram na primeira página, no estado
-    // compartilhado da thread (ativa/resolvida) — o mesmo registro que o card do Hub mostra.
-    return forkJoin([of(page), from(this.messages.listBySender(this.profile.read().name))]).pipe(
+    // compartilhado da thread (ativa/resolvida) — o mesmo registro que o card do Hub mostra. Ainda sem backend.
+    return forkJoin([page$, from(this.messages.listBySender(this.profile.read().name))]).pipe(
       map(([base, sent]) => {
         const mine = sent
           .filter(thread => (thread.resolved ? 'resolved' : 'pending') === status)
           .map(sentThreadToNotification)
           .reverse();
 
-        return cursor === null
-          ? { ...base, items: [...mine, ...base.items], totalCount: base.totalCount + mine.length }
-          : { ...base, totalCount: base.totalCount + mine.length };
+        return cursor === null ? { ...base, items: [...mine, ...base.items] } : base;
       }),
     );
   }
 
   override createReply(notificationId: number, text: string): Observable<NotificationReply> {
-    return of(this.repository.addReply(notificationId, text));
+    if (notificationId < 0) {
+      // Thread enviada pelo Hub: ainda sem backend; a resposta segue o registro provisório do Hub.
+      return of(this.repository.addReply(notificationId, text));
+    }
+
+    // `createNotificationReply` é x-implemented no contrato: chamada real.
+    return super.createReply(notificationId, text);
   }
 
   override resolve(notificationId: number): Observable<void> {
@@ -61,7 +67,7 @@ export class ProvisionalNotificationsApiService extends NotificationsApiService 
       ).pipe(map(() => undefined));
     }
 
-    // `resolveNotification` é x-implemented no contrato: chamada real; o mock local só espelha o estado.
-    return super.resolve(notificationId).pipe(tap(() => this.repository.resolve(notificationId)));
+    // `resolveNotification` é x-implemented no contrato: chamada real.
+    return super.resolve(notificationId);
   }
 }

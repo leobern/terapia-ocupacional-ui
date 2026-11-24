@@ -7,6 +7,7 @@ import { catchError, concatMap, EMPTY, filter, from, map, mergeMap, of, switchMa
 import { HomeApiService } from '../../home/data-access/home-api.service';
 import { NotificationsApiService } from '../data-access/notifications-api.service';
 import { NotificationsActions } from './notifications.actions';
+import { apiErrorMessage } from './notifications.errors';
 import {
   type NotificationsTab,
   selectActiveTab,
@@ -19,6 +20,7 @@ import {
 
 const ERROR_LOAD = 'Verifique sua conexão de internet e tente novamente em alguns instantes.';
 const ERROR_NEXT_BATCH = 'Falha ao carregar o próximo lote de notificações.';
+const ERROR_RESOLVE = 'Não foi possível resolver a notificação.';
 const ERROR_SUBMIT_REPLY = 'Não foi possível enviar sua resposta. Verifique sua conexão e tente novamente.';
 
 /**
@@ -141,8 +143,13 @@ export const submitReply$ = createEffect(
       switchMap(([{ notificationId }, draftText]) =>
         api.createReply(notificationId, draftText).pipe(
           map(reply => NotificationsActions.answerSubmitSuccess({ notificationId, reply })),
-          catchError(() =>
-            of(NotificationsActions.answerSubmitFailure({ notificationId, message: ERROR_SUBMIT_REPLY })),
+          catchError((error: unknown) =>
+            of(
+              NotificationsActions.answerSubmitFailure({
+                notificationId,
+                message: apiErrorMessage(error, ERROR_SUBMIT_REPLY),
+              }),
+            ),
           ),
         ),
       ),
@@ -159,11 +166,11 @@ export const resolveNotification$ = createEffect(
       concatMap(({ notificationId }) =>
         api.resolve(notificationId).pipe(
           map(() => NotificationsActions.resolveSuccess({ notificationId })),
-          catchError(() =>
+          catchError((error: unknown) =>
             of(
               NotificationsActions.resolveFailure({
                 notificationId,
-                message: 'Não foi possível resolver a notificação.',
+                message: apiErrorMessage(error, ERROR_RESOLVE),
               }),
             ),
           ),
