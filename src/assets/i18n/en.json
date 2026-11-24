@@ -61,6 +61,15 @@
       "title": "Set new password"
     }
   },
+  "patientRegistration": {
+    "duplicate": {
+      "birthDate": "Date of birth",
+      "invalidBirthDate": "Enter a valid date of birth.",
+      "name": "Name",
+      "nameTooShort": "Enter at least 3 characters to search.",
+      "same": "SAME"
+    }
+  },
   "settings": {
     "reviewTutorial": "Review tutorial",
     "title": "Settings"

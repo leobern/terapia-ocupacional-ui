@@ -61,6 +61,15 @@
       "title": "Definir nova senha"
     }
   },
+  "patientRegistration": {
+    "duplicate": {
+      "birthDate": "Data de nascimento",
+      "invalidBirthDate": "Informe uma data de nascimento válida.",
+      "name": "Nome",
+      "nameTooShort": "Digite pelo menos 3 caracteres para buscar.",
+      "same": "SAME"
+    }
+  },
   "settings": {
     "reviewTutorial": "Rever tutorial",
     "title": "Configurações"
