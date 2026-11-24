@@ -139,6 +139,66 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/MovimentacaoLeitoErrorResponse"
+  /api/v1/pacientes/{pacienteId}/internacoes/movimentacao-leito/ocupacao:
+    get:
+      operationId: verificarOcupacaoLeito
+      x-implemented: true
+      summary: Verifica se o leito de destino já está ocupado por outro paciente do mesmo hospital
+      description: >
+        US-002-2-04. Consulta sem efeito colateral, chamada antes de exibir a confirmação
+        da movimentação (US-002-2-03). Requer vínculo aprovado do profissional com o
+        hospital do paciente.
+        RN-01: o leito está ocupado quando o bedNumber da internação mais recente (maior
+        createdAt, desempate por maior id) de OUTRO paciente do mesmo hospital é igual a
+        newBedNumber (comparação após remover espaços nas pontas, sem distinguir
+        maiúsculas/minúsculas). A internação do próprio paciente é ignorada.
+        RN-02: ocupado => occupied=true e occupants com o nome de cada paciente que ocupa o
+        leito; o alerta não bloqueia a continuidade (nenhum erro é retornado).
+        RN-03: livre => occupied=false e occupants vazio.
+        newBedNumber ausente ou em branco => 422 field=newBedNumber, code=MSG-12.
+        Paciente sem internação => 422 code=MSG-11 (mesmas regras de resolverMovimentacaoLeito).
+      parameters:
+        - name: pacienteId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: newBedNumber
+          in: query
+          required: true
+          schema:
+            type: string
+            maxLength: 20
+      responses:
+        "200":
+          description: Situação de ocupação do leito de destino
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OcupacaoLeito"
+        "400":
+          $ref: "#/components/responses/Error"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          description: Profissional sem vínculo aprovado com o hospital do paciente
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Paciente não encontrado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "422":
+          description: MSG-11 (paciente sem internação) ou MSG-12 (leito não identificado)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MovimentacaoLeitoErrorResponse"
 components:
   securitySchemes:
     bearerAuth:
@@ -291,3 +351,25 @@ components:
             code:
               type: string
               enum: [MSG-11, MSG-12]
+    OcupacaoLeito:
+      type: object
+      required: [newBedNumber, occupied, occupants]
+      properties:
+        newBedNumber:
+          type: string
+        occupied:
+          type: boolean
+        occupants:
+          type: array
+          description: Pacientes cuja internação mais recente está no leito (vazio quando livre)
+          items:
+            $ref: "#/components/schemas/OcupanteLeito"
+    OcupanteLeito:
+      type: object
+      required: [pacienteId, name]
+      properties:
+        pacienteId:
+          type: integer
+          format: int64
+        name:
+          type: string

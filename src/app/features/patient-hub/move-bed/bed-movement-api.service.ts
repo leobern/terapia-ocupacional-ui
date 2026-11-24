@@ -1,14 +1,9 @@
-import { HttpClient, HttpErrorResponse } from '@angular/common/http';
+import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { environment } from '@environments/environment';
 import { firstValueFrom } from 'rxjs';
 
-import {
-  BedMovementPort,
-  BedNotIdentifiedError,
-  PatientWithoutInternacaoError,
-  type ResolvedBedMovement,
-} from './bed-movement.port';
+import { BedMovementPort, type ResolvedBedMovement, translateMovementError } from './bed-movement.port';
 
 /**
  * Resolução da movimentação de leito via API real
@@ -32,17 +27,7 @@ export class BedMovementApiService extends BedMovementPort {
         ),
       );
     } catch (error) {
-      if (error instanceof HttpErrorResponse && error.status === 422) {
-        const data = error.error as { field?: string; code?: string; message?: string } | null;
-
-        if (data?.code === 'MSG-11') {
-          throw new PatientWithoutInternacaoError(data.message ?? '');
-        }
-        if (data?.code === 'MSG-12') {
-          throw new BedNotIdentifiedError(data.field ?? 'newBedNumber', data.message ?? '');
-        }
-      }
-      throw error;
+      throw translateMovementError(error);
     }
   }
 }

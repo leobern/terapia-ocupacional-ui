@@ -7,7 +7,12 @@ import {
   ConversationStepError,
   type ScreenAction,
 } from '../../../shared/services/screen-actions.service';
-import { BedMovementPort, BedNotIdentifiedError, PatientWithoutInternacaoError } from './bed-movement.port';
+import {
+  BedMovementPort,
+  BedNotIdentifiedError,
+  BedOccupancyPort,
+  PatientWithoutInternacaoError,
+} from './bed-movement.port';
 import { BedNumberExtractor } from './bed-number-extractor';
 
 /**
@@ -18,6 +23,7 @@ import { BedNumberExtractor } from './bed-number-extractor';
 export class MoveBedAction {
   private readonly i18n = inject(I18nService);
   private readonly port = inject(BedMovementPort);
+  private readonly occupancy = inject(BedOccupancyPort);
   private readonly extractor = inject(BedNumberExtractor);
 
   build(patient: { readonly id: string; readonly name: string }): ScreenAction {
@@ -56,10 +62,18 @@ export class MoveBedAction {
     }
     try {
       const result = await this.port.resolve(Number(patient.id), bed);
-      const text = t('messages.resolved')
+      // RN-01: a ocupação é consultada antes de exibir a confirmação; RN-02: o alerta não bloqueia o fluxo.
+      const occupancy = await this.occupancy.check(Number(patient.id), result.newBedNumber);
+      let text = t('messages.resolved')
         .replace('{patient}', patient.name)
         .replace('{current}', result.currentBedNumber ?? t('messages.noCurrentBed'))
         .replace('{new}', result.newBedNumber);
+
+      if (occupancy.occupied && occupancy.occupants.length > 0) {
+        const names = occupancy.occupants.map(o => o.name).join(', ');
+
+        text += ` ${t('messages.occupied').replace('{bed}', result.newBedNumber).replace('{occupants}', names)}`;
+      }
 
       return { message: text, tone: 'success' };
     } catch (error) {

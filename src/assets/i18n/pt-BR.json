@@ -30,6 +30,7 @@
       "MSG-12": "Não consegui identificar o novo leito. Pode informar o número do leito?",
       "error": "Não foi possível processar a movimentação de leito. Tente novamente.",
       "noCurrentBed": "não informado",
+      "occupied": "Atenção: o leito {bed} já está ocupado por {occupants}. Você pode continuar mesmo assim.",
       "resolved": "Pedido associado à internação mais recente de {patient}. Leito atual: {current}. Novo leito: {new}. A mudança ainda não foi aplicada."
     },
     "prompts": {

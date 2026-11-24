@@ -30,6 +30,7 @@
       "MSG-12": "I couldn't identify the new bed. Can you tell me the bed number?",
       "error": "Couldn't process the bed move. Please try again.",
       "noCurrentBed": "not set",
+      "occupied": "Warning: bed {bed} is already occupied by {occupants}. You can continue anyway.",
       "resolved": "Request linked to the most recent stay of {patient}. Current bed: {current}. New bed: {new}. The change has not been applied yet."
     },
     "prompts": {

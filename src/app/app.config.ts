@@ -72,9 +72,10 @@ import {
   ProvisionalPatientMessageSource,
   ProvisionalPatientTeamSource,
 } from './features/patient-hub/messages/provisional-patient-message';
-import { BedMovementPort } from './features/patient-hub/move-bed/bed-movement.port';
+import { BedMovementPort, BedOccupancyPort } from './features/patient-hub/move-bed/bed-movement.port';
 import { BedMovementApiService } from './features/patient-hub/move-bed/bed-movement-api.service';
 import { BedNumberExtractor } from './features/patient-hub/move-bed/bed-number-extractor';
+import { BedOccupancyApiService } from './features/patient-hub/move-bed/bed-occupancy-api.service';
 import { ProvisionalBedNumberExtractor } from './features/patient-hub/move-bed/provisional-bed-number-extractor';
 import {
   HypothesisSynthesizer,
@@ -163,6 +164,7 @@ export const appConfig: ApplicationConfig = {
     { provide: PatientCreationPort, useClass: PacientesApiService },
     { provide: InternacaoCreationPort, useClass: InternacoesApiService },
     { provide: BedMovementPort, useClass: BedMovementApiService },
+    { provide: BedOccupancyPort, useClass: BedOccupancyApiService },
     { provide: BedNumberExtractor, useClass: ProvisionalBedNumberExtractor },
     { provide: PatientListAiCommandPort, useClass: ProvisionalPatientListAiCommand },
     ProvisionalPatientMessages,

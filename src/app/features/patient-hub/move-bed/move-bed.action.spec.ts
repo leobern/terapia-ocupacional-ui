@@ -6,6 +6,8 @@ import { ScreenActionsService } from '../../../shared/services/screen-actions.se
 import {
   BedMovementPort,
   BedNotIdentifiedError,
+  type BedOccupancy,
+  BedOccupancyPort,
   PatientWithoutInternacaoError,
   type ResolvedBedMovement,
 } from './bed-movement.port';
@@ -19,6 +21,7 @@ const MSG_12 = 'Não consegui identificar o novo leito. Pode informar o número 
 
 describe('MoveBedAction (US-002-2-01)', () => {
   let resolve: jasmine.Spy<(id: number, bed?: string) => Promise<ResolvedBedMovement>>;
+  let check: jasmine.Spy<(id: number, bed: string) => Promise<BedOccupancy>>;
   let flow: AssistantConversationService;
   let assistant: AiAssistantService;
   const texts = (): string[] => flow.messages().map(m => m.text);
@@ -31,6 +34,9 @@ describe('MoveBedAction (US-002-2-01)', () => {
   });
 
   beforeEach(() => {
+    check = jasmine
+      .createSpy('check')
+      .and.callFake((_: number, bed: string) => Promise.resolve({ newBedNumber: bed, occupants: [], occupied: false }));
     resolve = jasmine.createSpy('resolve').and.callFake((_: number, bed?: string) => Promise.resolve(moved(bed ?? '')));
   });
 
@@ -39,6 +45,7 @@ describe('MoveBedAction (US-002-2-01)', () => {
     TestBed.configureTestingModule({
       providers: [
         { provide: BedMovementPort, useValue: { resolve } },
+        { provide: BedOccupancyPort, useValue: { check } },
         { provide: BedNumberExtractor, useClass: ProvisionalBedNumberExtractor },
       ],
     });
@@ -151,5 +158,66 @@ describe('MoveBedAction (US-002-2-01)', () => {
 
     expect(resolve).not.toHaveBeenCalled();
     expect(flow.canRetry()).toBeTrue();
+  });
+
+  it('US-002-2-04 scenario 1: occupied bed adds an alert with the occupant name, without blocking', async () => {
+    setup();
+    check.and.resolveTo({
+      newBedNumber: '412',
+      occupants: [{ name: 'Helena Duarte Ramos', pacienteId: 7 }],
+      occupied: true,
+    });
+    assistant.ask('mudar para o leito 412');
+    await settle();
+
+    expect(check).toHaveBeenCalledOnceWith(5, '412');
+    expect(texts().at(-1)).toContain('Novo leito: 412. A mudança ainda não foi aplicada.');
+    expect(texts().at(-1)).toContain('Atenção: o leito 412 já está ocupado por Helena Duarte Ramos.');
+    expect(flow.messages().at(-1)?.tone).toBe('success');
+  });
+
+  it('US-002-2-04: lists every occupant in the alert', async () => {
+    setup();
+    check.and.resolveTo({
+      newBedNumber: '412',
+      occupants: [
+        { name: 'Helena Duarte Ramos', pacienteId: 7 },
+        { name: 'Paulo Lima', pacienteId: 8 },
+      ],
+      occupied: true,
+    });
+    assistant.ask('mudar para o leito 412');
+    await settle();
+
+    expect(texts().at(-1)).toContain('ocupado por Helena Duarte Ramos, Paulo Lima.');
+  });
+
+  it('US-002-2-04 scenario 2: free bed keeps the confirmation without any alert', async () => {
+    setup();
+    assistant.ask('mudar para o leito 415');
+    await settle();
+
+    expect(check).toHaveBeenCalledOnceWith(5, '415');
+    expect(texts().at(-1)).toBe(
+      'Pedido associado à internação mais recente de Marcos Vinícius Alves. Leito atual: 302B. Novo leito: 415. A mudança ainda não foi aplicada.',
+    );
+  });
+
+  it('US-002-2-04: a failing occupancy check shows the default error message', async () => {
+    setup();
+    check.and.rejectWith(new Error('rede'));
+    assistant.ask('mudar para o leito 412');
+    await settle();
+
+    expect(texts().at(-1)).toBe('Não foi possível processar a movimentação de leito. Tente novamente.');
+  });
+
+  it('US-002-2-04: MSG-11 from the occupancy check keeps the usual message', async () => {
+    setup();
+    check.and.rejectWith(new PatientWithoutInternacaoError());
+    assistant.ask('mudar para o leito 412');
+    await settle();
+
+    expect(texts().at(-1)).toBe(MSG_11);
   });
 });

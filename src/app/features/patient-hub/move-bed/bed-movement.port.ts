@@ -1,3 +1,5 @@
+import { HttpErrorResponse } from '@angular/common/http';
+
 /** Internação mais recente do paciente associada ao pedido de mudança de leito (US-002-2-01, RN-01). */
 export interface ResolvedBedMovement {
   readonly pacienteId: number;
@@ -31,4 +33,36 @@ export class BedNotIdentifiedError extends Error {
  */
 export abstract class BedMovementPort {
   abstract resolve(pacienteId: number, newBedNumber?: string): Promise<ResolvedBedMovement>;
+}
+
+/** Situação de ocupação do leito de destino (US-002-2-04, RN-01..RN-03). */
+export interface BedOccupancy {
+  readonly newBedNumber: string;
+  readonly occupied: boolean;
+  /** Nomes dos pacientes cuja internação mais recente está no leito; vazio quando livre. */
+  readonly occupants: readonly { readonly pacienteId: number; readonly name: string }[];
+}
+
+/**
+ * Fronteira que consulta se o leito de destino já está ocupado por outro paciente do mesmo hospital.
+ * Sem efeito colateral; mesmos erros tipados de `BedMovementPort` (MSG-11 e MSG-12).
+ */
+export abstract class BedOccupancyPort {
+  abstract check(pacienteId: number, newBedNumber: string): Promise<BedOccupancy>;
+}
+
+/** Converte 422 MSG-11/MSG-12 nos erros tipados; qualquer outro erro é devolvido como está. */
+export function translateMovementError(error: unknown): unknown {
+  if (error instanceof HttpErrorResponse && error.status === 422) {
+    const data = error.error as { field?: string; code?: string; message?: string } | null;
+
+    if (data?.code === 'MSG-11') {
+      return new PatientWithoutInternacaoError(data.message ?? '');
+    }
+    if (data?.code === 'MSG-12') {
+      return new BedNotIdentifiedError(data.field ?? 'newBedNumber', data.message ?? '');
+    }
+  }
+
+  return error;
 }
