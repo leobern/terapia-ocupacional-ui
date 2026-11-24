@@ -21,7 +21,7 @@
         <div class="hub__grid">
           <div class="hub__col">
             <section
-              class="hub__identity"
+              class="hub__identity hub__o-1"
               aria-label="Identificação do paciente"
             >
               <p class="hub__bed">{{ header()?.bed }}</p>
@@ -33,7 +33,10 @@
               </div>
             </section>
 
-            <section class="hub__hypothesis" aria-labelledby="hypothesis-title">
+            <section
+              class="hub__hypothesis hub__o-2"
+              aria-labelledby="hypothesis-title"
+            >
               <h2 id="hypothesis-title" class="hub__card-title">
                 Hipótese diagnóstica
               </h2>
@@ -216,6 +219,7 @@
             @if (profile(); as p) {
               @if (hospitalId(); as hospital) {
                 <app-prior-stays-box
+                  class="hub__o-3"
                   [patientId]="p.id"
                   [hospitalId]="hospital"
                 />
@@ -224,68 +228,82 @@
 
             @if (profile(); as p) {
               <app-follow-up-status
+                class="hub__o-9"
                 [patientId]="p.id"
                 [canReopen]="hospitalId() !== null"
               />
-              <app-patient-threads [patientId]="p.id" />
+              <app-patient-threads class="hub__o-9" [patientId]="p.id" />
             }
           </div>
           <div class="hub__col">
             @if (profile(); as p) {
-              <h2 class="hub__section-title">Diagnóstico</h2>
+              <h2 class="hub__section-title hub__o-4">Diagnóstico</h2>
               <app-measure-chart
+                class="hub__o-4"
                 title="Peso"
                 unit="kg"
                 caption="Medido hoje, 28/05 · 6 medições"
                 [series]="weightSeries"
               />
               <app-measure-chart
+                class="hub__o-4"
                 title="IMC"
                 unit="kg/m²"
                 caption="Altura 1,63 m · faixa ideal 18,5–24,9"
                 [series]="bmiSeries"
                 [idealRange]="[18.5, 24.9]"
               />
+              <!-- Painel Nutricional (FT-004-3): paciente novo mostra todos os cards em "Sem dados". -->
+              <app-nutrition-panel
+                class="hub__o-5"
+                title="Avaliações"
+                [values]="values()"
+                [addedCards]="addedCards()"
+                [hiddenCards]="hiddenCards()"
+                (cardSelect)="openCardModal($event)"
+                (addRequest)="openAddSheet()"
+                (hiddenRequest)="openHiddenSheet()"
+              />
               <app-assessment-section
+                class="hub__o-6"
                 [patientId]="p.id"
                 (concluded)="onAssessmentConcluded()"
               />
               @if (diagnosisHint(); as message) {
-                <p class="hub__status hub__status--warning" role="alert">
+                <p
+                  class="hub__status hub__status--warning hub__o-6"
+                  role="alert"
+                >
                   {{ message }}
                 </p>
               }
               <!-- Acesso fixo ao Diagnóstico (FR-008): a tela trata o pré-requisito e o offline. -->
               <button
                 type="button"
-                class="hub__diagnosis"
+                class="hub__diagnosis hub__o-6"
                 (click)="openDiagnosis()"
               >
                 <span class="hub__diagnosis-title">Diagnóstico</span>
                 <ph-icon name="caret-right" [size]="16" />
               </button>
               <app-plan-section
+                class="hub__o-6"
                 [patientId]="p.id"
                 (targetsSaved)="reloadResults()"
               />
             }
           </div>
           <div class="hub__col">
-            <!-- Painel Nutricional (FT-004-3): paciente novo mostra todos os cards em "Sem dados". -->
-            <app-nutrition-panel
-              [values]="values()"
-              [addedCards]="addedCards()"
-              [hiddenCards]="hiddenCards()"
-              (cardSelect)="openCardModal($event)"
-              (addRequest)="openAddSheet()"
-              (hiddenRequest)="openHiddenSheet()"
-            />
             @if (profile(); as p) {
               @if (adequacy(); as a) {
-                <app-adequacy-summary [adequacy]="a" />
+                <app-adequacy-summary class="hub__o-7" [adequacy]="a" />
               }
-              <app-prescription-summary [prescriptions]="prescription()" />
+              <app-prescription-summary
+                class="hub__o-8"
+                [prescriptions]="prescription()"
+              />
               <app-patient-messages
+                class="hub__o-9"
                 [patientId]="p.id"
                 [refreshKey]="messagesVersion()"
               />

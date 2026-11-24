@@ -53,11 +53,9 @@ export class MeasureChartComponent {
 
   protected readonly bounds = computed(() => {
     const values = this.visible().map(p => p.value);
-    const range = this.idealRange();
-    const all = range ? [...values, ...range] : values;
-    const min = Math.min(...all);
-    const max = Math.max(...all);
-    const margin = (max - min || 1) * 0.1;
+    const min = Math.min(...values);
+    const max = Math.max(...values);
+    const margin = (max - min || 1) * 0.3;
 
     return { max: max + margin, min: min - margin };
   });
@@ -96,7 +94,10 @@ export class MeasureChartComponent {
     }
     const top = this.scaleY(range[1], min, max);
 
-    return { height: this.scaleY(range[0], min, max) - top, y: top };
+    const bottom = this.scaleY(range[0], min, max);
+    const y = Math.max(0, Math.min(HEIGHT, top));
+
+    return { height: Math.max(0, Math.min(HEIGHT, bottom) - y), y };
   });
 
   protected readonly summary = computed(

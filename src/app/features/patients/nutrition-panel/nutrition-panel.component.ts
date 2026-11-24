@@ -24,6 +24,8 @@ export const NO_DATA_TEXT = 'Sem dados';
   templateUrl: './nutrition-panel.component.html',
 })
 export class NutritionPanelComponent {
+  /** Título da seção (no Hub, "Avaliações", dentro da seção Diagnóstico). */
+  readonly title = input('Diagnóstico');
   readonly values = input<NutritionValues>({});
   /** Cards adicionados pelo "+", exibidos após os fixos. */
   readonly addedCards = input<readonly CatalogNutritionIndicatorId[]>([]);

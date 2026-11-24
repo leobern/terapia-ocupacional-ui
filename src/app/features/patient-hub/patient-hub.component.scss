@@ -40,6 +40,19 @@
   flex-direction: column;
   gap: tokens.$space-16;
   min-width: 0;
+
+  // Mobile: uma coluna só, na ordem do Figma 4608:4375 (paciente, hipótese, diagnóstico, avaliação, metas, prescrição, evoluções).
+  @media (width < 1200px) {
+    display: contents;
+  }
+}
+
+@media (width < 1200px) {
+  @for $n from 1 through 9 {
+    .hub__o-#{$n} {
+      order: $n;
+    }
+  }
 }
 
 .hub__section-title {
