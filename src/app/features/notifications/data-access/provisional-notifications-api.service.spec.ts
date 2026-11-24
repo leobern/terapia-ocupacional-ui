@@ -1,4 +1,5 @@
 import { provideHttpClient } from '@angular/common/http';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { firstValueFrom } from 'rxjs';
 
@@ -10,6 +11,7 @@ import { ProvisionalNotificationsApiService } from './provisional-notifications-
 
 const PROVIDERS = [
   provideHttpClient(),
+  provideHttpClientTesting(),
   ProvisionalNotificationsApiService,
   ProvisionalPatientMessages,
   { provide: PatientMessagesSource, useExisting: ProvisionalPatientMessages },
@@ -72,7 +74,7 @@ describe('Provisional notification APIs', () => {
   it('quem não é o remetente não recebe a entrada', async () => {
     TestBed.configureTestingModule({
       providers: [
-        ...PROVIDERS.slice(0, 4),
+        ...PROVIDERS.slice(0, 5),
         { provide: PatientMessagesWriter, useExisting: ProvisionalPatientMessages },
         {
           provide: ProfessionalProfileReader,
@@ -125,7 +127,14 @@ describe('Provisional notification APIs', () => {
     const target = repository.list('pending', null, 1).items[0];
     const resolvedBefore = repository.list('resolved', null, 50).totalCount;
 
-    await firstValueFrom(api.resolve(target.id));
+    const done = firstValueFrom(api.resolve(target.id));
+    const req = TestBed.inject(HttpTestingController).expectOne(r =>
+      r.url.endsWith(`/notifications/${target.id}/resolve`),
+    );
+
+    expect(req.request.method).toBe('POST');
+    req.flush(null);
+    await done;
 
     expect(repository.list('resolved', null, 50).totalCount).toBe(resolvedBefore + 1);
     expect(repository.list('pending', null, 50).items.some(n => n.id === target.id)).toBeFalse();

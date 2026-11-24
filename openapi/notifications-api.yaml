@@ -8,10 +8,15 @@ info:
     terapia-ocupacional-ui/openapitools.json. Servido pelo módulo
     pt.terapiaocupacional.home (backend) — Notificacao já é dono deste módulo desde a
     Home (research.md §1), esta feature estende com respostas e listagem por status.
+servers:
+  - url: /
+security:
+  - bearerAuth: []
 paths:
   /api/v1/notifications:
     get:
       operationId: getNotifications
+      x-implemented: false
       summary: >
         Lista paginada de notificações do profissional autenticado, filtrada por status
         (pendente/resolvida — FR-004a). Cada seção da tela pagina de forma independente.
@@ -57,6 +62,7 @@ paths:
   /api/v1/notifications/{notificationId}/replies:
     post:
       operationId: createNotificationReply
+      x-implemented: false
       summary: >
         Registra a resposta do profissional autenticado a uma notificação (FR-009); move a
         notificação da seção Pendentes para Resolvidas.
@@ -91,14 +97,83 @@ paths:
         "422":
           description: "Corpo inválido (ex.: texto vazio)"
 
+  /api/v1/notifications/{notificationId}/resolve:
+    post:
+      operationId: resolveNotification
+      x-implemented: true
+      summary: Marca a thread/pendência como resolvida (registro compartilhado com o Hub do paciente)
+      description: >
+        Permitido a qualquer participante da thread: remetente original, destinatário
+        mencionado (pessoa, ou membro de grupo resolvido) ou quem já respondeu. Não exige
+        abrir a conversa nem corpo de requisição. O status é um único registro
+        compartilhado — o mesmo valor aparece na lista de notificações e no card do Hub do
+        paciente. Persiste autor e data/hora da ação em trilha de auditoria imutável
+        (FR-014). Idempotente: se a thread já está resolvida, retorna 200 com o estado
+        atual, sem nova entrada de auditoria. Uma nova resposta reabre a thread
+        (comportamento da US-005-1-02, fora desta operação).
+      parameters:
+        - name: notificationId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        "200":
+          description: Thread resolvida; retorna o registro atualizado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Notification"
+        "401":
+          description: Não autenticado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Profissional sem vínculo com o hospital/paciente, ou não é participante da thread
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Notificação não encontrada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
 components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
   schemas:
+    ErrorResponse:
+      type: object
+      required: [message, timestamp]
+      properties:
+        message:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+        detalhes:
+          type: array
+          nullable: true
+          items:
+            type: string
+
     NotificationStatus:
       type: string
       enum: [pending, resolved]
       description: >
-        pending = nenhuma resposta registrada; resolved = ao menos 1 resposta registrada
-        (status derivado, não uma coluna persistida — ver data-model.md).
+        pending = thread ativa; resolved = thread marcada como resolvida por um participante
+        (POST .../resolve) e não reaberta por resposta posterior. Revisão da US-005-1-03:
+        o status passa a ser o registro compartilhado de resolução (resolvedAt), não mais
+        derivado apenas da existência de respostas.
 
     NotificationPage:
       type: object
@@ -115,9 +190,12 @@ components:
 
     Notification:
       type: object
-      required: [id, author, patient, description, createdAt, read, replyCount]
+      required: [id, author, description, createdAt, read, replyCount]
       description: >
-        `patient` é required nesta v1 porque o único `tipoEvento` suportado hoje é
+        REVISÃO US-005-1-03: `patient` deixou de ser required porque o backend ainda não tem
+        entidade/vínculo de paciente em `notificacao` (nem as respostas — `replyCount` é 0 e
+        `replies` é omitido até a US-005-1-02); a UI deve tratar `patient` ausente.
+        Texto original: `patient` era required nesta v1 porque o único `tipoEvento` suportado hoje é
         relacionado a paciente (spec.md FR-006) — mas a coluna correspondente no banco
         (`notificacao.paciente_id`) já é nullable, de propósito, para permitir tipos de
         notificação futuros sem paciente associado (research.md §4, spec.md § Assumptions).
@@ -139,6 +217,21 @@ components:
           format: date-time
         read:
           type: boolean
+        mentioned:
+          type: array
+          description: Destinatários mencionados (pessoas); usado pela UI para decidir se o profissional é participante
+          items:
+            $ref: "#/components/schemas/ProfessionalRef"
+        resolvedAt:
+          type: string
+          format: date-time
+          nullable: true
+          description: Data/hora em que a thread foi resolvida; null quando ativa
+        resolvedBy:
+          allOf:
+            - $ref: "#/components/schemas/ProfessionalRef"
+          nullable: true
+          description: Autor da resolução; null quando ativa
         replyCount:
           type: integer
           description: >

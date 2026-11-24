@@ -1,5 +1,5 @@
 import { inject, Injectable } from '@angular/core';
-import { forkJoin, from, map, Observable, of } from 'rxjs';
+import { forkJoin, from, map, Observable, of, tap } from 'rxjs';
 
 import { NOW, ProfessionalProfileReader } from '../../home/professional-profile';
 import { PatientMessagesSource, PatientMessagesWriter } from '../../patient-messages/patient-messages-source';
@@ -60,8 +60,8 @@ export class ProvisionalNotificationsApiService extends NotificationsApiService 
         }),
       ).pipe(map(() => undefined));
     }
-    this.repository.resolve(notificationId);
 
-    return of(undefined);
+    // `resolveNotification` é x-implemented no contrato: chamada real; o mock local só espelha o estado.
+    return super.resolve(notificationId).pipe(tap(() => this.repository.resolve(notificationId)));
   }
 }
