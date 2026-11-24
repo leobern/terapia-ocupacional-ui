@@ -4,6 +4,7 @@ import { AiAssistantService } from '../../shared/services/ai-assistant.service';
 import { AssistantConversationService } from '../../shared/services/assistant-conversation.service';
 import { HospitalContextService } from '../home/hospital-context.service';
 import { LinkedHospitalsReader } from '../home/linked-hospitals';
+import { type CreateInternacaoRequest, InternacaoCreationPort, InternacaoFieldError } from './internacao-creation.port';
 import { type CreatePatientRequest, PatientCreationPort, PatientFieldError } from './patient-creation.port';
 import { PatientRegistrationAction } from './patient-registration.action';
 
@@ -22,6 +23,7 @@ describe('PatientRegistrationAction (US-002-1-02)', () => {
     TestBed.configureTestingModule({
       providers: [
         { provide: PatientCreationPort, useValue: { create } },
+        { provide: InternacaoCreationPort, useValue: { create: (): Promise<unknown> => Promise.resolve({}) } },
         { provide: LinkedHospitalsReader, useValue: { read: (): Promise<unknown> => Promise.resolve(hospitals) } },
       ],
     });
@@ -155,6 +157,7 @@ describe('PatientRegistrationAction admit question (US-002-1-05)', () => {
     TestBed.configureTestingModule({
       providers: [
         { provide: PatientCreationPort, useValue: { create } },
+        { provide: InternacaoCreationPort, useValue: { create: (): Promise<unknown> => Promise.resolve({}) } },
         {
           provide: LinkedHospitalsReader,
           useValue: { read: (): Promise<unknown> => Promise.resolve([{ id: 7, name: 'H' }]) },
@@ -196,18 +199,13 @@ describe('PatientRegistrationAction admit question (US-002-1-05)', () => {
     expect(flow.messages().at(-1)?.text).toBe('Paciente cadastrado com sucesso.');
   });
 
-  it('"sim" saves no admission data and asks no admission questions yet', async () => {
+  it('"sim" asks the admission questions in order, all skippable', async () => {
     await toAdmitQuestion();
     assistant.ask('sim');
-    await settle();
 
-    expect(create.calls.mostRecent().args[0]).not.toEqual(jasmine.objectContaining({ admit: jasmine.anything() }));
-    expect(
-      flow
-        .messages()
-        .map(m => m.text)
-        .join(' '),
-    ).not.toMatch(/leito|conv[êe]nio/iu);
+    expect(flow.currentStep()?.id).toBe('bedNumber');
+    expect(flow.canSkip()).toBeTrue();
+    expect(flow.messages().at(-1)?.text).toContain('leito');
   });
 
   it('an ambiguous answer repeats the question', async () => {
@@ -236,6 +234,7 @@ describe('PatientRegistrationAction server errors', () => {
     TestBed.configureTestingModule({
       providers: [
         { provide: PatientCreationPort, useValue: { create } },
+        { provide: InternacaoCreationPort, useValue: { create: (): Promise<unknown> => Promise.resolve({}) } },
         {
           provide: LinkedHospitalsReader,
           useValue: { read: (): Promise<unknown> => Promise.resolve([{ id: 7, name: 'H' }]) },
@@ -297,6 +296,201 @@ describe('PatientRegistrationAction server errors', () => {
 
     expect(create).toHaveBeenCalledTimes(2);
     expect(create.calls.mostRecent().args[0]).toEqual(jasmine.objectContaining({ fullName: 'Ana', sex: 'MALE' }));
+    expect(flow.finished()).toBeTrue();
+  });
+});
+
+describe('PatientRegistrationAction admission data (US-002-1-06)', () => {
+  let create: jasmine.Spy<(request: CreatePatientRequest) => Promise<unknown>>;
+  let createInternacao: jasmine.Spy<(id: number, request: CreateInternacaoRequest) => Promise<unknown>>;
+  let flow: AssistantConversationService;
+  let assistant: AiAssistantService;
+  const texts = (): string[] => flow.messages().map(m => m.text);
+  const settle = (): Promise<void> => new Promise(resolve => setTimeout(resolve));
+
+  async function toAdmissionQuestions(): Promise<void> {
+    spyOnProperty(navigator, 'language').and.returnValue('pt-BR');
+    create = jasmine.createSpy('create').and.resolveTo({ id: 42 });
+    createInternacao = jasmine.createSpy('createInternacao').and.resolveTo({});
+    TestBed.configureTestingModule({
+      providers: [
+        { provide: PatientCreationPort, useValue: { create } },
+        { provide: InternacaoCreationPort, useValue: { create: createInternacao } },
+        {
+          provide: LinkedHospitalsReader,
+          useValue: { read: (): Promise<unknown> => Promise.resolve([{ id: 7, name: 'H' }]) },
+        },
+      ],
+    });
+    await TestBed.inject(HospitalContextService).load();
+    flow = TestBed.inject(AssistantConversationService);
+    assistant = TestBed.inject(AiAssistantService);
+    assistant.openAction(TestBed.inject(PatientRegistrationAction).build());
+    assistant.ask('Ana');
+    assistant.ask('01/01/2000');
+    assistant.ask('masculino');
+    assistant.ask('');
+    assistant.ask('sim');
+  }
+
+  const skipAll = (): void => {
+    while (flow.canSkip() && !flow.finished()) {
+      flow.skip();
+    }
+  };
+
+  it('scenario 1: skipping every question creates the internação with all fields empty', async () => {
+    await toAdmissionQuestions();
+    skipAll();
+    await settle();
+
+    expect(createInternacao).toHaveBeenCalledOnceWith(42, {});
+    expect(flow.finished()).toBeTrue();
+  });
+
+  it('"não sei" answers also leave the fields empty', async () => {
+    await toAdmissionQuestions();
+    for (const answer of ['não sei', 'não sei', 'não sei', 'não sei', 'não sei']) {
+      assistant.ask(answer);
+    }
+    await settle();
+
+    expect(createInternacao).toHaveBeenCalledOnceWith(42, {});
+  });
+
+  it('scenario 2: bed "302B" and the rest skipped creates the internação with only the bed', async () => {
+    await toAdmissionQuestions();
+    assistant.ask('302B');
+    skipAll();
+    await settle();
+
+    expect(createInternacao).toHaveBeenCalledOnceWith(42, { bedNumber: '302B' });
+  });
+
+  it('collects every field and sends the dates as yyyy-mm-dd', async () => {
+    await toAdmissionQuestions();
+    assistant.ask('302B');
+    assistant.ask('Unimed');
+    assistant.ask('A-123');
+    assistant.ask('20/11/2026');
+    assistant.ask('21/11/2026');
+    await settle();
+
+    expect(createInternacao).toHaveBeenCalledOnceWith(42, {
+      admissionNumber: 'A-123',
+      bedNumber: '302B',
+      healthInsurance: 'Unimed',
+      hospitalAdmissionDate: '2026-11-20',
+      nutritionalTherapyStartDate: '2026-11-21',
+    });
+  });
+
+  it('answering "não" creates no internação', async () => {
+    await toAdmissionQuestions();
+    flow.reset();
+    assistant.openAction(TestBed.inject(PatientRegistrationAction).build());
+    for (const answer of ['Ana', '01/01/2000', 'masculino', '', 'não']) {
+      assistant.ask(answer);
+    }
+    await settle();
+
+    expect(create).toHaveBeenCalledOnceWith(jasmine.objectContaining({ fullName: 'Ana' }));
+    expect(createInternacao).not.toHaveBeenCalled();
+  });
+
+  it('rejects answers over the limits and repeats the question', async () => {
+    await toAdmissionQuestions();
+    assistant.ask('1'.repeat(21));
+
+    expect(texts().slice(-2)).toEqual([
+      'O leito deve ter no máximo 20 caracteres.',
+      'Qual o leito do paciente? (opcional)',
+    ]);
+    flow.skip();
+    assistant.ask('a'.repeat(101));
+
+    expect(texts().at(-2)).toBe('O convênio deve ter no máximo 100 caracteres.');
+    flow.skip();
+    assistant.ask('1'.repeat(31));
+
+    expect(texts().at(-2)).toBe('O número de atendimento deve ter no máximo 30 caracteres.');
+    expect(createInternacao).not.toHaveBeenCalled();
+  });
+
+  it('rejects an invalid nutritional therapy start date and repeats it', async () => {
+    await toAdmissionQuestions();
+    flow.skip();
+    flow.skip();
+    flow.skip();
+    flow.skip();
+    assistant.ask('31/02/2026');
+
+    expect(texts().slice(-2)[0]).toBe('Informe uma data válida (dd/mm/aaaa).');
+    expect(flow.currentStep()?.id).toBe('nutritionalTherapyStartDate');
+  });
+
+  it('scenario 3: a future admission date shows MSG-08 and asks the date again, nothing is created', async () => {
+    await toAdmissionQuestions();
+    flow.skip();
+    flow.skip();
+    flow.skip();
+    assistant.ask('01/01/2999');
+
+    expect(texts().slice(-2)).toEqual([
+      'A data de internação hospitalar não pode ser uma data futura.',
+      'Qual a data de internação hospitalar? (dd/mm/aaaa, opcional)',
+    ]);
+
+    expect(createInternacao).not.toHaveBeenCalled();
+    expect(create).not.toHaveBeenCalled();
+  });
+
+  it('server 422 MSG-08 returns to the date question keeping the other answers and the created patient', async () => {
+    await toAdmissionQuestions();
+    createInternacao.and.rejectWith(new InternacaoFieldError('hospitalAdmissionDate', 'MSG-08', 'Texto do servidor'));
+    assistant.ask('302B');
+    flow.skip();
+    flow.skip();
+    assistant.ask('01/01/2020');
+    flow.skip();
+    await settle();
+
+    expect(texts().slice(-2)).toEqual([
+      'Texto do servidor',
+      'Qual a data de internação hospitalar? (dd/mm/aaaa, opcional)',
+    ]);
+    createInternacao.and.resolveTo({});
+    assistant.ask('02/01/2020');
+    await settle();
+
+    expect(create).toHaveBeenCalledTimes(1);
+    expect(createInternacao).toHaveBeenCalledWith(42, { bedNumber: '302B', hospitalAdmissionDate: '2020-01-02' });
+    expect(flow.finished()).toBeTrue();
+  });
+
+  it('server 422 MSG-08 without text falls back to the local MSG-08', async () => {
+    await toAdmissionQuestions();
+    createInternacao.and.rejectWith(new InternacaoFieldError('hospitalAdmissionDate', 'MSG-08'));
+    skipAll();
+    await settle();
+
+    expect(texts().at(-2)).toBe('A data de internação hospitalar não pode ser uma data futura.');
+  });
+
+  it('a generic API failure shows the generic error and retry reuses the created patient', async () => {
+    await toAdmissionQuestions();
+    createInternacao.and.rejectWith(new Error('boom'));
+    skipAll();
+    await settle();
+
+    expect(texts().at(-1)).toBe('Não foi possível cadastrar o paciente. Tente novamente.');
+    expect(flow.canRetry()).toBeTrue();
+    createInternacao.and.resolveTo({});
+    flow.retry();
+    await settle();
+
+    expect(create).toHaveBeenCalledTimes(1);
+    expect(createInternacao).toHaveBeenCalledTimes(2);
     expect(flow.finished()).toBeTrue();
   });
 });

@@ -95,15 +95,25 @@
       "MSG-03": "Select the patient's sex.",
       "MSG-04": "Patient registered successfully.",
       "MSG-05": "The full name must have at most 150 characters.",
+      "MSG-08": "The hospital admission date cannot be a future date.",
+      "admissionNumberTooLong": "The admission number must have at most 30 characters.",
       "admitChoice": "Answer yes or no.",
+      "bedTooLong": "The bed must have at most 20 characters.",
       "error": "Could not register the patient. Try again.",
+      "insuranceTooLong": "The health insurance must have at most 100 characters.",
+      "invalidDate": "Enter a valid date (dd/mm/yyyy).",
       "sameTooLong": "The medical record number must have at most 30 characters."
     },
     "prompts": {
+      "admissionNumber": "What is the admission number? (optional)",
       "admit": "Do you want to admit the patient now?",
+      "bedNumber": "What is the patient's bed? (optional)",
       "birthDate": "What is the date of birth? (dd/mm/yyyy)",
       "fullName": "Tell me the patient's full name",
+      "healthInsurance": "What is the health insurance? (optional)",
+      "hospitalAdmissionDate": "What is the hospital admission date? (dd/mm/yyyy, optional)",
       "medicalRecordNumber": "What is the patient's medical record number (SAME)? (optional)",
+      "nutritionalTherapyStartDate": "What is the nutritional therapy start date? (dd/mm/yyyy, optional)",
       "sex": "What is the patient's sex?"
     },
     "sex": {

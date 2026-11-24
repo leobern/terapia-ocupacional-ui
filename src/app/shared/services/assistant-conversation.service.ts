@@ -124,7 +124,7 @@ export class AssistantConversationService {
 
     this.values = { ...this.values, [step.id]: value };
     // Próxima etapa ainda sem resposta (após corrigir uma etapa devolvida pelo servidor, segue direto ao envio).
-    const next = definition.steps.findIndex(s => !(s.id in this.values));
+    const next = definition.steps.findIndex(s => !(s.id in this.values) && (s.when?.(this.values) ?? true));
 
     if (next >= 0) {
       this.stepIndex.set(next);

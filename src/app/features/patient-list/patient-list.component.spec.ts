@@ -14,6 +14,7 @@ import { HospitalContextService } from '../home/hospital-context.service';
 import { LinkedHospitalsReader } from '../home/linked-hospitals';
 import { ProfessionalProfileReader } from '../home/professional-profile';
 import { UnreadNotificationsReader } from '../home/unread-notifications-reader';
+import { InternacaoCreationPort } from '../patient-registration/internacao-creation.port';
 import { PatientCreationPort } from '../patient-registration/patient-creation.port';
 import { PatientListComponent, refreshesOnVisibility } from './patient-list.component';
 import { CensusPatient } from './patient-list.models';
@@ -87,6 +88,7 @@ describe('PatientListComponent', () => {
         },
         { provide: PatientListAiCommandPort, useValue: ai },
         { provide: PatientCreationPort, useValue: { create: (): Promise<void> => Promise.resolve() } },
+        { provide: InternacaoCreationPort, useValue: { create: (): Promise<void> => Promise.resolve() } },
         { provide: UnreadNotificationsReader, useValue: { countUnread: (): Promise<number> => Promise.resolve(2) } },
         {
           provide: LinkedHospitalsReader,

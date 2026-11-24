@@ -70,6 +70,8 @@ export interface ConversationStep {
   readonly options?: readonly ConversationOption[];
   /** Etapa opcional: resposta vazia (ou "Pular") avança sem valor. */
   readonly optional?: boolean;
+  /** Etapa condicional: só é perguntada quando devolve `true` para as respostas já dadas (ex.: internação só se "sim"). */
+  readonly when?: (values: Readonly<Record<string, string>>) => boolean;
   readonly parse: (answer: string) => ConversationParseResult;
 }
 

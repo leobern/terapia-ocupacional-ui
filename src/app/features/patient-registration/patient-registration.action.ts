@@ -4,20 +4,27 @@ import { REGISTER_PATIENT_ACTION_ID } from '../../shared/services/assistant-acti
 import { I18nService } from '../../shared/services/i18n.service';
 import {
   type ConversationParseResult,
+  type ConversationStep,
   ConversationStepError,
   type ScreenAction,
 } from '../../shared/services/screen-actions.service';
 import { HospitalContextService } from '../home/hospital-context.service';
-import { PatientCreationPort, PatientFieldError } from './patient-creation.port';
+import { type CreateInternacaoRequest, InternacaoCreationPort, InternacaoFieldError } from './internacao-creation.port';
+import { type CreatedPatient, PatientCreationPort, PatientFieldError } from './patient-creation.port';
 import {
   PATIENT_SEXES,
   type PatientMessageCode,
   type PatientSex,
   type RuleResult,
+  validateAdmissionNumber,
   validateAdmitChoice,
+  validateBedNumber,
   validateBirthDate,
   validateFullName,
+  validateHealthInsurance,
+  validateHospitalAdmissionDate,
   validateMedicalRecordNumber,
+  validateNutritionalTherapyStartDate,
   validateSex,
 } from './patient-registration.rules';
 
@@ -26,7 +33,16 @@ const MESSAGE_BY_CODE: Readonly<Record<string, PatientMessageCode>> = {
   'MSG-02': 'MSG-02',
   'MSG-03': 'MSG-03',
   'MSG-05': 'MSG-05',
+  'MSG-08': 'MSG-08',
 };
+
+const ADMISSION_FIELDS = [
+  'bedNumber',
+  'healthInsurance',
+  'admissionNumber',
+  'hospitalAdmissionDate',
+  'nutritionalTherapyStartDate',
+] as const;
 
 /**
  * Ação "Cadastrar paciente" (US-002-1-02): o assistente pergunta nome, nascimento, sexo e SAME, um por
@@ -36,7 +52,14 @@ const MESSAGE_BY_CODE: Readonly<Record<string, PatientMessageCode>> = {
 export class PatientRegistrationAction {
   private readonly i18n = inject(I18nService);
   private readonly port = inject(PatientCreationPort);
+  private readonly internacaoPort = inject(InternacaoCreationPort);
   private readonly hospitals = inject(HospitalContextService);
+
+  /**
+   * Paciente já criado cuja internação falhou: ao tentar de novo (ou corrigir a data), reaproveita-o em vez de
+   * criar outro. Limpo quando o envio inteiro conclui.
+   */
+  private pending: { readonly key: string; readonly patient: CreatedPatient } | null = null;
 
   build(): ScreenAction {
     const t = (key: string): string => this.i18n.t(`patientRegistration.${key}`);
@@ -72,8 +95,7 @@ export class PatientRegistrationAction {
             prompt: t('prompts.medicalRecordNumber'),
           },
           {
-            // US-002-1-05: internação é opcional. "Sim" só registra a escolha (values['admit']); as perguntas
-            // de internação entram aqui nas próximas stories da FT-002-1.
+            // US-002-1-05: internação é opcional; "sim" habilita as perguntas da US-002-1-06 (todas opcionais).
             id: 'admit',
             options: [
               { label: t('admit.yes'), value: 'yes' },
@@ -82,6 +104,7 @@ export class PatientRegistrationAction {
             parse: raw => parse(validateAdmitChoice(raw)),
             prompt: t('prompts.admit'),
           },
+          ...this.admissionSteps(t, parse),
         ],
         submit: values => this.submit(values, message),
         successMessage: message('MSG-04'),
@@ -92,6 +115,40 @@ export class PatientRegistrationAction {
     };
   }
 
+  /** US-002-1-06: dados da internação, um por vez; todos opcionais (RN-01) e só perguntados se o usuário quer internar. */
+  private admissionSteps(
+    t: (key: string) => string,
+    parse: <T extends string>(result: RuleResult<T>) => ConversationParseResult,
+  ): ConversationStep[] {
+    const when = (values: Readonly<Record<string, string>>): boolean => values['admit'] === 'yes';
+
+    const steps: Pick<ConversationStep, 'id' | 'parse' | 'prompt'>[] = [
+      { id: 'bedNumber', parse: raw => parse(validateBedNumber(raw)), prompt: t('prompts.bedNumber') },
+      {
+        id: 'healthInsurance',
+        parse: raw => parse(validateHealthInsurance(raw)),
+        prompt: t('prompts.healthInsurance'),
+      },
+      {
+        id: 'admissionNumber',
+        parse: raw => parse(validateAdmissionNumber(raw)),
+        prompt: t('prompts.admissionNumber'),
+      },
+      {
+        id: 'hospitalAdmissionDate',
+        parse: raw => parse(validateHospitalAdmissionDate(raw, new Date())),
+        prompt: t('prompts.hospitalAdmissionDate'),
+      },
+      {
+        id: 'nutritionalTherapyStartDate',
+        parse: raw => parse(validateNutritionalTherapyStartDate(raw)),
+        prompt: t('prompts.nutritionalTherapyStartDate'),
+      },
+    ];
+
+    return steps.map(step => ({ ...step, optional: true, when }));
+  }
+
   private async submit(values: Readonly<Record<string, string>>, message: (code: string) => string): Promise<void> {
     const hospitalId = this.hospitals.selected()?.id;
 
@@ -99,16 +156,24 @@ export class PatientRegistrationAction {
     if (hospitalId === undefined) {
       throw new Error('Sem hospital ativo na sessão');
     }
+    const key = JSON.stringify([
+      hospitalId,
+      values['fullName'],
+      values['birthDate'],
+      values['sex'],
+      values['medicalRecordNumber'],
+    ]);
+
     try {
-      await this.port.create({
-        birthDate: values['birthDate'],
-        fullName: values['fullName'],
-        hospitalId,
-        sex: values['sex'] as PatientSex,
-        ...(values['medicalRecordNumber'] ? { medicalRecordNumber: values['medicalRecordNumber'] } : {}),
-      });
+      const patient = this.pending?.key === key ? this.pending.patient : await this.createPatient(hospitalId, values);
+
+      if (values['admit'] === 'yes') {
+        this.pending = { key, patient };
+        await this.internacaoPort.create(patient.id, this.admissionRequest(values));
+      }
+      this.pending = null;
     } catch (error) {
-      if (error instanceof PatientFieldError) {
+      if (error instanceof PatientFieldError || error instanceof InternacaoFieldError) {
         const code = MESSAGE_BY_CODE[error.code];
 
         // A mensagem do servidor tem precedência; sem ela, usa o texto local do código.
@@ -116,5 +181,20 @@ export class PatientRegistrationAction {
       }
       throw error;
     }
+  }
+
+  private createPatient(hospitalId: number, values: Readonly<Record<string, string>>): Promise<CreatedPatient> {
+    return this.port.create({
+      birthDate: values['birthDate'],
+      fullName: values['fullName'],
+      hospitalId,
+      sex: values['sex'] as PatientSex,
+      ...(values['medicalRecordNumber'] ? { medicalRecordNumber: values['medicalRecordNumber'] } : {}),
+    });
+  }
+
+  /** Só os campos respondidos (RN-01): pular ou "não sei" deixa o campo de fora. */
+  private admissionRequest(values: Readonly<Record<string, string>>): CreateInternacaoRequest {
+    return Object.fromEntries(ADMISSION_FIELDS.filter(field => values[field]).map(field => [field, values[field]]));
   }
 }
