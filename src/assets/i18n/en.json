@@ -89,6 +89,14 @@
       "yes": "Yes, it is the same patient",
       "yesThis": "Yes, it is this patient"
     },
+    "locationKind": {
+      "ALA": "Ward",
+      "UNIDADE": "Unit"
+    },
+    "locationRemove": {
+      "ALA": "Remove Ward",
+      "UNIDADE": "Remove Unit"
+    },
     "messages": {
       "MSG-01": "Enter the patient's full name.",
       "MSG-02": "Enter a valid date of birth.",
@@ -96,15 +104,22 @@
       "MSG-04": "Patient registered successfully.",
       "MSG-05": "The full name must have at most 150 characters.",
       "MSG-08": "The hospital admission date cannot be a future date.",
+      "MSG-09": "Select the type: Unit or Ward.",
+      "MSG-10": "Fill in the location value.",
       "admissionNumberTooLong": "The admission number must have at most 30 characters.",
       "admitChoice": "Answer yes or no.",
       "bedTooLong": "The bed must have at most 20 characters.",
       "error": "Could not register the patient. Try again.",
       "insuranceTooLong": "The health insurance must have at most 100 characters.",
       "invalidDate": "Enter a valid date (dd/mm/yyyy).",
+      "locationLimit": "The limit of 2 locations has been reached.",
+      "locationNotInformed": "That location was not provided.",
+      "locationTooLong": "The location value must have at most 100 characters.",
+      "locationTypeRepeated": "That type was already provided. Select the other type.",
       "sameTooLong": "The medical record number must have at most 30 characters."
     },
     "prompts": {
+      "addLocation": "Do you want to add a Unit and/or Ward to the admission?",
       "admissionNumber": "What is the admission number? (optional)",
       "admit": "Do you want to admit the patient now?",
       "bedNumber": "What is the patient's bed? (optional)",
@@ -112,6 +127,13 @@
       "fullName": "Tell me the patient's full name",
       "healthInsurance": "What is the health insurance? (optional)",
       "hospitalAdmissionDate": "What is the hospital admission date? (dd/mm/yyyy, optional)",
+      "location1More": "Do you want to add another location?",
+      "location1Type": "What is the location type? (Unit or Ward)",
+      "location1Value": "What is the location value?",
+      "location2More": "Do you want to add one more location?",
+      "location2Type": "What is the type of the other location? (Unit or Ward)",
+      "location2Value": "What is the value of the other location?",
+      "locationRemove": "Do you want to remove any location before finishing?",
       "medicalRecordNumber": "What is the patient's medical record number (SAME)? (optional)",
       "nutritionalTherapyStartDate": "What is the nutritional therapy start date? (dd/mm/yyyy, optional)",
       "sex": "What is the patient's sex?"

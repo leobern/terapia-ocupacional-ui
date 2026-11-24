@@ -350,7 +350,7 @@ describe('PatientRegistrationAction admission data (US-002-1-06)', () => {
 
   it('"não sei" answers also leave the fields empty', async () => {
     await toAdmissionQuestions();
-    for (const answer of ['não sei', 'não sei', 'não sei', 'não sei', 'não sei']) {
+    for (const answer of ['não sei', 'não sei', 'não sei', 'não sei', 'não sei', 'não']) {
       assistant.ask(answer);
     }
     await settle();
@@ -374,6 +374,7 @@ describe('PatientRegistrationAction admission data (US-002-1-06)', () => {
     assistant.ask('A-123');
     assistant.ask('20/11/2026');
     assistant.ask('21/11/2026');
+    flow.skip();
     await settle();
 
     expect(createInternacao).toHaveBeenCalledOnceWith(42, {
@@ -453,6 +454,7 @@ describe('PatientRegistrationAction admission data (US-002-1-06)', () => {
     flow.skip();
     assistant.ask('01/01/2020');
     flow.skip();
+    flow.skip();
     await settle();
 
     expect(texts().slice(-2)).toEqual([
@@ -492,5 +494,138 @@ describe('PatientRegistrationAction admission data (US-002-1-06)', () => {
     expect(create).toHaveBeenCalledTimes(1);
     expect(createInternacao).toHaveBeenCalledTimes(2);
     expect(flow.finished()).toBeTrue();
+  });
+});
+
+describe('PatientRegistrationAction locations (US-002-1-07)', () => {
+  let createInternacao: jasmine.Spy<(id: number, request: CreateInternacaoRequest) => Promise<unknown>>;
+  let flow: AssistantConversationService;
+  const texts = (): string[] => flow.messages().map(m => m.text);
+  const settle = (): Promise<void> => new Promise(resolve => setTimeout(resolve));
+  const answers = (...list: string[]): void => list.forEach(a => flow.answer(a));
+
+  beforeEach(async () => {
+    spyOnProperty(navigator, 'language').and.returnValue('pt-BR');
+    createInternacao = jasmine.createSpy('createInternacao').and.resolveTo({});
+    TestBed.configureTestingModule({
+      providers: [
+        { provide: PatientCreationPort, useValue: { create: (): Promise<unknown> => Promise.resolve({ id: 42 }) } },
+        { provide: InternacaoCreationPort, useValue: { create: createInternacao } },
+        {
+          provide: LinkedHospitalsReader,
+          useValue: { read: (): Promise<unknown> => Promise.resolve([{ id: 7, name: 'H' }]) },
+        },
+      ],
+    });
+    await TestBed.inject(HospitalContextService).load();
+    flow = TestBed.inject(AssistantConversationService);
+    const assistant = TestBed.inject(AiAssistantService);
+
+    assistant.openAction(TestBed.inject(PatientRegistrationAction).build());
+    answers('Ana', '01/01/2000', 'masculino', '', 'sim', '', '', '', '', '');
+  });
+
+  it('scenario 1: asks about Unidade/Ala after the admission data; "não" creates without locations', async () => {
+    expect(texts().at(-1)).toBe('Deseja adicionar Unidade e/ou Ala à internação?');
+    flow.answer('não');
+    await settle();
+
+    expect(createInternacao).toHaveBeenCalledOnceWith(42, {});
+  });
+
+  it('skipping the question also creates without locations', async () => {
+    flow.skip();
+    await settle();
+
+    expect(createInternacao).toHaveBeenCalledOnceWith(42, {});
+  });
+
+  it('scenario 2: empty value shows MSG-10 and asks again', () => {
+    answers('sim', 'unidade', '  ');
+
+    expect(texts().slice(-2)).toEqual(['Preencha o valor da localização.', 'Qual o valor da localização?']);
+  });
+
+  it('unknown type shows MSG-09 and asks again; value above 100 chars is rejected', () => {
+    answers('sim', 'sala');
+
+    expect(texts().slice(-2)).toEqual([
+      'Selecione o tipo: Unidade ou Ala.',
+      'Qual o tipo da localização? (Unidade ou Ala)',
+    ]);
+    answers('ala', 'x'.repeat(101));
+
+    expect(texts().at(-2)).toBe('O valor da localização deve ter no máximo 100 caracteres.');
+  });
+
+  it('sends one location', async () => {
+    answers('sim', 'Unidade', 'UTI', 'não');
+    flow.skip();
+    await settle();
+
+    expect(createInternacao).toHaveBeenCalledOnceWith(42, {
+      locations: [{ locationType: 'UNIDADE', locationValue: 'UTI' }],
+    });
+  });
+
+  it('rejects a repeated type for the second location', () => {
+    answers('sim', 'unidade', 'UTI', 'sim', 'unidade');
+
+    expect(texts().slice(-2)).toEqual([
+      'Esse tipo já foi informado. Selecione o outro tipo.',
+      'Qual o tipo da outra localização? (Unidade ou Ala)',
+    ]);
+  });
+
+  it('scenario 3: asking for a third location reports the limit of 2 and adds nothing', async () => {
+    answers('sim', 'unidade', 'UTI', 'sim', 'ala', 'Ala Norte', 'sim');
+
+    expect(texts().at(-2)).toBe('O limite de 2 localizações foi atingido.');
+    answers('não');
+    flow.skip();
+    await settle();
+
+    expect(createInternacao).toHaveBeenCalledOnceWith(42, {
+      locations: [
+        { locationType: 'UNIDADE', locationValue: 'UTI' },
+        { locationType: 'ALA', locationValue: 'Ala Norte' },
+      ],
+    });
+  });
+
+  it('scenario 4: a removed Ala is not sent', async () => {
+    answers('sim', 'unidade', 'UTI', 'sim', 'ala', 'Ala Norte', 'não', 'Remover Ala');
+    await settle();
+
+    expect(createInternacao).toHaveBeenCalledOnceWith(42, {
+      locations: [{ locationType: 'UNIDADE', locationValue: 'UTI' }],
+    });
+  });
+
+  it('removing a location that was not informed or an unknown option is rejected', () => {
+    answers('sim', 'unidade', 'UTI', 'não', 'remover ala');
+
+    expect(texts().at(-2)).toBe('Essa localização não foi informada.');
+    answers('xyz');
+
+    expect(texts().at(-2)).toBe('Selecione o tipo: Unidade ou Ala.');
+  });
+
+  it('server 422 on locations shows the message and repeats the matching question', async () => {
+    createInternacao.and.rejectWith(new InternacaoFieldError('locations', 'MSG-10', 'Texto do servidor'));
+    answers('sim', 'unidade', 'UTI', 'não');
+    flow.skip();
+    await settle();
+
+    expect(texts().slice(-2)).toEqual(['Texto do servidor', 'Qual o valor da localização?']);
+
+    createInternacao.and.rejectWith(new InternacaoFieldError('locations', 'MSG-09'));
+    flow.answer('UTI');
+    await settle();
+
+    expect(texts().slice(-2)).toEqual([
+      'Selecione o tipo: Unidade ou Ala.',
+      'Qual o tipo da localização? (Unidade ou Ala)',
+    ]);
   });
 });
