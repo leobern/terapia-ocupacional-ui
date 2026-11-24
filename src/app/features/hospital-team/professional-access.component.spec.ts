@@ -7,12 +7,12 @@ import { HospitalContextService } from '../home/hospital-context.service';
 import { LinkedHospitalsReader } from '../home/linked-hospitals';
 import { ProfessionalAccessComponent } from './professional-access.component';
 import { HospitalProfessional } from './professional-access.models';
-import { ProfessionalAccessRevoker, ProfessionalAccessSource } from './professional-access-port';
 import {
   ProvisionalHttpError,
-  ProvisionalProfessionalAccess,
   ProvisionalProfessionalRevoker,
-} from './provisional-professional-access';
+  RevocableProvisionalAccess,
+} from './professional-access.testing';
+import { ProfessionalAccessRevoker, ProfessionalAccessSource } from './professional-access-port';
 
 class FakeSource extends ProfessionalAccessSource {
   fail = false;
@@ -224,10 +224,10 @@ describe('ProfessionalAccessComponent', () => {
   });
 });
 
-describe('ProvisionalProfessionalAccess', () => {
+describe('RevocableProvisionalAccess', () => {
   it('revoga em memória e reflete na lista; 409 se repetir; 404 se inexistente', async () => {
-    TestBed.configureTestingModule({ providers: [ProvisionalProfessionalAccess, ProvisionalProfessionalRevoker] });
-    const access = TestBed.inject(ProvisionalProfessionalAccess);
+    TestBed.configureTestingModule({ providers: [RevocableProvisionalAccess, ProvisionalProfessionalRevoker] });
+    const access = TestBed.inject(RevocableProvisionalAccess);
     const revoker = TestBed.inject(ProvisionalProfessionalRevoker);
 
     expect((await access.list()).every(p => p.status === 'approved')).toBeTrue();
