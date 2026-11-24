@@ -111,7 +111,9 @@ export function validateAdmitChoice(raw: string): RuleResult<'yes' | 'no'> {
 
 /** "Não sei" e equivalentes: o campo opcional fica vazio (RN-01 da US-002-1-06). */
 function isDontKnow(raw: string): boolean {
-  return ['nao sei', 'n sei', 'nao lembro', "i don't know", 'i dont know', 'dont know', 'unknown'].includes(normalize(raw));
+  return ['nao sei', 'n sei', 'nao lembro', "i don't know", 'i dont know', 'dont know', 'unknown'].includes(
+    normalize(raw),
+  );
 }
 
 function validateOptionalText(raw: string, max: number, tooLong: PatientMessageCode): RuleResult<string> {

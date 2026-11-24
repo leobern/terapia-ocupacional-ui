@@ -120,4 +120,25 @@ describe('AssistantConversationService', () => {
 
     expect(service.canRetry()).toBeFalse();
   });
+
+  it('skips conditional steps whose `when` is false and asks them when it is true', async () => {
+    const conditional = (): ConversationDefinition => ({
+      ...definition(),
+      steps: [
+        { id: 'a', parse: raw => ({ value: raw }), prompt: 'pergunta a' },
+        { id: 'b', parse: raw => ({ value: raw }), prompt: 'pergunta b', when: values => values['a'] === 'sim' },
+      ],
+    });
+
+    service.start(conditional());
+    service.answer('não');
+    await settle();
+
+    expect(submit).toHaveBeenCalledOnceWith({ a: 'não' });
+
+    service.start(conditional());
+    service.answer('sim');
+
+    expect(service.currentStep()?.id).toBe('b');
+  });
 });

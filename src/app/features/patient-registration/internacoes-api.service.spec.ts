@@ -69,12 +69,12 @@ describe('InternacoesApiService', () => {
     const unknown = service.create(5, {});
 
     http.expectOne(url).flush({ field: 'x' }, { status: 422, statusText: 'err' });
-    await expectAsync(unknown).toBeRejectedWithError(HttpErrorResponse);
+    await expectAsync(unknown).toBeRejectedWith(jasmine.any(HttpErrorResponse));
 
     const empty = service.create(5, {});
 
     http.expectOne(url).flush(null, { status: 422, statusText: 'err' });
-    await expectAsync(empty).toBeRejectedWithError(HttpErrorResponse);
+    await expectAsync(empty).toBeRejectedWith(jasmine.any(HttpErrorResponse));
   });
 
   it('422 without code or message falls back to empty strings', async () => {
@@ -91,7 +91,7 @@ describe('InternacoesApiService', () => {
 
       http.expectOne(url).flush({ message: 'x' }, { status, statusText: 'err' });
 
-      await expectAsync(result).toBeRejectedWithError(HttpErrorResponse);
+      await expectAsync(result).toBeRejectedWith(jasmine.any(HttpErrorResponse));
     });
   }
 });
