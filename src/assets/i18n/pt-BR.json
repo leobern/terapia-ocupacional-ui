@@ -2,6 +2,11 @@
   "app": {
     "title": "Terapia Nutricional"
   },
+  "assistant": {
+    "conversation": {
+      "retry": "Tentar novamente"
+    }
+  },
   "home": {
     "error": {
       "description": "Verifique sua conexão de internet e tente novamente em alguns instantes.",
@@ -59,6 +64,30 @@
       "serviceError": "Não foi possível redefinir a senha. Tente novamente.",
       "submit": "Redefinir senha",
       "title": "Definir nova senha"
+    }
+  },
+  "patientRegistration": {
+    "title": "Cadastrar paciente",
+    "skip": "Pular",
+    "prompts": {
+      "fullName": "Me fale o nome completo do paciente",
+      "birthDate": "Qual a data de nascimento? (dd/mm/aaaa)",
+      "sex": "Qual o sexo do paciente?",
+      "medicalRecordNumber": "Qual o SAME do paciente? (opcional)"
+    },
+    "sex": {
+      "MALE": "Masculino",
+      "FEMALE": "Feminino",
+      "NOT_INFORMED": "Não informado"
+    },
+    "messages": {
+      "MSG-01": "Informe o nome completo do paciente.",
+      "MSG-02": "Informe uma data de nascimento válida.",
+      "MSG-03": "Selecione o sexo do paciente.",
+      "MSG-04": "Paciente cadastrado com sucesso.",
+      "MSG-05": "O nome completo deve ter no máximo 150 caracteres.",
+      "sameTooLong": "O SAME deve ter no máximo 30 caracteres.",
+      "error": "Não foi possível cadastrar o paciente. Tente novamente."
     }
   },
   "settings": {

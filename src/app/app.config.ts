@@ -109,6 +109,8 @@ import {
   ProvisionalPatientMessages,
   ProvisionalReplyTranscriber,
 } from './features/patient-messages/provisional-patient-messages';
+import { PatientCreationPort } from './features/patient-registration/patient-creation.port';
+import { ProvisionalPatientCreation } from './features/patient-registration/provisional-patient-creation';
 import {
   NutritionAddedCards,
   NutritionHiddenCards,
@@ -146,6 +148,7 @@ export const appConfig: ApplicationConfig = {
     { provide: LinkRevocationChecker, useClass: ApiLinkRevocationChecker },
     { provide: UnreadNotificationsReader, useClass: ApiUnreadNotificationsReader },
     { provide: DailyPatientsSource, useClass: ProvisionalDailyPatientsSource },
+    { provide: PatientCreationPort, useClass: ProvisionalPatientCreation },
     { provide: PatientListAiCommandPort, useClass: ProvisionalPatientListAiCommand },
     ProvisionalPatientMessages,
     { provide: PatientMessagesSource, useExisting: ProvisionalPatientMessages },

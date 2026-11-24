@@ -28,6 +28,7 @@ import { type ScreenAction, ScreenActionsService } from '../../shared/services/s
 import { ClosurePatient, FollowUpClosureSheetComponent } from '../follow-up-closure/follow-up-closure-sheet.component';
 import { HospitalContextService } from '../home/hospital-context.service';
 import { UnreadNotificationsReader } from '../home/unread-notifications-reader';
+import { PatientRegistrationAction } from '../patient-registration/patient-registration.action';
 import { adequacyLabel, goalLabel, hasAdequacy, therapyStartLabel } from './patient-card-labels';
 import { PatientCard, TherapyType } from './patient-list.models';
 import { PatientListAiCommandPort } from './patient-list-ai-command';
@@ -260,6 +261,7 @@ export class PatientListComponent implements OnInit {
   private readonly tableCard = viewChild<ElementRef<HTMLElement>>('tableCard');
   private readonly unread = inject(UnreadNotificationsReader);
   private readonly screenActions = inject(ScreenActionsService);
+  private readonly patientRegistration = inject(PatientRegistrationAction);
   private readonly aiCommand = inject(PatientListAiCommandPort);
   private readonly priorityGroups = computed<readonly PatientGroup[]>(() => {
     const out = this.patients()
@@ -303,7 +305,7 @@ export class PatientListComponent implements OnInit {
       const actions: readonly ScreenAction[] = this.readOnly()
         ? []
         : [
-            { id: 'register-patient', label: 'Cadastrar paciente', navigate: (): void => this.registerPatient() },
+            this.patientRegistration.build(),
             { id: 'edit-patient', label: 'Alterar dados de paciente', navigate: (): void => this.editPatient() },
             ...PATIENT_LIST_ACTIONS,
           ];

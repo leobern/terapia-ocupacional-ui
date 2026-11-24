@@ -2,6 +2,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter, Router } from '@angular/router';
 
 import { AiAssistantService } from '../../shared/services/ai-assistant.service';
+import { AssistantConversationService } from '../../shared/services/assistant-conversation.service';
 import { ConnectivityService } from '../../shared/services/connectivity.service';
 import {
   type ScreenAction,
@@ -13,6 +14,7 @@ import { HospitalContextService } from '../home/hospital-context.service';
 import { LinkedHospitalsReader } from '../home/linked-hospitals';
 import { ProfessionalProfileReader } from '../home/professional-profile';
 import { UnreadNotificationsReader } from '../home/unread-notifications-reader';
+import { PatientCreationPort } from '../patient-registration/patient-creation.port';
 import { PatientListComponent, refreshesOnVisibility } from './patient-list.component';
 import { CensusPatient } from './patient-list.models';
 import { PatientListAiCommandPort } from './patient-list-ai-command';
@@ -71,6 +73,7 @@ describe('PatientListComponent', () => {
   }
 
   beforeEach(async () => {
+    spyOnProperty(navigator, 'language').and.returnValue('pt-BR');
     source = new FakeSource();
     ai = new FakeAi();
     TestBed.configureTestingModule({
@@ -83,6 +86,7 @@ describe('PatientListComponent', () => {
           useValue: { read: (): { name: string; role: string } => ({ name: 'Michelle', role: 'doctor' }) },
         },
         { provide: PatientListAiCommandPort, useValue: ai },
+        { provide: PatientCreationPort, useValue: { create: (): Promise<void> => Promise.resolve() } },
         { provide: UnreadNotificationsReader, useValue: { countUnread: (): Promise<number> => Promise.resolve(2) } },
         {
           provide: LinkedHospitalsReader,
@@ -740,15 +744,17 @@ describe('PatientListComponent', () => {
         .actions()
         .find(a => a.label === label);
 
-    it('"Cadastrar paciente" fecha o painel e navega ao cadastro da FT-002-1', async () => {
+    it('"Cadastrar paciente" abre o cadastro conversacional da FT-002-1 no painel', async () => {
       await create();
       const assistant = TestBed.inject(AiAssistantService);
 
       assistant.openShortcuts();
       assistant.openAction(actionByLabel('Cadastrar paciente') as ScreenAction);
 
-      expect(assistant.isOpen()).toBeFalse();
-      expect(router.navigate).toHaveBeenCalledWith(['/patients', 'register']);
+      expect(assistant.view()).toBe('conversation');
+      expect(TestBed.inject(AssistantConversationService).messages()[0].text).toBe(
+        'Me fale o nome completo do paciente',
+      );
     });
 
     it('"Alterar dados de paciente" fecha o painel e navega à entrada da edição', async () => {
@@ -762,11 +768,13 @@ describe('PatientListComponent', () => {
       expect(router.navigate).toHaveBeenCalledWith(['/patients', 'edit']);
     });
 
-    it('pedir "cadastrar paciente" ao assistente leva à mesma navegação', async () => {
+    it('pedir "cadastrar paciente" ao assistente leva à mesma conversa', async () => {
       await create();
-      TestBed.inject(AiAssistantService).ask('quero cadastrar um paciente');
+      const assistant = TestBed.inject(AiAssistantService);
 
-      expect(router.navigate).toHaveBeenCalledWith(['/patients', 'register']);
+      assistant.ask('quero cadastrar um paciente');
+
+      expect(assistant.view()).toBe('conversation');
     });
 
     it('em data retroativa as duas ações ficam indisponíveis', async () => {

@@ -53,9 +53,54 @@ export interface FormActionDefinition {
   readonly submit: (values: FormValues) => Promise<void> | void;
 }
 
+/** Resultado da validação da resposta de uma etapa da conversa: valor aceito ou a mensagem do sistema a exibir. */
+export type ConversationParseResult = { readonly value: string } | { readonly error: string };
+
+/** Opção selecionável de uma etapa de escolha (ex.: sexo): `value` é o valor do contrato, `label` o texto exibido. */
+export interface ConversationOption {
+  readonly value: string;
+  readonly label: string;
+}
+
+/** Uma pergunta da conversa: o assistente pergunta, valida a resposta e só avança se ela for válida. */
+export interface ConversationStep {
+  readonly id: string;
+  readonly prompt: string;
+  /** Opções selecionáveis; a resposta digitada também é validada por `parse`. */
+  readonly options?: readonly ConversationOption[];
+  /** Etapa opcional: resposta vazia (ou "Pular") avança sem valor. */
+  readonly optional?: boolean;
+  readonly parse: (answer: string) => ConversationParseResult;
+}
+
+/** Erro de envio ligado a uma etapa (ex.: 422 do servidor): a conversa volta para ela exibindo `message`. */
+export class ConversationStepError extends Error {
+  constructor(
+    readonly stepId: string,
+    message: string,
+  ) {
+    super(message);
+  }
+}
+
+/**
+ * Cadastro conduzido por conversa, um dado por vez (ex.: paciente, FT-002-1). `submit` recebe os valores
+ * validados por `id` de etapa; lançar `ConversationStepError` volta à etapa, qualquer outro erro mostra `errorMessage`.
+ */
+export interface ConversationDefinition {
+  readonly title: string;
+  readonly steps: readonly ConversationStep[];
+  readonly skipLabel: string;
+  readonly successMessage: string;
+  readonly errorMessage: string;
+  readonly submit: (values: Readonly<Record<string, string>>) => Promise<void>;
+}
+
 export interface ScreenAction {
   readonly id: string;
   readonly label: string;
+  /** Cadastro conversacional: o painel vira um chat que pergunta um dado por vez. */
+  readonly conversation?: ConversationDefinition;
   /** Ausente = ação ainda não disponível (o painel avisa em vez de abrir um formulário). */
   readonly form?: FormActionDefinition;
   /** Ação de navegação (fluxo de outra feature): o painel fecha e `navigate` leva ao destino; sem formulário. */
