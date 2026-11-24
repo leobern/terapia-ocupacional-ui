@@ -31,6 +31,7 @@ import { PageContainerComponent } from '../../shared/components/page-container/p
 import { PhIconComponent } from '../../shared/icons/ph-icon/ph-icon.component';
 import { AiAssistantService } from '../../shared/services/ai-assistant.service';
 import { ConnectivityService } from '../../shared/services/connectivity.service';
+import { I18nService } from '../../shared/services/i18n.service';
 import {
   FormSubmitError,
   type FormValues,
@@ -44,7 +45,7 @@ import { HospitalContextService } from '../home/hospital-context.service';
 import { AnnouncementAssistant } from './assistant/announcement-assistant';
 import { type ComunicadoRecipientSpec, ComunicadosApiService } from './data-access/comunicados-api.service';
 import { NotificationsRepository } from './data-access/notifications-repository.service';
-import { HospitalLinkStatus, Notification, NotificationType } from './notifications.models';
+import { Notification, NotificationType } from './notifications.models';
 import { NotificationsActions } from './state/notifications.actions';
 import {
   type NotificationsTab,
@@ -84,12 +85,6 @@ const KIND_LABELS: Record<NotificationType, string> = {
   reevaluation_pending: 'Pendência de reavaliação',
 };
 
-const LINK_STATUS_LABELS: Record<HospitalLinkStatus, string> = {
-  approved: 'Aprovado',
-  rejected: 'Recusado',
-  revoked: 'Revogado',
-};
-
 /**
  * Tela "Notificações" (specs/004-notificacoes) — cabeçalho (sino + contagem, sem botão
  * de voltar — FR-002, saída só via Menu, guardada por `canDeactivateNotifications`),
@@ -124,6 +119,7 @@ export class NotificationsComponent implements OnDestroy {
   // arquivo, e não na ordem de accessibility exigida pelo lint (mesmo
   // padrão de home.component.ts).
   protected readonly store = inject(Store);
+  protected readonly i18n = inject(I18nService);
 
   protected readonly status = toSignal(this.store.select(selectStatus), { initialValue: 'loading-initial' as const });
   protected readonly hospitalId = toSignal(this.store.select(selectHospitalId), { initialValue: null });
@@ -402,7 +398,7 @@ export class NotificationsComponent implements OnDestroy {
   /** Linha abaixo do nome: o status do vínculo em texto (nunca só cor); senão a especialidade do autor. */
   protected cardSubtitle(notification: Notification): string {
     return notification.linkStatus
-      ? `Vínculo ${LINK_STATUS_LABELS[notification.linkStatus].toLowerCase()}`
+      ? this.i18n.t(`notifications.linkStatus.${notification.linkStatus}`)
       : (notification.author?.specialty ?? '');
   }
 

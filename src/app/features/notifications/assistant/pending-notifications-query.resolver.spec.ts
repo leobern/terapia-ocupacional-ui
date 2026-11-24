@@ -26,6 +26,7 @@ describe('PendingNotificationsQueryResolver', () => {
   let resolver: PendingNotificationsQueryResolver;
 
   beforeEach(async () => {
+    spyOnProperty(navigator, 'language', 'get').and.returnValue('pt-BR');
     pages = [];
     calls = [];
     failing = false;

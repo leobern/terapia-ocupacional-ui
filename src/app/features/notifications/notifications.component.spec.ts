@@ -491,6 +491,10 @@ describe('NotificationsComponent', () => {
   // --- US-001-2-03: mudança de status do vínculo com o hospital ---
 
   describe('mudança de status de vínculo', () => {
+    beforeEach(() => {
+      spyOnProperty(navigator, 'language', 'get').and.returnValue('pt-BR');
+    });
+
     const link = (id: number, linkStatus: 'approved' | 'rejected' | 'revoked', hospitalId = 1): Notification =>
       notification(id, {
         author: undefined,

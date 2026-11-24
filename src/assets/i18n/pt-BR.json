@@ -19,6 +19,14 @@
     "signOut": "Sair",
     "title": "Deseja sair da conta?"
   },
+  "notifications": {
+    "fallbackTitle": "Notificação",
+    "linkStatus": {
+      "approved": "Vínculo aprovado",
+      "rejected": "Vínculo recusado",
+      "revoked": "Vínculo revogado"
+    }
+  },
   "passwordRecovery": {
     "backToLogin": "Voltar ao login",
     "forgot": {

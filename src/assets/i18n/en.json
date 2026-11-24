@@ -19,6 +19,14 @@
     "signOut": "Sign out",
     "title": "Sign out of your account?"
   },
+  "notifications": {
+    "fallbackTitle": "Notification",
+    "linkStatus": {
+      "approved": "Link approved",
+      "rejected": "Link rejected",
+      "revoked": "Link revoked"
+    }
+  },
   "passwordRecovery": {
     "backToLogin": "Back to login",
     "forgot": {
