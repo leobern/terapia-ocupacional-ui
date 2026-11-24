@@ -72,6 +72,8 @@ import {
   ProvisionalPatientMessageSource,
   ProvisionalPatientTeamSource,
 } from './features/patient-hub/messages/provisional-patient-message';
+import { BedMovementPort } from './features/patient-hub/move-bed/bed-movement.port';
+import { BedMovementApiService } from './features/patient-hub/move-bed/bed-movement-api.service';
 import {
   HypothesisSynthesizer,
   HypothesisWriter,
@@ -154,6 +156,7 @@ export const appConfig: ApplicationConfig = {
     { provide: DailyPatientsSource, useClass: ProvisionalDailyPatientsSource },
     { provide: PatientCreationPort, useClass: PacientesApiService },
     { provide: InternacaoCreationPort, useClass: InternacoesApiService },
+    { provide: BedMovementPort, useClass: BedMovementApiService },
     { provide: PatientListAiCommandPort, useClass: ProvisionalPatientListAiCommand },
     ProvisionalPatientMessages,
     { provide: PatientMessagesSource, useExisting: ProvisionalPatientMessages },

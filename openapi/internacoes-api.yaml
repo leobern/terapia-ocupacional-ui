@@ -69,6 +69,65 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ValidationErrorResponse"
+  /api/v1/pacientes/{pacienteId}/internacoes/movimentacao-leito/resolver:
+    post:
+      operationId: resolverMovimentacaoLeito
+      x-implemented: true
+      summary: Associa o pedido de mudança de leito à internação mais recente do paciente
+      description: >
+        US-002-2-01. Operação sem efeito colateral: não grava nada (confirmação e aplicação
+        da mudança são da US-002-2-03). A extração do leito da mensagem é feita pelo
+        chatbot (fora de escopo); o cliente envia o leito já extraído em newBedNumber,
+        ausente/nulo/em branco quando não conseguiu extrair.
+        Requer vínculo aprovado do profissional com o hospital do paciente.
+        RN-03: newBedNumber ausente, nulo ou em branco, 422 com field=newBedNumber,
+        code=MSG-12 e message "Não consegui identificar o novo leito. Pode informar o número do leito?".
+        RN-02: paciente sem nenhuma internação, 422 com code=MSG-11 e message
+        "Este paciente ainda não possui internação registrada. É necessário internar o paciente antes de movimentar o leito."
+        (field ausente). Se ambos ocorrerem, vale MSG-11 (sem internação não há o que movimentar).
+        RN-01: a internação mais recente é a de maior createdAt (desempate por maior id).
+      parameters:
+        - name: pacienteId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ResolverMovimentacaoLeitoRequest"
+      responses:
+        "200":
+          description: Pedido associado à internação mais recente
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MovimentacaoLeitoResolvida"
+        "400":
+          $ref: "#/components/responses/Error"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          description: Profissional sem vínculo aprovado com o hospital do paciente
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Paciente não encontrado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "422":
+          description: MSG-11 (paciente sem internação) ou MSG-12 (leito não identificado)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MovimentacaoLeitoErrorResponse"
 components:
   securitySchemes:
     bearerAuth:
@@ -160,3 +219,39 @@ components:
         createdAt:
           type: string
           format: date-time
+    ResolverMovimentacaoLeitoRequest:
+      type: object
+      properties:
+        newBedNumber:
+          type: string
+          nullable: true
+          maxLength: 20
+          description: Leito extraído pelo chatbot; ausente/nulo/em branco quando não identificado (MSG-12)
+    MovimentacaoLeitoResolvida:
+      type: object
+      required: [pacienteId, internacaoId, newBedNumber]
+      properties:
+        pacienteId:
+          type: integer
+          format: int64
+        internacaoId:
+          type: integer
+          format: int64
+        currentBedNumber:
+          type: string
+          nullable: true
+        newBedNumber:
+          type: string
+    MovimentacaoLeitoErrorResponse:
+      allOf:
+        - $ref: "#/components/schemas/ErrorResponse"
+        - type: object
+          required: [code]
+          properties:
+            field:
+              type: string
+              enum: [newBedNumber]
+              description: Presente apenas em MSG-12
+            code:
+              type: string
+              enum: [MSG-11, MSG-12]
