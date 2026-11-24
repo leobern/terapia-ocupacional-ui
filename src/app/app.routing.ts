@@ -35,6 +35,16 @@ export const routes: Routes = [
     data: { hideShell: true },
     loadChildren: () => import('./features/tutorial/tutorial.routes').then(m => m.TUTORIAL_ROUTES),
   },
+  // Configurações (US-001-3-02, RN03): rever o tutorial. Rota própria em modo revisão, sem o shell.
+  {
+    path: 'settings/tutorial',
+    data: { hideShell: true, review: true },
+    loadChildren: () => import('./features/tutorial/tutorial.routes').then(m => m.TUTORIAL_ROUTES),
+  },
+  {
+    path: 'settings',
+    loadChildren: () => import('./features/settings/settings.routes').then(m => m.SETTINGS_ROUTES),
+  },
   {
     path: 'patients',
     pathMatch: 'full',

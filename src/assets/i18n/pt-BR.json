@@ -53,6 +53,10 @@
       "title": "Definir nova senha"
     }
   },
+  "settings": {
+    "reviewTutorial": "Rever tutorial",
+    "title": "Configurações"
+  },
   "splash": {
     "logoLabel": "Conductia",
     "noConnection": "Sem conexão",
@@ -66,21 +70,21 @@
     "progress": "Passo {current} de {total}",
     "skip": "Pular",
     "steps": {
-      "home": {
-        "title": "Painel Metabólico",
-        "description": "Veja em um só lugar a situação dos seus pacientes e o que precisa da sua atenção hoje."
+      "assistant": {
+        "description": "Pergunte ou peça ações pelo assistente: ele também reúne os atalhos da tela.",
+        "title": "Assistente de IA"
       },
-      "patients": {
-        "title": "Pacientes",
-        "description": "Acompanhe cada paciente, com diagnóstico, plano nutricional e evolução diária."
+      "home": {
+        "description": "Veja em um só lugar a situação dos seus pacientes e o que precisa da sua atenção hoje.",
+        "title": "Painel Metabólico"
       },
       "notifications": {
-        "title": "Notificações",
-        "description": "Receba avisos e comunicados da equipe e responda sem sair do app."
+        "description": "Receba avisos e comunicados da equipe e responda sem sair do app.",
+        "title": "Notificações"
       },
-      "assistant": {
-        "title": "Assistente de IA",
-        "description": "Pergunte ou peça ações pelo assistente: ele também reúne os atalhos da tela."
+      "patients": {
+        "description": "Acompanhe cada paciente, com diagnóstico, plano nutricional e evolução diária.",
+        "title": "Pacientes"
       }
     }
   }

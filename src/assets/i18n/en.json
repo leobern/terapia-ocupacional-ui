@@ -53,6 +53,10 @@
       "title": "Set new password"
     }
   },
+  "settings": {
+    "reviewTutorial": "Review tutorial",
+    "title": "Settings"
+  },
   "splash": {
     "logoLabel": "Conductia",
     "noConnection": "No connection",
@@ -66,21 +70,21 @@
     "progress": "Step {current} of {total}",
     "skip": "Skip",
     "steps": {
-      "home": {
-        "title": "Metabolic Dashboard",
-        "description": "See your patients' status and what needs your attention today, all in one place."
+      "assistant": {
+        "description": "Ask or request actions through the assistant, which also gathers the screen shortcuts.",
+        "title": "AI assistant"
       },
-      "patients": {
-        "title": "Patients",
-        "description": "Follow each patient, with diagnosis, nutrition plan and daily evolution."
+      "home": {
+        "description": "See your patients' status and what needs your attention today, all in one place.",
+        "title": "Metabolic Dashboard"
       },
       "notifications": {
-        "title": "Notifications",
-        "description": "Get team notices and announcements and reply without leaving the app."
+        "description": "Get team notices and announcements and reply without leaving the app.",
+        "title": "Notifications"
       },
-      "assistant": {
-        "title": "AI assistant",
-        "description": "Ask or request actions through the assistant, which also gathers the screen shortcuts."
+      "patients": {
+        "description": "Follow each patient, with diagnosis, nutrition plan and daily evolution.",
+        "title": "Patients"
       }
     }
   }

@@ -36,7 +36,7 @@ describe('NavMenuComponent', () => {
     fixture.detectChanges();
   });
 
-  it('renders the 6 navigation items with the expected icons, all in "regular" weight and 24px', () => {
+  it('renders the 7 navigation items with the expected icons, all in "regular" weight and 24px', () => {
     const expected: { label: string; icon: string }[] = [
       { icon: 'house', label: 'Home' },
       { icon: 'hospital', label: 'Hospitais' },
@@ -44,11 +44,12 @@ describe('NavMenuComponent', () => {
       { icon: 'users-four', label: 'Pacientes' },
       { icon: 'squares-four', label: 'Ações da tela' },
       { icon: 'bell', label: 'Notificações' },
+      { icon: 'gear', label: 'Configurações' },
     ];
 
     const links = navLinks();
 
-    expect(links.length).toBe(6);
+    expect(links.length).toBe(7);
 
     expected.forEach(({ label, icon }) => {
       const link = linkByLabel(label);
@@ -88,6 +89,7 @@ describe('NavMenuComponent', () => {
     { label: 'Pacientes', output: 'pacientesClick' },
     { label: 'Ações da tela', output: 'acoesTelaClick' },
     { label: 'Notificações', output: 'notificacoesClick' },
+    { label: 'Configurações', output: 'configuracoesClick' },
   ];
 
   for (const { label, output } of clickCases) {
