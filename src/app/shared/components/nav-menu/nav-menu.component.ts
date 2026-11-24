@@ -74,8 +74,6 @@ interface NavMenuItem {
 })
 export class NavMenuComponent {
   readonly activeItem = input<NavMenuItemKey | null>(null);
-  /** O assistente está aberto: o logo do menu mostra o Sparkling sólido (aba ativa). */
-  readonly assistantOpen = input<boolean>(false);
   /** Itens sem acesso para o perfil atual: ficam desabilitados (ex.: Farmácia só para o gestor). */
   readonly disabledItems = input<readonly NavMenuItemKey[]>([]);
 

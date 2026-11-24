@@ -30,7 +30,7 @@ import { type IconLogoSparkle, IconLogoVisualComponent, type IconLogoVisualState
 export class IconLogoButtonComponent {
   readonly ariaLabel = input.required<string>();
   /** Ícone Sparkling do logo: `outline` (padrão), `solid` (ativo) ou `none` (menu). */
-  readonly sparkle = input<IconLogoSparkle>('outline');
+  readonly sparkle = input<IconLogoSparkle>('none');
   readonly disabled = input<boolean>(false);
 
   /**

@@ -9,7 +9,6 @@
       [activeItem]="activeNavItem()"
       [open]="menuOpen()"
       [disabledItems]="disabledNavItems"
-      [assistantOpen]="aiAssistant.isOpen()"
       (closed)="menuOpen.set(false)"
       (logoClick)="aiAssistant.openPanel()"
       (homeClick)="onHomeClick()"

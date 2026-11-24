@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 
-import { type IconLogoState, IconLogoVisualComponent } from './icon-logo-visual.component';
+import { type IconLogoSparkle, type IconLogoState, IconLogoVisualComponent } from './icon-logo-visual.component';
 
 export type { IconLogoState };
 
@@ -27,4 +27,6 @@ export type { IconLogoState };
 })
 export class IconLogoComponent {
   readonly state = input<IconLogoState>('default');
+  /** Estrelas (Sparkling do Figma): só no logo da sidebar e do bottom sheet abertos; nunca no menu. */
+  readonly sparkle = input<IconLogoSparkle>('none');
 }
