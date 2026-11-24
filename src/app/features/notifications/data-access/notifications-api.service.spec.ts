@@ -2,6 +2,7 @@ import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 
+import { Notification } from '../notifications.models';
 import { NotificationsApiService } from './notifications-api.service';
 
 describe('NotificationsApiService', () => {
@@ -32,6 +33,36 @@ describe('NotificationsApiService', () => {
     expect(second.request.params.get('cursor')).toBe('xyz');
     expect(second.request.params.get('limit')).toBe('20');
     second.flush({});
+  });
+
+  it('getNotifications: repassa hospital e status do vínculo, sem autor', () => {
+    let page: unknown;
+
+    api.getNotifications(3, 'pending', null).subscribe(p => (page = p));
+    http
+      .expectOne(r => r.url.endsWith('/v1/notifications'))
+      .flush({
+        items: [
+          {
+            createdAt: '2026-11-24T10:00:00Z',
+            description: 'Você foi aprovado no Hospital X',
+            hospital: { id: 3, name: 'Hospital X' },
+            id: 1,
+            linkStatus: 'approved',
+            read: false,
+            replyCount: 0,
+            type: 'hospital_link_status_change',
+          },
+        ],
+        nextCursor: null,
+        unreadCount: 1,
+      });
+
+    const item = (page as { items: Notification[] }).items[0];
+
+    expect(item.hospital).toEqual({ id: 3, name: 'Hospital X' });
+    expect(item.linkStatus).toBe('approved');
+    expect(item.author).toBeUndefined();
   });
 
   it('createReply: POST /v1/notifications/:id/replies com o texto', () => {

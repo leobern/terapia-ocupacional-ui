@@ -45,7 +45,7 @@ import { isSentThreadNotification } from '../patient-messages/sent-thread-notifi
 import { AnnouncementAssistant } from './assistant/announcement-assistant';
 import { type ComunicadoRecipientSpec, ComunicadosApiService } from './data-access/comunicados-api.service';
 import { NotificationsRepository } from './data-access/notifications-repository.service';
-import { Notification, NotificationType } from './notifications.models';
+import { HospitalLinkStatus, Notification, NotificationType } from './notifications.models';
 import { NotificationsActions } from './state/notifications.actions';
 import {
   type NotificationsTab,
@@ -79,9 +79,16 @@ function formatTodayLabel(): string {
 const PULL_TO_REFRESH_THRESHOLD = 80;
 
 const KIND_LABELS: Record<NotificationType, string> = {
+  hospital_link_status_change: 'Vínculo com hospital',
   internal_notice: 'Comunicado interno',
   patient_message: 'Mensagem de paciente',
   reevaluation_pending: 'Pendência de reavaliação',
+};
+
+const LINK_STATUS_LABELS: Record<HospitalLinkStatus, string> = {
+  approved: 'Aprovado',
+  rejected: 'Recusado',
+  revoked: 'Revogado',
 };
 
 /**
@@ -334,11 +341,15 @@ export class NotificationsComponent implements OnDestroy {
   isParticipant(notification: Notification): boolean {
     const me = this.currentUserId;
 
+    if (notification.type === 'hospital_link_status_change') {
+      return false;
+    }
+
     return (
       isSentThreadNotification(notification) ||
-      notification.author.id === me ||
+      notification.author?.id === me ||
       (notification.mentioned ?? []).some(person => person.id === me) ||
-      notification.replies.some(reply => reply.author.id === me)
+      (notification.replies ?? []).some(reply => reply.author.id === me)
     );
   }
 
@@ -392,6 +403,40 @@ export class NotificationsComponent implements OnDestroy {
     }
   }
 
+  /** Nome exibido no cabeçalho do card: o hospital, nas mudanças de vínculo (RN02); senão o autor. */
+  protected cardName(notification: Notification): string {
+    return notification.hospital?.name ?? notification.author?.name ?? '';
+  }
+
+  /** Linha abaixo do nome: o status do vínculo em texto (nunca só cor); senão a especialidade do autor. */
+  protected cardSubtitle(notification: Notification): string {
+    return notification.linkStatus
+      ? `Vínculo ${LINK_STATUS_LABELS[notification.linkStatus].toLowerCase()}`
+      : (notification.author?.specialty ?? '');
+  }
+
+  /** Toque no card: mudança de vínculo vai ao Painel (aprovado) ou à tela de vínculos; as demais, ao paciente. */
+  protected async onNotificationClick(notification: Notification): Promise<void> {
+    if (notification.type !== 'hospital_link_status_change') {
+      this.onCardClick(notification.patient?.id);
+
+      return;
+    }
+    const hospitalId = notification.hospital?.id;
+
+    if (notification.linkStatus === 'approved' && hospitalId !== undefined) {
+      // O hospital recém-aprovado pode ainda não estar na lista de vínculos carregada.
+      if (!this.hospitalContext.hospitals().some(h => h.id === hospitalId)) {
+        await this.hospitalContext.load();
+      }
+      this.hospitalContext.select(hospitalId);
+      await this.router.navigate(['/home']);
+
+      return;
+    }
+    await this.router.navigate(['/hospital-links']);
+  }
+
   protected onSelectTab(tab: NotificationsTab): void {
     if (tab !== this.activeTab()) {
       this.store.dispatch(NotificationsActions.tabSelected({ tab }));
@@ -423,7 +468,7 @@ export class NotificationsComponent implements OnDestroy {
   }
 
   protected toReplies(notification: Notification): CardNotifyReply[] {
-    return notification.replies.map(reply => ({
+    return (notification.replies ?? []).map(reply => ({
       authorName: reply.author.name,
       authorSpecialty: reply.author.specialty,
       authorPhotoUrl: reply.author.photoUrl,
