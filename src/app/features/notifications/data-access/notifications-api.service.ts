@@ -31,7 +31,10 @@ export class NotificationsApiService {
       params = params.set('cursor', cursor);
     }
 
-    return this.http.get<NotificationPage>(this.baseUrl, { params });
+    // O servidor omite `replies` quando vazio; o resto da tela espera sempre uma lista.
+    return this.http
+      .get<NotificationPage>(this.baseUrl, { params })
+      .pipe(map(page => ({ ...page, items: page.items.map(item => ({ ...item, replies: item.replies ?? [] })) })));
   }
 
   createReply(notificationId: number, text: string): Observable<NotificationReply> {

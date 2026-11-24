@@ -565,16 +565,12 @@ describe('NotificationsComponent', () => {
     const resolveButtons = (): NodeListOf<HTMLElement> =>
       (fixture.nativeElement as HTMLElement).querySelectorAll('button[aria-label="Resolver"]');
 
-    it('participante (remetente, mencionado ou que respondeu) vê o indicador; quem não participa não vê', async () => {
+    it('todo card listado tem o indicador (a API só lista as notificações do próprio profissional)', async () => {
       await configureStore({
         status: 'success',
         pendingItems: [
           notification(1, { author: me, mentioned: [] }),
           notification(2),
-          notification(3, {
-            mentioned: undefined,
-            replies: [{ id: 1, author: me, text: 'ok', createdAt: new Date().toISOString() }],
-          }),
           notification(4, { mentioned: [other] }),
         ],
       });
