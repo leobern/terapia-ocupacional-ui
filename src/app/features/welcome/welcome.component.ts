@@ -5,6 +5,7 @@ import { BackgroundMeshComponent } from '../../shared/components/background-mesh
 import { ButtonComponent } from '../../shared/components/button/button.component';
 import { IconLogoComponent } from '../../shared/components/icon-logo/icon-logo.component';
 import { I18nService } from '../../shared/services/i18n.service';
+import { TutorialStateStore } from '../tutorial/tutorial-state';
 import { WelcomeSource } from './welcome-source';
 
 /**
@@ -24,6 +25,7 @@ export class WelcomeComponent implements OnInit {
 
   private readonly source = inject(WelcomeSource);
   private readonly router = inject(Router);
+  private readonly tutorial = inject(TutorialStateStore);
 
   ngOnInit(): void {
     this.source.getStatus().then(
@@ -39,19 +41,29 @@ export class WelcomeComponent implements OnInit {
   }
 
   protected startTutorial(): void {
-    void this.finish('/tutorial');
+    void this.finish('/tutorial', false);
   }
 
   protected goToApp(): void {
-    void this.finish('/home');
+    void this.finish('/home', true);
   }
 
-  /** Conclui as boas-vindas; falha ao registrar nunca impede a navegação. */
-  private async finish(url: string): Promise<void> {
+  /**
+   * Conclui as boas-vindas. Quem vai direto ao app registra o tutorial como PULADO, para ele não
+   * reaparecer na próxima abertura. Falha ao registrar nunca impede a navegação.
+   */
+  private async finish(url: string, skipTutorial: boolean): Promise<void> {
     try {
       await this.source.complete();
     } catch {
       // O médico segue mesmo assim; a próxima abertura tenta de novo.
+    }
+    if (skipTutorial) {
+      try {
+        await this.tutorial.register('PULADO');
+      } catch {
+        // Idem: o tutorial ainda pode aparecer na próxima abertura.
+      }
     }
     await this.router.navigateByUrl(url, { replaceUrl: true });
   }

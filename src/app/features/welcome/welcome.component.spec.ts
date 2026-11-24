@@ -1,6 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter, Router } from '@angular/router';
 
+import { TutorialResult, TutorialStateStore, TutorialStatus } from '../tutorial/tutorial-state';
 import { WelcomeComponent } from './welcome.component';
 import { WelcomeSource, WelcomeStatus } from './welcome-source';
 
@@ -20,7 +21,23 @@ class FakeWelcome extends WelcomeSource {
   }
 }
 
+class FakeTutorial extends TutorialStateStore {
+  registered: TutorialResult[] = [];
+  failure: Promise<void> = Promise.resolve();
+
+  read(): Promise<TutorialStatus> {
+    return Promise.resolve('PENDENTE');
+  }
+
+  register(result: TutorialResult): Promise<void> {
+    this.registered.push(result);
+
+    return this.failure;
+  }
+}
+
 describe('WelcomeComponent', () => {
+  let tutorial: FakeTutorial;
   let source: FakeWelcome;
   let navigate: jasmine.Spy;
   let fixture: ComponentFixture<WelcomeComponent>;
@@ -28,9 +45,14 @@ describe('WelcomeComponent', () => {
   beforeEach(() => {
     spyOnProperty(navigator, 'language', 'get').and.returnValue('pt-BR');
     source = new FakeWelcome();
+    tutorial = new FakeTutorial();
     TestBed.configureTestingModule({
       imports: [WelcomeComponent],
-      providers: [provideRouter([]), { provide: WelcomeSource, useValue: source }],
+      providers: [
+        provideRouter([]),
+        { provide: WelcomeSource, useValue: source },
+        { provide: TutorialStateStore, useValue: tutorial },
+      ],
     });
     navigate = spyOn(TestBed.inject(Router), 'navigateByUrl').and.resolveTo(true);
   });
@@ -60,6 +82,7 @@ describe('WelcomeComponent', () => {
     await fixture.whenStable();
 
     expect(source.completed).toBe(1);
+    expect(tutorial.registered).toEqual([]);
     expect(navigate).toHaveBeenCalledWith('/tutorial', { replaceUrl: true });
   });
 
@@ -70,6 +93,17 @@ describe('WelcomeComponent', () => {
     await fixture.whenStable();
 
     expect(source.completed).toBe(1);
+    expect(tutorial.registered).toEqual(['PULADO']);
+    expect(navigate).toHaveBeenCalledWith('/home', { replaceUrl: true });
+  });
+
+  it('does not block the doctor when registering the skipped tutorial fails', async () => {
+    tutorial.failure = Promise.reject(new Error('offline'));
+    const el = await open();
+
+    buttons(el)[1].click();
+    await fixture.whenStable();
+
     expect(navigate).toHaveBeenCalledWith('/home', { replaceUrl: true });
   });
 
