@@ -1,0 +1,113 @@
+openapi: 3.0.3
+info:
+  title: Tutorial do App API
+  version: 1.0.0
+  description: >
+    Contrato da US-001-3-02 (Tutorial do app). O servidor guarda apenas se o
+    profissional já concluiu ou pulou o tutorial, para que ele não seja exibido
+    novamente (inclusive em outro dispositivo). O conteúdo e o número de telas
+    (máx. 5, RN01) são definidos pela UI. Rever o tutorial pelas configurações
+    (RN03) é só navegação no cliente e não altera este estado.
+servers:
+  - url: /
+security:
+  - bearerAuth: []
+paths:
+  /api/v1/tutorial:
+    get:
+      operationId: getTutorialStatus
+      x-implemented: true
+      summary: Consulta se o tutorial já foi concluído ou pulado pelo usuário autenticado
+      description: >
+        A UI exibe o tutorial automaticamente apenas quando `status` é `PENDENTE`.
+      responses:
+        "200":
+          description: Estado do tutorial
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TutorialStatus"
+        "401":
+          description: Não autenticado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    put:
+      operationId: registrarTutorialResultado
+      x-implemented: true
+      summary: Registra que o tutorial foi concluído ou pulado
+      description: >
+        Idempotente. Após o primeiro registro, chamadas seguintes mantêm o
+        resultado e a data originais e retornam 200 com o estado atual.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TutorialResultadoRequest"
+      responses:
+        "200":
+          description: Estado do tutorial após o registro
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TutorialStatus"
+        "400":
+          description: Corpo inválido
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Não autenticado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "422":
+          description: Resultado desconhecido
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    TutorialStatus:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [PENDENTE, CONCLUIDO, PULADO]
+        registradoEm:
+          type: string
+          format: date-time
+          nullable: true
+          description: Quando foi concluído/pulado; nulo se pendente
+    TutorialResultadoRequest:
+      type: object
+      required: [resultado]
+      properties:
+        resultado:
+          type: string
+          enum: [CONCLUIDO, PULADO]
+    ErrorResponse:
+      type: object
+      required: [message, timestamp]
+      properties:
+        message:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+        detalhes:
+          type: array
+          nullable: true
+          items:
+            type: string

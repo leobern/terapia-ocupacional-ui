@@ -117,7 +117,7 @@ import { FormulasApi } from './features/pharmacy/formulas-api';
 import { ProvisionalFormulasApi } from './features/pharmacy/provisional-formulas-api';
 import { LocalStartupStateReader } from './features/splash/local-startup-state-reader';
 import { StartupStateReader } from './features/splash/startup-state';
-import { LocalTutorialStateStore } from './features/tutorial/local-tutorial-state-store';
+import { TutorialApiService } from './features/tutorial/tutorial-api.service';
 import { TutorialStateStore } from './features/tutorial/tutorial-state';
 import { ProvisionalSessionRoleReader } from './shared/auth/provisional-session-role-reader';
 import { SessionRoleReader } from './shared/auth/session-role';
@@ -133,7 +133,7 @@ export const appConfig: ApplicationConfig = {
     { provide: PasswordResetGateway, useClass: HttpPasswordResetGateway },
     { provide: SessionRevoker, useClass: NoopSessionRevoker },
     { provide: StartupStateReader, useClass: LocalStartupStateReader },
-    { provide: TutorialStateStore, useClass: LocalTutorialStateStore },
+    { provide: TutorialStateStore, useClass: TutorialApiService },
     { provide: LinkedHospitalsReader, useClass: HomeHospitalsApiService },
     { provide: UnreadNotificationsReader, useClass: LocalUnreadNotificationsReader },
     { provide: DailyPatientsSource, useClass: ProvisionalDailyPatientsSource },
