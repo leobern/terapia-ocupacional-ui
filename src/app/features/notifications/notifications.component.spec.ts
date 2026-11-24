@@ -198,6 +198,26 @@ describe('NotificationsComponent', () => {
       expect(el.querySelector('.card-notify--resolved')).not.toBeNull();
     });
 
+    it('na aba Resolvidas o card oferece responder (sem Resolver) e acioná-lo inicia a resposta', async () => {
+      await configureStore({
+        activeTab: 'resolved',
+        resolvedItems: [notification(2)],
+        resolvedLoaded: true,
+        status: 'success',
+      });
+      createComponent();
+      spyOn(store, 'dispatch');
+      const el: HTMLElement = fixture.nativeElement;
+      const answer = el.querySelector('.card-notify__actions app-icon-button button') as HTMLButtonElement;
+
+      expect(answer).not.toBeNull();
+      expect(el.querySelector('.card-notify__row app-icon-button')).toBeNull();
+
+      answer.click();
+
+      expect(store.dispatch).toHaveBeenCalledWith(NotificationsActions.answerStarted({ notificationId: 2 }));
+    });
+
     it('acionar a aba Resolvidas despacha tabSelected; acionar a aba atual não faz nada', async () => {
       await configureStore({ status: 'success' });
       createComponent();
