@@ -1,0 +1,123 @@
+openapi: 3.0.3
+info:
+  title: Pacientes API
+  version: 1.0.0
+  description: >
+    Contrato da US-002-1-03 (FT-002-1 Cadastro de Paciente): verificação de possível
+    duplicidade por nome completo + data de nascimento dentro do hospital. A API só
+    informa se há paciente coincidente; a pergunta ao usuário (MSG-06) e a resposta
+    "sim" (cancelar e direcionar ao registro existente, RN-03) ou "não" (prosseguir com
+    o cadastro, RN-04) são conduzidas pelo chatbot/cliente e não geram chamada
+    adicional: nada é persistido antes da confirmação final do cadastro.
+servers:
+  - url: /
+security:
+  - bearerAuth: []
+paths:
+  /api/v1/pacientes/duplicidade:
+    post:
+      operationId: checkPatientDuplicate
+      x-implemented: true
+      summary: Verifica se já existe paciente com mesmo nome e nascimento no hospital
+      description: >
+        RN-01: retorna os pacientes do mesmo hospital com fullName e birthDate idênticos
+        (nome comparado sem diferenciar maiúsculas/minúsculas e acentos) cujo
+        medicalRecordNumber seja diferente do informado ou vazio em qualquer um dos dois.
+        Se ambos tiverem SAME igual e preenchido, não é considerado possível duplicidade
+        por esta regra. Cada item traz nome, nascimento e SAME (RN-02) e o id para
+        direcionar ao registro existente (RN-03). Não cria nem altera dados.
+        Requer vínculo aprovado do usuário com o hospital.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PatientDuplicateCheckRequest"
+      responses:
+        "200":
+          description: Resultado da verificação (lista vazia quando não há coincidência)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PatientDuplicateCheckResult"
+        "400":
+          $ref: "#/components/responses/Error"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+        "422":
+          description: Nome vazio ou data de nascimento inválida/futura
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  responses:
+    Error:
+      description: Erro
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+  schemas:
+    ErrorResponse:
+      type: object
+      required: [message, timestamp]
+      properties:
+        message:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+    PatientDuplicateCheckRequest:
+      type: object
+      required: [hospitalId, fullName, birthDate]
+      properties:
+        hospitalId:
+          type: integer
+          format: int64
+        fullName:
+          type: string
+          minLength: 1
+        birthDate:
+          type: string
+          format: date
+        medicalRecordNumber:
+          type: string
+          nullable: true
+          description: SAME informado para o novo paciente (opcional)
+    PatientDuplicateCandidate:
+      type: object
+      required: [id, fullName, birthDate]
+      properties:
+        id:
+          type: integer
+          format: int64
+        fullName:
+          type: string
+        birthDate:
+          type: string
+          format: date
+        medicalRecordNumber:
+          type: string
+          nullable: true
+          description: SAME do paciente já cadastrado; nulo se não preenchido
+    PatientDuplicateCheckResult:
+      type: object
+      required: [duplicate, candidates]
+      properties:
+        duplicate:
+          type: boolean
+          description: true quando o chatbot deve exibir MSG-06 antes de continuar
+        candidates:
+          type: array
+          items:
+            $ref: "#/components/schemas/PatientDuplicateCandidate"

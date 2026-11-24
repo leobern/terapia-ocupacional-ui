@@ -61,6 +61,27 @@
       "title": "Set new password"
     }
   },
+  "patients": {
+    "duplicate": {
+      "birthDate": "Date of birth",
+      "checking": "Checking whether the patient is already registered…",
+      "errors": {
+        "401": "Your session has expired. Sign in again to continue.",
+        "403": "You do not have access to this hospital.",
+        "404": "Hospital not found.",
+        "422": "Check the name and date of birth entered.",
+        "generic": "Could not check the registration. Try again."
+      },
+      "name": "Name",
+      "no": "No, it is another patient",
+      "question": "A patient with this name and date of birth already exists in this hospital. Is it the same patient?",
+      "retry": "Try again",
+      "same": "Medical record no. (SAME)",
+      "sameMissing": "not filled in",
+      "yes": "Yes, it is the same patient",
+      "yesThis": "Yes, it is this patient"
+    }
+  },
   "settings": {
     "reviewTutorial": "Review tutorial",
     "title": "Settings"
