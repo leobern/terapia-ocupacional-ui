@@ -67,6 +67,10 @@
     }
   },
   "patientRegistration": {
+    "admit": {
+      "no": "Não",
+      "yes": "Sim"
+    },
     "duplicate": {
       "accessDenied": "Você não tem acesso a este hospital.",
       "birthDate": "Data de nascimento",
@@ -91,10 +95,12 @@
       "MSG-03": "Selecione o sexo do paciente.",
       "MSG-04": "Paciente cadastrado com sucesso.",
       "MSG-05": "O nome completo deve ter no máximo 150 caracteres.",
+      "admitChoice": "Responda sim ou não.",
       "error": "Não foi possível cadastrar o paciente. Tente novamente.",
       "sameTooLong": "O SAME deve ter no máximo 30 caracteres."
     },
     "prompts": {
+      "admit": "Deseja internar o paciente agora?",
       "birthDate": "Qual a data de nascimento? (dd/mm/aaaa)",
       "fullName": "Me fale o nome completo do paciente",
       "medicalRecordNumber": "Qual o SAME do paciente? (opcional)",
