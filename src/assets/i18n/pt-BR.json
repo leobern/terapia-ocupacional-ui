@@ -2,6 +2,11 @@
   "app": {
     "title": "Terapia Nutricional"
   },
+  "assistant": {
+    "conversation": {
+      "retry": "Tentar novamente"
+    }
+  },
   "home": {
     "error": {
       "description": "Verifique sua conexão de internet e tente novamente em alguns instantes.",
