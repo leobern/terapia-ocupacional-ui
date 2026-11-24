@@ -13,8 +13,6 @@ import {
 export interface NewNotification {
   readonly recipients: readonly ProfessionalRef[];
   readonly message: string;
-  /** Data limite para resolução (`yyyy-MM-dd`); vazio = sem prazo. */
-  readonly dueDate: string;
   /** Paciente vinculado (mensagens do Hub, FT-005-1); ausente = comunicado sem paciente. */
   readonly patient?: PatientRef;
 }
