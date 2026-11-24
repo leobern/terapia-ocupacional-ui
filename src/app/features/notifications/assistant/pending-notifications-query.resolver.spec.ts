@@ -16,6 +16,7 @@ const note = (id: number, name: string, description: string): Notification => ({
   read: false,
   replyCount: 0,
   replies: [],
+  type: 'patient_message',
 });
 
 describe('PendingNotificationsQueryResolver', () => {

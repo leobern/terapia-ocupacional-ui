@@ -2,12 +2,14 @@ import { inject } from '@angular/core';
 import { Actions, createEffect, ofType } from '@ngrx/effects';
 import { concatLatestFrom } from '@ngrx/operators';
 import { Store } from '@ngrx/store';
-import { catchError, concatMap, filter, map, of, switchMap } from 'rxjs';
+import { catchError, concatMap, EMPTY, filter, from, map, mergeMap, of, switchMap } from 'rxjs';
 
 import { HomeApiService } from '../../home/data-access/home-api.service';
 import { NotificationsApiService } from '../data-access/notifications-api.service';
 import { NotificationsActions } from './notifications.actions';
 import {
+  type NotificationsTab,
+  selectActiveTab,
   selectDraftText,
   selectHospitalId,
   selectPendingCursor,
@@ -60,12 +62,8 @@ export const loadPendingPage$ = createEffect(
 );
 
 /**
- * Infinite scroll (FR-004a) — cobre tanto os próximos lotes de Pendentes
- * quanto a transição para Resolvidas (incluindo a 1ª página dela, ainda não
- * buscada — `resolvedLoaded` desambigua de "esgotada"; ver
- * `notifications.reducer.ts` § `selectHasMore`): enquanto a seção Pendentes
- * ainda tiver `pendingCursor`, o próximo lote é dela; só depois de esgotada
- * (`null`) o próximo lote passa a ser o de Resolvidas.
+ * Infinite scroll (FR-002) da aba selecionada: cada aba tem cursor próprio. Em
+ * Resolvidas, a 1ª página (ainda não buscada, `resolvedLoaded` falso) usa cursor nulo.
  */
 export const loadNextBatch$ = createEffect(
   (actions$ = inject(Actions), store = inject(Store), api = inject(NotificationsApiService)) => {
@@ -73,6 +71,7 @@ export const loadNextBatch$ = createEffect(
       ofType(NotificationsActions.loadNextBatchRequested),
       concatLatestFrom(() => [
         store.select(selectHospitalId),
+        store.select(selectActiveTab),
         store.select(selectPendingCursor),
         store.select(selectResolvedCursor),
         store.select(selectResolvedLoaded),
@@ -83,17 +82,14 @@ export const loadNextBatch$ = createEffect(
         ): tuple is [
           ReturnType<typeof NotificationsActions.loadNextBatchRequested>,
           number,
+          NotificationsTab,
           string | null,
           string | null,
           boolean,
-        ] => tuple[1] != null && (tuple[2] != null || !tuple[4] || tuple[3] != null),
+        ] => tuple[1] != null && (tuple[2] === 'pending' ? tuple[3] != null : !tuple[5] || tuple[4] != null),
       ),
-      switchMap(([, hospitalId, pendingCursor, resolvedCursor]) => {
-        const status = pendingCursor != null ? 'pending' : 'resolved';
-        // 1ª página de Resolvidas (resolvedLoaded=false) usa cursor null, mesmo
-        // que `resolvedCursor` também seja null nesse ponto — `cursor` só
-        // importa quando `status === 'resolved'` e já houve uma página anterior.
-        const cursor = pendingCursor != null ? pendingCursor : resolvedCursor;
+      switchMap(([, hospitalId, status, pendingCursor, resolvedCursor]) => {
+        const cursor = status === 'pending' ? pendingCursor : resolvedCursor;
 
         return api.getNotifications(hospitalId, status, cursor).pipe(
           map(page =>
@@ -110,6 +106,20 @@ export const loadNextBatch$ = createEffect(
           ),
         );
       }),
+    );
+  },
+  { functional: true },
+);
+
+/** Trocar para Resolvidas pela 1ª vez busca a 1ª página dela (Ativas já vem com a abertura da tela). */
+export const loadResolvedOnTabSelected$ = createEffect(
+  (actions$ = inject(Actions), store = inject(Store)) => {
+    return actions$.pipe(
+      ofType(NotificationsActions.tabSelected),
+      filter(({ tab }) => tab === 'resolved'),
+      concatLatestFrom(() => store.select(selectResolvedLoaded)),
+      filter(([, loaded]) => !loaded),
+      map(() => NotificationsActions.loadNextBatchRequested()),
     );
   },
   { functional: true },
@@ -164,14 +174,39 @@ export const resolveNotification$ = createEffect(
   { functional: true },
 );
 
+/**
+ * Marca como lida cada notificação exibida (FR-005). Sem conexão (ou qualquer falha) a
+ * marcação é ignorada sem erro visível: a lista já carregada continua na tela e a próxima
+ * carga, vinda do servidor, tenta de novo.
+ */
+export const markAsRead$ = createEffect(
+  (actions$ = inject(Actions), api = inject(NotificationsApiService)) => {
+    return actions$.pipe(
+      ofType(NotificationsActions.markAsReadRequested),
+      mergeMap(({ notificationIds }) =>
+        from(notificationIds).pipe(mergeMap(id => api.markAsRead(id).pipe(catchError(() => EMPTY)))),
+      ),
+    );
+  },
+  { functional: true, dispatch: false },
+);
+
 /** Pull-to-refresh (FR-004b) — reinicia as duas seções do zero. */
 export const refresh$ = createEffect(
   (actions$ = inject(Actions), store = inject(Store)) => {
     return actions$.pipe(
       ofType(NotificationsActions.refreshRequested),
-      concatLatestFrom(() => store.select(selectHospitalId)),
-      filter((tuple): tuple is [ReturnType<typeof NotificationsActions.refreshRequested>, number] => tuple[1] != null),
-      map(([, hospitalId]) => NotificationsActions.pageOpened({ hospitalId })),
+      concatLatestFrom(() => [store.select(selectHospitalId), store.select(selectActiveTab)]),
+      filter(
+        (tuple): tuple is [ReturnType<typeof NotificationsActions.refreshRequested>, number, NotificationsTab] =>
+          tuple[1] != null,
+      ),
+      // `pageOpened` reinicia tudo (volta para Ativas); reaplica a aba em que o profissional estava.
+      mergeMap(([, hospitalId, tab]) =>
+        tab === 'resolved'
+          ? [NotificationsActions.pageOpened({ hospitalId }), NotificationsActions.tabSelected({ tab })]
+          : [NotificationsActions.pageOpened({ hospitalId })],
+      ),
     );
   },
   { functional: true },

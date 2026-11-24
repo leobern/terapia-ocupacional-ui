@@ -20,12 +20,18 @@ export const NotificationsActions = createActionGroup({
     'Load Resolved Page Success': props<{ page: NotificationPage }>(),
     'Load Resolved Page Failure': props<{ message: string }>(),
 
+    // Troca de aba (Ativas | Resolvidas) — FR-003; a 1ª página de Resolvidas é buscada sob demanda.
+    'Tab Selected': props<{ tab: 'pending' | 'resolved' }>(),
+
     // Infinite scroll (FR-004a) — a fase (pendente/resolvida) é resolvida no effect
     // a partir do estado atual, não passada pelo componente.
     'Load Next Batch Requested': emptyProps(),
 
     // Pull-to-refresh (FR-004b) — reinicia os dois cursores
     'Refresh Requested': emptyProps(),
+
+    // Notificações não lidas exibidas na lista passam a lidas (FR-005); a falha é silenciosa.
+    'Mark As Read Requested': props<{ notificationIds: number[] }>(),
 
     // Retry do erro genérico (FR-016), sem dados em cache
     'Retry Requested': props<{ hospitalId: number }>(),

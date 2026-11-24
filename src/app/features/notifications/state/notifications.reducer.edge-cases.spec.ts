@@ -14,6 +14,7 @@ function notification(id: number, createdAt = new Date().toISOString()): Notific
     read: false,
     replies: [],
     replyCount: 0,
+    type: 'patient_message',
   };
 }
 

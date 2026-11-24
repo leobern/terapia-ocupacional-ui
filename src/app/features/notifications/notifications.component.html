@@ -65,34 +65,50 @@
           (touchstart)="onTouchStart($event, scrollContainer)"
           (touchend)="onTouchEnd($event)"
         >
+          <div
+            class="notifications__tabs"
+            role="tablist"
+            aria-label="Visão das notificações"
+          >
+            @for (tab of tabs; track tab.id) {
+              <button
+                type="button"
+                role="tab"
+                class="notifications__tab"
+                [class.notifications__tab--active]="activeTab() === tab.id"
+                [attr.aria-selected]="activeTab() === tab.id"
+                (click)="onSelectTab(tab.id)"
+              >
+                {{ tab.label }}
+              </button>
+            }
+          </div>
+
           @if (isEmpty()) {
-            <!-- Figma (seção 07, tela 6 · Vazio) -->
             <div class="notifications__empty" role="status">
               <ph-icon name="bell" [size]="48" />
-              <p class="notifications__empty-title">Tudo em dia por aqui</p>
-              <p class="notifications__empty-text">
-                Quando alguém da equipe mencionar você ou um paciente seu, a
-                notificação aparece aqui.
-              </p>
+              <p class="notifications__empty-title">{{ emptyTitle() }}</p>
+              <p class="notifications__empty-text">{{ emptyText() }}</p>
             </div>
           }
 
-          <!-- Figma (seção 07): no desktop, Pendentes e Resolvidas lado a lado. -->
-          <section class="notifications__column" aria-label="Pendentes">
-            @if (pendingItems().length > 0) {
-              <app-notification-section-title
-                class="notifications__section-title"
-                label="Pendentes"
-                [count]="pendingCount()"
-              />
-            }
-            @for (notification of pendingItems(); track notification.id) {
+          <section
+            class="notifications__cards"
+            role="tabpanel"
+            [attr.aria-label]="
+              activeTab() === 'pending' ? 'Ativas' : 'Resolvidas'
+            "
+          >
+            @for (notification of visibleItems(); track notification.id) {
               <app-card-notify
                 actionAriaLabel="Responder"
+                [resolved]="activeTab() === 'resolved'"
                 [type]="cardType(notification.id)"
                 [authorName]="notification.author.name"
                 [authorSpecialty]="notification.author.specialty"
                 [authorPhotoUrl]="notification.author.photoUrl"
+                [kindLabel]="kindLabel(notification.type)"
+                [overdue]="notification.overdue === true"
                 [unread]="!notification.read"
                 [patientName]="notification.patient?.name ?? ''"
                 [description]="notification.description"
@@ -109,39 +125,6 @@
                 (collapseClick)="onCollapseClick(notification.id)"
                 (resolveClick)="onResolveClick(notification.id)"
               />
-            }
-            <div #scrollSentinel class="notifications__scroll-sentinel"></div>
-          </section>
-
-          <section class="notifications__column" aria-label="Resolvidas">
-            @if (resolvedItems().length > 0) {
-              <app-notification-section-title
-                class="notifications__section-title"
-                label="Resolvidas"
-                [count]="resolvedCount()"
-              />
-
-              @for (notification of resolvedItems(); track notification.id) {
-                <app-card-notify
-                  actionAriaLabel="Responder"
-                  [resolved]="true"
-                  [type]="cardType(notification.id)"
-                  [authorName]="notification.author.name"
-                  [authorSpecialty]="notification.author.specialty"
-                  [authorPhotoUrl]="notification.author.photoUrl"
-                  [patientName]="notification.patient?.name ?? ''"
-                  [description]="notification.description"
-                  [time]="formatTime(notification.createdAt)"
-                  [replies]="toReplies(notification)"
-                  [draftText]="draftText()"
-                  [draftAuthorName]="professionalName"
-                  [draftAuthorSpecialty]="professionalSpecialty"
-                  (cardClick)="onCardClick(notification.patient?.id)"
-                  (answerClick)="onAnswerClick(notification.id)"
-                  (viewRepliesClick)="onViewRepliesClick(notification.id)"
-                  (collapseClick)="onCollapseClick(notification.id)"
-                />
-              }
             }
             <div #scrollSentinel class="notifications__scroll-sentinel"></div>
           </section>
