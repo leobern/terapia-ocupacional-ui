@@ -35,7 +35,7 @@ import { type DirectoryUser } from '../../shared/services/user-directory';
 import { formatRelativeTime } from '../../shared/utils/relative-time';
 import { HospitalContextService } from '../home/hospital-context.service';
 import { NotificationsRepository } from './data-access/notifications-repository.service';
-import { Notification } from './notifications.models';
+import { Notification, NotificationType } from './notifications.models';
 import { NotificationsActions } from './state/notifications.actions';
 import {
   type NotificationsTab,
@@ -66,6 +66,12 @@ function formatTodayLabel(): string {
 
 /** Distância mínima de arraste, em px, para disparar o pull-to-refresh (FR-004b). */
 const PULL_TO_REFRESH_THRESHOLD = 80;
+
+const KIND_LABELS: Record<NotificationType, string> = {
+  internal_notice: 'Comunicado interno',
+  patient_message: 'Mensagem de paciente',
+  reevaluation_pending: 'Pendência de reavaliação',
+};
 
 /**
  * Tela "Notificações" (specs/004-notificacoes) — cabeçalho (sino + contagem, sem botão
@@ -259,6 +265,10 @@ export class NotificationsComponent implements OnDestroy {
   }
 
   /** `type` a passar para `app-card-notify` — usado no template para as 2 seções. */
+  kindLabel(type: NotificationType): string {
+    return KIND_LABELS[type];
+  }
+
   cardType(id: number): CardNotifyType {
     if (this.answeringId() === id) {
       return 'answering';

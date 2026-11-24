@@ -19,6 +19,7 @@ function notification(id: number, overrides: Partial<Notification> = {}): Notifi
     read: false,
     replyCount: 0,
     replies: [],
+    type: 'patient_message',
     ...overrides,
   };
 }

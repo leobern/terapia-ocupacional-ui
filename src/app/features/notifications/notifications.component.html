@@ -104,6 +104,8 @@
                 [authorName]="notification.author.name"
                 [authorSpecialty]="notification.author.specialty"
                 [authorPhotoUrl]="notification.author.photoUrl"
+                [kindLabel]="kindLabel(notification.type)"
+                [overdue]="notification.overdue === true"
                 [unread]="!notification.read"
                 [patientName]="notification.patient?.name ?? ''"
                 [description]="notification.description"

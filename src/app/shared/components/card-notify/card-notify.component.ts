@@ -52,6 +52,10 @@ export class CardNotifyComponent {
   readonly resolved = input<boolean>(false);
   /** v2: ponto vermelho de 8px no card não lido (Figma v2/CardNotify Read=false). */
   readonly unread = input<boolean>(false);
+  /** Tipo do conteúdo em texto (ex.: "Comunicado interno"); vazio = sem etiqueta. */
+  readonly kindLabel = input<string>('');
+  /** Pendência de reavaliação vencida. */
+  readonly overdue = input<boolean>(false);
   readonly patientAriaLabel = input<string>('Paciente');
   readonly replies = input<readonly CardNotifyReply[]>([]);
   readonly draftText = input<string>('');

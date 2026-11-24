@@ -45,6 +45,7 @@ function seed(): StoredNotification[] {
     read: false,
     replies,
     replyCount: replies.length,
+    type: 'patient_message',
   });
   const reply = (id: number, text: string): NotificationReply => ({
     author: ME,
@@ -53,7 +54,36 @@ function seed(): StoredNotification[] {
     text,
   });
 
+  const notice = (id: number, author: ProfessionalRef, description: string, minutes: number): Notification => ({
+    ...base(id, author, null, description, minutes),
+    type: 'internal_notice',
+  });
+  const reevaluation = (
+    id: number,
+    patient: string,
+    description: string,
+    minutes: number,
+    overdue: boolean,
+  ): Notification => ({
+    ...base(id, FILIPPA, patient, description, minutes),
+    overdue,
+    type: 'reevaluation_pending',
+  });
+
   return [
+    { notification: notice(14, RAFAEL, 'Reunião de equipe amanhã às 8h na sala 3.', 10), status: 'pending' },
+    {
+      notification: reevaluation(15, 'Almira Borges Pereira', 'Reavaliação nutricional vencida há 2 dias.', 30, true),
+      status: 'pending',
+    },
+    {
+      notification: reevaluation(16, 'Samuel Lima Rocha', 'Reavaliação nutricional prevista para amanhã.', 50, false),
+      status: 'pending',
+    },
+    {
+      notification: { ...notice(25, JAIRO, 'Checklist de segurança atualizado.', 200), replies: [], replyCount: 1 },
+      status: 'resolved',
+    },
     {
       notification: base(
         11,
@@ -127,7 +157,7 @@ export class NotificationsRepository {
   }
 
   /** Página (por cursor = índice do próximo item) das notificações de um status, da mais recente para a mais antiga. */
-  list(status: NotificationStatus, cursor: string | null, limit: number): NotificationPage {
+  list(status: NotificationStatus, cursor: string | null, limit: number): NotificationPage & { totalCount: number } {
     const all = this.items
       .filter(item => item.status === status)
       .map(item => item.notification)
@@ -170,6 +200,7 @@ export class NotificationsRepository {
       read: false,
       replies: [],
       replyCount: 0,
+      type: 'internal_notice',
     };
 
     this.items = [...this.items, { notification, status: 'pending' }];

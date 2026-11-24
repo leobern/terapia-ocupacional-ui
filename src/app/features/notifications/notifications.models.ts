@@ -21,11 +21,16 @@ export interface NotificationReply {
   createdAt: string;
 }
 
+export type NotificationType = 'patient_message' | 'reevaluation_pending' | 'internal_notice';
+
 export interface Notification {
   id: number;
+  type: NotificationType;
+  /** Pendência de reavaliação vencida (indicador da FT-005-1). */
+  overdue?: boolean;
   author: ProfessionalRef;
-  /** Ausente nas notificações criadas pelo formulário (que não escolhe paciente). */
-  patient: PatientRef | null;
+  /** Ausente em comunicados internos e nas notificações criadas pelo formulário. */
+  patient?: PatientRef | null;
   description: string;
   createdAt: string;
   read: boolean;
@@ -38,6 +43,8 @@ export type NotificationStatus = 'pending' | 'resolved';
 export interface NotificationPage {
   items: Notification[];
   nextCursor: string | null;
-  /** Contagem total (não paginada) daquele status — convergence T053. */
-  totalCount: number;
+  /** Não lidas do profissional (os dois tipos), independente de status/cursor. */
+  unreadCount?: number;
+  /** Contagem total daquele status — só a fonte provisória informa; o contrato não a define. */
+  totalCount?: number;
 }

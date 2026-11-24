@@ -14,10 +14,10 @@ describe('NotificationsRepository', () => {
     const second = repository.list('resolved', first.nextCursor, 2);
 
     expect(first.items.length).toBe(2);
-    expect(first.totalCount).toBe(4);
+    expect(first.totalCount).toBe(5);
     expect(first.nextCursor).toBe('2');
     expect(second.items.length).toBe(2);
-    expect(second.nextCursor).toBeNull();
+    expect(second.nextCursor).toBe('4');
     expect(Date.parse(first.items[0].createdAt)).toBeGreaterThanOrEqual(Date.parse(first.items[1].createdAt));
   });
 

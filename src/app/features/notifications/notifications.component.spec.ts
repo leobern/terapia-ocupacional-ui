@@ -28,6 +28,7 @@ function notification(id: number, overrides: Partial<Notification> = {}): Notifi
     read: false,
     replyCount: 0,
     replies: [],
+    type: 'patient_message',
     ...overrides,
   };
 }
@@ -295,6 +296,54 @@ describe('NotificationsComponent', () => {
 
       expect(repository.list('pending', null, 50).items.some(n => n.description === 'Revisar')).toBeTrue();
       expect(dispatch).toHaveBeenCalledWith(NotificationsActions.refreshRequested());
+    });
+  });
+
+  describe('tipos de conteúdo', () => {
+    const mixed = (): Notification[] => [
+      notification(1),
+      notification(2, { type: 'reevaluation_pending', overdue: true }),
+      notification(3, { type: 'reevaluation_pending', overdue: false }),
+      notification(4, { type: 'internal_notice', patient: undefined }),
+    ];
+
+    for (const tab of ['pending', 'resolved'] as const) {
+      it(`aba ${tab}: identifica cada tipo em texto, "Vencida" só na vencida e sem paciente no comunicado`, async () => {
+        await configureStore(
+          tab === 'pending'
+            ? { status: 'success', pendingItems: mixed() }
+            : { activeTab: 'resolved', resolvedItems: mixed(), resolvedLoaded: true, status: 'success' },
+        );
+        createComponent();
+        const cards = Array.from(fixture.nativeElement.querySelectorAll('app-card-notify')) as HTMLElement[];
+        const labels = cards.map(c => c.querySelector('.card-notify__kind-label')?.textContent?.trim());
+
+        expect(labels).toEqual([
+          'Mensagem de paciente',
+          'Pendência de reavaliação',
+          'Pendência de reavaliação',
+          'Comunicado interno',
+        ]);
+
+        expect(cards.map(c => c.querySelector('.card-notify__kind-label--overdue')?.textContent?.trim())).toEqual([
+          undefined,
+          'Vencida',
+          undefined,
+          undefined,
+        ]);
+
+        expect(cards[3].querySelector('.card-notify__patient')).toBeNull();
+      });
+    }
+
+    it('toque em comunicado interno não navega ao paciente', async () => {
+      await configureStore({ status: 'success', pendingItems: mixed() });
+      createComponent();
+      spyOn(router, 'navigate');
+
+      fixture.componentInstance.onCardClick(undefined);
+
+      expect(router.navigate).not.toHaveBeenCalled();
     });
   });
 
