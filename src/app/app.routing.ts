@@ -39,6 +39,18 @@ export const routes: Routes = [
     data: { hideShell: true },
     loadChildren: () => import('./features/splash/splash.routes').then(m => m.SPLASH_ROUTES),
   },
+  // Tutorial do app (US-001-3-02): placeholder até a story existir.
+  {
+    path: 'welcome/tutorial',
+    data: { screen: 'tutorial' },
+    loadComponent: () =>
+      import('./features/pending-screen/pending-screen.component').then(m => m.PendingScreenComponent),
+  },
+  {
+    path: 'welcome',
+    data: { hideShell: true },
+    loadChildren: () => import('./features/welcome/welcome.routes').then(m => m.WELCOME_ROUTES),
+  },
   // Detalhe da notificação (US-003-3-04): tela com especificação própria — placeholder até lá.
   {
     path: 'notifications/:id',

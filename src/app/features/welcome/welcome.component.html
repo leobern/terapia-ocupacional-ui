@@ -1,0 +1,28 @@
+<app-background-mesh variant="gradient" />
+<main class="welcome">
+  @if (name()) {
+    <div class="welcome__logo" aria-hidden="true">
+      <app-icon-logo state="default" />
+    </div>
+    <div class="welcome__message">
+      <h1 class="welcome__title">
+        {{ i18n.t('welcome.greeting').replace('{name}', name()) }}
+      </h1>
+      <p class="welcome__hint">{{ i18n.t('welcome.hint') }}</p>
+    </div>
+    <div class="welcome__actions">
+      <app-button
+        [fullWidth]="true"
+        [label]="i18n.t('welcome.startTutorial')"
+        (click)="startTutorial()"
+      />
+      <app-button
+        appearance="outlined"
+        kind="secondary"
+        [fullWidth]="true"
+        [label]="i18n.t('welcome.goToApp')"
+        (click)="goToApp()"
+      />
+    </div>
+  }
+</main>

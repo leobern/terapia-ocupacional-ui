@@ -1,6 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter, Router } from '@angular/router';
 
+import { WelcomeSource, WelcomeStatus } from '../welcome/welcome-source';
 import { SPLASH_MIN_DISPLAY_MS, SPLASH_TIMEOUT_MS, SplashComponent } from './splash.component';
 import { LocalStartupState, StartupStateReader } from './startup-state';
 
@@ -13,27 +14,44 @@ class FakeReader extends StartupStateReader {
   }
 }
 
+class FakeWelcome extends WelcomeSource {
+  status: Promise<WelcomeStatus> = Promise.resolve({ name: 'Ana', shouldShow: false });
+
+  getStatus(): Promise<WelcomeStatus> {
+    return this.status;
+  }
+
+  complete(): Promise<void> {
+    return Promise.resolve();
+  }
+}
+
 describe('SplashComponent', () => {
   let reader: FakeReader;
+  let welcome: FakeWelcome;
   let navigate: jasmine.Spy;
   let fixture: ComponentFixture<SplashComponent>;
 
   /** Avança o relógio simulado e drena as promises pendentes. */
   async function tick(ms: number): Promise<void> {
     jasmine.clock().tick(ms);
-    await Promise.resolve();
-    await Promise.resolve();
-    await Promise.resolve();
+    await Promise.all(Array.from({ length: 8 }, () => Promise.resolve()));
+    await new Promise<void>(resolve => queueMicrotask(resolve));
   }
 
   beforeEach(() => {
     jasmine.clock().install();
     spyOnProperty(navigator, 'language', 'get').and.returnValue('pt-BR');
     reader = new FakeReader();
+    welcome = new FakeWelcome();
     reader.initialize = jasmine.createSpy('initialize').and.callFake(() => Promise.resolve());
     TestBed.configureTestingModule({
       imports: [SplashComponent],
-      providers: [provideRouter([]), { provide: StartupStateReader, useValue: reader }],
+      providers: [
+        provideRouter([]),
+        { provide: StartupStateReader, useValue: reader },
+        { provide: WelcomeSource, useValue: welcome },
+      ],
     });
     navigate = spyOn(TestBed.inject(Router), 'navigateByUrl').and.resolveTo(true);
   });
@@ -70,6 +88,33 @@ describe('SplashComponent', () => {
     await tick(SPLASH_MIN_DISPLAY_MS);
 
     expect(navigate).toHaveBeenCalledWith('/lock', { replaceUrl: true });
+  });
+
+  it('welcome: routes to the welcome screen on the first approved access', async () => {
+    reader.state = { hasApprovedHospitalLink: true, isLocked: false, isSessionValid: true };
+    welcome.status = Promise.resolve({ name: 'Ana', shouldShow: true });
+    open();
+    await tick(SPLASH_MIN_DISPLAY_MS);
+
+    expect(navigate).toHaveBeenCalledWith('/welcome', { replaceUrl: true });
+  });
+
+  it('welcome: falls back to home when reading the welcome state fails', async () => {
+    reader.state = { hasApprovedHospitalLink: true, isLocked: false, isSessionValid: true };
+    welcome.status = Promise.reject(new Error('offline'));
+    open();
+    await tick(SPLASH_MIN_DISPLAY_MS);
+
+    expect(navigate).toHaveBeenCalledWith('/home', { replaceUrl: true });
+  });
+
+  it('welcome: does not consult the welcome state without a session', async () => {
+    const spy = spyOn(welcome, 'getStatus').and.callThrough();
+
+    open();
+    await tick(SPLASH_MIN_DISPLAY_MS);
+
+    expect(spy).not.toHaveBeenCalled();
   });
 
   it('C3: routes to home', async () => {
