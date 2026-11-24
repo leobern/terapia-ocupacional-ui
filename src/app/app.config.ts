@@ -109,6 +109,8 @@ import {
   ProvisionalPatientMessages,
   ProvisionalReplyTranscriber,
 } from './features/patient-messages/provisional-patient-messages';
+import { InternacaoCreationPort } from './features/patient-registration/internacao-creation.port';
+import { InternacoesApiService } from './features/patient-registration/internacoes-api.service';
 import { PacientesApiService } from './features/patient-registration/pacientes-api.service';
 import { PatientCreationPort } from './features/patient-registration/patient-creation.port';
 import { PatientDuplicateApiService } from './features/patient-registration/patient-duplicate-api.service';
@@ -151,6 +153,7 @@ export const appConfig: ApplicationConfig = {
     { provide: UnreadNotificationsReader, useClass: ApiUnreadNotificationsReader },
     { provide: DailyPatientsSource, useClass: ProvisionalDailyPatientsSource },
     { provide: PatientCreationPort, useClass: PacientesApiService },
+    { provide: InternacaoCreationPort, useClass: InternacoesApiService },
     { provide: PatientListAiCommandPort, useClass: ProvisionalPatientListAiCommand },
     ProvisionalPatientMessages,
     { provide: PatientMessagesSource, useExisting: ProvisionalPatientMessages },

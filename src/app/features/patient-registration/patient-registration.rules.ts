@@ -5,9 +5,23 @@ export type PatientSex = 'MALE' | 'FEMALE' | 'NOT_INFORMED';
 export const PATIENT_SEXES: readonly PatientSex[] = ['MALE', 'FEMALE', 'NOT_INFORMED'];
 export const FULL_NAME_MAX = 150;
 export const SAME_MAX = 30;
+export const BED_NUMBER_MAX = 20;
+export const HEALTH_INSURANCE_MAX = 100;
+export const ADMISSION_NUMBER_MAX = 30;
 
 /** Códigos das mensagens do sistema usados nas validações. */
-export type PatientMessageCode = 'MSG-01' | 'MSG-02' | 'MSG-03' | 'MSG-05' | 'admitChoice' | 'sameTooLong';
+export type PatientMessageCode =
+  | 'MSG-01'
+  | 'MSG-02'
+  | 'MSG-03'
+  | 'MSG-05'
+  | 'MSG-08'
+  | 'admissionNumberTooLong'
+  | 'admitChoice'
+  | 'bedTooLong'
+  | 'insuranceTooLong'
+  | 'invalidDate'
+  | 'sameTooLong';
 
 export type RuleResult<T> = { readonly value: T } | { readonly code: PatientMessageCode };
 
@@ -33,25 +47,40 @@ export function validateFullName(raw: string): RuleResult<string> {
   return name.length > FULL_NAME_MAX ? { code: 'MSG-05' } : { value: name };
 }
 
-/** Data dd/mm/aaaa existente e não posterior a `today` (hoje é válido); devolve `aaaa-mm-dd` (MSG-02 se inválida). */
-export function validateBirthDate(raw: string, today: Date): RuleResult<string> {
+interface ParsedDate {
+  readonly date: Date;
+  readonly iso: string;
+}
+
+/** Data dd/mm/aaaa existente (ano ≥ 1); `null` se o texto não for uma data real. */
+function parseBrDate(raw: string): ParsedDate | null {
   const match = DATE_BR.exec(raw.trim());
 
   if (!match) {
-    return { code: 'MSG-02' };
+    return null;
   }
   const [day, month, year] = [Number(match[1]), Number(match[2]), Number(match[3])];
   const date = new Date(year, month - 1, day);
-  const exists = date.getFullYear() === year && date.getMonth() === month - 1 && date.getDate() === day;
-  const startOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate());
 
-  if (!exists || year < 1 || date > startOfToday) {
-    return { code: 'MSG-02' };
+  if (date.getFullYear() !== year || date.getMonth() !== month - 1 || date.getDate() !== day || year < 1) {
+    return null;
   }
 
   return {
-    value: `${String(year).padStart(4, '0')}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`,
+    date,
+    iso: `${String(year).padStart(4, '0')}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`,
   };
+}
+
+function startOfDay(day: Date): Date {
+  return new Date(day.getFullYear(), day.getMonth(), day.getDate());
+}
+
+/** Data dd/mm/aaaa existente e não posterior a `today` (hoje é válido); devolve `aaaa-mm-dd` (MSG-02 se inválida). */
+export function validateBirthDate(raw: string, today: Date): RuleResult<string> {
+  const parsed = parseBrDate(raw);
+
+  return parsed && parsed.date <= startOfDay(today) ? { value: parsed.iso } : { code: 'MSG-02' };
 }
 
 /** Sexo: aceita o rótulo (`labels`) ou o valor do contrato; qualquer outra coisa é MSG-03. */
@@ -78,4 +107,58 @@ export function validateAdmitChoice(raw: string): RuleResult<'yes' | 'no'> {
   }
 
   return answer === 'nao' || answer === 'no' ? { value: 'no' } : { code: 'admitChoice' };
+}
+
+/** "Não sei" e equivalentes: o campo opcional fica vazio (RN-01 da US-002-1-06). */
+function isDontKnow(raw: string): boolean {
+  return ['nao sei', 'n sei', 'nao lembro', "i don't know", 'i dont know', 'dont know', 'unknown'].includes(normalize(raw));
+}
+
+function validateOptionalText(raw: string, max: number, tooLong: PatientMessageCode): RuleResult<string> {
+  const text = raw.trim();
+
+  if (isDontKnow(text)) {
+    return { value: '' };
+  }
+
+  return text.length > max ? { code: tooLong } : { value: text };
+}
+
+/** Leito: opcional, até 20 caracteres. */
+export function validateBedNumber(raw: string): RuleResult<string> {
+  return validateOptionalText(raw, BED_NUMBER_MAX, 'bedTooLong');
+}
+
+/** Convênio: opcional, até 100 caracteres. */
+export function validateHealthInsurance(raw: string): RuleResult<string> {
+  return validateOptionalText(raw, HEALTH_INSURANCE_MAX, 'insuranceTooLong');
+}
+
+/** Número de atendimento: opcional, até 30 caracteres, sem formato fixo. */
+export function validateAdmissionNumber(raw: string): RuleResult<string> {
+  return validateOptionalText(raw, ADMISSION_NUMBER_MAX, 'admissionNumberTooLong');
+}
+
+/** Data de internação hospitalar: dd/mm/aaaa real e não futura (RN-02, MSG-08); "não sei" deixa vazio. */
+export function validateHospitalAdmissionDate(raw: string, today: Date): RuleResult<string> {
+  if (isDontKnow(raw)) {
+    return { value: '' };
+  }
+  const parsed = parseBrDate(raw);
+
+  if (!parsed) {
+    return { code: 'invalidDate' };
+  }
+
+  return parsed.date > startOfDay(today) ? { code: 'MSG-08' } : { value: parsed.iso };
+}
+
+/** Data de início da TN: dd/mm/aaaa real (pode ser futura); "não sei" deixa vazio. */
+export function validateNutritionalTherapyStartDate(raw: string): RuleResult<string> {
+  if (isDontKnow(raw)) {
+    return { value: '' };
+  }
+  const parsed = parseBrDate(raw);
+
+  return parsed ? { value: parsed.iso } : { code: 'invalidDate' };
 }
