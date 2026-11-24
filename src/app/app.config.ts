@@ -119,6 +119,8 @@ import { LocalStartupStateReader } from './features/splash/local-startup-state-r
 import { StartupStateReader } from './features/splash/startup-state';
 import { WelcomeApiService } from './features/welcome/welcome-api.service';
 import { WelcomeSource } from './features/welcome/welcome-source';
+import { TutorialApiService } from './features/tutorial/tutorial-api.service';
+import { TutorialStateStore } from './features/tutorial/tutorial-state';
 import { ProvisionalSessionRoleReader } from './shared/auth/provisional-session-role-reader';
 import { SessionRoleReader } from './shared/auth/session-role';
 import { DEV_BACKEND_PROVIDERS } from './shared/dev-backend/dev-backend.providers';
@@ -134,6 +136,7 @@ export const appConfig: ApplicationConfig = {
     { provide: SessionRevoker, useClass: NoopSessionRevoker },
     { provide: StartupStateReader, useClass: LocalStartupStateReader },
     { provide: WelcomeSource, useClass: WelcomeApiService },
+    { provide: TutorialStateStore, useClass: TutorialApiService },
     { provide: LinkedHospitalsReader, useClass: HomeHospitalsApiService },
     { provide: UnreadNotificationsReader, useClass: LocalUnreadNotificationsReader },
     { provide: DailyPatientsSource, useClass: ProvisionalDailyPatientsSource },

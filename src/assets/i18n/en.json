@@ -53,16 +53,45 @@
       "title": "Set new password"
     }
   },
+  "settings": {
+    "reviewTutorial": "Review tutorial",
+    "title": "Settings"
+  },
   "splash": {
     "logoLabel": "Conductia",
     "noConnection": "No connection",
     "noConnectionHint": "Check your internet and try again.",
     "retry": "Try again"
   },
+  "tutorial": {
+    "back": "Back",
+    "finish": "Finish",
+    "next": "Next",
+    "progress": "Step {current} of {total}",
+    "skip": "Skip",
+    "steps": {
+      "assistant": {
+        "description": "Ask or request actions through the assistant, which also gathers the screen shortcuts.",
+        "title": "AI assistant"
+      },
+      "home": {
+        "description": "See your patients' status and what needs your attention today, all in one place.",
+        "title": "Metabolic Dashboard"
+      },
+      "notifications": {
+        "description": "Get team notices and announcements and reply without leaving the app.",
+        "title": "Notifications"
+      },
+      "patients": {
+        "description": "Follow each patient, with diagnosis, nutrition plan and daily evolution.",
+        "title": "Patients"
+      }
+    }
+  },
   "welcome": {
+    "goToApp": "Go straight to the app",
     "greeting": "Hello, {name}!",
     "hint": "Your access was approved and Conductia is ready for you. Would you like a quick tutorial or to go straight to the Metabolic Panel?",
-    "startTutorial": "Start tutorial",
-    "goToApp": "Go straight to the app"
+    "startTutorial": "Start tutorial"
   }
 }

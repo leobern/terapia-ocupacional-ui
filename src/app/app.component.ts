@@ -89,6 +89,10 @@ export class AppComponent {
       return 'pacientes';
     }
 
+    if (url.startsWith('/settings')) {
+      return 'configuracoes';
+    }
+
     return url.startsWith('/notifications') ? 'notificacoes' : null;
   });
 
@@ -201,6 +205,11 @@ export class AppComponent {
   protected onNotificacoesClick(): void {
     this.menuOpen.set(false);
     this.router.navigate(['/notifications']);
+  }
+
+  protected onConfiguracoesClick(): void {
+    this.menuOpen.set(false);
+    void this.router.navigate(['/settings']);
   }
 
   protected onFarmaciaClick(): void {

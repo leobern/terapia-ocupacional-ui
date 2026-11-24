@@ -1,0 +1,86 @@
+@use '../../shared/styles/tokens';
+@use '../../shared/styles/typography';
+
+.tutorial {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: tokens.$space-24;
+  box-sizing: border-box;
+  max-width: 640px;
+  min-height: 100vh;
+  margin-inline: auto;
+  padding: tokens.$space-16;
+  color: tokens.c(content-1);
+}
+
+.tutorial__top {
+  display: flex;
+  justify-content: flex-end;
+  align-self: stretch;
+  // Área de toque mínima de 44px.
+  min-height: 44px;
+}
+
+.tutorial__card {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: tokens.$space-16;
+  text-align: center;
+}
+
+.tutorial__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: tokens.c(primary);
+}
+
+.tutorial__title {
+  margin: 0;
+  color: tokens.c(content-1);
+
+  @include typography.title-lg;
+}
+
+.tutorial__description {
+  margin: 0;
+  color: tokens.c(content-4);
+
+  @include typography.body-lg;
+}
+
+.tutorial__progress {
+  margin: 0;
+  color: tokens.c(content-4);
+
+  @include typography.body-md;
+}
+
+.tutorial__dots {
+  display: flex;
+  gap: tokens.$space-8;
+}
+
+.tutorial__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: tokens.c(content-4);
+  opacity: 0.4;
+}
+
+.tutorial__dot--active {
+  background: tokens.c(primary);
+  opacity: 1;
+}
+
+.tutorial__actions {
+  display: flex;
+  gap: tokens.$space-12;
+  justify-content: center;
+  align-self: stretch;
+}

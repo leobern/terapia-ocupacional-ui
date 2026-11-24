@@ -29,6 +29,22 @@ export const routes: Routes = [
     path: 'home',
     loadChildren: () => import('./features/home/home.routes').then(m => m.HOME_ROUTES),
   },
+  // Tutorial do app (US-001-3-02): primeiro acesso, sem o shell de navegação.
+  {
+    path: 'tutorial',
+    data: { hideShell: true },
+    loadChildren: () => import('./features/tutorial/tutorial.routes').then(m => m.TUTORIAL_ROUTES),
+  },
+  // Configurações (US-001-3-02, RN03): rever o tutorial. Rota própria em modo revisão, sem o shell.
+  {
+    path: 'settings/tutorial',
+    data: { hideShell: true, review: true },
+    loadChildren: () => import('./features/tutorial/tutorial.routes').then(m => m.TUTORIAL_ROUTES),
+  },
+  {
+    path: 'settings',
+    loadChildren: () => import('./features/settings/settings.routes').then(m => m.SETTINGS_ROUTES),
+  },
   {
     path: 'patients',
     pathMatch: 'full',
@@ -38,13 +54,6 @@ export const routes: Routes = [
     path: 'splash',
     data: { hideShell: true },
     loadChildren: () => import('./features/splash/splash.routes').then(m => m.SPLASH_ROUTES),
-  },
-  // Tutorial do app (US-001-3-02): placeholder até a story existir.
-  {
-    path: 'welcome/tutorial',
-    data: { screen: 'tutorial' },
-    loadComponent: () =>
-      import('./features/pending-screen/pending-screen.component').then(m => m.PendingScreenComponent),
   },
   {
     path: 'welcome',

@@ -53,16 +53,45 @@
       "title": "Definir nova senha"
     }
   },
+  "settings": {
+    "reviewTutorial": "Rever tutorial",
+    "title": "Configurações"
+  },
   "splash": {
     "logoLabel": "Conductia",
     "noConnection": "Sem conexão",
     "noConnectionHint": "Verifique sua internet e tente novamente.",
     "retry": "Tentar novamente"
   },
+  "tutorial": {
+    "back": "Voltar",
+    "finish": "Concluir",
+    "next": "Avançar",
+    "progress": "Passo {current} de {total}",
+    "skip": "Pular",
+    "steps": {
+      "assistant": {
+        "description": "Pergunte ou peça ações pelo assistente: ele também reúne os atalhos da tela.",
+        "title": "Assistente de IA"
+      },
+      "home": {
+        "description": "Veja em um só lugar a situação dos seus pacientes e o que precisa da sua atenção hoje.",
+        "title": "Painel Metabólico"
+      },
+      "notifications": {
+        "description": "Receba avisos e comunicados da equipe e responda sem sair do app.",
+        "title": "Notificações"
+      },
+      "patients": {
+        "description": "Acompanhe cada paciente, com diagnóstico, plano nutricional e evolução diária.",
+        "title": "Pacientes"
+      }
+    }
+  },
   "welcome": {
+    "goToApp": "Ir direto ao app",
     "greeting": "Olá, {name}!",
     "hint": "Seu acesso foi aprovado e o Conductia já está pronto para você. Quer conhecer o app com um tutorial rápido ou ir direto ao Painel Metabólico?",
-    "startTutorial": "Iniciar tutorial",
-    "goToApp": "Ir direto ao app"
+    "startTutorial": "Iniciar tutorial"
   }
 }

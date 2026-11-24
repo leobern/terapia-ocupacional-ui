@@ -39,7 +39,7 @@ export class WelcomeComponent implements OnInit {
   }
 
   protected startTutorial(): void {
-    void this.finish('/welcome/tutorial');
+    void this.finish('/tutorial');
   }
 
   protected goToApp(): void {

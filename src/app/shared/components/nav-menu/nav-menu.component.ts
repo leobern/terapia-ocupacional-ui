@@ -23,7 +23,8 @@ import { IconButtonComponent } from '../icon-button/icon-button.component';
 import { IconLogoButtonComponent } from '../icon-logo/icon-logo-button.component';
 
 /** Mapeia as 6 chaves fixas dos itens de navegação (spec.md § Clarifications + Home). */
-export type NavMenuItemKey = 'home' | 'hospitais' | 'farmacia' | 'pacientes' | 'acoes-tela' | 'notificacoes';
+export type NavMenuItemKey =
+  'home' | 'hospitais' | 'farmacia' | 'pacientes' | 'acoes-tela' | 'notificacoes' | 'configuracoes';
 
 interface NavMenuItem {
   readonly key: NavMenuItemKey;
@@ -91,6 +92,7 @@ export class NavMenuComponent {
   readonly pacientesClick = output();
   readonly acoesTelaClick = output();
   readonly notificacoesClick = output();
+  readonly configuracoesClick = output();
   readonly logoutClick = output();
 
   protected readonly professionalName = 'Michelle Franklin';
@@ -116,6 +118,7 @@ export class NavMenuComponent {
     { icon: 'users-four', key: 'pacientes', label: 'Pacientes' },
     { icon: 'squares-four', key: 'acoes-tela', label: 'Ações da tela' },
     { icon: 'bell', key: 'notificacoes', label: 'Notificações' },
+    { icon: 'gear', key: 'configuracoes', label: 'Configurações' },
   ];
 
   // Anel de foco sistêmico compartilhado por todos os controles clicáveis do
@@ -155,6 +158,9 @@ export class NavMenuComponent {
         break;
       case 'notificacoes':
         this.notificacoesClick.emit();
+        break;
+      case 'configuracoes':
+        this.configuracoesClick.emit();
         break;
     }
   }

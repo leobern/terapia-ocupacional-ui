@@ -60,7 +60,7 @@ describe('WelcomeComponent', () => {
     await fixture.whenStable();
 
     expect(source.completed).toBe(1);
-    expect(navigate).toHaveBeenCalledWith('/welcome/tutorial', { replaceUrl: true });
+    expect(navigate).toHaveBeenCalledWith('/tutorial', { replaceUrl: true });
   });
 
   it('going straight to the app completes the welcome and goes to home', async () => {
