@@ -16,6 +16,11 @@ export interface NewNotification {
   readonly dueDate: string;
 }
 
+/** Página do armazenamento provisório: além do contrato, expõe a contagem total do status. */
+export interface StoredPage extends NotificationPage {
+  totalCount: number;
+}
+
 interface StoredNotification {
   readonly status: NotificationStatus;
   readonly notification: Notification;
@@ -127,7 +132,7 @@ export class NotificationsRepository {
   }
 
   /** Página (por cursor = índice do próximo item) das notificações de um status, da mais recente para a mais antiga. */
-  list(status: NotificationStatus, cursor: string | null, limit: number): NotificationPage {
+  list(status: NotificationStatus, cursor: string | null, limit: number): StoredPage {
     const all = this.items
       .filter(item => item.status === status)
       .map(item => item.notification)
@@ -139,6 +144,7 @@ export class NotificationsRepository {
       items: all.slice(start, end),
       nextCursor: end < all.length ? String(end) : null,
       totalCount: all.length,
+      unreadCount: all.filter(item => !item.read).length,
     };
   }
 

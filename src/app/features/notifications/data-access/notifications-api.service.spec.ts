@@ -54,4 +54,16 @@ describe('NotificationsApiService', () => {
 
     expect(done).toBeTrue();
   });
+
+  it('markAsRead: PUT /v1/notifications/:id/read', () => {
+    let done = false;
+
+    api.markAsRead(9).subscribe(() => (done = true));
+    const req = http.expectOne(r => r.url.endsWith('/v1/notifications/9/read'));
+
+    expect(req.request.method).toBe('PUT');
+    req.flush(null);
+
+    expect(done).toBeTrue();
+  });
 });

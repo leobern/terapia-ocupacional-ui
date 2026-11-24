@@ -8,6 +8,7 @@ import { MockStore, provideMockStore } from '@ngrx/store/testing';
 import { Subject } from 'rxjs';
 
 import { AiAssistantService } from '../../shared/services/ai-assistant.service';
+import { ConnectivityService } from '../../shared/services/connectivity.service';
 import { ScreenActionsService } from '../../shared/services/screen-actions.service';
 import { ViewportBreakpointService } from '../../shared/services/viewport-breakpoint.service';
 import { HospitalContextService } from '../home/hospital-context.service';
@@ -221,6 +222,46 @@ describe('NotificationsComponent', () => {
     });
   });
 
+  describe('offline e erros de ação', () => {
+    it('sem conexão: avisa, e responder/resolver não fazem nada; a lista segue visível', async () => {
+      await configureStore({ hospitalId: 1, status: 'success', pendingItems: [notification(1)] });
+      createComponent();
+      const dispatch = spyOn(store, 'dispatch').and.callThrough();
+
+      TestBed.inject(ConnectivityService).online.set(false);
+      fixture.detectChanges();
+      fixture.componentInstance.onAnswerClick(1);
+      fixture.componentInstance.onResolveClick(1);
+
+      expect(fixture.nativeElement.querySelector('.notifications__offline')).not.toBeNull();
+      expect(fixture.nativeElement.querySelectorAll('app-card-notify').length).toBe(1);
+      expect(dispatch).not.toHaveBeenCalled();
+    });
+
+    it('rascunho vazio não é enviado', async () => {
+      await configureStore({ hospitalId: 1, status: 'success', answeringId: 1, draftText: '  ' });
+      createComponent();
+      const dispatch = spyOn(store, 'dispatch').and.callThrough();
+
+      fixture.componentInstance.onSendDraft();
+
+      expect(dispatch).not.toHaveBeenCalled();
+    });
+
+    it('erro ao resolver aparece como alerta sem derrubar a lista', async () => {
+      await configureStore({
+        hospitalId: 1,
+        status: 'success',
+        pendingItems: [notification(1)],
+        actionErrorMessage: 'Você não é participante desta notificação.',
+      });
+      createComponent();
+
+      expect(fixture.nativeElement.querySelector('[role="alert"]')?.textContent).toContain('participante');
+      expect(fixture.nativeElement.querySelectorAll('app-card-notify').length).toBe(1);
+    });
+  });
+
   // --- US2: navegação ao paciente (FR-006) ---
 
   it('onCardClick navega para /patients/:id com o patientId correto', async () => {
@@ -337,7 +378,7 @@ describe('NotificationsComponent', () => {
   });
 
   it('onSendDraft despacha answerSubmitted só quando há um card em edição', async () => {
-    await configureStore({ status: 'success', answeringId: 5 });
+    await configureStore({ status: 'success', answeringId: 5, draftText: 'ok' });
     createComponent();
     spyOn(store, 'dispatch');
 

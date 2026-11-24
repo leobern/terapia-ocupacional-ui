@@ -35,8 +35,6 @@ import {
   ProvisionalManagerAccess,
 } from './features/hospital-team/provisional-hospital-invite';
 import { PendingNotificationsQueryResolver } from './features/notifications/assistant/pending-notifications-query.resolver';
-import { NotificationsApiService } from './features/notifications/data-access/notifications-api.service';
-import { ProvisionalNotificationsApiService } from './features/notifications/data-access/provisional-notifications-api.service';
 import { AssessmentAiStructurer } from './features/patient-hub/assessment/assessment-ai-structurer';
 import { AssessmentSource } from './features/patient-hub/assessment/assessment-source';
 import { AssessmentWriter } from './features/patient-hub/assessment/assessment-writer';
@@ -143,8 +141,7 @@ export const appConfig: ApplicationConfig = {
     { provide: NutritionAddedCards, useExisting: ProvisionalNutritionCardStore },
     { provide: NutritionHiddenCards, useExisting: ProvisionalNutritionCardStore },
     { provide: HomeNotificationsSource, useClass: HomeNotificationsApiService },
-    // Provisórios (sem backend ainda): notificações em memória e usuários de exemplo.
-    { provide: NotificationsApiService, useClass: ProvisionalNotificationsApiService },
+    // Provisórios (sem backend ainda): convite de hospital, usuários de exemplo etc.
     { provide: HospitalInvitePort, useClass: ProvisionalHospitalInvite },
     { provide: ManagerAccessReader, useClass: ProvisionalManagerAccess },
     { provide: UserDirectory, useClass: ProvisionalUserDirectory },

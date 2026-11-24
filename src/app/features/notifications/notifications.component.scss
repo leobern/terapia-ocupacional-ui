@@ -168,3 +168,13 @@
   font-size: 12px;
   color: tokens.c(content-4);
 }
+
+// Avisos da tela (offline / erro de ação): texto sempre junto da cor (status nunca só por cor).
+.notifications__offline,
+.notifications__answer-error {
+  margin: 0;
+  padding: 0 tokens.$space-8;
+  color: tokens.c(comm-alert);
+
+  @include typography.body-md;
+}

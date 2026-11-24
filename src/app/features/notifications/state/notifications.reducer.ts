@@ -1,6 +1,6 @@
 import { createFeature, createReducer, createSelector, on } from '@ngrx/store';
 
-import { Notification } from '../notifications.models';
+import { Notification, NotificationReply } from '../notifications.models';
 import { NotificationsActions } from './notifications.actions';
 
 export type NotificationsStatus =
@@ -10,7 +10,7 @@ export interface NotificationsState {
   hospitalId: number | null;
   pendingItems: Notification[];
   pendingCursor: string | null;
-  /** Contagem total (não paginada) — convergence T053, vem de `NotificationPage.totalCount`. */
+  /** Itens já carregados da seção (o contrato não devolve total por status). */
   pendingTotalCount: number;
   resolvedItems: Notification[];
   resolvedCursor: string | null;
@@ -33,6 +33,8 @@ export interface NotificationsState {
   submitting: boolean;
   /** Erro do último envio, se houver — exibido no bottom sheet (não a tela cheia). */
   answerErrorMessage: string | null;
+  /** Erro da última ação sobre um card (resolver), exibido sem derrubar a lista. */
+  actionErrorMessage: string | null;
   /** Diálogo "Descartar resposta não enviada?" pendente (FR-010a/FR-004b). */
   discardConfirmPending: boolean;
 }
@@ -55,6 +57,7 @@ export const initialNotificationsState: NotificationsState = {
   draftText: '',
   submitting: false,
   answerErrorMessage: null,
+  actionErrorMessage: null,
   discardConfirmPending: false,
 };
 
@@ -76,45 +79,39 @@ function hasUnsavedDraft(state: NotificationsState): boolean {
   return state.answeringId != null;
 }
 
-/**
- * Registra o incremento de `replyCount` de uma resposta bem-sucedida,
- * preservando a ordem cronológica da própria notificação (não da resposta)
- * dentro de Resolvidas — data-model.md §5. Cobre os dois casos: (a) a
- * notificação estava em Pendentes → migra para Resolvidas; (b) já estava em
- * Resolvidas (responder de novo a uma notificação já respondida) → só
- * atualiza a contagem, sem duplicar nem mover.
- */
-function moveToResolved(state: NotificationsState, notificationId: number): NotificationsState {
-  const jaResolvida = state.resolvedItems.some(item => item.id === notificationId);
+/** Ordena da mais recente para a mais antiga (FR-001). */
+function byNewest(items: Notification[]): Notification[] {
+  return [...items].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+}
 
-  if (jaResolvida) {
+/**
+ * Registra a resposta no histórico do card. Responder não resolve: o item fica na seção em que
+ * está, exceto se estava Resolvido — aí é reaberto e volta para Ativas (FR-012, o servidor
+ * reabre a thread na própria resposta).
+ */
+function applyReply(state: NotificationsState, notificationId: number, reply: NotificationReply): NotificationsState {
+  const withReply = (item: Notification): Notification => ({
+    ...item,
+    replies: [...item.replies, reply],
+    replyCount: item.replyCount + 1,
+  });
+  const reopened = state.resolvedItems.find(item => item.id === notificationId);
+
+  if (reopened) {
+    const pendingItems = byNewest([...state.pendingItems, withReply(reopened)]);
+
     return {
       ...state,
-      resolvedItems: state.resolvedItems.map(item =>
-        item.id === notificationId ? { ...item, replyCount: item.replyCount + 1 } : item,
-      ),
+      pendingItems,
+      pendingTotalCount: pendingItems.length,
+      resolvedItems: state.resolvedItems.filter(item => item.id !== notificationId),
+      resolvedTotalCount: Math.max(0, state.resolvedTotalCount - 1),
     };
   }
 
-  const notification = state.pendingItems.find(item => item.id === notificationId);
-
-  if (!notification) {
-    return state;
-  }
-  const updated: Notification = { ...notification, replyCount: notification.replyCount + 1 };
-  const resolvedItems = [...state.resolvedItems, updated].sort(
-    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
-  );
-
   return {
     ...state,
-    pendingItems: state.pendingItems.filter(item => item.id !== notificationId),
-    // Ajuste otimista dos totais (T053) — reflete no cabeçalho a migração de
-    // seção imediatamente, sem esperar um novo fetch; o próximo pull-to-refresh
-    // (ou reabertura da tela) reconcilia com o valor real do backend de qualquer forma.
-    pendingTotalCount: Math.max(0, state.pendingTotalCount - 1),
-    resolvedItems,
-    resolvedTotalCount: state.resolvedTotalCount + 1,
+    pendingItems: state.pendingItems.map(item => (item.id === notificationId ? withReply(item) : item)),
   };
 }
 
@@ -125,16 +122,14 @@ function resolveNotification(state: NotificationsState, notificationId: number):
   if (!notification) {
     return state;
   }
-  const resolvedItems = [...state.resolvedItems, notification].sort(
-    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
-  );
+  const resolvedItems = byNewest([...state.resolvedItems, notification]);
 
   return {
     ...state,
     pendingItems: state.pendingItems.filter(item => item.id !== notificationId),
     pendingTotalCount: Math.max(0, state.pendingTotalCount - 1),
     resolvedItems,
-    resolvedTotalCount: state.resolvedTotalCount + 1,
+    resolvedTotalCount: resolvedItems.length,
   };
 }
 
@@ -159,7 +154,7 @@ export const notificationsFeature = createFeature({
       ...state,
       pendingItems: appendWithoutDuplicates(state.pendingItems, page.items),
       pendingCursor: page.nextCursor,
-      pendingTotalCount: page.totalCount,
+      pendingTotalCount: appendWithoutDuplicates(state.pendingItems, page.items).length,
       status: 'success',
       stale: false,
       errorMessage: null,
@@ -180,7 +175,7 @@ export const notificationsFeature = createFeature({
       ...state,
       resolvedItems: appendWithoutDuplicates(state.resolvedItems, page.items),
       resolvedCursor: page.nextCursor,
-      resolvedTotalCount: page.totalCount,
+      resolvedTotalCount: appendWithoutDuplicates(state.resolvedItems, page.items).length,
       resolvedLoaded: true,
       status: 'success',
       stale: false,
@@ -235,8 +230,8 @@ export const notificationsFeature = createFeature({
       answerErrorMessage: null,
     })),
 
-    on(NotificationsActions.answerSubmitSuccess, (state, { notificationId }): NotificationsState => ({
-      ...moveToResolved(state, notificationId),
+    on(NotificationsActions.answerSubmitSuccess, (state, { notificationId, reply }): NotificationsState => ({
+      ...applyReply(state, notificationId, reply),
       answeringId: null,
       draftText: '',
       submitting: false,
@@ -260,9 +255,18 @@ export const notificationsFeature = createFeature({
       discardConfirmPending: false,
     })),
 
-    on(NotificationsActions.resolveSuccess, (state, { notificationId }): NotificationsState =>
-      resolveNotification(state, notificationId),
-    ),
+    on(NotificationsActions.resolveSuccess, (state, { notificationId }): NotificationsState => ({
+      ...resolveNotification(state, notificationId),
+      actionErrorMessage: null,
+    })),
+    on(NotificationsActions.resolveFailure, (state, { message }): NotificationsState => ({
+      ...state,
+      actionErrorMessage: message,
+    })),
+    on(NotificationsActions.resolveRequested, (state): NotificationsState => ({
+      ...state,
+      actionErrorMessage: null,
+    })),
     on(NotificationsActions.discardConfirmationRequested, (state): NotificationsState => ({
       ...state,
       discardConfirmPending: hasUnsavedDraft(state),
@@ -293,6 +297,7 @@ export const {
   selectDraftText,
   selectSubmitting,
   selectAnswerErrorMessage,
+  selectActionErrorMessage,
   selectDiscardConfirmPending,
 } = notificationsFeature;
 

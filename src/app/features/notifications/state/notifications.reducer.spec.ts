@@ -35,8 +35,8 @@ describe('notificationsFeature reducer', () => {
     expect(state.status).toBe('loading-initial');
   });
 
-  it('loadPendingPageSuccess popula a seção Pendentes e a contagem real (totalCount)', () => {
-    const page = { items: [notification(1), notification(2)], nextCursor: 'abc', totalCount: 2 };
+  it('loadPendingPageSuccess popula a seção Pendentes e a quantidade carregada', () => {
+    const page = { items: [notification(1), notification(2)], nextCursor: 'abc', unreadCount: 2 };
     const state = reducer(initialNotificationsState, NotificationsActions.loadPendingPageSuccess({ page }));
 
     expect(state.status).toBe('success');
@@ -49,14 +49,14 @@ describe('notificationsFeature reducer', () => {
     const primeiroLote = reducer(
       initialNotificationsState,
       NotificationsActions.loadPendingPageSuccess({
-        page: { items: [notification(1)], nextCursor: 'c1', totalCount: 15 },
+        page: { items: [notification(1)], nextCursor: 'c1', unreadCount: 15 },
       }),
     );
 
     const state = reducer(
       primeiroLote,
       NotificationsActions.loadPendingPageSuccess({
-        page: { items: [notification(2)], nextCursor: 'c2', totalCount: 15 },
+        page: { items: [notification(2)], nextCursor: 'c2', unreadCount: 15 },
       }),
     );
 
@@ -68,14 +68,14 @@ describe('notificationsFeature reducer', () => {
     const primeiroLote = reducer(
       initialNotificationsState,
       NotificationsActions.loadPendingPageSuccess({
-        page: { items: [notification(1)], nextCursor: null, totalCount: 1 },
+        page: { items: [notification(1)], nextCursor: null, unreadCount: 1 },
       }),
     );
 
     const state = reducer(
       primeiroLote,
       NotificationsActions.loadPendingPageSuccess({
-        page: { items: [notification(1)], nextCursor: null, totalCount: 1 },
+        page: { items: [notification(1)], nextCursor: null, unreadCount: 1 },
       }),
     );
 
@@ -86,14 +86,14 @@ describe('notificationsFeature reducer', () => {
     const comPendentes = reducer(
       initialNotificationsState,
       NotificationsActions.loadPendingPageSuccess({
-        page: { items: [notification(1)], nextCursor: null, totalCount: 1 },
+        page: { items: [notification(1)], nextCursor: null, unreadCount: 1 },
       }),
     );
 
     const state = reducer(
       comPendentes,
       NotificationsActions.loadResolvedPageSuccess({
-        page: { items: [notification(2, { replyCount: 1 })], nextCursor: null, totalCount: 1 },
+        page: { items: [notification(2, { replyCount: 1 })], nextCursor: null, unreadCount: 1 },
       }),
     );
 
@@ -115,7 +115,7 @@ describe('notificationsFeature reducer', () => {
     const comSucesso = reducer(
       initialNotificationsState,
       NotificationsActions.loadPendingPageSuccess({
-        page: { items: [notification(1)], nextCursor: null, totalCount: 1 },
+        page: { items: [notification(1)], nextCursor: null, unreadCount: 1 },
       }),
     );
 
@@ -130,7 +130,7 @@ describe('notificationsFeature reducer', () => {
     const comPendentes = reducer(
       initialNotificationsState,
       NotificationsActions.loadPendingPageSuccess({
-        page: { items: [notification(1)], nextCursor: 'c1', totalCount: 1 },
+        page: { items: [notification(1)], nextCursor: 'c1', unreadCount: 1 },
       }),
     );
 
@@ -143,7 +143,7 @@ describe('notificationsFeature reducer', () => {
     const comPendentesEsgotados = reducer(
       initialNotificationsState,
       NotificationsActions.loadPendingPageSuccess({
-        page: { items: [notification(1)], nextCursor: null, totalCount: 1 },
+        page: { items: [notification(1)], nextCursor: null, unreadCount: 1 },
       }),
     );
 
@@ -162,7 +162,7 @@ describe('notificationsFeature reducer', () => {
     const pendentesEsgotados = reducer(
       initialNotificationsState,
       NotificationsActions.loadPendingPageSuccess({
-        page: { items: [notification(1)], nextCursor: null, totalCount: 1 },
+        page: { items: [notification(1)], nextCursor: null, unreadCount: 1 },
       }),
     );
 
@@ -175,7 +175,7 @@ describe('notificationsFeature reducer', () => {
     const comResolvidasEsgotadas = reducer(
       initialNotificationsState,
       NotificationsActions.loadResolvedPageSuccess({
-        page: { items: [notification(1)], nextCursor: null, totalCount: 1 },
+        page: { items: [notification(1)], nextCursor: null, unreadCount: 1 },
       }),
     );
 
@@ -194,11 +194,11 @@ describe('notificationsFeature reducer', () => {
     expect(state.draftText).toBe('');
   });
 
-  it('answerSubmitSuccess migra a notificação de Pendentes para Resolvidas', () => {
+  it('answerSubmitSuccess registra a resposta e mantém a notificação em Ativas (responder não resolve)', () => {
     const comPendente = reducer(
       initialNotificationsState,
       NotificationsActions.loadPendingPageSuccess({
-        page: { items: [notification(1)], nextCursor: null, totalCount: 1 },
+        page: { items: [notification(1)], nextCursor: null, unreadCount: 1 },
       }),
     );
     const respondendo = reducer(comPendente, NotificationsActions.answerStarted({ notificationId: 1 }));
@@ -216,17 +216,18 @@ describe('notificationsFeature reducer', () => {
       }),
     );
 
-    expect(state.pendingItems.length).toBe(0);
-    expect(state.resolvedItems.length).toBe(1);
-    expect(state.resolvedItems[0].replyCount).toBe(1);
+    expect(state.resolvedItems.length).toBe(0);
+    expect(state.pendingItems.length).toBe(1);
+    expect(state.pendingItems[0].replyCount).toBe(1);
+    expect(state.pendingItems[0].replies.length).toBe(1);
     expect(state.answeringId).toBeNull();
   });
 
-  it('answerSubmitSuccess numa notificação já resolvida só incrementa a contagem (2ª resposta)', () => {
+  it('answerSubmitSuccess numa notificação resolvida a reabre: sai de Resolvidas e volta para Ativas (FR-012)', () => {
     const comResolvida = reducer(
       initialNotificationsState,
       NotificationsActions.loadResolvedPageSuccess({
-        page: { items: [notification(1, { replyCount: 1 })], nextCursor: null, totalCount: 1 },
+        page: { items: [notification(1, { replyCount: 1 })], nextCursor: null, unreadCount: 1 },
       }),
     );
 
@@ -243,8 +244,11 @@ describe('notificationsFeature reducer', () => {
       }),
     );
 
-    expect(state.resolvedItems.length).toBe(1);
-    expect(state.resolvedItems[0].replyCount).toBe(2);
+    expect(state.resolvedItems.length).toBe(0);
+    expect(state.resolvedTotalCount).toBe(0);
+    expect(state.pendingItems.length).toBe(1);
+    expect(state.pendingTotalCount).toBe(1);
+    expect(state.pendingItems[0].replyCount).toBe(2);
   });
 
   it('answerSubmitFailure preserva o rascunho e não altera a notificação (Acceptance Scenario 6)', () => {
@@ -303,7 +307,7 @@ describe('notificationsFeature reducer', () => {
     const loaded = reducer(
       initialNotificationsState,
       NotificationsActions.loadPendingPageSuccess({
-        page: { items: [notification(1), notification(2)], nextCursor: null, totalCount: 2 },
+        page: { items: [notification(1), notification(2)], nextCursor: null, unreadCount: 2 },
       }),
     );
 
@@ -318,10 +322,40 @@ describe('notificationsFeature reducer', () => {
   it('resolveSuccess de uma notificação desconhecida não altera o estado', () => {
     const state = reducer(initialNotificationsState, NotificationsActions.resolveSuccess({ notificationId: 99 }));
 
-    expect(state).toBe(initialNotificationsState);
+    expect(state.pendingItems).toBe(initialNotificationsState.pendingItems);
+    expect(state.resolvedItems).toBe(initialNotificationsState.resolvedItems);
   });
 
   it('selectTotalCount soma pendentes e resolvidas', () => {
     expect(selectTotalCount.projector(3, 4)).toBe(7);
+  });
+
+  it('resolveFailure guarda a mensagem sem mexer na lista; resolveRequested/resolveSuccess a limpam', () => {
+    const comPendente = reducer(
+      initialNotificationsState,
+      NotificationsActions.loadPendingPageSuccess({
+        page: { items: [notification(1)], nextCursor: null, unreadCount: 1 },
+      }),
+    );
+    const falhou = reducer(comPendente, NotificationsActions.resolveFailure({ notificationId: 1, message: 'ruim' }));
+
+    expect(falhou.actionErrorMessage).toBe('ruim');
+    expect(falhou.pendingItems.length).toBe(1);
+    expect(reducer(falhou, NotificationsActions.resolveRequested({ notificationId: 1 })).actionErrorMessage).toBeNull();
+    expect(reducer(falhou, NotificationsActions.resolveSuccess({ notificationId: 1 })).actionErrorMessage).toBeNull();
+  });
+
+  it('resolveSuccess repetido num item já resolvido não altera as listas (idempotente)', () => {
+    const comPendente = reducer(
+      initialNotificationsState,
+      NotificationsActions.loadPendingPageSuccess({
+        page: { items: [notification(1)], nextCursor: null, unreadCount: 1 },
+      }),
+    );
+    const uma = reducer(comPendente, NotificationsActions.resolveSuccess({ notificationId: 1 }));
+    const duas = reducer(uma, NotificationsActions.resolveSuccess({ notificationId: 1 }));
+
+    expect(duas.resolvedItems.length).toBe(1);
+    expect(duas.pendingItems.length).toBe(0);
   });
 });

@@ -62,6 +62,17 @@
           (touchstart)="onTouchStart($event, scrollContainer)"
           (touchend)="onTouchEnd($event)"
         >
+          @if (!online()) {
+            <p class="notifications__offline" role="status">
+              Sem conexão: responder e resolver ficam indisponíveis até a
+              conexão voltar.
+            </p>
+          }
+          @if (actionErrorMessage(); as message) {
+            <p class="notifications__answer-error" role="alert">
+              {{ message }}
+            </p>
+          }
           @if (isEmpty()) {
             <!-- Figma (seção 07, tela 6 · Vazio) -->
             <div class="notifications__empty" role="status">

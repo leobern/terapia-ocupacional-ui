@@ -68,9 +68,9 @@ describe('PendingNotificationsQueryResolver', () => {
       {
         items: [note(1, 'Ana', 'a'), note(2, 'Bia', 'b')],
         nextCursor: '2',
-        totalCount: 3,
+        unreadCount: 3,
       },
-      { items: [note(3, 'Caio', 'c')], nextCursor: null, totalCount: 3 },
+      { items: [note(3, 'Caio', 'c')], nextCursor: null, unreadCount: 3 },
     ];
 
     const answer = await resolver.resolve();
@@ -91,19 +91,19 @@ describe('PendingNotificationsQueryResolver', () => {
   });
 
   it('uses singular for a single pending notification', async () => {
-    pages = [{ items: [note(1, 'Ana', 'a')], nextCursor: null, totalCount: 1 }];
+    pages = [{ items: [note(1, 'Ana', 'a')], nextCursor: null, unreadCount: 1 }];
 
     expect((await resolver.resolve()).summary).toBe('Você tem 1 pendência:');
   });
 
   it('says there are no pending notifications when the list is empty', async () => {
-    pages = [{ items: [], nextCursor: null, totalCount: 0 }];
+    pages = [{ items: [], nextCursor: null, unreadCount: 0 }];
 
     expect(await resolver.resolve()).toEqual({ summary: 'Você não tem pendências.' });
   });
 
   it('reflects the hospital selected at question time', async () => {
-    pages = [{ items: [], nextCursor: null, totalCount: 0 }];
+    pages = [{ items: [], nextCursor: null, unreadCount: 0 }];
     TestBed.inject(HospitalContextService).select(8);
 
     await resolver.resolve();

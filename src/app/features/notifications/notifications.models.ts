@@ -1,6 +1,6 @@
-// Espelham specs/004-notificacoes/contracts/notifications-api.yaml. Mesmo padrão
-// manual usado em features/home/home.models.ts (stand-in para o client gerado por
-// `pnpm models`, ver nota em data-access/notifications-api.service.ts).
+// Espelham openapi/notifications-api.yaml. Mesmo padrão manual usado em
+// features/home/home.models.ts (stand-in para o client gerado por `pnpm models`,
+// ver nota em data-access/notifications-api.service.ts).
 
 export interface ProfessionalRef {
   id: number;
@@ -21,11 +21,17 @@ export interface NotificationReply {
   createdAt: string;
 }
 
+/** Tipo do item da lista (FT-005-1 exibidos aqui + comunicado interno da FT-005-2). */
+export type NotificationType = 'patient_message' | 'reevaluation_pending' | 'internal_notice';
+
 export interface Notification {
   id: number;
   author: ProfessionalRef;
-  /** Ausente nas notificações criadas pelo formulário (que não escolhe paciente). */
+  type?: NotificationType;
+  /** Ausente no comunicado interno (`type = internal_notice`). */
   patient: PatientRef | null;
+  /** Pendência de reavaliação vencida (indicador definido na FT-005-1). */
+  overdue?: boolean;
   description: string;
   createdAt: string;
   read: boolean;
@@ -38,6 +44,6 @@ export type NotificationStatus = 'pending' | 'resolved';
 export interface NotificationPage {
   items: Notification[];
   nextCursor: string | null;
-  /** Contagem total (não paginada) daquele status — convergence T053. */
-  totalCount: number;
+  /** Total de não lidas do profissional (os dois tipos), independente de status/cursor. */
+  unreadCount: number;
 }

@@ -30,6 +30,7 @@ import { InputChatComponent } from '../../shared/components/input-chat/input-cha
 import { PageContainerComponent } from '../../shared/components/page-container/page-container.component';
 import { PhIconComponent } from '../../shared/icons/ph-icon/ph-icon.component';
 import { AiAssistantService } from '../../shared/services/ai-assistant.service';
+import { ConnectivityService } from '../../shared/services/connectivity.service';
 import { type ScreenAction, ScreenActionsService } from '../../shared/services/screen-actions.service';
 import { type DirectoryUser } from '../../shared/services/user-directory';
 import { formatRelativeTime } from '../../shared/utils/relative-time';
@@ -39,6 +40,7 @@ import { NotificationsRepository } from './data-access/notifications-repository.
 import { Notification } from './notifications.models';
 import { NotificationsActions } from './state/notifications.actions';
 import {
+  selectActionErrorMessage,
   selectAnswerErrorMessage,
   selectAnsweringId,
   selectDiscardConfirmPending,
@@ -115,6 +117,10 @@ export class NotificationsComponent implements OnDestroy {
   protected readonly answerErrorMessage = toSignal(this.store.select(selectAnswerErrorMessage), {
     initialValue: null,
   });
+  protected readonly actionErrorMessage = toSignal(this.store.select(selectActionErrorMessage), {
+    initialValue: null,
+  });
+  protected readonly online = inject(ConnectivityService).online;
   /** Notificação aguardando a confirmação de "Resolver" (null = diálogo fechado). */
   protected readonly resolveConfirmId = signal<number | null>(null);
   protected readonly discardConfirmPending = toSignal(this.store.select(selectDiscardConfirmPending), {
@@ -266,6 +272,9 @@ export class NotificationsComponent implements OnDestroy {
 
   /** Botão ✓ do card (Figma v2/NotificationThread): marca como resolvida. */
   onResolveClick(id: number): void {
+    if (!this.online()) {
+      return;
+    }
     this.resolveConfirmId.set(id);
   }
 
@@ -293,13 +302,16 @@ export class NotificationsComponent implements OnDestroy {
   // --- Fluxo de resposta via IA (User Story 3) ---
 
   onAnswerClick(id: number): void {
+    if (!this.online()) {
+      return;
+    }
     this.store.dispatch(NotificationsActions.answerStarted({ notificationId: id }));
   }
 
   onSendDraft(): void {
     const id = this.answeringId();
 
-    if (id != null) {
+    if (id != null && this.online() && this.draftText().trim() !== '') {
       this.store.dispatch(NotificationsActions.answerSubmitted({ notificationId: id }));
     }
   }

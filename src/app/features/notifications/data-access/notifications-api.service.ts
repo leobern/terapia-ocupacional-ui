@@ -6,9 +6,8 @@ import { map, Observable } from 'rxjs';
 import { NotificationPage, NotificationReply, NotificationStatus } from '../notifications.models';
 
 /**
- * Cliente HTTP para `GET /api/v1/notifications` e
- * `POST /api/v1/notifications/{id}/replies`
- * (specs/004-notificacoes/contracts/notifications-api.yaml).
+ * Cliente HTTP de `openapi/notifications-api.yaml`: `GET /api/v1/notifications`,
+ * `POST .../{id}/replies`, `PUT .../{id}/read` e `POST .../{id}/resolve`.
  *
  * Mesmo padrão de `features/home/data-access/home-api.service.ts`: escrito à
  * mão em vez de gerado por `pnpm models` (ver nota lá) — mantenha em
@@ -38,8 +37,13 @@ export class NotificationsApiService {
     return this.http.post<NotificationReply>(`${this.baseUrl}/${notificationId}/replies`, { text });
   }
 
-  /** Marca a notificação como resolvida (botão ✓ do card — Figma v2/NotificationThread). */
+  /** Marca a notificação como resolvida (botão ✓ do card — Figma v2/NotificationThread). Idempotente. */
   resolve(notificationId: number): Observable<void> {
-    return this.http.post<undefined>(`${this.baseUrl}/${notificationId}/resolve`, {}).pipe(map(() => undefined));
+    return this.http.post<unknown>(`${this.baseUrl}/${notificationId}/resolve`, {}).pipe(map(() => undefined));
+  }
+
+  /** Marca a notificação como lida para o profissional autenticado (idempotente, 204). */
+  markAsRead(notificationId: number): Observable<void> {
+    return this.http.put<unknown>(`${this.baseUrl}/${notificationId}/read`, {}).pipe(map(() => undefined));
   }
 }
