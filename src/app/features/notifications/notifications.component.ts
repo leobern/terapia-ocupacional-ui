@@ -41,9 +41,9 @@ import {
 import { type DirectoryUser } from '../../shared/services/user-directory';
 import { formatRelativeTime } from '../../shared/utils/relative-time';
 import { HospitalContextService } from '../home/hospital-context.service';
+import { isSentThreadNotification } from '../patient-messages/sent-thread-notification';
 import { AnnouncementAssistant } from './assistant/announcement-assistant';
 import { type ComunicadoRecipientSpec, ComunicadosApiService } from './data-access/comunicados-api.service';
-import { isSentThreadNotification } from '../patient-messages/sent-thread-notification';
 import { NotificationsRepository } from './data-access/notifications-repository.service';
 import { Notification, NotificationType } from './notifications.models';
 import { NotificationsActions } from './state/notifications.actions';
