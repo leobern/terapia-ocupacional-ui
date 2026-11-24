@@ -37,43 +37,21 @@
           (touchstart)="onTouchStart($event, scrollContainer)"
           (touchend)="onTouchEnd($event)"
         >
-          <!-- Mobile: abas Ativas | Resolvidas (uma lista por vez). Desktop (Figma seção 07): colunas lado a lado. -->
-          @if (!isDesktop()) {
-            <div
-              class="notifications__tabs"
-              role="tablist"
-              aria-label="Visão das notificações"
-            >
-              @for (tab of tabs; track tab.id) {
-                <button
-                  type="button"
-                  role="tab"
-                  class="notifications__tab"
-                  [class.notifications__tab--active]="activeTab() === tab.id"
-                  [attr.aria-selected]="activeTab() === tab.id"
-                  (click)="onSelectTab(tab.id)"
-                >
-                  {{ tab.label }}
-                </button>
-              }
+          @if (isEmpty()) {
+            <div class="notifications__empty" role="status">
+              <ph-icon name="bell" [size]="48" />
+              <p class="notifications__empty-title">{{ emptyTitle }}</p>
+              <p class="notifications__empty-text">{{ emptyText }}</p>
             </div>
-
-            @if (isEmpty()) {
-              <div class="notifications__empty" role="status">
-                <ph-icon name="bell" [size]="48" />
-                <p class="notifications__empty-title">{{ emptyTitle() }}</p>
-                <p class="notifications__empty-text">{{ emptyText() }}</p>
-              </div>
-            }
           }
 
-          @if (isDesktop() || activeTab() === 'pending') {
+          @if (pendingItems().length > 0) {
             <section
               appScrollReveal
               class="notifications__column"
               aria-label="Pendentes"
             >
-              @if (isDesktop() && pendingItems().length > 0) {
+              @if (pendingItems().length > 0) {
                 <app-notification-section-title
                   class="notifications__section-title"
                   label="Pendentes"
@@ -92,13 +70,13 @@
             </section>
           }
 
-          @if (isDesktop() || activeTab() === 'resolved') {
+          @if (resolvedItems().length > 0) {
             <section
               appScrollReveal
               class="notifications__column"
               aria-label="Resolvidas"
             >
-              @if (isDesktop() && resolvedItems().length > 0) {
+              @if (resolvedItems().length > 0) {
                 <app-notification-section-title
                   class="notifications__section-title"
                   label="Resolvidas"

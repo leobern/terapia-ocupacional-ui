@@ -41,7 +41,6 @@ import {
 } from '../../shared/services/screen-actions.service';
 import { NOTIFICATIONS_CONTEXT } from '../../shared/services/screen-contexts';
 import { type DirectoryUser } from '../../shared/services/user-directory';
-import { ViewportBreakpointService } from '../../shared/services/viewport-breakpoint.service';
 import { formatRelativeTime } from '../../shared/utils/relative-time';
 import { HospitalContextService } from '../home/hospital-context.service';
 import { isSentThreadNotification } from '../patient-messages/sent-thread-notification';
@@ -52,7 +51,6 @@ import { NotificationsRepository } from './data-access/notifications-repository.
 import { Notification, NotificationType } from './notifications.models';
 import { NotificationsActions } from './state/notifications.actions';
 import {
-  type NotificationsTab,
   selectActiveTab,
   selectAnswerErrorMessage,
   selectAnsweringId,
@@ -135,10 +133,6 @@ export class NotificationsComponent implements OnDestroy {
   protected readonly resolvedItems = toSignal(this.store.select(selectResolvedItems), { initialValue: [] });
   protected readonly activeTab = toSignal(this.store.select(selectActiveTab), { initialValue: 'pending' as const });
   protected readonly resolvedLoaded = toSignal(this.store.select(selectResolvedLoaded), { initialValue: false });
-  protected readonly tabs: readonly { id: NotificationsTab; label: string }[] = [
-    { id: 'pending', label: 'Ativas' },
-    { id: 'resolved', label: 'Resolvidas' },
-  ];
   protected readonly hasMore = toSignal(this.store.select(selectHasMore), { initialValue: true });
 
   protected readonly answeringId = toSignal(this.store.select(selectAnsweringId), { initialValue: null });
@@ -162,26 +156,13 @@ export class NotificationsComponent implements OnDestroy {
   // Figma (seção 07): o título conta as pendentes; cada seção mostra o próprio total.
   protected readonly resolvedCount = toSignal(this.store.select(selectResolvedTotalCount), { initialValue: 0 });
   protected readonly pendingCount = toSignal(this.store.select(selectPendingTotalCount), { initialValue: 0 });
-  /** Itens da aba selecionada, da mais recente para a mais antiga. */
-  protected readonly visibleItems = computed(() =>
-    this.activeTab() === 'pending' ? this.pendingItems() : this.resolvedItems(),
-  );
-  /** Vazio só depois de carregar a aba (Resolvidas ainda não buscada não é "vazia"). */
-  protected readonly isEmpty = computed(() => {
-    if (this.status() !== 'success' || this.visibleItems().length > 0) {
-      return false;
-    }
-
-    return this.activeTab() === 'pending' || this.resolvedLoaded();
-  });
-  protected readonly emptyTitle = computed(() =>
-    this.activeTab() === 'pending' ? 'Nenhuma notificação pendente no momento' : 'Nenhuma notificação resolvida',
-  );
-  protected readonly emptyText = computed(() =>
-    this.activeTab() === 'pending'
-      ? 'Quando alguém da equipe mencionar você ou um paciente seu, a notificação aparece aqui.'
-      : 'As notificações marcadas como resolvidas aparecem aqui.',
-  );
+  /** Itens exibidos (Pendentes e Resolvidas, sempre juntas), da mais recente para a mais antiga. */
+  protected readonly visibleItems = computed(() => [...this.pendingItems(), ...this.resolvedItems()]);
+  /** Vazio quando carregou e não há pendentes (as Resolvidas têm a própria seção, que some sem itens). */
+  protected readonly isEmpty = computed(() => this.status() === 'success' && this.pendingItems().length === 0);
+  protected readonly emptyTitle = 'Nenhuma notificação pendente no momento';
+  protected readonly emptyText =
+    'Quando alguém da equipe mencionar você ou um paciente seu, a notificação aparece aqui.';
 
   // Sem serviço de sessão no frontend ainda — mesmo valor de exemplo de home.component.ts.
   protected readonly professionalName = 'Michelle Franklin';
@@ -194,7 +175,6 @@ export class NotificationsComponent implements OnDestroy {
   protected readonly hospitalName = computed(() => this.hospitalContext.selected()?.name ?? '');
   protected readonly todayLabel = computed(() => formatTodayLabel());
   protected readonly assistant = inject(AiAssistantService);
-  protected readonly isDesktop = inject(ViewportBreakpointService).isDesktop;
   /** Contexto abaixo do título: "<hospital> · <data>" (Figma v2/PageHeader). */
   protected readonly subtitle = computed(() => {
     const id = this.hospitalId();
@@ -241,10 +221,10 @@ export class NotificationsComponent implements OnDestroy {
   private pullStartY: number | null = null;
 
   constructor() {
-    // Desktop mostra Pendentes e Resolvidas juntas: busca a 1ª página de Resolvidas (a aba "resolved" a dispara) e
-    // devolve a aba ativa para Pendentes, que segue paginando pelo scroll.
+    // Pendentes e Resolvidas aparecem juntas (nosso layout, mobile e desktop): busca a 1ª página de Resolvidas (a aba
+    // "resolved" a dispara) e devolve a aba ativa para Pendentes, que segue paginando pelo scroll.
     effect(() => {
-      if (!this.isDesktop() || this.status() !== 'success') {
+      if (this.status() !== 'success') {
         return;
       }
       if (!this.resolvedLoaded() && this.activeTab() === 'pending') {
@@ -458,12 +438,6 @@ export class NotificationsComponent implements OnDestroy {
   /** Erro mostrado no campo em edição: envio com falha ou transcrição indisponível. */
   cardAnswerError(id: number): string | null {
     return this.answeringId() === id ? (this.answerErrorMessage() ?? this.transcribeError()) : null;
-  }
-
-  protected onSelectTab(tab: NotificationsTab): void {
-    if (tab !== this.activeTab()) {
-      this.store.dispatch(NotificationsActions.tabSelected({ tab }));
-    }
   }
 
   protected onRetry(): void {
