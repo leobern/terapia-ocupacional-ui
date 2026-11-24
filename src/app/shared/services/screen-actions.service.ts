@@ -93,6 +93,14 @@ export class ConversationStepError extends Error {
 export interface ConversationOutcome {
   readonly message: string;
   readonly tone: 'error' | 'success';
+  /**
+   * Pede uma confirmação antes de concluir (ex.: Sim/Não da movimentação de leito): a conversa segue com
+   * essa única etapa e, ao respondê-la, `submit` decide o desfecho final.
+   */
+  readonly confirmation?: {
+    readonly step: ConversationStep;
+    readonly submit: (answer: string) => Promise<ConversationOutcome>;
+  };
 }
 
 export interface ConversationDefinition {

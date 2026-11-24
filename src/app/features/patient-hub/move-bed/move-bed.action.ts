@@ -4,15 +4,22 @@ import { MOVE_BED_ACTION_ID } from '../../../shared/services/assistant-action-ro
 import { I18nService } from '../../../shared/services/i18n.service';
 import {
   type ConversationOutcome,
+  type ConversationParseResult,
+  type ConversationStep,
   ConversationStepError,
   type ScreenAction,
 } from '../../../shared/services/screen-actions.service';
-import { BedMovementPort, BedNotIdentifiedError, PatientWithoutInternacaoError } from './bed-movement.port';
+import {
+  BedMovementPort,
+  BedNotIdentifiedError,
+  PatientWithoutInternacaoError,
+  type ResolvedBedMovement,
+} from './bed-movement.port';
 import { BedNumberExtractor } from './bed-number-extractor';
 
 /**
  * Ação "Movimentar leito" do Hub (US-002-2-01): o paciente é o da tela, o leito vem da mensagem (ou da
- * resposta à pergunta) e o pedido é associado à internação mais recente. Não grava nada (US-002-2-03).
+ * resposta à pergunta) e o pedido é associado à internação mais recente. Confirma com Sim/Não antes de aplicar (US-002-2-03).
  */
 @Injectable({ providedIn: 'root' })
 export class MoveBedAction {
@@ -56,20 +63,90 @@ export class MoveBedAction {
     }
     try {
       const result = await this.port.resolve(Number(patient.id), bed);
-      const text = t('messages.resolved')
+      const summary = t('messages.summary')
         .replace('{patient}', patient.name)
         .replace('{current}', result.currentBedNumber ?? t('messages.noCurrentBed'))
         .replace('{new}', result.newBedNumber);
 
-      return { message: text, tone: 'success' };
+      // RN-01: nada é gravado aqui; só o "Sim" da etapa de confirmação aplica a mudança.
+      return {
+        confirmation: { step: this.confirmStep(t), submit: answer => this.decide(answer, patient, result, t) },
+        message: summary,
+        tone: 'success',
+      };
     } catch (error) {
-      if (error instanceof PatientWithoutInternacaoError) {
-        return { message: error.message || t('messages.MSG-11'), tone: 'error' };
-      }
+      return this.blocked(error, t);
+    }
+  }
+
+  private confirmStep(t: (key: string) => string): ConversationStep {
+    return {
+      id: 'confirm',
+      options: [
+        { label: t('options.yes'), value: 'yes' },
+        { label: t('options.no'), value: 'no' },
+      ],
+      parse: (raw): ConversationParseResult => {
+        const answer = raw
+          .normalize('NFD')
+          .replace(/[\u0300-\u036f]/g, '')
+          .trim()
+          .toLowerCase();
+
+        if (answer === 'sim' || answer === 'yes') {
+          return { value: 'yes' };
+        }
+
+        return answer === 'nao' || answer === 'no' ? { value: 'no' } : { error: t('messages.confirmChoice') };
+      },
+      prompt: t('prompts.confirm'),
+    };
+  }
+
+  /** RN-02 ("Sim" aplica) e RN-03 ("Não" cancela sem enviar nada). */
+  private async decide(
+    answer: string,
+    patient: { readonly id: string; readonly name: string },
+    result: ResolvedBedMovement,
+    t: (key: string) => string,
+  ): Promise<ConversationOutcome> {
+    if (answer !== 'yes') {
+      return {
+        message: t('messages.cancelled').replace('{current}', result.currentBedNumber ?? t('messages.noCurrentBed')),
+        tone: 'success',
+      };
+    }
+    try {
+      await this.port.confirm(result.pacienteId, result.internacaoId, result.newBedNumber);
+
+      return { message: t('messages.applied').replace('{new}', result.newBedNumber), tone: 'success' };
+    } catch (error) {
       if (error instanceof BedNotIdentifiedError) {
-        throw new ConversationStepError('newBedNumber', error.message || t('messages.MSG-12'));
+        // 422 MSG-12 na confirmação: volta a pedir o leito e refaz a resolução com o valor informado.
+        return {
+          confirmation: {
+            step: {
+              id: 'newBedNumber',
+              parse: raw => ({ value: this.extractor.extract(raw) ?? '' }),
+              prompt: t('prompts.bedNumber'),
+            },
+            submit: bed => this.submit(patient, bed, t),
+          },
+          message: error.message || t('messages.MSG-12'),
+          tone: 'error',
+        };
       }
       throw error;
     }
+  }
+
+  private blocked(error: unknown, t: (key: string) => string): ConversationOutcome {
+    if (error instanceof PatientWithoutInternacaoError) {
+      return { message: error.message || t('messages.MSG-11'), tone: 'error' };
+    }
+    if (error instanceof BedNotIdentifiedError) {
+      throw new ConversationStepError('newBedNumber', error.message || t('messages.MSG-12'));
+    }
+    throw error;
   }
 }

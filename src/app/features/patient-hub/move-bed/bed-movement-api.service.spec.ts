@@ -108,4 +108,53 @@ describe('BedMovementApiService', () => {
 
     expect(await Promise.all(results)).toEqual(statuses);
   });
+
+  describe('confirm', () => {
+    const confirmUrl = `${environment.apiBaseUrl}/v1/pacientes/5/internacoes/9/movimentacao-leito/confirmar`;
+
+    it('200: posts the trimmed bed to the stay route', async () => {
+      const result = service.confirm(5, 9, ' 412 ');
+      const req = http.expectOne(confirmUrl);
+
+      expect(req.request.method).toBe('POST');
+      expect(req.request.body).toEqual({ newBedNumber: '412' });
+      req.flush({ id: 9, pacienteId: 5, bedNumber: '412', createdAt: 'x' });
+
+      await expectAsync(result).toBeResolved();
+    });
+
+    it('422 MSG-12 becomes BedNotIdentifiedError', async () => {
+      const result = service.confirm(5, 9, '412');
+
+      http.expectOne(confirmUrl).flush({ code: 'MSG-12', message: 'x' }, { status: 422, statusText: 'U' });
+
+      await expectAsync(result).toBeRejectedWith(new BedNotIdentifiedError('newBedNumber', 'x'));
+    });
+
+    it('422 MSG-12 without field or message falls back to defaults', async () => {
+      const result = service.confirm(5, 9, '412');
+
+      http.expectOne(confirmUrl).flush({ code: 'MSG-12' }, { status: 422, statusText: 'U' });
+
+      await expectAsync(result).toBeRejectedWith(new BedNotIdentifiedError('newBedNumber', ''));
+    });
+
+    it('422 with an unknown code or empty body stays the HTTP error', async () => {
+      const result = service.confirm(5, 9, '412');
+
+      http.expectOne(confirmUrl).flush(null, { status: 422, statusText: 'U' });
+
+      await expectAsync(result).toBeRejectedWith(jasmine.any(HttpErrorResponse));
+    });
+
+    for (const status of [403, 404, 500]) {
+      it(`${status} reaches the caller as the original HTTP error`, async () => {
+        const result = service.confirm(5, 9, '412');
+
+        http.expectOne(confirmUrl).flush({}, { status, statusText: 'E' });
+
+        await expectAsync(result).toBeRejectedWith(jasmine.any(HttpErrorResponse));
+      });
+    }
+  });
 });
