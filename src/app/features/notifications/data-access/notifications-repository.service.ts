@@ -9,12 +9,12 @@ import {
   type ProfessionalRef,
 } from '../notifications.models';
 
-/** Dados do cadastro de uma notificação (formulário "Criar notificação"). */
+/** Dados de um comunicado interno (assistente central): sempre com destinatários. */
 export interface NewNotification {
   readonly recipients: readonly ProfessionalRef[];
   readonly message: string;
-  /** Data limite para resolução (`yyyy-MM-dd`); vazio = sem prazo. */
-  readonly dueDate: string;
+  /** Data limite (`yyyy-MM-dd`); ausente ou vazio = sem prazo (comunicado interno não tem). */
+  readonly dueDate?: string;
   /** Paciente vinculado (mensagens do Hub, FT-005-1); ausente = comunicado sem paciente. */
   readonly patient?: PatientRef;
 }
@@ -192,7 +192,7 @@ export class NotificationsRepository {
     );
   }
 
-  /** Cria uma notificação PENDENTE do profissional autenticado. */
+  /** Cria um comunicado interno ATIVO (pendente) do profissional autenticado. */
   create(input: NewNotification): Notification {
     const notification: Notification = {
       author: ME,
@@ -201,6 +201,7 @@ export class NotificationsRepository {
       id: this.nextId++,
       patient: input.patient ?? null,
       read: false,
+      recipients: input.recipients.map(recipient => ({ ...recipient })),
       replies: [],
       replyCount: 0,
       type: 'internal_notice',

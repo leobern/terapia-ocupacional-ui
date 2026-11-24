@@ -20,6 +20,9 @@ export type FormFieldValue = string | readonly DirectoryUser[];
 
 export type FormValues = Readonly<Record<string, FormFieldValue>>;
 
+/** Erro de envio com mensagem própria para o usuário (ex.: sem conexão); o formulário a exibe e mantém as respostas. */
+export class FormSubmitError extends Error {}
+
 export interface FormFieldDefinition {
   readonly id: string;
   /** Pergunta exibida no cabeçalho do card. */
@@ -27,6 +30,14 @@ export interface FormFieldDefinition {
   readonly kind: FormFieldKind;
   readonly placeholder: string;
   readonly required: boolean;
+  /** Motivo exibido enquanto uma pergunta obrigatória está sem resposta (ex.: "Informe ao menos um destinatário"). */
+  readonly requiredMessage?: string;
+  /**
+   * Só em `mention`: sugere destinatários a partir do texto do campo `from` (ao sair dele, se ainda
+   * não há ninguém marcado). As sugestões ficam à parte e só valem após confirmação explícita.
+   * Rejeitar = IA indisponível: o preenchimento manual segue funcionando.
+   */
+  readonly suggest?: { readonly from: string; readonly run: (content: string) => Promise<readonly DirectoryUser[]> };
 }
 
 export interface FormActionDefinition {
@@ -34,6 +45,10 @@ export interface FormActionDefinition {
   readonly title: string;
   readonly submitLabel: string;
   readonly fields: readonly FormFieldDefinition[];
+  /** Respostas de texto já preenchidas (por id de campo), ex.: conteúdo ditado por áudio; continuam editáveis. */
+  readonly initialValues?: Readonly<Record<string, string>>;
+  /** Aviso discreto exibido no topo do formulário (ex.: falha na transcrição do áudio). */
+  readonly notice?: string;
   /** Persiste o cadastro. Lançar erro mantém o formulário aberto com os dados. */
   readonly submit: (values: FormValues) => Promise<void> | void;
 }

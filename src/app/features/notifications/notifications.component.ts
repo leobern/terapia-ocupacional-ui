@@ -16,7 +16,7 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Actions, ofType } from '@ngrx/effects';
 import { Store } from '@ngrx/store';
-import { take } from 'rxjs';
+import { firstValueFrom, take } from 'rxjs';
 
 import { BottomSheetComponent } from '../../shared/components/bottom-sheet/bottom-sheet.component';
 import {
@@ -31,11 +31,19 @@ import { PageContainerComponent } from '../../shared/components/page-container/p
 import { PhIconComponent } from '../../shared/icons/ph-icon/ph-icon.component';
 import { AiAssistantService } from '../../shared/services/ai-assistant.service';
 import { ConnectivityService } from '../../shared/services/connectivity.service';
-import { type ScreenAction, ScreenActionsService } from '../../shared/services/screen-actions.service';
+import {
+  FormSubmitError,
+  type FormValues,
+  type ScreenAction,
+  ScreenActionsService,
+  type ScreenCommand,
+} from '../../shared/services/screen-actions.service';
 import { type DirectoryUser } from '../../shared/services/user-directory';
 import { formatRelativeTime } from '../../shared/utils/relative-time';
 import { HospitalContextService } from '../home/hospital-context.service';
 import { isSentThreadNotification } from '../patient-messages/sent-thread-notification';
+import { AnnouncementAssistant } from './assistant/announcement-assistant';
+import { type ComunicadoRecipientSpec, ComunicadosApiService } from './data-access/comunicados-api.service';
 import { NotificationsRepository } from './data-access/notifications-repository.service';
 import { Notification, NotificationType } from './notifications.models';
 import { NotificationsActions } from './state/notifications.actions';
@@ -189,6 +197,9 @@ export class NotificationsComponent implements OnDestroy {
   private readonly location = inject(Location);
   private readonly hospitalContext = inject(HospitalContextService);
   private readonly repository = inject(NotificationsRepository);
+  private readonly comunicados = inject(ComunicadosApiService);
+  private readonly announcementAssistant = inject(AnnouncementAssistant);
+  private readonly connectivity = inject(ConnectivityService);
   private readonly screenActions = inject(ScreenActionsService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly route = inject(ActivatedRoute);
@@ -215,6 +226,10 @@ export class NotificationsComponent implements OnDestroy {
     // Ações da tela no assistente (padrão de cadastro): "Criar notificação" abre o formulário;
     // Editar e Responder já aparecem nos atalhos mas ainda não têm fluxo.
     this.destroyRef.onDestroy(this.screenActions.register(this.screenActionsList()));
+    // Comando por texto/áudio fora do contexto de paciente: abre o mesmo formulário de comunicado, pré-preenchido.
+    this.destroyRef.onDestroy(
+      this.screenActions.registerCommandHandler(command => this.openAnnouncementFromCommand(command)),
+    );
 
     // Uma notificação criada/respondida muda o repositório: recarrega a lista.
     let seenVersion = this.repository.version();
@@ -454,6 +469,65 @@ export class NotificationsComponent implements OnDestroy {
     this.store.dispatch(NotificationsActions.discardConfirmationRequested());
   }
 
+  /** Texto do card: comunicado interno mostra os destinatários ("Para A, B: ..."). */
+  protected cardDescription(notification: Notification): string {
+    const names = (notification.recipients ?? []).map(recipient => recipient.name);
+
+    return names.length > 0 ? `Para ${names.join(', ')}: ${notification.description}` : notification.description;
+  }
+
+  /** Envia o comunicado interno pela API; sem conexão o envio fica indisponível e as respostas são mantidas. */
+  private async sendAnnouncement(values: FormValues): Promise<void> {
+    const hospitalId = this.hospitalContext.selected()?.id ?? this.hospitalId();
+
+    if (!this.connectivity.online()) {
+      throw new FormSubmitError(
+        'Sem conexão: não é possível enviar o comunicado agora. Tente novamente quando voltar a conexão.',
+      );
+    }
+    if (hospitalId == null) {
+      throw new FormSubmitError('Selecione um hospital para enviar o comunicado.');
+    }
+    const selected = values['recipients'] as readonly DirectoryUser[];
+    const recipients = selected.map((user): ComunicadoRecipientSpec => {
+      if (!user.group) {
+        return { professionalId: user.id, type: 'PESSOA' };
+      }
+
+      return user.group.profile === null ? { type: 'TODOS' } : { perfil: user.group.profile, type: 'GRUPO' };
+    });
+
+    await firstValueFrom(this.comunicados.create(hospitalId, values['message'] as string, recipients));
+    this.store.dispatch(NotificationsActions.refreshRequested());
+  }
+
+  /** Texto vira o conteúdo; áudio é transcrito. Falha na transcrição abre o formulário vazio, com aviso, para digitar. */
+  private async openAnnouncementFromCommand(command: ScreenCommand): Promise<void> {
+    let content: string;
+    let notice: string | undefined;
+
+    if (command.kind === 'text') {
+      content = command.text;
+    } else {
+      try {
+        content = await this.announcementAssistant.transcribe(command.audio);
+      } catch {
+        content = '';
+        notice = 'Não foi possível transcrever o áudio. Digite o comunicado manualmente.';
+      }
+    }
+    const action = this.announcementAction();
+
+    this.assistant.openAction({
+      ...action,
+      form: action.form && { ...action.form, initialValues: content ? { message: content } : undefined, notice },
+    });
+  }
+
+  private announcementAction(): ScreenAction {
+    return this.screenActionsList()[0];
+  }
+
   private screenActionsList(): readonly ScreenAction[] {
     return [
       {
@@ -462,37 +536,30 @@ export class NotificationsComponent implements OnDestroy {
             {
               id: 'recipients',
               kind: 'mention',
-              label: 'Quem será notificado:',
-              placeholder: '@nome da pessoa',
+              label: 'Quem receberá o comunicado:',
+              placeholder: '@pessoa, @grupo (ex.: @medicos) ou @todos',
               required: true,
+              requiredMessage: 'Informe ao menos um destinatário para enviar o comunicado.',
+              suggest: {
+                from: 'message',
+                run: (content): Promise<readonly DirectoryUser[]> =>
+                  this.announcementAssistant.suggestRecipients(content),
+              },
             },
             {
               id: 'message',
               kind: 'text',
-              label: 'Qual é a mensagem da notificação?',
-              placeholder: 'Escreva a mensagem',
+              label: 'Qual é o comunicado?',
+              placeholder: 'Escreva o comunicado',
               required: true,
             },
-            {
-              id: 'dueDate',
-              kind: 'date',
-              label: 'Data para resolução?',
-              placeholder: 'Selecione uma data final',
-              required: false,
-            },
           ],
-          submit: (values): void => {
-            this.repository.create({
-              dueDate: values['dueDate'] as string,
-              message: values['message'] as string,
-              recipients: (values['recipients'] as readonly DirectoryUser[]).map(user => ({ ...user })),
-            });
-          },
-          submitLabel: 'Criar notificação',
-          title: 'Criar notificação',
+          submit: (values): Promise<void> => this.sendAnnouncement(values),
+          submitLabel: 'Enviar comunicado',
+          title: 'Criar comunicado interno',
         },
         id: 'create',
-        label: 'Criar notificação',
+        label: 'Criar comunicado interno',
       },
       { id: 'edit', label: 'Editar notificação' },
       { id: 'reply', label: 'Responder notificação' },

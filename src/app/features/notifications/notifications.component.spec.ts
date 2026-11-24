@@ -5,15 +5,26 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Actions } from '@ngrx/effects';
 import { MockStore, provideMockStore } from '@ngrx/store/testing';
-import { Subject } from 'rxjs';
+import { of, Subject, throwError } from 'rxjs';
 
 import { AiAssistantService } from '../../shared/services/ai-assistant.service';
 import { ConnectivityService } from '../../shared/services/connectivity.service';
-import { ScreenActionsService } from '../../shared/services/screen-actions.service';
+import { ProvisionalUserDirectory } from '../../shared/services/provisional-user-directory';
+import {
+  FormSubmitError,
+  type ScreenAction,
+  ScreenActionsService,
+  type ScreenCommand,
+} from '../../shared/services/screen-actions.service';
+import { UserDirectory } from '../../shared/services/user-directory';
 import { ViewportBreakpointService } from '../../shared/services/viewport-breakpoint.service';
 import { HospitalContextService } from '../home/hospital-context.service';
 import { LinkedHospitalsReader } from '../home/linked-hospitals';
-import { NotificationsRepository } from './data-access/notifications-repository.service';
+import { AnnouncementAssistant } from './assistant/announcement-assistant';
+import { ProvisionalAnnouncementAssistant } from './assistant/provisional-announcement-assistant';
+import { type Comunicado, ComunicadosApiService } from './data-access/comunicados-api.service';
+import { NotificationsApiService } from './data-access/notifications-api.service';
+import { ProvisionalNotificationsApiService } from './data-access/provisional-notifications-api.service';
 import { NotificationsComponent } from './notifications.component';
 import { Notification } from './notifications.models';
 import { NotificationsActions } from './state/notifications.actions';
@@ -50,6 +61,9 @@ describe('NotificationsComponent', () => {
       imports: [NotificationsComponent],
       providers: [
         provideHttpClient(),
+        { provide: NotificationsApiService, useClass: ProvisionalNotificationsApiService },
+        { provide: UserDirectory, useClass: ProvisionalUserDirectory },
+        { provide: AnnouncementAssistant, useClass: ProvisionalAnnouncementAssistant },
         { provide: ViewportBreakpointService, useValue: { isDesktop: isDesktop.asReadonly() } },
         {
           provide: LinkedHospitalsReader,
@@ -260,13 +274,13 @@ describe('NotificationsComponent', () => {
   // --- Ações da tela no assistente (padrão de cadastro) ---
 
   describe('ações da tela', () => {
-    it('registra Criar, Editar e Responder notificação e as remove ao sair da tela', async () => {
+    it('registra Criar comunicado, Editar e Responder e as remove ao sair da tela', async () => {
       await configureStore({ status: 'success' });
       createComponent();
       const registry = TestBed.inject(ScreenActionsService);
 
       expect(registry.actions().map(a => a.label)).toEqual([
-        'Criar notificação',
+        'Criar comunicado interno',
         'Editar notificação',
         'Responder notificação',
       ]);
@@ -274,30 +288,135 @@ describe('NotificationsComponent', () => {
       expect(registry.actions()[0].form?.fields.map(f => [f.kind, f.required])).toEqual([
         ['mention', true],
         ['text', true],
-        ['date', false],
       ]);
+
+      expect(registry.actions()[0].form?.fields[0].requiredMessage).toContain('destinatário');
 
       fixture.destroy();
 
       expect(registry.actions()).toEqual([]);
     });
 
-    it('o formulário de criar grava a notificação no repositório e recarrega a lista', async () => {
+    it('o campo de destinatários pede sugestão ao assistente a partir do texto do comunicado', async () => {
       await configureStore({ status: 'success' });
       createComponent();
-      const repository = TestBed.inject(NotificationsRepository);
+      const assistant = TestBed.inject(AnnouncementAssistant);
+      const spy = spyOn(assistant, 'suggestRecipients').and.callThrough();
+      const field = TestBed.inject(ScreenActionsService).actions()[0].form?.fields[0];
+
+      expect(field?.suggest?.from).toBe('message');
+      expect((await field?.suggest?.run('Estoque de medicamento baixo'))?.map(u => u.name)).toEqual(['farmaceuticos']);
+      expect(spy).toHaveBeenCalledWith('Estoque de medicamento baixo');
+    });
+
+    describe('comando por texto ou áudio', () => {
+      const open = async (command: ScreenCommand, transcript: string | Error): Promise<ScreenAction> => {
+        await configureStore({ status: 'success' });
+        createComponent();
+        spyOn(TestBed.inject(AnnouncementAssistant), 'transcribe').and.callFake(() =>
+          transcript instanceof Error ? Promise.reject(transcript) : Promise.resolve(transcript),
+        );
+        const assistant = TestBed.inject(AiAssistantService);
+
+        spyOn(assistant, 'openAction');
+
+        await TestBed.inject(ScreenActionsService).commandHandler()?.(command);
+
+        return (assistant.openAction as jasmine.Spy).calls.mostRecent().args[0];
+      };
+
+      it('texto abre o formulário do comunicado com o conteúdo preenchido', async () => {
+        const action = await open({ kind: 'text', text: 'Reunião às 10h' }, '');
+
+        expect(action.form?.initialValues).toEqual({ message: 'Reunião às 10h' });
+        expect(action.form?.notice).toBeUndefined();
+      });
+
+      it('áudio transcrito preenche o conteúdo editável', async () => {
+        const action = await open({ audio: new Blob(['x']), kind: 'audio' }, 'Estoque baixo');
+
+        expect(action.form?.initialValues).toEqual({ message: 'Estoque baixo' });
+      });
+
+      it('falha na transcrição abre o formulário vazio com aviso para digitar', async () => {
+        const action = await open({ audio: new Blob(['x']), kind: 'audio' }, new Error('falha'));
+
+        expect(action.form?.initialValues).toBeUndefined();
+        expect(action.form?.notice).toContain('Digite o comunicado');
+      });
+    });
+
+    const jairo = { id: 3, name: 'Jairo Nepomuceno', photoUrl: null, specialty: 'Farmacêutico' };
+
+    it('o formulário envia o comunicado pela API de comunicados e recarrega a lista', async () => {
+      await configureStore({ hospitalId: 1, status: 'success' });
+      createComponent();
+      const send = spyOn(TestBed.inject(ComunicadosApiService), 'create').and.returnValue(of({} as Comunicado));
       const dispatch = spyOn(store, 'dispatch').and.callThrough();
       const create = TestBed.inject(ScreenActionsService).actions()[0].form;
 
-      await create?.submit({
-        dueDate: '2030-01-01',
-        message: 'Revisar',
-        recipients: [{ id: 3, name: 'Jairo Nepomuceno', photoUrl: null, specialty: 'Farmacêutico' }],
-      });
-      fixture.detectChanges();
+      await create?.submit({ message: 'Revisar', recipients: [jairo] });
 
-      expect(repository.list('pending', null, 50).items.some(n => n.description === 'Revisar')).toBeTrue();
+      expect(send).toHaveBeenCalledWith(1, 'Revisar', [{ professionalId: 3, type: 'PESSOA' }]);
       expect(dispatch).toHaveBeenCalledWith(NotificationsActions.refreshRequested());
+    });
+
+    it('grupos por perfil e @todos vão como GRUPO e TODOS, junto das pessoas', async () => {
+      await configureStore({ hospitalId: 1, status: 'success' });
+      createComponent();
+      const send = spyOn(TestBed.inject(ComunicadosApiService), 'create').and.returnValue(of({} as Comunicado));
+      const create = TestBed.inject(ScreenActionsService).actions()[0].form;
+      const medicos = {
+        group: { memberCount: 2, profile: 'medicos' },
+        id: -5,
+        name: 'medicos',
+        photoUrl: null,
+        specialty: '',
+      };
+      const todos = { group: { memberCount: 6, profile: null }, id: -1, name: 'todos', photoUrl: null, specialty: '' };
+
+      await create?.submit({ message: 'Reunião', recipients: [jairo, medicos, todos] });
+
+      expect(send).toHaveBeenCalledWith(1, 'Reunião', [
+        { professionalId: 3, type: 'PESSOA' },
+        { perfil: 'medicos', type: 'GRUPO' },
+        { type: 'TODOS' },
+      ]);
+    });
+
+    it('sem conexão o envio fica indisponível, avisa e não chama a API', async () => {
+      await configureStore({ hospitalId: 1, status: 'success' });
+      createComponent();
+      TestBed.inject(ConnectivityService).online.set(false);
+      const api = TestBed.inject(ComunicadosApiService);
+
+      spyOn(api, 'create');
+      const create = TestBed.inject(ScreenActionsService).actions()[0].form;
+
+      await expectAsync(
+        create?.submit({ message: 'Revisar', recipients: [jairo] }) as Promise<void>,
+      ).toBeRejectedWithError(FormSubmitError, /Sem conexão/u);
+
+      expect(api.create).not.toHaveBeenCalled();
+    });
+
+    it('falha da API propaga o erro (o formulário mantém as respostas)', async () => {
+      await configureStore({ hospitalId: 1, status: 'success' });
+      createComponent();
+      spyOn(TestBed.inject(ComunicadosApiService), 'create').and.returnValue(throwError(() => new Error('x')));
+      const create = TestBed.inject(ScreenActionsService).actions()[0].form;
+
+      await expectAsync(create?.submit({ message: 'x', recipients: [jairo] }) as Promise<void>).toBeRejected();
+    });
+
+    it('o card de comunicado mostra os destinatários antes do texto', async () => {
+      await configureStore({
+        status: 'success',
+        pendingItems: [notification(1, { patient: null, recipients: [jairo] })],
+      });
+      createComponent();
+
+      expect(fixture.nativeElement.textContent).toContain('Para Jairo Nepomuceno: Descrição 1');
     });
   });
 

@@ -1,4 +1,7 @@
 <div class="assistant-form">
+  @if (definition().notice; as notice) {
+    <p class="assistant-form__hint" role="status">{{ notice }}</p>
+  }
   @for (field of definition().fields; track field.id) {
     <app-accordion
       [title]="field.label"
@@ -55,11 +58,47 @@
                 }
               </ul>
             }
+            @if (proposedFor(field).length > 0) {
+              <p class="assistant-form__hint">
+                Sugestão do assistente — confirme para valerem como
+                destinatários:
+              </p>
+              <ul class="assistant-form__chips" aria-label="Sugeridos">
+                @for (user of proposedFor(field); track user.id) {
+                  <li
+                    class="assistant-form__chip assistant-form__chip--suggested"
+                  >
+                    <span>{{ label(user) }} · sugerido</span>
+                    <button
+                      type="button"
+                      class="assistant-form__chip-remove"
+                      [attr.aria-label]="'Descartar sugestão ' + user.name"
+                      (click)="rejectProposed(field, user)"
+                    >
+                      <ph-icon name="x" [size]="12" />
+                    </button>
+                  </li>
+                }
+              </ul>
+              <button
+                type="button"
+                class="assistant-form__confirm"
+                (click)="confirmProposed(field)"
+              >
+                Confirmar destinatários sugeridos
+              </button>
+            }
+            @if (suggestUnavailable().has(field.id)) {
+              <p class="assistant-form__hint">
+                Sugestão automática indisponível. Informe os destinatários
+                manualmente.
+              </p>
+            }
             @if (selected(field).length > 0) {
               <ul class="assistant-form__chips" aria-label="Marcados">
                 @for (user of selected(field); track user.id) {
                   <li class="assistant-form__chip">
-                    <span>{{ user.name }}</span>
+                    <span>{{ label(user) }}</span>
                     <button
                       type="button"
                       class="assistant-form__chip-remove"
@@ -98,6 +137,7 @@
                 [placeholder]="field.placeholder"
                 [value]="text(field)"
                 (input)="onText(field, $any($event.target).value)"
+                (blur)="onBlur(field)"
               ></textarea>
             </div>
           }
@@ -110,7 +150,7 @@
             @for (user of selected(field); track user.id) {
               <span class="assistant-form__tag">
                 <app-avatar size="small" type="user" [name]="user.name" />
-                {{ user.name }}
+                {{ label(user) }}
               </span>
             }
           }
@@ -123,6 +163,10 @@
         }
       </span>
     </app-accordion>
+  }
+
+  @for (reason of missingReasons(); track reason) {
+    <p class="assistant-form__hint">{{ reason }}</p>
   }
 
   @if (errorMessage(); as message) {
