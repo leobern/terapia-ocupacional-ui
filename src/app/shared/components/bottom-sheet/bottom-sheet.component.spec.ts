@@ -523,8 +523,8 @@ describe('BottomSheetComponent', () => {
     expect(actionsBand()).toBeNull();
   });
 
-  it('renderiza no máximo 3 atalhos, ignorando os excedentes', () => {
-    const many: ChatShortcut[] = Array.from({ length: 5 }, (_, index) => ({
+  it('renderiza no máximo 6 atalhos, ignorando os excedentes', () => {
+    const many: ChatShortcut[] = Array.from({ length: 8 }, (_, index) => ({
       id: `s${index}`,
       label: `Atalho ${index}`,
     }));
@@ -532,9 +532,9 @@ describe('BottomSheetComponent', () => {
     fixture.componentRef.setInput('shortcuts', many);
     openSheet();
 
-    expect(shortcutButtons().length).toBe(3);
+    expect(shortcutButtons().length).toBe(6);
     expect(shortcutButtons()[0].textContent).toContain('Atalho 0');
-    expect(shortcutButtons()[2].textContent).toContain('Atalho 2');
+    expect(shortcutButtons()[5].textContent).toContain('Atalho 5');
   });
 
   it('emite (shortcutSelect) com o item completo, não só o id', () => {

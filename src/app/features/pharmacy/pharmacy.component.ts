@@ -3,6 +3,7 @@ import { ChangeDetectionStrategy, Component, computed, DestroyRef, effect, injec
 import { PageContainerComponent } from '../../shared/components/page-container/page-container.component';
 import { PageHeaderComponent } from '../../shared/components/page-header/page-header.component';
 import { type FormValues, type ScreenAction, ScreenActionsService } from '../../shared/services/screen-actions.service';
+import { PHARMACY_CONTEXT } from '../../shared/services/screen-contexts';
 import { HospitalContextService } from '../home/hospital-context.service';
 import { Formula, FORMULA_CATEGORIES } from './formulas.models';
 import { FormulasApi } from './formulas-api';
@@ -40,6 +41,10 @@ export class PharmacyComponent {
   private readonly screenActions = inject(ScreenActionsService);
 
   constructor() {
+    effect(onCleanup => {
+      onCleanup(this.screenActions.registerContext(PHARMACY_CONTEXT));
+    });
+
     const onOnline = (): void => this.online.set(true);
     const onOffline = (): void => this.online.set(false);
 

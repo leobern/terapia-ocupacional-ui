@@ -53,17 +53,20 @@
         <app-assistant-heading bottomSheetHeaderStart />
         <app-assistant-content bottomSheetContent />
         <!-- Cadastro aberto: sugestões da IA + mensagem/áudio no rodapé; o botão de envio fica no formulário. -->
-        @if (aiAssistant.view() === 'form') {
-          <app-assistant-form-footer bottomSheetFooter />
-        } @else {
-          <app-input-chat
-            bottomSheetFooter
-            placeholder="Escreva a sua mensagem"
-            [(value)]="aiChatValue"
-            [(mode)]="aiChatMode"
-            (send)="onAiSend($event)"
-            (audioSend)="onAiAudio($event)"
-          />
+        @switch (aiAssistant.view()) {
+          @case ('form') {
+            <app-assistant-form-footer bottomSheetFooter />
+          }
+          @case ('chat') {
+            <app-input-chat
+              bottomSheetFooter
+              placeholder="Escreva a sua mensagem"
+              [(value)]="aiChatValue"
+              [(mode)]="aiChatMode"
+              (send)="onAiSend($event)"
+              (audioSend)="onAiAudio($event)"
+            />
+          }
         }
       </app-bottom-sheet>
     } @else {
@@ -80,17 +83,20 @@
         <app-assistant-heading drawerHeaderStart />
         <app-assistant-content drawerContent />
         <!-- Cadastro aberto: o botão de envio ocupa o rodapé no lugar da mensagem/áudio. -->
-        @if (aiAssistant.view() === 'form') {
-          <app-assistant-form-footer drawerFooter />
-        } @else {
-          <app-input-chat
-            drawerFooter
-            placeholder="Escreva a sua mensagem"
-            [(value)]="aiChatValue"
-            [(mode)]="aiChatMode"
-            (send)="onAiSend($event)"
-            (audioSend)="onAiAudio($event)"
-          />
+        @switch (aiAssistant.view()) {
+          @case ('form') {
+            <app-assistant-form-footer drawerFooter />
+          }
+          @case ('chat') {
+            <app-input-chat
+              drawerFooter
+              placeholder="Escreva a sua mensagem"
+              [(value)]="aiChatValue"
+              [(mode)]="aiChatMode"
+              (send)="onAiSend($event)"
+              (audioSend)="onAiAudio($event)"
+            />
+          }
         }
       </app-drawer>
     }

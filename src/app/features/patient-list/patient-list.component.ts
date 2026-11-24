@@ -25,6 +25,7 @@ import { PhIconComponent } from '../../shared/icons/ph-icon/ph-icon.component';
 import { AiAssistantService } from '../../shared/services/ai-assistant.service';
 import { ConnectivityService } from '../../shared/services/connectivity.service';
 import { type ScreenAction, ScreenActionsService } from '../../shared/services/screen-actions.service';
+import { PATIENTS_CONTEXT } from '../../shared/services/screen-contexts';
 import { ClosurePatient, FollowUpClosureSheetComponent } from '../follow-up-closure/follow-up-closure-sheet.component';
 import { HospitalContextService } from '../home/hospital-context.service';
 import { UnreadNotificationsReader } from '../home/unread-notifications-reader';
@@ -312,6 +313,10 @@ export class PatientListComponent implements OnInit {
   });
 
   constructor() {
+    effect(onCleanup => {
+      onCleanup(this.screenActions.registerContext(PATIENTS_CONTEXT));
+    });
+
     // Atalhos da tela (padrão de cadastro): ações principais; os cadastro e edição navegam à FT-002-1 (US-004-1-07).
     // Em modo somente leitura (FR-014) todas levam a fluxos de escrita e saem dos atalhos.
     effect(onCleanup => {

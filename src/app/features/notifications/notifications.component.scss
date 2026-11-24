@@ -17,7 +17,9 @@
   padding-top: tokens.$space-8;
 
   @include breakpoints.md {
-    // Desktop: a página não rola; cada coluna (Pendentes | Resolvidas) tem o próprio scroll.
+    // Desktop (Figma 4722:10983): 24px entre o cabeçalho e as colunas. A página não rola; cada coluna
+    // (Pendentes | Resolvidas) tem o próprio scroll.
+    gap: tokens.$space-24;
     height: 100vh;
     min-height: 0;
     padding: tokens.$space-24 var(--layout-page-margin, 32px) 0;

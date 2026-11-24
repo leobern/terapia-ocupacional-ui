@@ -24,6 +24,7 @@ import { TagComponent } from '../../shared/components/tag/tag.component';
 import { PhIconComponent } from '../../shared/icons/ph-icon/ph-icon.component';
 import { AiAssistantService } from '../../shared/services/ai-assistant.service';
 import { ScreenActionsService } from '../../shared/services/screen-actions.service';
+import { HOME_CONTEXT } from '../../shared/services/screen-contexts';
 import { formatRelativeTime } from '../../shared/utils/relative-time';
 import { ManagerAccessReader } from '../hospital-team/hospital-invite-port';
 import { HomeErrorComponent } from './components/home-error/home-error.component';
@@ -142,6 +143,10 @@ export class HomeComponent implements OnInit, OnDestroy {
   private loadingMore = false;
 
   constructor() {
+    effect(onCleanup => {
+      onCleanup(this.screenActions.registerContext(HOME_CONTEXT));
+    });
+
     const profile = inject(ProfessionalProfileReader).read();
 
     this.professionalName = profile.name;

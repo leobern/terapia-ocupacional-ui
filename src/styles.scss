@@ -83,3 +83,23 @@ body {
   background: var(--color-content-5);
   background-clip: content-box;
 }
+
+// Noise do software inteiro (Figma, efeito NOISE do quadro: monótono, densidade 100%, tamanho 0,2, preto a 4%).
+// Camada fixa, acima de tudo e sem capturar cliques; o grão é um SVG `feTurbulence` em tons de preto com alfa
+// variável (média ≈ 4%), ladrilhado em 256px. Vale no claro e no escuro, como nos protótipos.
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 2147483647;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='256' height='256'><filter id='n' x='0' y='0' width='100%' height='100%'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1.6 0 0 0 -0.35'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+  background-size: 256px 256px;
+  opacity: 0.09;
+}
+
+@media print {
+  body::after {
+    display: none;
+  }
+}

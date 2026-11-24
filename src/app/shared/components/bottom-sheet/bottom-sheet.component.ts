@@ -29,7 +29,7 @@ export interface ChatShortcut {
 }
 
 /** Teto de atalhos renderizados (spec.md FR-023). Excedentes são ignorados. */
-const MAX_SHORTCUTS = 3;
+const MAX_SHORTCUTS = 6;
 
 /** Fração da altura visível do sheet que o arraste precisa cruzar para comprometer. */
 const COMMIT_THRESHOLD_RATIO = 0.25;

@@ -24,8 +24,11 @@
 }
 
 :host(.page-header--back) .page-header {
+  // Desktop, tela interna (Figma v2/PageHeader, 4722:10983): 84px de altura = padding 8 em cima e 16 embaixo, sem recuo
+  // à esquerda (o voltar alinha com o conteúdo).
   @include breakpoints.md {
-    padding-left: 0;
+    min-height: 0;
+    padding: tokens.$space-8 0 tokens.$space-16;
   }
 }
 

@@ -30,6 +30,7 @@ import { PageHeaderComponent } from '../../shared/components/page-header/page-he
 import { PhIconComponent } from '../../shared/icons/ph-icon/ph-icon.component';
 import { AudioTranscriber } from '../../shared/services/audio-transcriber';
 import { type ScreenAction, ScreenActionsService } from '../../shared/services/screen-actions.service';
+import { NOTIFICATIONS_CONTEXT } from '../../shared/services/screen-contexts';
 import { type DirectoryUser } from '../../shared/services/user-directory';
 import { formatRelativeTime } from '../../shared/utils/relative-time';
 import { HospitalContextService } from '../home/hospital-context.service';
@@ -190,6 +191,7 @@ export class NotificationsComponent implements OnDestroy {
     // Ações da tela no assistente (padrão de cadastro): "Criar notificação" abre o formulário;
     // Editar e Responder já aparecem nos atalhos mas ainda não têm fluxo.
     this.destroyRef.onDestroy(this.screenActions.register(this.screenActionsList()));
+    this.destroyRef.onDestroy(this.screenActions.registerContext(NOTIFICATIONS_CONTEXT));
 
     // Uma notificação criada/respondida muda o repositório: recarrega a lista.
     let seenVersion = this.repository.version();

@@ -7,6 +7,8 @@ import { LogoutService } from './features/auth/logout.service';
 import { SessionRevoker } from './features/auth/session-revoker';
 import { ProvisionalSessionRoleReader } from './shared/auth/provisional-session-role-reader';
 import { SessionRoleReader } from './shared/auth/session-role';
+import { type ScreenAction, ScreenActionsService } from './shared/services/screen-actions.service';
+import { UserDirectory } from './shared/services/user-directory';
 
 @Component({ changeDetection: ChangeDetectionStrategy.OnPush, template: '' })
 class DummyComponent {}
@@ -25,6 +27,7 @@ const ROUTES: Routes = [
 const TEST_PROVIDERS = [
   { provide: SessionRoleReader, useClass: ProvisionalSessionRoleReader },
   { provide: SessionRevoker, useValue: { revokeCurrentDevice: (): Promise<void> => Promise.resolve() } },
+  { provide: UserDirectory, useValue: { search: (): Promise<[]> => Promise.resolve([]) } },
 ];
 
 describe('AppComponent', () => {
@@ -224,6 +227,85 @@ describe('AppComponent', () => {
       fixture.detectChanges();
 
       expect(component.aiChatValue()).toBe('');
+    });
+  });
+
+  describe('atalhos da tela no assistente (padrão de 23/11)', () => {
+    const action = (id: string, label: string, form = false): ScreenAction => ({
+      id,
+      label,
+      ...(form
+        ? {
+            form: {
+              fields: [{ id: 'm', kind: 'text', label: 'Mensagem?', placeholder: 'x', required: true }],
+              submit: (): void => undefined,
+              submitLabel: 'Criar',
+              title: 'Criar item',
+            },
+          }
+        : {}),
+    });
+    const chips = (): string[] =>
+      Array.from(fixture.nativeElement.querySelectorAll('.bottom-sheet__shortcut')).map(
+        e => (e as HTMLElement).textContent?.trim() ?? '',
+      );
+    const sheetSnap = (): string => (fixture.componentInstance as unknown as { aiSheetSnap(): string }).aiSheetSnap();
+
+    it('no chat, as ações da tela viram os chips acima do campo de mensagem (sem as perguntas genéricas)', () => {
+      TestBed.inject(ScreenActionsService).register([action('a', 'Criar item', true), action('b', 'Editar item')]);
+      fixture.componentInstance.aiAssistant.openPanel();
+      fixture.detectChanges();
+
+      expect(chips()).toEqual(['Criar item', 'Editar item']);
+      expect(fixture.nativeElement.querySelector('app-input-chat')).not.toBeNull();
+    });
+
+    it('tocar no chip de uma ação da tela abre o cadastro dela, em tela cheia', () => {
+      TestBed.inject(ScreenActionsService).register([action('a', 'Criar item', true)]);
+      fixture.componentInstance.aiAssistant.openPanel();
+      fixture.detectChanges();
+
+      expect(sheetSnap()).toBe('default');
+
+      fixture.nativeElement.querySelector('.bottom-sheet__shortcut button').click();
+      fixture.detectChanges();
+
+      expect(fixture.componentInstance.aiAssistant.view()).toBe('form');
+      expect(sheetSnap()).toBe('full');
+    });
+
+    it('tocar numa pergunta rápida pergunta à IA em vez de abrir uma ação', () => {
+      fixture.componentInstance.aiAssistant.openPanel();
+      fixture.detectChanges();
+      const questionChip = Array.from(
+        fixture.nativeElement.querySelectorAll('.bottom-sheet__shortcut button'),
+      )[0] as HTMLButtonElement;
+
+      questionChip.click();
+      fixture.detectChanges();
+
+      expect(fixture.componentInstance.aiAssistant.view()).toBe('chat');
+      expect(fixture.componentInstance.aiAssistant.lastQuestion()).not.toBeNull();
+    });
+
+    it('a tela de Atalhos não tem campo de mensagem nem chips embaixo; as ações ficam no conteúdo', () => {
+      TestBed.inject(ScreenActionsService).register([action('a', 'Criar item', true)]);
+      fixture.componentInstance.aiAssistant.openShortcuts();
+      fixture.detectChanges();
+
+      expect(fixture.nativeElement.querySelector('app-input-chat')).toBeNull();
+      expect(chips()).toEqual([]);
+      expect(fixture.nativeElement.querySelector('.assistant-content__actions app-tip')).not.toBeNull();
+      expect(sheetSnap()).toBe('default');
+    });
+
+    it('ação indisponível também abre sem campo de mensagem', () => {
+      TestBed.inject(ScreenActionsService).register([action('x', 'Ainda não existe')]);
+      fixture.componentInstance.aiAssistant.openAction(action('x', 'Ainda não existe'));
+      fixture.detectChanges();
+
+      expect(fixture.componentInstance.aiAssistant.view()).toBe('unavailable');
+      expect(fixture.nativeElement.querySelector('app-input-chat')).toBeNull();
     });
   });
 

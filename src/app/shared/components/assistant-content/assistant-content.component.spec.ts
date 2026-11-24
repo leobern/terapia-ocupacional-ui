@@ -293,4 +293,77 @@ describe('AssistantContentComponent', () => {
       expect(el().querySelector('.assistant-content__chips')).toBeNull();
     });
   });
+
+  describe('saudação da tela: texto próprio, digitado, com o aviso em fade', () => {
+    const live = (index: number): string => el().querySelectorAll('.typewriter__live')[index]?.textContent ?? '';
+    const hint = (): HTMLElement => el().querySelector('.assistant-content__hint') as HTMLElement;
+
+    beforeEach(() => jasmine.clock().install());
+
+    afterEach(() => jasmine.clock().uninstall());
+
+    it('usa o título e o texto registrados pela tela, escreve um depois do outro e mostra o aviso 2s depois', () => {
+      TestBed.inject(ScreenActionsService).registerContext({
+        description: 'Descrição da tela',
+        title: 'Título da tela',
+      });
+      assistant.openPanel();
+      fixture.detectChanges();
+
+      expect(live(0)).toBe('');
+      expect(live(1)).toBe('');
+      expect(hint().classList).not.toContain('assistant-content__hint--visible');
+
+      jasmine.clock().tick(14 * 'Título da tela'.length);
+      fixture.detectChanges();
+
+      expect(live(0)).toBe('Título da tela');
+      expect(live(1)).toBe('');
+
+      jasmine.clock().tick(14 * 'Descrição da tela'.length);
+      fixture.detectChanges();
+
+      expect(live(1)).toBe('Descrição da tela');
+      expect(hint().classList).not.toContain('assistant-content__hint--visible');
+
+      jasmine.clock().tick(1999);
+      fixture.detectChanges();
+
+      expect(hint().classList).not.toContain('assistant-content__hint--visible');
+
+      jasmine.clock().tick(1);
+      fixture.detectChanges();
+
+      expect(hint().classList).toContain('assistant-content__hint--visible');
+    });
+
+    it('sem texto registrado pela tela usa a saudação padrão', () => {
+      assistant.openPanel();
+      fixture.detectChanges();
+      jasmine.clock().tick(14 * 'Como eu posso te ajudar?'.length);
+      fixture.detectChanges();
+
+      expect(live(0)).toBe('Como eu posso te ajudar?');
+    });
+
+    it('fechar e reabrir o painel escreve tudo de novo e esconde o aviso', () => {
+      assistant.openPanel();
+      fixture.detectChanges();
+      // título → descrição → aviso: cada etapa só começa depois de um ciclo de detecção da anterior.
+      for (const ms of [1000, 3000, 2500]) {
+        jasmine.clock().tick(ms);
+        fixture.detectChanges();
+      }
+
+      expect(hint().classList).toContain('assistant-content__hint--visible');
+
+      assistant.closePanel();
+      fixture.detectChanges();
+      assistant.openPanel();
+      fixture.detectChanges();
+
+      expect(live(0)).toBe('');
+      expect(hint().classList).not.toContain('assistant-content__hint--visible');
+    });
+  });
 });

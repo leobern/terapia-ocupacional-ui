@@ -11,6 +11,7 @@ import { TherapyTagComponent } from '../../shared/components/therapy-tag/therapy
 import { PhIconComponent } from '../../shared/icons/ph-icon/ph-icon.component';
 import { ConnectivityService } from '../../shared/services/connectivity.service';
 import { ScreenAction, ScreenActionsService } from '../../shared/services/screen-actions.service';
+import { PATIENT_HUB_CONTEXT } from '../../shared/services/screen-contexts';
 import { adequacyPanelValues, DailyAdequacy } from '../daily-evolution/adequacy/adequacy.models';
 import { AdequacySummaryComponent } from '../daily-evolution/adequacy/adequacy-summary.component';
 import { DailyAdequacyService } from '../daily-evolution/adequacy/daily-adequacy.service';
@@ -245,6 +246,10 @@ export class PatientHubComponent implements OnInit {
   });
 
   constructor() {
+    effect(onCleanup => {
+      onCleanup(this.screenActions.registerContext(PATIENT_HUB_CONTEXT));
+    });
+
     // A ação só existe com o paciente carregado e hospital com vínculo aprovado em contexto.
     effect(onCleanup => {
       if (this.status() === 'ready' && this.hospitalId() !== null) {
