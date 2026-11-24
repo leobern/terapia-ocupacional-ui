@@ -1,0 +1,143 @@
+openapi: 3.0.3
+info:
+  title: Pacientes API
+  version: 1.0.0
+  description: >
+    Contrato da US-002-1-02 (FT-002-1 Cadastro de Paciente): criação do registro mestre do
+    paciente com os dados fixos coletados pelo chatbot, um dado por vez. A coleta
+    conversacional e a interpretação das respostas em linguagem natural pertencem à camada
+    de IA/chatbot (fora de escopo); esta API recebe os quatro campos já coletados e os
+    valida de forma definitiva. O paciente é exclusivo do hospital informado (RN-04), sem
+    partilha entre hospitais. Edição e verificação de duplicidade estão fora desta story
+    (US-002-1-03 e US-002-1-04).
+servers:
+  - url: /
+security:
+  - bearerAuth: []
+paths:
+  /api/v1/pacientes:
+    post:
+      operationId: createPaciente
+      x-implemented: true
+      summary: Cria o paciente com os dados fixos, vinculado exclusivamente ao hospital informado
+      description: >
+        Valida fullName (obrigatório, máx. 150), birthDate (obrigatória, não futura em
+        relação à data do sistema), sex (um dos 3 valores) e medicalRecordNumber
+        (opcional, máx. 30). Requer que o profissional tenha vínculo aprovado com o
+        hospital informado. Em sucesso, o chatbot exibe MSG-04 ("Paciente cadastrado com
+        sucesso."). Em erro de validação (422) o campo inválido é indicado em `field` e
+        `message` traz o texto da mensagem do sistema correspondente.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreatePacienteRequest"
+      responses:
+        "201":
+          description: Paciente criado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Paciente"
+        "400":
+          $ref: "#/components/responses/Error"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          description: Profissional sem vínculo aprovado com o hospital informado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "422":
+          description: >
+            Validação de campo. MSG-01 (fullName vazio), MSG-05 (fullName > 150),
+            MSG-02 (birthDate vazia ou futura), MSG-03 (sex não reconhecido).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationErrorResponse"
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  responses:
+    Error:
+      description: Erro
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+  schemas:
+    ErrorResponse:
+      type: object
+      required: [message, timestamp]
+      properties:
+        message:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+    ValidationErrorResponse:
+      allOf:
+        - $ref: "#/components/schemas/ErrorResponse"
+        - type: object
+          required: [field, code]
+          properties:
+            field:
+              type: string
+              enum: [fullName, birthDate, sex]
+            code:
+              type: string
+              enum: [MSG-01, MSG-02, MSG-03, MSG-05]
+    Sex:
+      type: string
+      enum: [MALE, FEMALE, NOT_INFORMED]
+    CreatePacienteRequest:
+      type: object
+      required: [hospitalId, fullName, birthDate, sex]
+      properties:
+        hospitalId:
+          type: integer
+          format: int64
+          description: Hospital ativo na sessão do usuário; o paciente fica vinculado só a ele (RN-04)
+        fullName:
+          type: string
+          maxLength: 150
+          description: Não vazio (MSG-01); acima de 150 caracteres gera MSG-05
+        birthDate:
+          type: string
+          format: date
+          description: Data válida, não futura (MSG-02)
+        sex:
+          $ref: "#/components/schemas/Sex"
+        medicalRecordNumber:
+          type: string
+          maxLength: 30
+          description: SAME, opcional, sem formato fixo
+    Paciente:
+      type: object
+      required: [id, hospitalId, fullName, birthDate, sex, createdAt]
+      properties:
+        id:
+          type: integer
+          format: int64
+        hospitalId:
+          type: integer
+          format: int64
+        fullName:
+          type: string
+        birthDate:
+          type: string
+          format: date
+        sex:
+          $ref: "#/components/schemas/Sex"
+        medicalRecordNumber:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
