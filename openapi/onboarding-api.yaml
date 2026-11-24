@@ -1,0 +1,90 @@
+openapi: 3.0.3
+info:
+  title: Onboarding API
+  version: 1.0.0
+  description: >
+    Contrato do fluxo de boas-vindas (US-001-3-01, FT-001-3). A tela é exibida uma única vez
+    por usuário (RN01), após o primeiro hospital aprovado. O estado "já visto" é persistido
+    no servidor para valer entre sessões e dispositivos.
+servers:
+  - url: /
+security:
+  - bearerAuth: []
+paths:
+  /api/v1/onboarding/welcome:
+    get:
+      operationId: getWelcomeStatus
+      x-implemented: true
+      summary: Indica se a tela de boas-vindas deve ser exibida e traz o nome do profissional
+      responses:
+        "200":
+          description: Estado do fluxo de boas-vindas do profissional autenticado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WelcomeStatus"
+        "401":
+          description: Não autenticado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Usuário autenticado não é profissional
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/v1/onboarding/welcome/complete:
+    post:
+      operationId: completeWelcome
+      x-implemented: true
+      summary: Marca o fluxo de boas-vindas como concluído (idempotente)
+      responses:
+        "204":
+          description: Boas-vindas registradas como concluídas; chamadas repetidas também retornam 204
+        "401":
+          description: Não autenticado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Usuário autenticado não é profissional ou ainda não tem hospital aprovado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    ErrorResponse:
+      type: object
+      required: [message, timestamp]
+      properties:
+        message:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+        detalhes:
+          type: array
+          nullable: true
+          items:
+            type: string
+    WelcomeStatus:
+      type: object
+      required: [shouldShow, name]
+      properties:
+        shouldShow:
+          type: boolean
+          description: >
+            true somente se o profissional tem ao menos um hospital com vínculo aprovado e
+            ainda não concluiu as boas-vindas. Quando false, a UI vai direto ao Painel Metabólico.
+        name:
+          type: string
+          description: Nome do profissional para a saudação personalizada

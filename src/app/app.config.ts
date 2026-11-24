@@ -117,7 +117,7 @@ import { FormulasApi } from './features/pharmacy/formulas-api';
 import { ProvisionalFormulasApi } from './features/pharmacy/provisional-formulas-api';
 import { LocalStartupStateReader } from './features/splash/local-startup-state-reader';
 import { StartupStateReader } from './features/splash/startup-state';
-import { ProvisionalWelcomeSource } from './features/welcome/provisional-welcome-source';
+import { WelcomeApiService } from './features/welcome/welcome-api.service';
 import { WelcomeSource } from './features/welcome/welcome-source';
 import { ProvisionalSessionRoleReader } from './shared/auth/provisional-session-role-reader';
 import { SessionRoleReader } from './shared/auth/session-role';
@@ -133,8 +133,7 @@ export const appConfig: ApplicationConfig = {
     { provide: PasswordResetGateway, useClass: HttpPasswordResetGateway },
     { provide: SessionRevoker, useClass: NoopSessionRevoker },
     { provide: StartupStateReader, useClass: LocalStartupStateReader },
-    // Provisório (API de onboarding ainda não ligada): "já visto" local.
-    { provide: WelcomeSource, useClass: ProvisionalWelcomeSource },
+    { provide: WelcomeSource, useClass: WelcomeApiService },
     { provide: LinkedHospitalsReader, useClass: HomeHospitalsApiService },
     { provide: UnreadNotificationsReader, useClass: LocalUnreadNotificationsReader },
     { provide: DailyPatientsSource, useClass: ProvisionalDailyPatientsSource },
