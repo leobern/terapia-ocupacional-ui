@@ -32,6 +32,12 @@ export interface FormFieldDefinition {
   readonly required: boolean;
   /** Motivo exibido enquanto uma pergunta obrigatória está sem resposta (ex.: "Informe ao menos um destinatário"). */
   readonly requiredMessage?: string;
+  /**
+   * Só em `mention`: sugere destinatários a partir do texto do campo `from` (ao sair dele, se ainda
+   * não há ninguém marcado). As sugestões ficam à parte e só valem após confirmação explícita.
+   * Rejeitar = IA indisponível: o preenchimento manual segue funcionando.
+   */
+  readonly suggest?: { readonly from: string; readonly run: (content: string) => Promise<readonly DirectoryUser[]> };
 }
 
 export interface FormActionDefinition {

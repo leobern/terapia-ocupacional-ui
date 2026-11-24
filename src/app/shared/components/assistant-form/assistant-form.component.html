@@ -55,6 +55,42 @@
                 }
               </ul>
             }
+            @if (proposedFor(field).length > 0) {
+              <p class="assistant-form__hint">
+                Sugestão do assistente — confirme para valerem como
+                destinatários:
+              </p>
+              <ul class="assistant-form__chips" aria-label="Sugeridos">
+                @for (user of proposedFor(field); track user.id) {
+                  <li
+                    class="assistant-form__chip assistant-form__chip--suggested"
+                  >
+                    <span>{{ label(user) }} · sugerido</span>
+                    <button
+                      type="button"
+                      class="assistant-form__chip-remove"
+                      [attr.aria-label]="'Descartar sugestão ' + user.name"
+                      (click)="rejectProposed(field, user)"
+                    >
+                      <ph-icon name="x" [size]="12" />
+                    </button>
+                  </li>
+                }
+              </ul>
+              <button
+                type="button"
+                class="assistant-form__confirm"
+                (click)="confirmProposed(field)"
+              >
+                Confirmar destinatários sugeridos
+              </button>
+            }
+            @if (suggestUnavailable().has(field.id)) {
+              <p class="assistant-form__hint">
+                Sugestão automática indisponível. Informe os destinatários
+                manualmente.
+              </p>
+            }
             @if (selected(field).length > 0) {
               <ul class="assistant-form__chips" aria-label="Marcados">
                 @for (user of selected(field); track user.id) {
@@ -98,6 +134,7 @@
                 [placeholder]="field.placeholder"
                 [value]="text(field)"
                 (input)="onText(field, $any($event.target).value)"
+                (blur)="onBlur(field)"
               ></textarea>
             </div>
           }

@@ -97,6 +97,8 @@ import { SessionRoleReader } from './shared/auth/session-role';
 import { DEV_BACKEND_PROVIDERS } from './shared/dev-backend/dev-backend.providers';
 import { devTokenInterceptor } from './shared/dev-backend/dev-token.interceptor';
 import { ASSISTANT_QUERY_RESOLVERS } from './shared/services/assistant-query-resolver';
+import { AnnouncementAssistant } from './features/notifications/assistant/announcement-assistant';
+import { ProvisionalAnnouncementAssistant } from './features/notifications/assistant/provisional-announcement-assistant';
 import { ProvisionalUserDirectory } from './shared/services/provisional-user-directory';
 import { UserDirectory } from './shared/services/user-directory';
 
@@ -148,6 +150,7 @@ export const appConfig: ApplicationConfig = {
     { provide: HospitalInvitePort, useClass: ProvisionalHospitalInvite },
     { provide: ManagerAccessReader, useClass: ProvisionalManagerAccess },
     { provide: UserDirectory, useClass: ProvisionalUserDirectory },
+    { provide: AnnouncementAssistant, useClass: ProvisionalAnnouncementAssistant },
     { provide: SessionRoleReader, useClass: ProvisionalSessionRoleReader },
     { provide: FormulasApi, useClass: ProvisionalFormulasApi },
     // Consultas de leitura do assistente (um resolvedor por intenção).

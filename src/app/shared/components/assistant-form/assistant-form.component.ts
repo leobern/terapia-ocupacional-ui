@@ -39,6 +39,10 @@ export class AssistantFormComponent {
   protected readonly errorMessage = signal<string | null>(null);
   protected readonly suggestionsFor = signal<string | null>(null);
   protected readonly suggestions = signal<readonly DirectoryUser[]>([]);
+  /** Sugestões da IA por campo: não valem nada até a confirmação explícita. */
+  protected readonly proposed = signal<Readonly<Record<string, readonly DirectoryUser[]>>>({});
+  /** Campos cuja sugestão falhou (IA indisponível): aviso discreto, preenchimento manual segue. */
+  protected readonly suggestUnavailable = signal<ReadonlySet<string>>(new Set());
   /** Data mínima do campo `date`: hoje (não faz sentido resolver no passado). */
   protected readonly today = new Date().toISOString().slice(0, 10);
 
@@ -169,6 +173,40 @@ export class AssistantFormComponent {
     this.closeSuggestions();
   }
 
+  /** Ao sair de um campo de texto, pede sugestão aos campos `mention` que dependem dele (só se ainda vazios). */
+  protected async onBlur(source: FormFieldDefinition): Promise<void> {
+    const content = this.text(source).trim();
+    const targets = this.definition().fields.filter(
+      field => field.suggest?.from === source.id && content !== '' && this.selected(field).length === 0,
+    );
+
+    await Promise.all(targets.map(field => this.suggestFor(field, content)));
+  }
+
+  protected proposedFor(field: FormFieldDefinition): readonly DirectoryUser[] {
+    return this.proposed()[field.id] ?? [];
+  }
+
+  /** Confirmação explícita: as sugestões restantes passam a ser destinatários. */
+  protected confirmProposed(field: FormFieldDefinition): void {
+    const picked = new Set(this.selected(field).map(user => user.id));
+    const accepted = this.proposedFor(field).filter(user => !picked.has(user.id));
+
+    this.mentions.update(current => ({ ...current, [field.id]: [...(current[field.id] ?? []), ...accepted] }));
+    this.dismissProposed(field);
+  }
+
+  protected rejectProposed(field: FormFieldDefinition, user: DirectoryUser): void {
+    this.proposed.update(current => ({
+      ...current,
+      [field.id]: (current[field.id] ?? []).filter(u => u.id !== user.id),
+    }));
+  }
+
+  protected dismissProposed(field: FormFieldDefinition): void {
+    this.proposed.update(current => ({ ...current, [field.id]: [] }));
+  }
+
   protected remove(field: FormFieldDefinition, user: DirectoryUser): void {
     this.mentions.update(current => ({
       ...current,
@@ -204,6 +242,25 @@ export class AssistantFormComponent {
     );
   }
 
+  private async suggestFor(field: FormFieldDefinition, content: string): Promise<void> {
+    try {
+      const users = await (field.suggest as NonNullable<FormFieldDefinition['suggest']>).run(content);
+
+      this.proposed.update(current => ({ ...current, [field.id]: users }));
+      this.suggestUnavailable.update(current => this.without(current, field.id));
+    } catch {
+      this.suggestUnavailable.update(current => new Set(current).add(field.id));
+    }
+  }
+
+  private without(set: ReadonlySet<string>, id: string): ReadonlySet<string> {
+    const next = new Set(set);
+
+    next.delete(id);
+
+    return next;
+  }
+
   private closeSuggestions(): void {
     this.searchToken++;
     this.suggestionsFor.set(null);
@@ -213,6 +270,8 @@ export class AssistantFormComponent {
   private reset(): void {
     this.texts.set({});
     this.mentions.set({});
+    this.proposed.set({});
+    this.suggestUnavailable.set(new Set());
     this.collapsed.set(new Set());
     this.closeSuggestions();
   }

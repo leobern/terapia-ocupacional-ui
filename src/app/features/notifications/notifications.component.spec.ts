@@ -1,3 +1,5 @@
+import { AnnouncementAssistant } from './assistant/announcement-assistant';
+import { ProvisionalAnnouncementAssistant } from './assistant/provisional-announcement-assistant';
 import { Location } from '@angular/common';
 import { provideHttpClient } from '@angular/common/http';
 import { signal } from '@angular/core';
@@ -54,6 +56,7 @@ describe('NotificationsComponent', () => {
         provideHttpClient(),
         { provide: NotificationsApiService, useClass: ProvisionalNotificationsApiService },
         { provide: UserDirectory, useClass: ProvisionalUserDirectory },
+        { provide: AnnouncementAssistant, useClass: ProvisionalAnnouncementAssistant },
         { provide: ViewportBreakpointService, useValue: { isDesktop: isDesktop.asReadonly() } },
         {
           provide: LinkedHospitalsReader,
@@ -208,6 +211,18 @@ describe('NotificationsComponent', () => {
       fixture.destroy();
 
       expect(registry.actions()).toEqual([]);
+    });
+
+    it('o campo de destinatários pede sugestão ao assistente a partir do texto do comunicado', async () => {
+      await configureStore({ status: 'success' });
+      createComponent();
+      const assistant = TestBed.inject(AnnouncementAssistant);
+      const spy = spyOn(assistant, 'suggestRecipients').and.callThrough();
+      const field = TestBed.inject(ScreenActionsService).actions()[0].form?.fields[0];
+
+      expect(field?.suggest?.from).toBe('message');
+      expect((await field?.suggest?.run('Estoque de medicamento baixo'))?.map(u => u.name)).toEqual(['farmaceuticos']);
+      expect(spy).toHaveBeenCalledWith('Estoque de medicamento baixo');
     });
 
     const jairo = { id: 3, name: 'Jairo Nepomuceno', photoUrl: null, specialty: 'Farmacêutico' };

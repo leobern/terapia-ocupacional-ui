@@ -41,6 +41,7 @@ import { type DirectoryUser } from '../../shared/services/user-directory';
 import { formatRelativeTime } from '../../shared/utils/relative-time';
 import { HospitalContextService } from '../home/hospital-context.service';
 import { NotificationSectionTitleComponent } from './components/notification-section-title/notification-section-title.component';
+import { AnnouncementAssistant } from './assistant/announcement-assistant';
 import { NotificationsApiService } from './data-access/notifications-api.service';
 import { NotificationsRepository } from './data-access/notifications-repository.service';
 import { Notification } from './notifications.models';
@@ -161,6 +162,7 @@ export class NotificationsComponent implements OnDestroy {
   private readonly hospitalContext = inject(HospitalContextService);
   private readonly repository = inject(NotificationsRepository);
   private readonly api = inject(NotificationsApiService);
+  private readonly announcementAssistant = inject(AnnouncementAssistant);
   private readonly connectivity = inject(ConnectivityService);
   private readonly screenActions = inject(ScreenActionsService);
   private readonly destroyRef = inject(DestroyRef);
@@ -437,6 +439,11 @@ export class NotificationsComponent implements OnDestroy {
               placeholder: '@pessoa, @grupo (ex.: @medicos) ou @todos',
               required: true,
               requiredMessage: 'Informe ao menos um destinatário para enviar o comunicado.',
+              suggest: {
+                from: 'message',
+                run: (content): Promise<readonly DirectoryUser[]> =>
+                  this.announcementAssistant.suggestRecipients(content),
+              },
             },
             {
               id: 'message',

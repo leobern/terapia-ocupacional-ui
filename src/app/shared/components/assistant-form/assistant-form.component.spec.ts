@@ -290,4 +290,88 @@ describe('AssistantFormComponent', () => {
 
     expect(el().querySelectorAll('.assistant-form__answer')[2].textContent).toContain('04/05/2030');
   });
+
+  describe('sugestão de destinatários', () => {
+    let suggest: () => Promise<readonly DirectoryUser[]>;
+    const chips = (label: string): string[] =>
+      Array.from(el().querySelectorAll(`[aria-label="${label}"] .assistant-form__chip span`)).map(
+        e => e.textContent?.trim() ?? '',
+      );
+    const blurMessage = async (value: string): Promise<void> => {
+      await type(1, value);
+      input(1).dispatchEvent(new Event('blur'));
+      await fixture.whenStable();
+      fixture.detectChanges();
+    };
+
+    beforeEach(() => {
+      suggest = (): Promise<readonly DirectoryUser[]> => Promise.resolve([USERS[0], USERS[1]]);
+      const base = definition();
+
+      fixture = TestBed.createComponent(AssistantFormComponent);
+      fixture.componentRef.setInput('definition', {
+        ...base,
+        fields: [
+          { ...base.fields[0], suggest: { from: 'text', run: (): Promise<readonly DirectoryUser[]> => suggest() } },
+          ...base.fields.slice(1),
+        ],
+      });
+      fixture.detectChanges();
+    });
+
+    it('apresenta sugestões marcadas como sugestão sem liberar o envio', async () => {
+      await blurMessage('Aviso');
+
+      expect(chips('Sugeridos')).toEqual(['Jairo Nepomuceno · sugerido', 'Filippa Martins · sugerido']);
+      expect(submit().disabled).toBeTrue();
+    });
+
+    it('confirmar as sugestões as torna destinatários e libera o envio', async () => {
+      await blurMessage('Aviso');
+      (el().querySelector('.assistant-form__confirm') as HTMLButtonElement).click();
+      fixture.detectChanges();
+
+      expect(chips('Marcados')).toEqual(['Jairo Nepomuceno', 'Filippa Martins']);
+      expect(el().querySelector('[aria-label="Sugeridos"]')).toBeNull();
+      expect(submit().disabled).toBeFalse();
+    });
+
+    it('descartar uma sugestão mantém só as demais; descartar todas mantém o envio impedido', async () => {
+      await blurMessage('Aviso');
+      (el().querySelector('[aria-label="Descartar sugestão Jairo Nepomuceno"]') as HTMLButtonElement).click();
+      fixture.detectChanges();
+
+      expect(chips('Sugeridos')).toEqual(['Filippa Martins · sugerido']);
+
+      (el().querySelector('[aria-label="Descartar sugestão Filippa Martins"]') as HTMLButtonElement).click();
+      fixture.detectChanges();
+
+      expect(el().querySelector('.assistant-form__confirm')).toBeNull();
+      expect(submit().disabled).toBeTrue();
+    });
+
+    it('com a IA indisponível avisa discretamente e o fluxo manual continua', async () => {
+      suggest = (): Promise<readonly DirectoryUser[]> => Promise.reject(new Error('fora do ar'));
+      await blurMessage('Aviso');
+
+      expect(el().textContent).toContain('Sugestão automática indisponível');
+
+      await type(0, '@jai');
+      await pick();
+
+      expect(submit().disabled).toBeFalse();
+    });
+
+    it('não sugere quando já há destinatário marcado ou o texto está vazio', async () => {
+      const suggestSpy = jasmine.createSpy('suggestSpy').and.callFake(() => Promise.resolve([USERS[0]]));
+
+      suggest = suggestSpy;
+      await blurMessage('  ');
+      await type(0, '@jai');
+      await pick();
+      await blurMessage('Aviso');
+
+      expect(suggestSpy).not.toHaveBeenCalled();
+    });
+  });
 });

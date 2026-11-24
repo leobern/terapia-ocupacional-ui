@@ -9,6 +9,7 @@ import { Subject } from 'rxjs';
 import { ViewportBreakpointService } from '../../shared/services/viewport-breakpoint.service';
 import { HospitalContextService } from '../home/hospital-context.service';
 import { LinkedHospitalsReader } from '../home/linked-hospitals';
+import { AnnouncementAssistant } from './assistant/announcement-assistant';
 import { NotificationsComponent } from './notifications.component';
 import { Notification } from './notifications.models';
 import { NotificationsActions } from './state/notifications.actions';
@@ -59,6 +60,10 @@ describe('NotificationsComponent — rolagem, rascunho e gestos', () => {
       imports: [NotificationsComponent],
       providers: [
         provideHttpClient(),
+        {
+          provide: AnnouncementAssistant,
+          useValue: { suggestRecipients: (): Promise<never[]> => Promise.resolve([]) },
+        },
         provideMockStore({ initialState: { notifications: { ...initialNotificationsState, ...overrides } } }),
         { provide: Actions, useValue: actions },
         { provide: ViewportBreakpointService, useValue: { isDesktop: signal(true).asReadonly() } },
