@@ -3,6 +3,7 @@ import { TestBed } from '@angular/core/testing';
 import { HospitalContextService } from '../home/hospital-context.service';
 import { LinkRevocationChecker } from '../home/link-revocation-checker';
 import { LinkedHospitalsReader } from '../home/linked-hospitals';
+import { DuplicateCheckOutcome } from './patient-duplicate.models';
 import { PatientDuplicateCheckService } from './patient-duplicate-check.service';
 import { PatientDuplicateError } from './patient-duplicate-error';
 import { PatientDuplicateSource } from './patient-duplicate-source';
@@ -31,7 +32,7 @@ describe('PatientDuplicateCheckService (fonte provisória)', () => {
     const outcome = await service.check({ birthDate: '14/03/1985', fullName: 'Maria Aparecida Souza', hospitalId: 1 });
 
     expect(outcome).toEqual({ kind: 'no-match', next: 'sex' });
-    expect(find).toHaveBeenCalledWith(1, 'Maria Aparecida Souza', '1985-03-14');
+    expect(find).toHaveBeenCalledWith(1, 'Maria Aparecida Souza', '1985-03-14', undefined);
   });
 
   it('Cenário 2: exibe nome, data e SAME do paciente encontrado antes de continuar', async () => {
@@ -40,6 +41,7 @@ describe('PatientDuplicateCheckService (fonte provisória)', () => {
     expect(outcome).toEqual({
       kind: 'matches',
       lines: ['Nome: João Pedro Lima · Data de nascimento: 02/07/1990 · SAME: 12345'],
+      matches: [{ birthDate: '1990-07-02', fullName: 'João Pedro Lima', id: 1, medicalRecordNumber: '12345' }],
       next: 'sex',
     });
   });
@@ -59,6 +61,7 @@ describe('PatientDuplicateCheckService (fonte provisória)', () => {
     expect(outcome).toEqual({
       kind: 'matches',
       lines: ['Nome: José Antônio · Data de nascimento: 10/01/1960'],
+      matches: [{ birthDate: '1960-01-10', fullName: 'José Antônio', id: 2, medicalRecordNumber: null }],
       next: 'sex',
     });
 
@@ -88,9 +91,31 @@ describe('PatientDuplicateCheckService (fonte provisória)', () => {
     expect(find).not.toHaveBeenCalled();
   });
 
+  it('US-002-1-03 RN-01: SAME igual preenchido nos dois lados não coincide; SAME diferente ou vazio coincide', async () => {
+    const check = (same?: string): Promise<DuplicateCheckOutcome> =>
+      service.check({ birthDate: '02/07/1990', fullName: 'João Pedro Lima', hospitalId: 1, medicalRecordNumber: same });
+
+    expect((await check('12345')).kind).toBe('no-match');
+    expect((await check('99999')).kind).toBe('matches');
+    expect((await check('')).kind).toBe('matches');
+    expect((await check()).kind).toBe('matches');
+    expect(find).toHaveBeenCalledWith(1, 'João Pedro Lima', '1990-07-02', '12345');
+    // Paciente existente sem SAME coincide mesmo com SAME informado.
+    expect(
+      (
+        await service.check({
+          birthDate: '10/01/1960',
+          fullName: 'José Antônio',
+          hospitalId: 1,
+          medicalRecordNumber: '1',
+        })
+      ).kind,
+    ).toBe('matches');
+  });
+
   it('exibe todos os correspondentes', async () => {
     find.and.resolveTo([
-      { birthDate: '2000-01-01', fullName: 'A B C', medicalRecordNumber: '1' },
+      { birthDate: '2000-01-01', fullName: 'A B C', id: 1, medicalRecordNumber: '1' },
       { birthDate: '2000-01-01', fullName: 'a b c', medicalRecordNumber: null },
     ]);
 

@@ -12,6 +12,7 @@ interface DuplicateResponse {
   readonly matches: readonly {
     readonly birthDate: string;
     readonly fullName: string;
+    readonly id: number;
     readonly medicalRecordNumber?: string | null;
   }[];
 }
@@ -24,11 +25,15 @@ function classify(failure: unknown): PatientDuplicateFailure {
       return 'session-expired';
     case 403:
       return 'access-denied';
-    case 422:
-      // MSG-01 fala em "caracteres"; qualquer outro 422 é a MSG-02 (data).
-      return String((error as { message?: unknown } | null)?.message ?? '').includes('caracteres')
-        ? 'invalid-name'
-        : 'invalid-date';
+    case 422: {
+      // O contrato indica o campo inválido em `field` (fullNameQuery = MSG-01, birthDateQuery = MSG-02).
+      const body = error as { field?: unknown; message?: unknown } | null;
+      const isName =
+        body?.field === 'fullNameQuery' ||
+        (body?.field === undefined && String(body?.message ?? '').includes('caracteres'));
+
+      return isName ? 'invalid-name' : 'invalid-date';
+    }
     default:
       return 'unavailable';
   }
@@ -39,11 +44,21 @@ function classify(failure: unknown): PatientDuplicateFailure {
 export class PatientDuplicateApiService extends PatientDuplicateSource {
   private readonly http = inject(HttpClient);
 
-  async find(hospitalId: number, fullName: string, birthDate: string): Promise<readonly PatientMatch[]> {
-    const params = new HttpParams()
+  async find(
+    hospitalId: number,
+    fullName: string,
+    birthDate: string,
+    medicalRecordNumber?: string | null,
+  ): Promise<readonly PatientMatch[]> {
+    let params = new HttpParams()
       .set('hospitalId', hospitalId)
       .set('fullNameQuery', fullName)
       .set('birthDateQuery', birthDate);
+    const same = medicalRecordNumber?.trim();
+
+    if (same) {
+      params = params.set('medicalRecordNumberQuery', same);
+    }
 
     try {
       const { matches } = await firstValueFrom(
@@ -53,6 +68,7 @@ export class PatientDuplicateApiService extends PatientDuplicateSource {
       return matches.map(m => ({
         birthDate: m.birthDate,
         fullName: m.fullName,
+        id: m.id,
         medicalRecordNumber: m.medicalRecordNumber ?? null,
       }));
     } catch (failure) {

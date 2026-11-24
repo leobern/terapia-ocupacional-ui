@@ -65,12 +65,20 @@
     "duplicate": {
       "accessDenied": "You do not have access to this hospital.",
       "birthDate": "Date of birth",
+      "checking": "Checking whether the patient is already registered…",
+      "hospitalNotFound": "Hospital not found.",
       "invalidBirthDate": "Enter a valid date of birth.",
       "name": "Name",
       "nameTooShort": "Enter at least 3 characters to search.",
+      "no": "No, it is another patient",
+      "question": "A patient with this name and date of birth already exists in this hospital. Is it the same patient?",
+      "retry": "Try again",
       "same": "SAME",
+      "sameMissing": "not filled in",
       "sessionExpired": "Your session has expired. Sign in again.",
-      "unavailable": "Could not check the patient right now. Try again."
+      "unavailable": "Could not check the patient right now. Try again.",
+      "yes": "Yes, it is the same patient",
+      "yesThis": "Yes, it is this patient"
     }
   },
   "settings": {

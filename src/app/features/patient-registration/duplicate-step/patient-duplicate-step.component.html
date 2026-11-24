@@ -1,0 +1,62 @@
+<section class="duplicate-step" [attr.aria-busy]="state() === 'loading'">
+  @switch (state()) {
+    @case ('loading') {
+      <p class="duplicate-step__text" role="status">
+        {{ i18n.t('patientRegistration.duplicate.checking') }}
+      </p>
+    }
+    @case ('error') {
+      <p class="duplicate-step__text duplicate-step__text--error" role="alert">
+        {{ errorMessage() }}
+      </p>
+      <app-button
+        appearance="outlined"
+        kind="secondary"
+        [label]="i18n.t('patientRegistration.duplicate.retry')"
+        (click)="retry()"
+      />
+    }
+    @case ('question') {
+      <p class="duplicate-step__text" role="alert">
+        {{ i18n.t('patientRegistration.duplicate.question') }}
+      </p>
+      <ul class="duplicate-step__list">
+        @for (candidate of candidates(); track candidate.id) {
+          <li class="duplicate-step__card">
+            <dl class="duplicate-step__data">
+              <dt>{{ i18n.t('patientRegistration.duplicate.name') }}</dt>
+              <dd>{{ candidate.fullName }}</dd>
+              <dt>{{ i18n.t('patientRegistration.duplicate.birthDate') }}</dt>
+              <dd>{{ formatDate(candidate.birthDate) }}</dd>
+              <dt>{{ i18n.t('patientRegistration.duplicate.same') }}</dt>
+              <dd>
+                {{
+                  candidate.medicalRecordNumber ||
+                    i18n.t('patientRegistration.duplicate.sameMissing')
+                }}
+              </dd>
+            </dl>
+            <app-button
+              [fullWidth]="true"
+              [label]="
+                i18n.t(
+                  single()
+                    ? 'patientRegistration.duplicate.yes'
+                    : 'patientRegistration.duplicate.yesThis'
+                )
+              "
+              (click)="answerYes(candidate)"
+            />
+          </li>
+        }
+      </ul>
+      <app-button
+        appearance="outlined"
+        kind="secondary"
+        [fullWidth]="true"
+        [label]="i18n.t('patientRegistration.duplicate.no')"
+        (click)="answerNo()"
+      />
+    }
+  }
+</section>

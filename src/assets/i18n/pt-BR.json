@@ -65,12 +65,20 @@
     "duplicate": {
       "accessDenied": "Você não tem acesso a este hospital.",
       "birthDate": "Data de nascimento",
+      "checking": "Verificando se o paciente já está cadastrado…",
+      "hospitalNotFound": "Hospital não encontrado.",
       "invalidBirthDate": "Informe uma data de nascimento válida.",
       "name": "Nome",
       "nameTooShort": "Digite pelo menos 3 caracteres para buscar.",
+      "no": "Não, é outro paciente",
+      "question": "Já existe um paciente com este nome e data de nascimento neste hospital. É o mesmo paciente?",
+      "retry": "Tentar novamente",
       "same": "SAME",
+      "sameMissing": "não preenchido",
       "sessionExpired": "Sua sessão expirou. Entre novamente.",
-      "unavailable": "Não foi possível verificar o paciente agora. Tente novamente."
+      "unavailable": "Não foi possível verificar o paciente agora. Tente novamente.",
+      "yes": "Sim, é o mesmo paciente",
+      "yesThis": "Sim, é este paciente"
     }
   },
   "settings": {

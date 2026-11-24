@@ -41,9 +41,25 @@ describe('PatientDuplicateApiService', () => {
     });
 
     expect(await result).toEqual([
-      { birthDate: '1960-01-10', fullName: 'José Antônio', medicalRecordNumber: '55' },
-      { birthDate: '1960-01-10', fullName: 'Jose Antonio', medicalRecordNumber: null },
+      { birthDate: '1960-01-10', fullName: 'José Antônio', id: 1, medicalRecordNumber: '55' },
+      { birthDate: '1960-01-10', fullName: 'Jose Antonio', id: 2, medicalRecordNumber: null },
     ]);
+  });
+
+  it('envia o SAME informado como medicalRecordNumberQuery e omite quando vazio', async () => {
+    const withSame = service.find(7, 'José Antônio', '1960-01-10', ' A-1 ');
+    const req = http.expectOne(r => r.url === '/api/v1/pacientes/duplicidade');
+
+    expect(req.request.params.get('medicalRecordNumberQuery')).toBe('A-1');
+    req.flush({ matches: [] });
+    await withSame;
+
+    const without = service.find(7, 'José Antônio', '1960-01-10', '  ');
+    const second = http.expectOne(r => r.url === '/api/v1/pacientes/duplicidade');
+
+    expect(second.request.params.has('medicalRecordNumberQuery')).toBeFalse();
+    second.flush({ matches: [] });
+    await without;
   });
 
   it('lista vazia resulta em array vazio', async () => {
@@ -58,6 +74,8 @@ describe('PatientDuplicateApiService', () => {
     ['422 MSG-01', 422, { message: 'Digite pelo menos 3 caracteres para buscar.' }, 'invalid-name'],
     ['422 MSG-02', 422, { message: 'Informe uma data de nascimento válida.' }, 'invalid-date'],
     ['422 sem corpo', 422, null, 'invalid-date'],
+    ['422 field=fullNameQuery', 422, { field: 'fullNameQuery', message: 'x' }, 'invalid-name'],
+    ['422 field=birthDateQuery', 422, { field: 'birthDateQuery', message: 'Digite caracteres' }, 'invalid-date'],
     ['403', 403, { message: 'x' }, 'access-denied'],
     ['401', 401, { message: 'x' }, 'session-expired'],
     ['400', 400, { message: 'x' }, 'unavailable'],

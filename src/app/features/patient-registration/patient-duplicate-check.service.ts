@@ -36,7 +36,7 @@ export class PatientDuplicateCheckService {
     let matches: readonly PatientMatch[];
 
     try {
-      matches = await this.source.find(input.hospitalId, fullName, birthDate);
+      matches = await this.source.find(input.hospitalId, fullName, birthDate, input.medicalRecordNumber);
     } catch (failure) {
       if (failure instanceof PatientDuplicateError) {
         return this.failed(failure.failure, input.hospitalId);
@@ -46,7 +46,7 @@ export class PatientDuplicateCheckService {
 
     return matches.length === 0
       ? { kind: 'no-match', next: 'sex' }
-      : { kind: 'matches', lines: matches.map(match => this.describe(match)), next: 'sex' };
+      : { kind: 'matches', lines: matches.map(match => this.describe(match)), matches, next: 'sex' };
   }
 
   /** Falhas da API: 422 volta às mensagens do contrato; 403 só vira revogação se o vínculo constar REVOGADO. */
