@@ -19,6 +19,9 @@ export class HospitalContextService {
   /** RN-03 (US-003-1-03): com um único vínculo o seletor não oferece outras opções. */
   readonly canSwitch = computed(() => this.hospitals().length > 1);
 
+  /** Hospital cujo acesso foi revogado nesta sessão (acesso negado pelo servidor); `null` = nenhum. */
+  readonly revoked = signal<LinkedHospital | null>(null);
+
   private readonly reader = inject(LinkedHospitalsReader);
   private readonly selectedId = signal<number | null>(null);
   private generation = 0;
@@ -41,6 +44,7 @@ export class HospitalContextService {
         return;
       }
       this.hospitals.set(hospitals);
+      this.revoked.set(null);
       if (!hospitals.some(h => h.id === this.selectedId())) {
         this.selectedId.set(hospitals[0]?.id ?? null);
       }
@@ -49,6 +53,26 @@ export class HospitalContextService {
       if (generation === this.generation) {
         this.status.set('error');
       }
+    }
+  }
+
+  /**
+   * Trata o acesso negado como revogação (US-001-2-04, RN01): tira o hospital das opções na hora,
+   * sem esperar novo login. Se era o selecionado, o contexto passa ao primeiro vínculo ativo restante
+   * ou ao estado sem hospital.
+   */
+  revokeAccess(id: number): void {
+    const hospital = this.hospitals().find(h => h.id === id);
+
+    if (hospital === undefined) {
+      return;
+    }
+    const remaining = this.hospitals().filter(h => h.id !== id);
+
+    this.revoked.set(hospital);
+    this.hospitals.set(remaining);
+    if (this.selectedId() === id) {
+      this.selectedId.set(remaining[0]?.id ?? null);
     }
   }
 

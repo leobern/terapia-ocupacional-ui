@@ -346,9 +346,12 @@ export class HomeComponent implements OnInit, OnDestroy {
         this.feedLoaded.set(true);
         this.nextCursor.set(page.nextCursor);
       }
-    } catch {
-      // Falha do primeiro lote: sem erro genérico (isso é do `refresh()`); sinaliza dados desatualizados.
-      if (generation === this.feedGeneration) {
+    } catch (failure) {
+      if ((failure as { status?: number }).status === 403) {
+        // Acesso negado = vínculo revogado: sem dados do hospital (US-001-2-04, Cenário 2).
+        this.context.revokeAccess(hospitalId);
+      } else if (generation === this.feedGeneration) {
+        // Falha do primeiro lote: sem erro genérico (isso é do `refresh()`); sinaliza dados desatualizados.
         this.stale.set(true);
       }
     }
