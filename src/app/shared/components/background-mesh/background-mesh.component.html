@@ -1,3 +1,10 @@
+<!--
+  Bordas de cor sólida, coladas no topo e na base da tela: o Safari do iPhone tinge a barra de status e a de endereço com
+  o `background-color` dos elementos fixos nessas bordas (o SVG do gradiente não conta). Mesma cor do degradê naquele ponto.
+-->
+<div class="background-mesh__edge background-mesh__edge--top"></div>
+<div class="background-mesh__edge background-mesh__edge--bottom"></div>
+
 @if (variant() === 'gradient') {
   <!--
     Gradiente de fundo do Figma: linear, 3 paradas, t = 0,1735·x + 0,8283·y (x e y normalizados no

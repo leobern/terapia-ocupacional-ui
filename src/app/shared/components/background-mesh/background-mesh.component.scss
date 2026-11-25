@@ -187,3 +187,26 @@ $extend: 160px;
     opacity: 1;
   }
 }
+
+// Bordas sólidas (ver o template): altura da área segura, no mínimo 24px, e esmaecem para o fundo do degradê.
+.background-mesh__edge {
+  position: fixed;
+  z-index: 0;
+  right: 0;
+  left: 0;
+  height: max(env(safe-area-inset-top, 0px), 24px);
+  pointer-events: none;
+
+  &--top {
+    top: 0;
+    background-color: var(--page-edge-top, transparent);
+    mask-image: linear-gradient(to bottom, #000000 60%, transparent);
+  }
+
+  &--bottom {
+    bottom: 0;
+    height: max(env(safe-area-inset-bottom, 0px), 24px);
+    background-color: var(--page-edge-bottom, transparent);
+    mask-image: linear-gradient(to top, #000000 60%, transparent);
+  }
+}
