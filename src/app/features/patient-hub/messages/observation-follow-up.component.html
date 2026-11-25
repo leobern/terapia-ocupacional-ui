@@ -1,0 +1,189 @@
+<!-- Sem frame no Figma: bottom-sheet no padrão do cadastro de mensagem, desenhado pelo agente. O clique no <dialog> é o scrim; Esc fecha. -->
+<!-- eslint-disable-next-line @angular-eslint/template/click-events-have-key-events, @angular-eslint/template/interactive-supports-focus -->
+<dialog
+  #dialogEl
+  class="msg"
+  aria-labelledby="follow-up-title"
+  (click)="onDialogClick($event)"
+  (cancel)="onCancel($event)"
+>
+  <span class="msg__handle" aria-hidden="true"></span>
+  <div class="msg__header">
+    <app-icon-logo class="sheet-logo" state="default" sparkle="solid" />
+    <h2 id="follow-up-title" class="msg__title">Sugestões para a observação</h2>
+    <app-icon-button
+      kind="secondary"
+      appearance="icon"
+      icon="x"
+      ariaLabel="Fechar"
+      (click)="close()"
+    />
+  </div>
+
+  @if (isOpen()) {
+    <div class="msg__body">
+      <p class="msg__help">
+        A observação já foi registrada. Nada abaixo é criado ou enviado sem a
+        sua confirmação.
+      </p>
+
+      @if (pendingSuggestion(); as suggestion) {
+        @if (pendingOutcome() === 'pending') {
+          <section
+            class="msg__card"
+            aria-labelledby="follow-up-pending"
+            data-testid="pending-card"
+          >
+            <span id="follow-up-pending" class="msg__label"
+              >Pendência de reavaliação</span
+            >
+            @if (suggestion.rationale) {
+              <p class="msg__help">{{ suggestion.rationale }}</p>
+            }
+            <label class="msg__help" for="follow-up-due">Prazo</label>
+            <input
+              id="follow-up-due"
+              class="msg__select"
+              type="date"
+              [min]="today()"
+              [value]="dueDate()"
+              (input)="onDue($event)"
+            />
+            @if (pastDate()) {
+              <p class="msg__status msg__status--error" role="alert">
+                O prazo deve ser hoje ou uma data futura.
+              </p>
+            }
+            <span class="msg__help">Destinatários</span>
+            <ul class="msg__entries">
+              @for (person of pendingOptions(); track person.id) {
+                <li class="msg__entry">
+                  <label class="msg__entry-text">
+                    <input
+                      type="checkbox"
+                      [checked]="isPicked('pending', person.id)"
+                      (change)="toggle('pending', person.id)"
+                    />
+                    <span class="msg__entry-label">{{ person.name }}</span>
+                    <span class="msg__help">{{ person.specialty }}</span>
+                  </label>
+                </li>
+              }
+            </ul>
+            @if (pendingPeople().size === 0) {
+              <p class="msg__status msg__status--error" role="alert">
+                Escolha ao menos um destinatário vinculado ao paciente.
+              </p>
+            }
+            <div class="msg__confirm-actions">
+              <app-button
+                label="Criar pendência"
+                [disabled]="!canCreate()"
+                (click)="createPending()"
+              />
+              <app-button
+                kind="primary"
+                appearance="outlined"
+                label="Recusar pendência"
+                (click)="decline('pending')"
+              />
+            </div>
+          </section>
+        } @else {
+          <p class="msg__help" role="status" data-testid="pending-outcome">
+            {{
+              pendingOutcome() === 'done'
+                ? 'Pendência de reavaliação criada.'
+                : 'Sugestão recusada: nenhuma pendência foi criada.'
+            }}
+          </p>
+        }
+      }
+
+      @if (communicationSuggestion(); as suggestion) {
+        @if (communicationOutcome() === 'pending') {
+          <section
+            class="msg__card"
+            aria-labelledby="follow-up-message"
+            data-testid="communication-card"
+          >
+            <span id="follow-up-message" class="msg__label"
+              >Mensagem sugerida</span
+            >
+            <label class="msg__help" for="follow-up-draft"
+              >Rascunho (edite antes de enviar)</label
+            >
+            <textarea
+              id="follow-up-draft"
+              class="msg__textarea"
+              rows="4"
+              [value]="draft()"
+              (input)="onDraft($event)"
+            ></textarea>
+            <span class="msg__help">Destinatários</span>
+            <ul class="msg__entries">
+              @for (person of communicationOptions(); track person.id) {
+                <li class="msg__entry">
+                  <label class="msg__entry-text">
+                    <input
+                      type="checkbox"
+                      [checked]="isPicked('communication', person.id)"
+                      (change)="toggle('communication', person.id)"
+                    />
+                    <span class="msg__entry-label">{{ person.name }}</span>
+                    <span class="msg__help">{{ person.specialty }}</span>
+                  </label>
+                </li>
+              }
+            </ul>
+            @if (communicationPeople().size === 0) {
+              <p class="msg__status msg__status--error" role="alert">
+                Escolha ao menos um destinatário vinculado ao paciente.
+              </p>
+            }
+            <div class="msg__confirm-actions">
+              <app-button
+                label="Enviar mensagem"
+                [disabled]="!canSend()"
+                (click)="sendMessage()"
+              />
+              <app-button
+                kind="primary"
+                appearance="outlined"
+                label="Recusar mensagem"
+                (click)="decline('communication')"
+              />
+            </div>
+          </section>
+        } @else {
+          <p
+            class="msg__help"
+            role="status"
+            data-testid="communication-outcome"
+          >
+            {{
+              communicationOutcome() === 'done'
+                ? 'Mensagem enviada.'
+                : 'Sugestão recusada: nenhuma mensagem foi enviada.'
+            }}
+          </p>
+        }
+      }
+
+      @if (hint(); as text) {
+        <p class="msg__status msg__status--error" role="alert">{{ text }}</p>
+      }
+      @if (!online()) {
+        <p class="msg__status msg__status--warning" role="status">
+          {{ offlineHint }}
+        </p>
+      }
+      <app-button
+        kind="primary"
+        appearance="outlined"
+        label="Recusar as duas sugestões"
+        (click)="decline('both')"
+      />
+    </div>
+  }
+</dialog>

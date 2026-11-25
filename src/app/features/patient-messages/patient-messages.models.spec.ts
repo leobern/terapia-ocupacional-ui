@@ -1,4 +1,4 @@
-import { formatDateTime, isOverdue, isThreadParticipant, MessageThread } from './patient-messages.models';
+import { formatDateTime, isOverdue, MessageThread } from './patient-messages.models';
 
 const base: MessageThread = {
   at: '2026-11-20T10:00:00.000Z',
@@ -25,20 +25,5 @@ describe('patient-messages.models', () => {
 
   it('formatDateTime formata dd/MM/yyyy HH:mm', () => {
     expect(formatDateTime(new Date(2026, 10, 21, 9, 5).toISOString())).toBe('21/11/2026 09:05');
-  });
-});
-
-describe('isThreadParticipant', () => {
-  const t = {
-    author: 'Ana',
-    recipients: ['@medicos', '@Bruno'],
-    replies: [{ author: 'Carla' }],
-  } as unknown as MessageThread;
-
-  it('remetente, mencionado pelo nome ou quem respondeu; grupo e estranho não', () => {
-    expect(isThreadParticipant(t, 'Ana')).toBeTrue();
-    expect(isThreadParticipant(t, 'bruno')).toBeTrue();
-    expect(isThreadParticipant(t, 'Carla')).toBeTrue();
-    expect(isThreadParticipant(t, 'Zé')).toBeFalse();
   });
 });

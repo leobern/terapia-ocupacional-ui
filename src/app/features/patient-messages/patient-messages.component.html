@@ -70,7 +70,9 @@
               {{ notice }}
             </p>
           }
-          <p class="thread__to">Para: {{ thread.recipients.join(', ') }}</p>
+          @if (thread.recipients.length > 0) {
+            <p class="thread__to">Para: {{ thread.recipients.join(', ') }}</p>
+          }
           <p class="thread__text">{{ thread.text }}</p>
 
           @if (thread.replies.length > 0) {
@@ -90,7 +92,8 @@
           }
           @for (change of thread.statusChanges; track $index) {
             <p class="thread__change" data-testid="status-change">
-              {{ change.kind === 'reopened' ? 'Reaberta' : 'Resolvida' }} por
+              {{ change.kind === 'reopened' ? 'Reaberta' : 'Resolvida' }}
+              {{ change.author ? 'por' : 'em' }}
               {{ stamp(change.author, change.at) }}
             </p>
           }

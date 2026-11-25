@@ -54,8 +54,6 @@ import { HttpAuthGateway } from './features/login/http-auth-gateway';
 import { AnnouncementAssistant } from './features/notifications/assistant/announcement-assistant';
 import { PendingNotificationsQueryResolver } from './features/notifications/assistant/pending-notifications-query.resolver';
 import { ProvisionalAnnouncementAssistant } from './features/notifications/assistant/provisional-announcement-assistant';
-import { NotificationsApiService } from './features/notifications/data-access/notifications-api.service';
-import { ProvisionalNotificationsApiService } from './features/notifications/data-access/provisional-notifications-api.service';
 import { HttpPasswordResetGateway } from './features/password-recovery/http-password-reset-gateway';
 import { PasswordResetGateway } from './features/password-recovery/password-reset-gateway';
 import { AssessmentAiStructurer } from './features/patient-hub/assessment/assessment-ai-structurer';
@@ -79,16 +77,18 @@ import { ProvisionalDailyEvolutionSource } from './features/patient-hub/daily-re
 import { ProvisionalDailyRecordSource } from './features/patient-hub/daily-record/provisional-daily-record-source';
 import { ProvisionalEvolutionAiStructurer } from './features/patient-hub/daily-record/provisional-evolution-ai-structurer';
 import { ProvisionalParameterAiStructurer } from './features/patient-hub/daily-record/provisional-parameter-ai-structurer';
+import { ObservationFollowUpPort } from './features/patient-hub/messages/observation-follow-up.port';
+import { ObservationFollowUpApiService } from './features/patient-hub/messages/observation-follow-up-api.service';
+import {
+  PatientMessageApiService,
+  PatientTeamApiService,
+} from './features/patient-hub/messages/patient-message-api.service';
 import {
   MessageAiAssistant,
   PatientMessageSource,
   PatientTeamSource,
 } from './features/patient-hub/messages/patient-message-source';
-import {
-  ProvisionalMessageAiAssistant,
-  ProvisionalPatientMessageSource,
-  ProvisionalPatientTeamSource,
-} from './features/patient-hub/messages/provisional-patient-message';
+import { ProvisionalMessageAiAssistant } from './features/patient-hub/messages/provisional-patient-message';
 import { BedMovementPort, BedOccupancyPort } from './features/patient-hub/move-bed/bed-movement.port';
 import { BedMovementApiService } from './features/patient-hub/move-bed/bed-movement-api.service';
 import { BedNumberExtractor } from './features/patient-hub/move-bed/bed-number-extractor';
@@ -129,10 +129,8 @@ import {
   PatientMessagesWriter,
   ReplyTranscriber,
 } from './features/patient-messages/patient-messages-source';
-import {
-  ProvisionalPatientMessages,
-  ProvisionalReplyTranscriber,
-} from './features/patient-messages/provisional-patient-messages';
+import { PatientThreadsApiService } from './features/patient-messages/patient-threads-api.service';
+import { ProvisionalReplyTranscriber } from './features/patient-messages/provisional-reply-transcriber';
 import { InternacaoCreationPort } from './features/patient-registration/internacao-creation.port';
 import { InternacoesApiService } from './features/patient-registration/internacoes-api.service';
 import { PacientesApiService } from './features/patient-registration/pacientes-api.service';
@@ -195,9 +193,9 @@ export const appConfig: ApplicationConfig = {
     { provide: BedNumberExtractor, useClass: ProvisionalBedNumberExtractor },
     { provide: PatientNameExtractor, useClass: ProvisionalPatientNameExtractor },
     { provide: PatientListAiCommandPort, useClass: ProvisionalPatientListAiCommand },
-    ProvisionalPatientMessages,
-    { provide: PatientMessagesSource, useExisting: ProvisionalPatientMessages },
-    { provide: PatientMessagesWriter, useExisting: ProvisionalPatientMessages },
+    PatientThreadsApiService,
+    { provide: PatientMessagesSource, useExisting: PatientThreadsApiService },
+    { provide: PatientMessagesWriter, useExisting: PatientThreadsApiService },
     { provide: ReplyTranscriber, useClass: ProvisionalReplyTranscriber },
     ProvisionalFollowUpClosureSource,
     { provide: FollowUpClosureSource, useExisting: ProvisionalFollowUpClosureSource },
@@ -221,8 +219,9 @@ export const appConfig: ApplicationConfig = {
     { provide: EvolutionAiStructurer, useClass: ProvisionalEvolutionAiStructurer },
     { provide: PrescriptionSource, useClass: ProvisionalPrescriptionSource },
     { provide: ParameterAiStructurer, useClass: ProvisionalParameterAiStructurer },
-    { provide: PatientMessageSource, useClass: ProvisionalPatientMessageSource },
-    { provide: PatientTeamSource, useClass: ProvisionalPatientTeamSource },
+    { provide: PatientMessageSource, useClass: PatientMessageApiService },
+    { provide: PatientTeamSource, useClass: PatientTeamApiService },
+    { provide: ObservationFollowUpPort, useClass: ObservationFollowUpApiService },
     { provide: MessageAiAssistant, useClass: ProvisionalMessageAiAssistant },
     { provide: PlanSource, useClass: ProvisionalPlanSource },
     { provide: PrescriptionSource, useClass: ProvisionalPrescriptionSource },
@@ -235,8 +234,7 @@ export const appConfig: ApplicationConfig = {
     { provide: PriorStaysSource, useClass: ProvisionalPriorStaysSource },
     { provide: PriorStaysSynthesizer, useClass: ProvisionalPriorStaysSynthesizer },
     { provide: HomeNotificationsSource, useClass: HomeNotificationsApiService },
-    // Provisórios (sem backend ainda): mensagens de paciente nas notificações e usuários de exemplo.
-    { provide: NotificationsApiService, useClass: ProvisionalNotificationsApiService },
+    // Provisórios (sem backend ainda): usuários de exemplo.
     { provide: HospitalInvitePort, useClass: HospitalInviteApiService },
     ProvisionalProfessionalAccess,
     { provide: ProfessionalAccessSource, useExisting: ProvisionalProfessionalAccess },

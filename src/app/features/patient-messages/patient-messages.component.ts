@@ -1,3 +1,4 @@
+import { HttpErrorResponse } from '@angular/common/http';
 import { ChangeDetectionStrategy, Component, computed, effect, inject, input, signal, untracked } from '@angular/core';
 
 import { ButtonComponent } from '../../shared/components/button/button.component';
@@ -8,7 +9,6 @@ import { NOW, ProfessionalProfileReader } from '../home/professional-profile';
 import {
   formatDateTime,
   isOverdue,
-  isThreadParticipant,
   MessageThread,
   REPLY_AUDIO_EMPTY_HINT,
   REPLY_AUDIO_FAILED_HINT,
@@ -18,6 +18,7 @@ import {
   REPLY_OFFLINE_HINT,
   ReplyOrigin,
   RESOLVE_FAILED_HINT,
+  RESOLVE_FORBIDDEN_HINT,
   RESOLVE_OFFLINE_HINT,
   THREADS_EMPTY_TEXT,
   THREADS_LOAD_FAILED_HINT,
@@ -108,7 +109,7 @@ export class PatientThreadsComponent {
   }
 
   protected stamp(author: string, at: string): string {
-    return `${author} · ${formatDateTime(at)}`;
+    return author === '' ? formatDateTime(at) : `${author} · ${formatDateTime(at)}`;
   }
 
   protected statusLabel(thread: MessageThread): string {
@@ -116,7 +117,8 @@ export class PatientThreadsComponent {
   }
 
   protected canResolve(thread: MessageThread): boolean {
-    return !thread.resolved && isThreadParticipant(thread, this.profile.read().name);
+    // O backend não devolve os destinatários de mensagem comum e só aceita participantes (403): ele decide.
+    return !thread.resolved;
   }
 
   protected onResolveClick(thread: MessageThread): void {
@@ -143,12 +145,16 @@ export class PatientThreadsComponent {
       const updated = await this.writer.resolve({
         at: this.now().toISOString(),
         author: this.profile.read().name,
+        patientId: this.patientId(),
         threadId: thread.id,
       });
 
       this.threads.update(list => list.map(t => (t.id === updated.id ? updated : t)));
-    } catch {
-      this.setResolveNotice(thread.id, RESOLVE_FAILED_HINT);
+    } catch (error) {
+      this.setResolveNotice(
+        thread.id,
+        error instanceof HttpErrorResponse && error.status === 403 ? RESOLVE_FORBIDDEN_HINT : RESOLVE_FAILED_HINT,
+      );
     }
   }
 
@@ -163,6 +169,7 @@ export class PatientThreadsComponent {
         at: this.now().toISOString(),
         author: this.profile.read().name,
         origin: this.origins()[thread.id] ?? 'text',
+        patientId: this.patientId(),
         text: this.draft(thread.id).trim(),
         threadId: thread.id,
       });

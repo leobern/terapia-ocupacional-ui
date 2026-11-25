@@ -38,8 +38,18 @@ export interface PatientRecord {
   readonly viaAudio: boolean;
 }
 
-/** Contrato de gravação: autor e data/hora seguem para a trilha de auditoria imutável (Princípio V). */
-export type PatientRecordRequest = Omit<PatientRecord, 'id'>;
+/** Destinatário no formato do contrato (`RecipientSpec`, openapi/mensagens-api.yaml). */
+export interface RecipientSpec {
+  readonly type: 'PESSOA' | 'GRUPO' | 'TODOS';
+  readonly professionalId?: number;
+  readonly perfil?: string;
+}
+
+/**
+ * Contrato de gravação: autor e data/hora seguem para a trilha de auditoria imutável (Princípio V).
+ * `recipientSpecs` é o que o profissional confirmou (@todos ou pessoas); sem ele, valem `recipients`.
+ */
+export type PatientRecordRequest = Omit<PatientRecord, 'id'> & { readonly recipientSpecs?: readonly RecipientSpec[] };
 
 interface GroupInfo {
   readonly aliases: readonly string[];
@@ -142,4 +152,32 @@ export function formatRecordTime(iso: string): string {
   const d = new Date(iso);
 
   return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+/**
+ * Destinatários confirmados no formato do contrato: @todos vira TODOS; grupo e pessoa viram PESSOA com os
+ * membros já resolvidos (a especialidade do backend é texto livre e um grupo da tela reúne várias).
+ */
+export function toRecipientSpecs(entries: readonly RecipientEntry[]): readonly RecipientSpec[] {
+  if (entries.some(e => e.key === 'all')) {
+    return [{ type: 'TODOS' }];
+  }
+
+  return resolveRecipients(entries).map(r => ({ professionalId: r.id, type: 'PESSOA' }));
+}
+
+const SPECIALTY_PATTERNS: readonly { readonly group: ProfessionalGroup; readonly pattern: RegExp }[] = [
+  { group: 'nutritionists', pattern: /nutricionist/ },
+  { group: 'doctors', pattern: /m[eé]dic|nutr[oó]log|intensivist|cl[ií]nic/ },
+  { group: 'nurses', pattern: /enfermeir/ },
+  { group: 'pharmacists', pattern: /farmac/ },
+  { group: 'physio', pattern: /fisioterap/ },
+  { group: 'speech', pattern: /fonoaudi/ },
+];
+
+/** Grupo da tela a que a especialidade (texto livre do backend) pertence; `null` quando não reconhecida. */
+export function groupOfSpecialty(specialty: string): ProfessionalGroup | null {
+  const text = specialty.toLowerCase();
+
+  return SPECIALTY_PATTERNS.find(rule => rule.pattern.test(text))?.group ?? null;
 }

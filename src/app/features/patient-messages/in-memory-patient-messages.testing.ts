@@ -6,7 +6,7 @@ import {
   ThreadReplyRequest,
   ThreadResolveRequest,
 } from './patient-messages.models';
-import { PatientMessagesSource, PatientMessagesWriter, ReplyTranscriber } from './patient-messages-source';
+import { PatientMessagesSource, PatientMessagesWriter } from './patient-messages-source';
 
 const SEED: readonly MessageThread[] = [
   {
@@ -37,9 +37,9 @@ const SEED: readonly MessageThread[] = [
   },
 ];
 
-/** Provisório: guarda as threads em memória (só acrescenta respostas e mudanças de estado). */
+/** Dublê de teste: guarda as threads em memória (só acrescenta respostas e mudanças de estado). Não é registrado no app. */
 @Injectable()
-export class ProvisionalPatientMessages extends PatientMessagesSource implements PatientMessagesWriter {
+export class InMemoryPatientMessages extends PatientMessagesSource implements PatientMessagesWriter {
   private threads: readonly MessageThread[] = SEED;
   private sequence = 0;
 
@@ -118,13 +118,5 @@ export class ProvisionalPatientMessages extends PatientMessagesSource implements
     this.threads = this.threads.map(t => (t.id === updated.id ? updated : t));
 
     return Promise.resolve(updated);
-  }
-}
-
-/** Provisório: ainda não há serviço de transcrição; não reconhece texto (segue o campo manual). */
-@Injectable()
-export class ProvisionalReplyTranscriber extends ReplyTranscriber {
-  transcribe(): Promise<string> {
-    return Promise.resolve('');
   }
 }

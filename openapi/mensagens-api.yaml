@@ -1,0 +1,745 @@
+openapi: 3.0.3
+info:
+  title: Mensagens por Paciente API
+  version: 1.0.0
+  description: >
+    Contrato de Mensagens por Paciente (FT-005-1). US-005-1-01: registrar observação (sem
+    destinatário) ou enviar mensagem direcionada vinculada a um paciente, a partir do Hub; a
+    interpretação de texto/áudio pertence à camada de IA (FT-003-4) e esta API recebe o
+    conteúdo já final e os destinatários já confirmados pelo profissional (FR-003).
+    US-005-1-02: ver e responder, no Hub do paciente, as threads de mensagem/pendência
+    vinculadas a ele. A thread é o mesmo registro exposto em /api/v1/notifications (o `id` da
+    thread é o `id` da Notification, e o status resolvido/ativo é um único registro
+    compartilhado — FR-013). A ação de resolver (US-005-1-03) é POST
+    /api/v1/notifications/{id}/resolve. Regras de visibilidade e resposta valem para qualquer
+    profissional vinculado e aprovado ao paciente, independentemente de menção.
+servers:
+  - url: /
+security:
+  - bearerAuth: []
+paths:
+  /api/v1/pacientes/{pacienteId}/mensagens/destinatarios/resolver:
+    post:
+      operationId: resolverDestinatariosMensagem
+      x-implemented: true
+      summary: Resolve destinatários em profissionais vinculados e aprovados ao paciente, para confirmação
+      description: >
+        Expande cada destinatário (pessoa, grupo por perfil ou todos) apenas entre os
+        profissionais vinculados e aprovados àquele paciente específico (FR-005), sem
+        criar nada. Duplicados são removidos; o remetente é excluído. Grupo sem nenhum
+        profissional válido responde 422 e impede o envio direcionado (a observação sem
+        destinatário continua possível).
+      parameters:
+        - $ref: "#/components/parameters/PacienteId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ResolverDestinatariosRequest"
+      responses:
+        "200":
+          description: Profissionais resolvidos
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DestinatariosResolvidos"
+        "400":
+          $ref: "#/components/responses/Error"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+        "422":
+          description: Lista vazia, ou grupo/pessoa sem nenhum profissional vinculado e aprovado ao paciente
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/v1/pacientes/{pacienteId}/mensagens:
+    get:
+      operationId: listarMensagensPaciente
+      x-implemented: true
+      summary: Lista as threads de mensagem do paciente para o Hub (todas, mencionado ou não)
+      description: >
+        FR-007. Retorna todas as threads vinculadas ao paciente a qualquer profissional
+        vinculado e aprovado a ele, mesmo que não tenha sido mencionado. Ordenadas da mais
+        recente para a mais antiga, com paginação por cursor. Cada thread traz o histórico
+        completo de respostas. Sem `status`, retorna ativas e resolvidas.
+      parameters:
+        - name: pacienteId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: status
+          in: query
+          required: false
+          schema:
+            $ref: "#/components/schemas/ThreadStatus"
+        - name: cursor
+          in: query
+          required: false
+          description: Cursor opaco do último item carregado (ausente = primeiro lote)
+          schema:
+            type: string
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 10
+            minimum: 1
+            maximum: 10
+      responses:
+        "200":
+          description: Lote de threads do paciente
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MensagemThreadPage"
+        "400":
+          description: Cursor inválido ou limit fora de 1..10
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          description: Profissional não vinculado e aprovado a este paciente
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Paciente não encontrado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    post:
+      operationId: criarRegistroPaciente
+      x-implemented: true
+      summary: Registra uma observação ou mensagem direcionada vinculada ao paciente
+      description: >
+        Sem `destinatarios` (ausente ou vazio) cria uma observação: documentada no
+        histórico do Hub, sem notificar ninguém (FR-004). Com `destinatarios` cria uma
+        mensagem direcionada, que notifica os profissionais resolvidos (vinculados e
+        aprovados ao paciente) e aparece também na lista do remetente (FR-010). Autor,
+        data/hora, paciente, destinatários e conteúdo são gravados em trilha de auditoria
+        imutável (FR-006). Resposta por áudio: o cliente envia somente o texto já
+        transcrito e confirmado.
+      parameters:
+        - $ref: "#/components/parameters/PacienteId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CriarRegistroRequest"
+      responses:
+        "201":
+          description: Registro criado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RegistroPaciente"
+        "400":
+          $ref: "#/components/responses/Error"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          description: Profissional não vinculado e aprovado ao paciente
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          $ref: "#/components/responses/Error"
+        "422":
+          description: Conteúdo vazio, ou destinatário/grupo sem nenhum profissional válido para o paciente
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/v1/pacientes/{pacienteId}/mensagens/{mensagemId}/respostas:
+    post:
+      operationId: responderMensagemPaciente
+      x-implemented: true
+      summary: Registra a resposta de um profissional vinculado a uma thread do paciente
+      description: >
+        FR-008, FR-009, FR-011. Qualquer profissional vinculado e aprovado ao paciente pode
+        responder, mesmo sem ter sido mencionado, sem nova passagem pelo assistente de IA.
+        Resposta por áudio: o cliente envia somente o texto já transcrito e confirmado.
+        Se a thread estava resolvida, é reaberta automaticamente (status volta a pending),
+        e a resposta fica visível a todos os vinculados. Autor, data/hora e a eventual
+        reabertura ficam em trilha de auditoria imutável. Retorna a thread atualizada.
+      parameters:
+        - name: pacienteId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: mensagemId
+          in: path
+          required: true
+          description: Id da thread (mesmo id da Notification correspondente)
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CriarRespostaRequest"
+      responses:
+        "201":
+          description: Resposta registrada; corpo é a thread atualizada (status e replies refletem a reabertura)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MensagemThread"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          description: Profissional não vinculado e aprovado a este paciente
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Paciente ou thread não encontrada para este paciente
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "422":
+          description: "Corpo inválido (ex.: texto vazio ou só espaços)"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/v1/pacientes/{pacienteId}/mensagens/{registroId}/sugestoes:
+    get:
+      operationId: obterSugestoesRegistroPaciente
+      x-implemented: true
+      summary: Obtém as sugestões de pendência de reavaliação e de comunicação para uma observação
+      description: >
+        US-005-1-04 (FR-014a, FR-014d). Somente leitura: nada é criado nem enviado. Aplica-se a
+        uma observação (kind OBSERVACAO) do paciente, registrada pelo próprio solicitante. Cada
+        sugestão é independente e `null` quando o assistente não identifica necessidade ou
+        quando a camada de IA está indisponível (FR-019) — o registro continua válido sem elas.
+        A pendência sugerida já traz o destinatário padrão (grupo do mesmo perfil do autor,
+        resolvido entre vinculados e aprovados ao paciente — FR-014b) e o prazo sugerido; a
+        comunicação traz destinatário(s) sugerido(s) e um rascunho editável.
+      parameters:
+        - $ref: "#/components/parameters/PacienteId"
+        - $ref: "#/components/parameters/RegistroId"
+      responses:
+        "200":
+          description: Sugestões (cada campo pode ser null)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SugestoesRegistro"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          description: Profissional não vinculado e aprovado ao paciente, ou não é o autor do registro
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Paciente ou registro não encontrado para este paciente
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "422":
+          description: O registro não é uma observação (já é mensagem direcionada)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/v1/pacientes/{pacienteId}/mensagens/{registroId}/pendencia:
+    post:
+      operationId: criarPendenciaReavaliacao
+      x-implemented: true
+      summary: Cria uma pendência de reavaliação com prazo a partir de uma observação, após confirmação
+      description: >
+        FR-014a a FR-014c. Chamada somente após confirmação explícita do profissional. Sem
+        `destinatarios` (ausente ou vazio), o destinatário padrão é o grupo do mesmo perfil do
+        autor, resolvido para os profissionais vinculados e aprovados ao paciente (FR-014b).
+        Com `destinatarios`, substitui o padrão (grupo alterado e/ou pessoas específicas —
+        FR-014c). Cria uma thread do tipo reevaluation_pending, status pending, que notifica os
+        profissionais resolvidos; a observação original permanece inalterada. Autor, data/hora,
+        prazo e destinatários ficam em trilha de auditoria imutável. Idempotência: uma
+        observação admite no máximo uma pendência (409 se já existir). Prazo vencido sem
+        resolução apenas marca `overdue` (FR-014f).
+      parameters:
+        - $ref: "#/components/parameters/PacienteId"
+        - $ref: "#/components/parameters/RegistroId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CriarPendenciaRequest"
+      responses:
+        "201":
+          description: Pendência criada; corpo é a thread
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MensagemThread"
+        "400":
+          $ref: "#/components/responses/Error"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          description: Profissional não vinculado e aprovado ao paciente, ou não é o autor da observação
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Paciente ou observação não encontrada para este paciente
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
+          description: A observação já possui uma pendência de reavaliação
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "422":
+          description: Prazo no passado, registro não é observação, ou grupo sem nenhum profissional vinculado e aprovado ao paciente
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/v1/pacientes/{pacienteId}/mensagens/{registroId}/comunicacao:
+    post:
+      operationId: enviarComunicacaoRegistro
+      x-implemented: true
+      summary: Envia a mensagem de comunicação sugerida (texto editado) a partir de uma observação, após confirmação
+      description: >
+        FR-014d, FR-014e. Chamada somente após confirmação explícita; `content` é o texto final
+        (rascunho aceito ou editado pelo profissional — nunca enviado sem essa chance, FR-014d).
+        Cria uma mensagem direcionada (kind MENSAGEM) com ao menos um destinatário confirmado,
+        vinculada à observação de origem, que permanece registrada. Recusar as sugestões não
+        exige nenhuma chamada. Autor, data/hora, destinatários e conteúdo ficam em trilha de
+        auditoria imutável.
+      parameters:
+        - $ref: "#/components/parameters/PacienteId"
+        - $ref: "#/components/parameters/RegistroId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EnviarComunicacaoRequest"
+      responses:
+        "201":
+          description: Mensagem enviada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RegistroPaciente"
+        "400":
+          $ref: "#/components/responses/Error"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          description: Profissional não vinculado e aprovado ao paciente, ou não é o autor da observação
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Paciente ou observação não encontrada para este paciente
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "422":
+          description: Conteúdo vazio, destinatários vazios, ou grupo/pessoa sem nenhum profissional válido para o paciente
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/v1/pacientes/{pacienteId}/mensagens/{mensagemId}/destinatarios:
+    put:
+      operationId: alterarDestinatariosPendencia
+      x-implemented: true
+      summary: Altera os destinatários de uma pendência de reavaliação, antes ou depois da criação
+      description: >
+        FR-014c. Substitui a lista de destinatários da pendência (grupo padrão alterado e/ou
+        pessoas específicas adicionadas). Aplica-se apenas a thread do tipo reevaluation_pending
+        do paciente. Pessoas já notificadas permanecem no histórico; as novas são notificadas.
+        Pelo menos um destinatário válido é exigido (remoção total do padrão não é permitida
+        nesta versão). Alteração registrada em trilha de auditoria imutável. Qualquer
+        profissional vinculado e aprovado ao paciente que participe da thread pode alterar.
+      parameters:
+        - $ref: "#/components/parameters/PacienteId"
+        - name: mensagemId
+          in: path
+          required: true
+          description: Id da thread de pendência (mesmo id da Notification correspondente)
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AlterarDestinatariosRequest"
+      responses:
+        "200":
+          description: Pendência atualizada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MensagemThread"
+        "400":
+          $ref: "#/components/responses/Error"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          description: Profissional não vinculado e aprovado ao paciente, ou não participa da thread
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Paciente ou pendência não encontrada para este paciente
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "422":
+          description: Thread não é pendência de reavaliação, lista vazia, ou grupo sem nenhum profissional válido para o paciente
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  parameters:
+    PacienteId:
+      name: pacienteId
+      in: path
+      required: true
+      schema:
+        type: integer
+        format: int64
+    RegistroId:
+      name: registroId
+      in: path
+      required: true
+      description: Id do registro (observação) do paciente
+      schema:
+        type: integer
+        format: int64
+  responses:
+    Error:
+      description: Erro
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+  schemas:
+    ErrorResponse:
+      type: object
+      required: [message, timestamp]
+      properties:
+        message:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+        detalhes:
+          type: array
+          nullable: true
+          items:
+            type: string
+    RecipientType:
+      type: string
+      enum: [PESSOA, GRUPO, TODOS]
+    RecipientSpec:
+      type: object
+      required: [type]
+      description: >
+        PESSOA exige professionalId; GRUPO exige perfil (especialidade, mesmo valor de
+        ProfessionalRef.specialty); TODOS atinge todos os vinculados e aprovados ao
+        paciente. Mesmo formato de comunicados-api.yaml.
+      properties:
+        type:
+          $ref: "#/components/schemas/RecipientType"
+        professionalId:
+          type: integer
+          format: int64
+        perfil:
+          type: string
+    ResolverDestinatariosRequest:
+      type: object
+      required: [recipients]
+      properties:
+        recipients:
+          type: array
+          minItems: 1
+          items:
+            $ref: "#/components/schemas/RecipientSpec"
+    DestinatariosResolvidos:
+      type: object
+      required: [professionals]
+      properties:
+        professionals:
+          type: array
+          items:
+            $ref: "#/components/schemas/ProfessionalRef"
+    CriarRegistroRequest:
+      type: object
+      required: [content]
+      properties:
+        content:
+          type: string
+          minLength: 1
+          description: Texto final (digitado ou transcrito de áudio e confirmado/editado pelo profissional)
+        destinatarios:
+          type: array
+          description: Destinatários confirmados explicitamente; ausente ou vazio = observação sem notificação
+          items:
+            $ref: "#/components/schemas/RecipientSpec"
+    RegistroPaciente:
+      type: object
+      required: [id, patient, author, content, createdAt, destinatarios, kind]
+      properties:
+        id:
+          type: integer
+          format: int64
+        kind:
+          type: string
+          enum: [OBSERVACAO, MENSAGEM]
+          description: OBSERVACAO = sem destinatário; MENSAGEM = direcionada
+        patient:
+          $ref: "#/components/schemas/PatientRef"
+        author:
+          $ref: "#/components/schemas/ProfessionalRef"
+        content:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        destinatarios:
+          type: array
+          description: Destinatários como confirmados (vazio para observação)
+          items:
+            $ref: "#/components/schemas/RecipientSpec"
+        resolvedRecipients:
+          type: array
+          description: Profissionais efetivamente atingidos no momento do envio
+          items:
+            $ref: "#/components/schemas/ProfessionalRef"
+    PatientRef:
+      type: object
+      required: [id, name]
+      properties:
+        id:
+          type: integer
+          format: int64
+        name:
+          type: string
+    ProfessionalRef:
+      type: object
+      required: [id, name, specialty]
+      properties:
+        id:
+          type: integer
+          format: int64
+        name:
+          type: string
+        specialty:
+          type: string
+        photoUrl:
+          type: string
+          nullable: true
+    ThreadStatus:
+      type: string
+      enum: [pending, resolved]
+    ThreadType:
+      type: string
+      enum: [patient_message, reevaluation_pending]
+    MensagemResposta:
+      type: object
+      required: [id, author, text, createdAt]
+      properties:
+        id:
+          type: integer
+          format: int64
+        author:
+          $ref: "#/components/schemas/ProfessionalRef"
+        text:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+    MensagemThread:
+      type: object
+      required: [id, type, status, description, createdAt, replyCount, replies, overdue]
+      properties:
+        id:
+          type: integer
+          format: int64
+        type:
+          $ref: "#/components/schemas/ThreadType"
+        status:
+          $ref: "#/components/schemas/ThreadStatus"
+        author:
+          $ref: "#/components/schemas/ProfessionalRef"
+        description:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        overdue:
+          type: boolean
+          description: true para pendência de reavaliação vencida e não resolvida
+        resolvedAt:
+          type: string
+          format: date-time
+          nullable: true
+        dueAt:
+          type: string
+          format: date-time
+          nullable: true
+          description: Prazo da pendência de reavaliação (null para mensagem comum)
+        recipients:
+          type: array
+          description: Destinatários confirmados da pendência (omitido quando não se aplica)
+          items:
+            $ref: "#/components/schemas/RecipientSpec"
+        replyCount:
+          type: integer
+          minimum: 0
+        replies:
+          type: array
+          items:
+            $ref: "#/components/schemas/MensagemResposta"
+    MensagemThreadPage:
+      type: object
+      required: [items, nextCursor]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/MensagemThread"
+        nextCursor:
+          type: string
+          nullable: true
+          description: null quando não há mais threads a carregar
+    CriarRespostaRequest:
+      type: object
+      required: [text]
+      properties:
+        text:
+          type: string
+          minLength: 1
+    SugestaoPendencia:
+      type: object
+      required: [suggestedDueAt, defaultRecipients, resolvedRecipients]
+      properties:
+        suggestedDueAt:
+          type: string
+          format: date-time
+          description: Prazo sugerido para a reavaliação
+        defaultRecipients:
+          type: array
+          description: Destinatário padrão (grupo do mesmo perfil do autor)
+          items:
+            $ref: "#/components/schemas/RecipientSpec"
+        resolvedRecipients:
+          type: array
+          description: Profissionais vinculados e aprovados ao paciente que o padrão atingiria
+          items:
+            $ref: "#/components/schemas/ProfessionalRef"
+        rationale:
+          type: string
+          nullable: true
+          description: Motivo curto da sugestão, exibido ao profissional
+    SugestaoComunicacao:
+      type: object
+      required: [suggestedRecipients, draft]
+      properties:
+        suggestedRecipients:
+          type: array
+          items:
+            $ref: "#/components/schemas/RecipientSpec"
+        resolvedRecipients:
+          type: array
+          items:
+            $ref: "#/components/schemas/ProfessionalRef"
+        draft:
+          type: string
+          description: Rascunho editável, redigido como instrução acionável
+    SugestoesRegistro:
+      type: object
+      required: [pendencia, comunicacao]
+      properties:
+        pendencia:
+          allOf:
+            - $ref: "#/components/schemas/SugestaoPendencia"
+          nullable: true
+        comunicacao:
+          allOf:
+            - $ref: "#/components/schemas/SugestaoComunicacao"
+          nullable: true
+    CriarPendenciaRequest:
+      type: object
+      required: [dueAt]
+      properties:
+        dueAt:
+          type: string
+          format: date-time
+          description: Prazo confirmado (sugerido ou ajustado); deve ser futuro
+        destinatarios:
+          type: array
+          description: Substitui o destinatário padrão; ausente ou vazio = grupo do perfil do autor
+          items:
+            $ref: "#/components/schemas/RecipientSpec"
+    EnviarComunicacaoRequest:
+      type: object
+      required: [content, destinatarios]
+      properties:
+        content:
+          type: string
+          minLength: 1
+          description: Texto final (rascunho aceito ou editado)
+        destinatarios:
+          type: array
+          minItems: 1
+          items:
+            $ref: "#/components/schemas/RecipientSpec"
+    AlterarDestinatariosRequest:
+      type: object
+      required: [destinatarios]
+      properties:
+        destinatarios:
+          type: array
+          minItems: 1
+          items:
+            $ref: "#/components/schemas/RecipientSpec"

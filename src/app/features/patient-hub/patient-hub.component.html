@@ -342,7 +342,12 @@
             [open]="messageOpen()"
             [patientId]="p.id"
             (closed)="messageOpen.set(false)"
-            (sent)="messagesVersion.set(messagesVersion() + 1)"
+            (sent)="onRecordSent($event)"
+          />
+          <app-observation-follow-up
+            [record]="followUpRecord()"
+            (closed)="followUpRecord.set(null)"
+            (changed)="messagesVersion.set(messagesVersion() + 1)"
           />
         }
       }

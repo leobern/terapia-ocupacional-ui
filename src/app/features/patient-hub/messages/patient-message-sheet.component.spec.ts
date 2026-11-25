@@ -157,6 +157,7 @@ describe('PatientMessageSheetComponent', () => {
         author: 'Michelle',
         content: 'dieta interrompida por realização de tomografia',
         patientId: 'p1',
+        recipientSpecs: [],
         recipients: [],
         viaAudio: false,
       },

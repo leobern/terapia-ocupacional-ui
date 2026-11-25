@@ -37,6 +37,8 @@ import { ClinicalTilesComponent } from './clinical-assessment/clinical-tiles.com
 import { DailyRecordEditorComponent } from './daily-record/daily-record-editor.component';
 import { DiagnosisEditorComponent } from './diagnosis-editor/diagnosis-editor.component';
 import { PatientEvolutionsComponent } from './evolutions/patient-evolutions.component';
+import { ObservationFollowUpComponent } from './messages/observation-follow-up.component';
+import { PatientRecord } from './messages/patient-message.models';
 import { PatientMessageSheetComponent } from './messages/patient-message-sheet.component';
 import { MoveBedAction } from './move-bed/move-bed.action';
 import { NutritionalFunctionalEditorComponent } from './nutritional-functional/nutritional-functional-editor.component';
@@ -104,6 +106,7 @@ export const DIAGNOSIS_FAILED_HINT =
     ButtonComponent,
     FollowUpStatusComponent,
     PageContainerComponent,
+    ObservationFollowUpComponent,
     PatientMessageSheetComponent,
     PhIconComponent,
     PlanSectionComponent,
@@ -189,6 +192,8 @@ export class PatientHubComponent implements OnInit {
   protected readonly messageOpen = signal(false);
   /** Muda a cada registro gravado, para a lista de cards recarregar. */
   protected readonly messagesVersion = signal(0);
+  /** Observação recém-registrada (sem destinatário): abre as sugestões de pendência/comunicação (US-005-1-04). */
+  protected readonly followUpRecord = signal<PatientRecord | null>(null);
   /** Prescrição vigente exibida no Hub; `null` = sem prescrição (ou leitura falhou). */
   protected readonly prescription = signal<readonly Prescription[]>([]);
 
@@ -323,6 +328,11 @@ export class PatientHubComponent implements OnInit {
     } catch {
       // mantém o valor atual
     }
+  }
+
+  protected onRecordSent(record: PatientRecord): void {
+    this.messagesVersion.set(this.messagesVersion() + 1);
+    this.followUpRecord.set(record.recipients.length === 0 ? record : null);
   }
 
   /** A prescrição ajustada virou a vigente: o Hub passa a mostrá-la sem recarregar a página. */

@@ -34,6 +34,7 @@ import {
   RecipientEntry,
   resolveRecipients,
   SEND_FAILED_HINT,
+  toRecipientSpecs,
 } from './patient-message.models';
 import { MessageAiAssistant, PatientMessageSource, PatientTeamSource } from './patient-message-source';
 
@@ -295,6 +296,7 @@ export class PatientMessageSheetComponent {
         author: this.professional.read().name,
         content: this.content().trim(),
         patientId: this.patientId(),
+        recipientSpecs: toRecipientSpecs(this.entries()),
         recipients: resolveRecipients(this.entries()),
         viaAudio: this.viaAudio,
       });

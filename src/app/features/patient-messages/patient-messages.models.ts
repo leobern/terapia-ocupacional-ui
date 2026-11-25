@@ -38,6 +38,7 @@ export interface ThreadReplyRequest {
   readonly at: string;
   readonly author: string;
   readonly origin: ReplyOrigin;
+  readonly patientId: string;
   readonly text: string;
   readonly threadId: string;
 }
@@ -56,6 +57,7 @@ export interface ThreadCreateRequest {
 export interface ThreadResolveRequest {
   readonly at: string;
   readonly author: string;
+  readonly patientId: string;
   readonly threadId: string;
 }
 
@@ -84,11 +86,4 @@ export const isOverdue = (thread: MessageThread, now: Date): boolean =>
 export const RESOLVE_FAILED_HINT = 'Não foi possível marcar como resolvida. A thread continua ativa; tente novamente.';
 export const RESOLVE_OFFLINE_HINT = 'Sem conexão: marcar como resolvida fica indisponível até a conexão voltar.';
 
-/**
- * Participante (FR-012): remetente, destinatário mencionado pelo nome ou quem já respondeu. Grupos (@medicos,
- * @todos) dependem da equipe vinculada ao paciente e não são resolvidos aqui.
- */
-export const isThreadParticipant = (thread: MessageThread, name: string): boolean =>
-  thread.author === name ||
-  thread.replies.some(reply => reply.author === name) ||
-  thread.recipients.some(recipient => recipient.toLowerCase() === `@${name.toLowerCase()}`);
+export const RESOLVE_FORBIDDEN_HINT = 'Apenas participantes da thread podem resolvê-la.';

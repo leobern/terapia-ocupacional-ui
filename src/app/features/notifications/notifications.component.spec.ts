@@ -24,8 +24,6 @@ import { LinkedHospitalsReader } from '../home/linked-hospitals';
 import { AnnouncementAssistant } from './assistant/announcement-assistant';
 import { ProvisionalAnnouncementAssistant } from './assistant/provisional-announcement-assistant';
 import { type Comunicado, ComunicadosApiService } from './data-access/comunicados-api.service';
-import { NotificationsApiService } from './data-access/notifications-api.service';
-import { ProvisionalNotificationsApiService } from './data-access/provisional-notifications-api.service';
 import { NotificationsComponent } from './notifications.component';
 import { Notification } from './notifications.models';
 import { NotificationsActions } from './state/notifications.actions';
@@ -62,7 +60,6 @@ describe('NotificationsComponent', () => {
       imports: [NotificationsComponent],
       providers: [
         provideHttpClient(),
-        { provide: NotificationsApiService, useClass: ProvisionalNotificationsApiService },
         { provide: UserDirectory, useClass: ProvisionalUserDirectory },
         { provide: AnnouncementAssistant, useClass: ProvisionalAnnouncementAssistant },
         { provide: ViewportBreakpointService, useValue: { isDesktop: isDesktop.asReadonly() } },

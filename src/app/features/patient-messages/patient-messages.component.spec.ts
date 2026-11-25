@@ -1,18 +1,14 @@
+import { HttpErrorResponse } from '@angular/common/http';
 import { signal, type WritableSignal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { InputChatComponent } from '../../shared/components/input-chat/input-chat.component';
 import { ConnectivityService } from '../../shared/services/connectivity.service';
 import { NOW, ProfessionalProfileReader } from '../home/professional-profile';
+import { InMemoryPatientMessages } from './in-memory-patient-messages.testing';
 import { PatientThreadsComponent } from './patient-messages.component';
-import {
-  MessageThread,
-  ThreadCreateRequest,
-  ThreadReplyRequest,
-  ThreadResolveRequest,
-} from './patient-messages.models';
+import { MessageThread, ThreadReplyRequest, ThreadResolveRequest } from './patient-messages.models';
 import { PatientMessagesSource, PatientMessagesWriter, ReplyTranscriber } from './patient-messages-source';
-import { ProvisionalPatientMessages } from './provisional-patient-messages';
 
 describe('PatientThreadsComponent', () => {
   const NOW_DATE = new Date('2026-11-22T12:00:00.000Z');
@@ -20,7 +16,7 @@ describe('PatientThreadsComponent', () => {
   let online: WritableSignal<boolean>;
   let failList: boolean;
   let failReply: boolean;
-  let failResolve: boolean;
+  let failResolve: boolean | HttpErrorResponse;
   let profileName: string;
   let transcript: string | Error;
   let requests: ThreadReplyRequest[];
@@ -63,33 +59,36 @@ describe('PatientThreadsComponent', () => {
     requests = [];
     TestBed.configureTestingModule({
       providers: [
-        ProvisionalPatientMessages,
+        InMemoryPatientMessages,
         {
           provide: PatientMessagesSource,
           useFactory: (): PatientMessagesSource => {
-            const real = TestBed.inject(ProvisionalPatientMessages);
+            const real = TestBed.inject(InMemoryPatientMessages);
 
             return {
               list: (id: string): Promise<readonly MessageThread[]> =>
                 failList ? Promise.reject(new Error('falhou')) : real.list(id),
-              listBySender: (a: string): Promise<readonly MessageThread[]> => real.listBySender(a),
             };
           },
         },
         {
           provide: PatientMessagesWriter,
           useFactory: (): PatientMessagesWriter => {
-            const real = TestBed.inject(ProvisionalPatientMessages);
+            const real = TestBed.inject(InMemoryPatientMessages);
 
             return {
-              create: (r: ThreadCreateRequest): Promise<MessageThread> => real.create(r),
               reply: (r: ThreadReplyRequest): Promise<MessageThread> => {
                 requests.push(r);
 
                 return failReply ? Promise.reject(new Error('falhou')) : real.reply(r);
               },
-              resolve: (r: ThreadResolveRequest): Promise<MessageThread> =>
-                failResolve ? Promise.reject(new Error('falhou')) : real.resolve(r),
+              resolve: (r: ThreadResolveRequest): Promise<MessageThread> => {
+                if (failResolve === false) {
+                  return real.resolve(r);
+                }
+
+                return Promise.reject(failResolve === true ? new Error('falhou') : failResolve);
+              },
             };
           },
         },
@@ -121,7 +120,7 @@ describe('PatientThreadsComponent', () => {
 
   it('recarrega as threads quando uma nova mensagem é enviada (refreshKey)', async () => {
     await create();
-    const real = TestBed.inject(ProvisionalPatientMessages);
+    const real = TestBed.inject(InMemoryPatientMessages);
 
     await real.create({
       at: '2026-11-23T10:00:00.000Z',
@@ -213,7 +212,7 @@ describe('PatientThreadsComponent', () => {
   });
 
   it('responder a thread resolvida a reabre e registra a reabertura com autor e data/hora', async () => {
-    const store = TestBed.inject(ProvisionalPatientMessages);
+    const store = TestBed.inject(InMemoryPatientMessages);
 
     (store as unknown as { threads: MessageThread[] }).threads = [{ ...(await store.list('p1'))[0], resolved: true }];
     await create();
@@ -325,22 +324,23 @@ describe('PatientThreadsComponent', () => {
       profileName = 'Michelle Franklin';
     });
 
-    it('só participante vê o indicador de resolução', async () => {
+    it('toda thread ativa mostra o indicador: quem pode resolver é decidido pelo backend (403)', async () => {
       await create();
 
       expect(resolveButton(mine)).not.toBeNull();
-      expect(resolveButton(0)).toBeNull();
+      expect(resolveButton(0)).not.toBeNull();
     });
 
-    it('quem foi mencionado pelo nome ou já respondeu também participa', async () => {
-      profileName = 'Dra. Helena Prado';
+    it('403 ao resolver mostra que só participantes podem resolver', async () => {
+      failResolve = new HttpErrorResponse({ status: 403 });
       await create();
+      resolveButton(0)?.click();
+      await settle();
+      await answer('Sim');
 
-      expect(resolveButton(0)).not.toBeNull();
-      profileName = 'Ana';
-      await create();
-
-      expect(resolveButton(0)).toBeNull();
+      expect(el().querySelector('[data-testid="resolve-error"]')?.textContent).toContain(
+        'Apenas participantes da thread podem resolvê-la.',
+      );
     });
 
     it('confirmar marca como resolvida, registra a mudança e some o indicador, sem abrir conversa', async () => {

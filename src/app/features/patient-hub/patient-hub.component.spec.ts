@@ -22,15 +22,13 @@ import { LinkRevocationChecker } from '../home/link-revocation-checker';
 import { LinkedHospitalsReader } from '../home/linked-hospitals';
 import { NOW, ProfessionalProfileReader } from '../home/professional-profile';
 import { UnreadNotificationsReader } from '../home/unread-notifications-reader';
+import { InMemoryPatientMessages } from '../patient-messages/in-memory-patient-messages.testing';
 import {
   PatientMessagesSource,
   PatientMessagesWriter,
   ReplyTranscriber,
 } from '../patient-messages/patient-messages-source';
-import {
-  ProvisionalPatientMessages,
-  ProvisionalReplyTranscriber,
-} from '../patient-messages/provisional-patient-messages';
+import { ProvisionalReplyTranscriber } from '../patient-messages/provisional-reply-transcriber';
 import { FormulasApi } from '../pharmacy/formulas-api';
 import { AssessmentAiStructurer } from './assessment/assessment-ai-structurer';
 import { AssessmentSource } from './assessment/assessment-source';
@@ -45,6 +43,7 @@ import { DailyRecordSource } from './daily-record/daily-record-source';
 import { DailyRecordWriter } from './daily-record/daily-record-writer';
 import { EvolutionAiStructurer } from './daily-record/evolution-ai-structurer';
 import { ParameterAiStructurer } from './daily-record/parameter-ai-structurer';
+import { ObservationFollowUpPort } from './messages/observation-follow-up.port';
 import { MessageAiAssistant, PatientMessageSource, PatientTeamSource } from './messages/patient-message-source';
 import { BedMovementPort, BedOccupancyPort } from './move-bed/bed-movement.port';
 import { BedNumberExtractor } from './move-bed/bed-number-extractor';
@@ -268,6 +267,10 @@ async function setup(
       { provide: PatientMessageSource, useValue: { list: (): Promise<readonly never[]> => Promise.resolve([]) } },
       { provide: PatientTeamSource, useValue: { listLinked: (): Promise<readonly never[]> => Promise.resolve([]) } },
       { provide: MessageAiAssistant, useValue: {} },
+      {
+        provide: ObservationFollowUpPort,
+        useValue: { suggestions: (): Promise<object> => Promise.resolve({ comunicacao: null, pendencia: null }) },
+      },
       { provide: ParameterAiStructurer, useValue: { suggest: (): Promise<readonly never[]> => Promise.resolve([]) } },
       { provide: RefeedingRiskSource, useValue: { load: (): Promise<null> => Promise.resolve(null) } },
       {
@@ -280,7 +283,7 @@ async function setup(
       { provide: DailyRecordWriter, useValue: { record: (): Promise<[]> => Promise.resolve([]) } },
       { provide: FormulasApi, useValue: { list: (): Promise<[]> => Promise.resolve([]) } },
       { provide: NutritionTargetsReader, useValue: { current: (): Promise<null> => Promise.resolve(null) } },
-      ProvisionalPatientMessages,
+      InMemoryPatientMessages,
       {
         provide: PatientMessagesSource,
         useValue: {
@@ -288,7 +291,7 @@ async function setup(
           listBySender: (): Promise<[]> => Promise.resolve([]),
         },
       },
-      { provide: PatientMessagesWriter, useExisting: ProvisionalPatientMessages },
+      { provide: PatientMessagesWriter, useExisting: InMemoryPatientMessages },
       { provide: ReplyTranscriber, useClass: ProvisionalReplyTranscriber },
       ProvisionalFollowUpClosureSource,
       { provide: FollowUpClosureSource, useExisting: ProvisionalFollowUpClosureSource },
@@ -473,6 +476,23 @@ describe('PatientHubComponent', () => {
       f.detectChanges();
 
       expect(dialog().open).toBe(false);
+    });
+
+    it('observação registrada abre as sugestões; mensagem direcionada não', async () => {
+      const f = await setup(new FakeSource());
+      const hub = f.componentInstance as unknown as {
+        followUpRecord: () => unknown;
+        onRecordSent: (r: object) => void;
+      };
+      const record = { at: '', author: 'A', content: 'x', id: '9', patientId: 'p1', recipients: [], viaAudio: false };
+
+      hub.onRecordSent(record);
+
+      expect(hub.followUpRecord()).toBe(record);
+
+      hub.onRecordSent({ ...record, recipients: [{ id: 1, name: 'B', specialty: 'S' }] });
+
+      expect(hub.followUpRecord()).toBeNull();
     });
 
     it('perfil não médico não recebe a ação "Revisão da prescrição"', async () => {
