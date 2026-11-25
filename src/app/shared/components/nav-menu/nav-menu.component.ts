@@ -61,6 +61,9 @@ interface NavMenuItem {
  * NOTA: mesmo placeholder de sessão/perfil ainda inexistente usado em
  * home.component.ts (não há serviço de sessão no frontend por enquanto).
  */
+/** Distância mínima do arrasto para a esquerda que fecha o menu no mobile. */
+const SWIPE_CLOSE_PX = 56;
+
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
@@ -128,6 +131,7 @@ export class NavMenuComponent {
   private readonly keyboardFocusService = inject(KeyboardFocusService);
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
   private releaseListener: ((event: MouseEvent) => void) | null = null;
+  private touchStart: { readonly x: number; readonly y: number } | null = null;
 
   constructor() {
     inject(DestroyRef).onDestroy(() => this.stopListening());
@@ -164,6 +168,26 @@ export class NavMenuComponent {
 
   protected onCloseClick(): void {
     this.closed.emit();
+  }
+
+  /** Mobile: arrastar o menu para a esquerda fecha (mais de 56px para o lado, sem desvio vertical maior). */
+  protected onTouchStart(event: TouchEvent): void {
+    this.touchStart = { x: event.touches[0].clientX, y: event.touches[0].clientY };
+  }
+
+  protected onTouchEnd(event: TouchEvent): void {
+    const start = this.touchStart;
+
+    this.touchStart = null;
+    if (start === null || !this.open() || this.viewportBreakpoint.isDesktop()) {
+      return;
+    }
+    const dx = event.changedTouches[0].clientX - start.x;
+    const dy = event.changedTouches[0].clientY - start.y;
+
+    if (dx < -SWIPE_CLOSE_PX && Math.abs(dy) < Math.abs(dx)) {
+      this.closed.emit();
+    }
   }
 
   /** Recolhe o menu após a navegação: tira o foco do item e ignora o hover até o mouse sair do trilho. */

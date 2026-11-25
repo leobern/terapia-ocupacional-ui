@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, input, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, effect, inject, input, output, signal } from '@angular/core';
 
 import { ViewportKeyboardService } from '../../services/viewport-keyboard.service';
 import { IconButtonComponent } from '../icon-button/icon-button.component';
@@ -25,6 +25,12 @@ import { IconLogoButtonComponent } from '../icon-logo/icon-logo-button.component
  * Instância ÚNICA, montada pelo shell (`app.component.html`) — nunca por tela,
  * nunca dentro do `page-container` (contracts/bottom-nav-bar-api.md).
  */
+/** Tempos da legenda do botão central (Thiago, 2026-11-25). */
+export const FIRST_SUGGESTION_DELAY_MS = 3000;
+export const SUGGESTION_INTERVAL_MS = 5000;
+const ERASE_MS = 22;
+const TYPE_MS = 34;
+
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
@@ -51,6 +57,12 @@ export class BottomNavBarComponent {
   readonly aiLabel = input<string>('Como posso ajudar?'); // Figma v2/BottomNav
 
   /**
+   * Sugestões da tela (Thiago, 2026-11-25): a legenda começa em `aiLabel`, depois de 3 s apaga e digita a primeira sugestão e
+   * segue trocando a cada 5 s (apaga para o meio e digita de novo, texto centralizado), voltando ao `aiLabel` no fim da lista.
+   */
+  readonly suggestions = input<readonly string[]>([]);
+
+  /**
    * Estado das superfícies que a barra abre, informado pelo consumidor (quem as
    * monta é ele). Existem só para alimentar `aria-expanded` — nenhum efeito
    * visual.
@@ -67,7 +79,8 @@ export class BottomNavBarComponent {
   // `output()` sem argumento de tipo (e não `output<void>()`): os eventos não
   // carregam payload — mesma convenção já usada em `IconLogoButtonComponent`.
   readonly menuClick = output();
-  readonly aiClick = output();
+  /** Emite o índice da sugestão visível (-1 = o convite padrão); a tela decide o que executar. */
+  readonly aiClick = output<number>();
   readonly actionsClick = output();
 
   /**
@@ -80,4 +93,75 @@ export class BottomNavBarComponent {
   protected readonly actionsLabel = 'Ações desta tela';
 
   protected readonly viewportKeyboard = inject(ViewportKeyboardService);
+
+  /** Texto exibido agora (muda por digitação). */
+  protected readonly shown = signal('');
+
+  private readonly destroyRef = inject(DestroyRef);
+  private currentIndex = -1;
+  private timer: ReturnType<typeof setTimeout> | undefined;
+
+  constructor() {
+    effect(() => {
+      this.start(this.aiLabel(), this.suggestions());
+    });
+    this.destroyRef.onDestroy(() => clearTimeout(this.timer));
+  }
+
+  protected onAiClick(): void {
+    this.aiClick.emit(this.currentIndex);
+  }
+
+  /** Reinicia o ciclo: convite padrão agora, primeira sugestão em 3 s e uma nova a cada 5 s. */
+  private start(idle: string, suggestions: readonly string[]): void {
+    clearTimeout(this.timer);
+    this.currentIndex = -1;
+    this.shown.set(idle);
+    if (suggestions.length === 0) {
+      return;
+    }
+    const labels = [idle, ...suggestions];
+    let position = 0;
+    const next = (): void => {
+      position = (position + 1) % labels.length;
+      this.currentIndex = position - 1;
+      this.swap(labels[position], () => {
+        this.timer = setTimeout(next, SUGGESTION_INTERVAL_MS);
+      });
+    };
+
+    this.timer = setTimeout(next, FIRST_SUGGESTION_DELAY_MS);
+  }
+
+  /** Apaga o texto atual (as letras somem para o meio, o texto é centralizado) e digita o novo. */
+  private swap(text: string, done: () => void): void {
+    if (typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      this.shown.set(text);
+      done();
+
+      return;
+    }
+    const type = (count: number): void => {
+      this.shown.set(text.slice(0, count));
+      if (count < text.length) {
+        this.timer = setTimeout(() => type(count + 1), TYPE_MS);
+      } else {
+        done();
+      }
+    };
+
+    const erase = (): void => {
+      const current = this.shown();
+
+      if (current.length > 0) {
+        this.shown.set(current.slice(0, -1));
+        this.timer = setTimeout(erase, ERASE_MS);
+
+        return;
+      }
+      type(0);
+    };
+
+    erase();
+  }
 }

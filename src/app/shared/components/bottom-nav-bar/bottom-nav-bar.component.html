@@ -18,7 +18,7 @@
     <app-icon-logo-button
       [ariaLabel]="aiButtonLabel"
       [ariaExpanded]="aiOpen()"
-      (clicked)="aiClick.emit()"
+      (clicked)="onAiClick()"
     />
 
     <!--
@@ -26,7 +26,7 @@
       de tela anunciaria o texto duas vezes (spec.md § Acessibilidade).
     -->
     <span class="bottom-nav-bar__ai-label" aria-hidden="true">{{
-      aiLabel()
+      shown()
     }}</span>
   </div>
 

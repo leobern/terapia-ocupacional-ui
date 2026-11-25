@@ -179,6 +179,15 @@ export interface ScreenContext {
   readonly description: string;
 }
 
+/**
+ * Sugestão exibida sob o botão central da barra inferior (mobile): a IA da tela convida a uma ação e, ao tocar no
+ * botão, `run` executa essa ação (Thiago, 2026-11-25). Sem `run`, o toque só abre o assistente.
+ */
+export interface ScreenSuggestion {
+  readonly label: string;
+  readonly run?: () => void;
+}
+
 /** Comando livre do profissional (texto ou áudio gravado) a encaminhar à camada de IA da tela. */
 export type ScreenCommand =
   { readonly kind: 'text'; readonly text: string } | { readonly kind: 'audio'; readonly audio: Blob };
@@ -196,6 +205,9 @@ export class ScreenActionsService {
 
   readonly sort: Signal<ScreenSortDefinition | null>;
 
+  /** Sugestões da tela para a legenda do botão central da barra inferior (alternam a cada poucos segundos). */
+  readonly suggestions: Signal<readonly ScreenSuggestion[]>;
+
   /** Texto do assistente para a tela atual; `null` = saudação genérica. */
   readonly context: Signal<ScreenContext | null>;
 
@@ -206,10 +218,12 @@ export class ScreenActionsService {
   private readonly contextSignal = signal<ScreenContext | null>(null);
   private readonly actionsSignal = signal<readonly ScreenAction[]>([]);
   private readonly sortSignal = signal<ScreenSortDefinition | null>(null);
+  private readonly suggestionsSignal = signal<readonly ScreenSuggestion[]>([]);
 
   constructor() {
     this.actions = this.actionsSignal.asReadonly();
     this.sort = this.sortSignal.asReadonly();
+    this.suggestions = this.suggestionsSignal.asReadonly();
     this.context = this.contextSignal.asReadonly();
     this.commandHandler = this.commandSignal.asReadonly();
   }
@@ -232,6 +246,17 @@ export class ScreenActionsService {
     return (): void => {
       if (this.contextSignal() === context) {
         this.contextSignal.set(null);
+      }
+    };
+  }
+
+  /** Registra as sugestões da tela; o cleanup só remove se ainda forem as atuais. */
+  registerSuggestions(suggestions: readonly ScreenSuggestion[]): () => void {
+    this.suggestionsSignal.set(suggestions);
+
+    return (): void => {
+      if (this.suggestionsSignal() === suggestions) {
+        this.suggestionsSignal.set([]);
       }
     };
   }

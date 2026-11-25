@@ -4,7 +4,13 @@
   vez de empurrá-lo (feedback do usuário: a versão anterior "arrastava" o
   conteúdo ao abrir).
 -->
-<div class="nav-menu__panel">
+<!-- Mobile: fundo escurecido a 10% atrás do menu; tocar fora dele fecha (Thiago, 2026-11-25). -->
+<div class="nav-menu__scrim" aria-hidden="true" (click)="onCloseClick()"></div>
+<div
+  class="nav-menu__panel"
+  (touchstart)="onTouchStart($event)"
+  (touchend)="onTouchEnd($event)"
+>
   <div class="nav-menu__logo">
     <!--
       Mesma instância em qualquer estado — nunca troca de componente nem de

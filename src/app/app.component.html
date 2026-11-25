@@ -33,8 +33,9 @@
       [menuOpen]="menuOpen()"
       [aiOpen]="aiAssistant.isOpen()"
       [actionsOpen]="aiAssistant.shortcutsOpen()"
+      [suggestions]="suggestionLabels()"
       (menuClick)="menuOpen.set(true)"
-      (aiClick)="aiAssistant.openPanel()"
+      (aiClick)="onNavAiClick($event)"
       (actionsClick)="aiAssistant.openShortcuts()"
     />
 

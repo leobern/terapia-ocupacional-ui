@@ -216,7 +216,8 @@ describe('AppComponent', () => {
       reopen();
 
       expect(component.aiAssistant.view()).toBe('chat');
-      expect(component.aiSheetSnap()).toBe('default');
+      // O botão central abre o chat na altura máxima; só os Atalhos abrem na altura de hoje (Thiago, 2026-11-25).
+      expect(component.aiSheetSnap()).toBe('full');
       expect(component.aiChatValue()).toBe('');
       expect(fixture.nativeElement.querySelector('app-input-chat textarea').value).toBe('');
     });
@@ -271,7 +272,7 @@ describe('AppComponent', () => {
       fixture.componentInstance.aiAssistant.openPanel();
       fixture.detectChanges();
 
-      expect(sheetSnap()).toBe('default');
+      expect(sheetSnap()).toBe('full');
 
       fixture.nativeElement.querySelector('.bottom-sheet__shortcut button').click();
       fixture.detectChanges();
@@ -349,7 +350,7 @@ describe('AppComponent', () => {
       expect(document.documentElement.style.overflow).not.toBe('hidden');
     });
 
-    it('fecha e reabre no encaixe compacto', () => {
+    it('fecha e reabre na altura máxima (o chat do botão central abre cheio)', () => {
       openWithConversation();
       sheetButton('Fechar')?.click();
       fixture.detectChanges();
@@ -361,6 +362,13 @@ describe('AppComponent', () => {
       fixture.detectChanges();
 
       expect(dialog().open).toBe(true);
+      expect(dialog().classList).toContain('bottom-sheet--full');
+    });
+
+    it('os Atalhos abrem na altura de hoje, não na máxima', () => {
+      fixture.componentInstance.aiAssistant.openShortcuts();
+      fixture.detectChanges();
+
       expect(dialog().classList).not.toContain('bottom-sheet--full');
     });
   });
@@ -595,6 +603,51 @@ describe('AppComponent', () => {
 
       expect(logout).toHaveBeenCalledTimes(1);
       expect(router.url).toBe('/login');
+    });
+  });
+
+  describe('botão central da barra inferior (sugestões da tela)', () => {
+    const nav = (): { onNavAiClick(i: number): void; suggestionLabels(): readonly string[] } =>
+      fixture.componentInstance as unknown as { onNavAiClick(i: number): void; suggestionLabels(): readonly string[] };
+
+    it('sem sugestões registradas, usa as ações principais da tela (até 3) e executa a ação tocada', () => {
+      const navigate = jasmine.createSpy('navigate');
+
+      TestBed.inject(ScreenActionsService).register([
+        { id: 'a', label: 'Criar item', navigate },
+        { id: 'b', label: 'Editar item' },
+        { id: 'c', label: 'Terceira' },
+        { id: 'd', label: 'Quarta' },
+      ]);
+      fixture.detectChanges();
+
+      expect(nav().suggestionLabels()).toEqual(['Criar item', 'Editar item', 'Terceira']);
+      nav().onNavAiClick(0);
+
+      expect(navigate).toHaveBeenCalledTimes(1);
+    });
+
+    it('com sugestões da tela, toca e executa a sugestão visível; sem sugestão abre o assistente', () => {
+      const run = jasmine.createSpy('run');
+
+      TestBed.inject(ScreenActionsService).registerSuggestions([{ label: 'Cadastrar hospital', run }]);
+      fixture.detectChanges();
+
+      expect(nav().suggestionLabels()).toEqual(['Cadastrar hospital']);
+      nav().onNavAiClick(0);
+
+      expect(run).toHaveBeenCalledTimes(1);
+      nav().onNavAiClick(-1);
+
+      expect(fixture.componentInstance.aiAssistant.isOpen()).toBe(true);
+    });
+
+    it('sugestão sem ação só abre o assistente', () => {
+      TestBed.inject(ScreenActionsService).registerSuggestions([{ label: 'Só texto' }]);
+      fixture.detectChanges();
+      nav().onNavAiClick(0);
+
+      expect(fixture.componentInstance.aiAssistant.isOpen()).toBe(true);
     });
   });
 });

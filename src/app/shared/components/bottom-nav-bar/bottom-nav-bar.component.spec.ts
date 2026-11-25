@@ -136,4 +136,74 @@ describe('BottomNavBarComponent', () => {
       });
     }
   });
+
+  describe('legenda do botão central (sugestões da tela)', () => {
+    const label = (): string => aiLabelElement().textContent.trim();
+    const withSuggestions = (list: readonly string[]): void => {
+      fixture.componentRef.setInput('suggestions', list);
+      fixture.detectChanges();
+    };
+
+    beforeEach(() => jasmine.clock().install());
+
+    afterEach(() => jasmine.clock().uninstall());
+
+    it('começa no convite padrão; em 3 s apaga e digita a primeira sugestão; depois troca a cada 5 s', () => {
+      withSuggestions(['Cadastrar hospital', 'Iniciar turno']);
+      const clicks: number[] = [];
+
+      component.aiClick.subscribe(i => clicks.push(i));
+
+      expect(label()).toBe('Como posso ajudar?');
+      buttons()[1].click();
+      jasmine.clock().tick(3000 + 2000);
+      fixture.detectChanges();
+
+      expect(label()).toBe('Cadastrar hospital');
+      buttons()[1].click();
+      jasmine.clock().tick(5000 + 2000);
+      fixture.detectChanges();
+
+      expect(label()).toBe('Iniciar turno');
+      jasmine.clock().tick(5000 + 2000);
+      fixture.detectChanges();
+
+      expect(label()).toBe('Como posso ajudar?');
+      expect(clicks).toEqual([-1, 0]);
+    });
+
+    it('o texto é apagado letra a letra antes de digitar o novo (some para o meio)', () => {
+      withSuggestions(['Cadastrar hospital']);
+      jasmine.clock().tick(3000 + 5 * 22);
+      fixture.detectChanges();
+
+      expect(label().length).toBeLessThan('Como posso ajudar?'.length);
+      expect('Como posso ajudar?').toContain(label());
+    });
+
+    it('sem sugestões o convite não muda', () => {
+      jasmine.clock().tick(60_000);
+      fixture.detectChanges();
+
+      expect(label()).toBe('Como posso ajudar?');
+    });
+
+    it('com movimento reduzido troca o texto na hora, sem digitar', () => {
+      spyOn(window, 'matchMedia').and.returnValue({ matches: true } as MediaQueryList);
+      withSuggestions(['Cadastrar hospital']);
+      jasmine.clock().tick(3000);
+      fixture.detectChanges();
+
+      expect(label()).toBe('Cadastrar hospital');
+    });
+
+    it('trocar as sugestões da tela reinicia o ciclo no convite padrão', () => {
+      withSuggestions(['Cadastrar hospital']);
+      jasmine.clock().tick(4000);
+      fixture.detectChanges();
+      withSuggestions(['Outra']);
+
+      expect(label()).toBe('Como posso ajudar?');
+    });
+  });
 });

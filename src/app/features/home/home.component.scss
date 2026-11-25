@@ -43,26 +43,10 @@
 }
 
 .home__header-text {
-  // Mobile (Figma 06 · Home): só avatar, CTA e sino; o nome continua para leitores de tela, mas sem ocupar a linha.
-  position: absolute;
-  overflow: hidden;
-  width: 1px;
-  height: 1px;
-  clip-path: inset(50%);
-  white-space: nowrap;
-
-  @include breakpoints.md {
-    position: static;
-    display: flex;
-    flex: 1 0 0;
-    flex-direction: column;
-    overflow: visible;
-    width: auto;
-    height: auto;
-    min-width: 0;
-    clip-path: none;
-    white-space: normal;
-  }
+  display: flex;
+  flex: 1 0 0;
+  flex-direction: column;
+  min-width: 0;
 }
 
 .home__header-title {
@@ -88,6 +72,14 @@
 }
 
 // Sino e atalhos colados entre si; o CTA da tela fica 8px afastado deles (mesmo padrão do `app-page-header`).
+.home__cta {
+  display: none;
+
+  @include breakpoints.md {
+    display: inline-flex;
+  }
+}
+
 .home__header-icons {
   display: flex;
   align-items: center;
@@ -102,8 +94,13 @@
 // Badge no canto superior direito do botão de 40px.
 .home__notify-badge {
   position: absolute;
-  top: 0;
-  left: 20px;
+  top: 4px;
+  left: 26px;
+
+  @include breakpoints.md {
+    top: 0;
+    left: 20px;
+  }
 }
 
 .home__shortcuts-wrapper {
@@ -132,32 +129,46 @@
   }
 }
 
-// --- contexto (hospital + frase + data) ------------------------------------------
+// --- contexto (hospital + turno + frase + data) --------------------------------------
+// Mobile (Figma 4591:216): seletor e "Iniciar turno" um sob o outro (gap 8), depois o bloco de texto (gap 12 acima, 8 entre
+// frase e data, recuo lateral 8). Desktop: seletor à esquerda e turno à direita na mesma linha; frase e data na linha de baixo.
 .home__local {
   display: flex;
   flex-direction: column;
   gap: tokens.$space-12;
 
   @include breakpoints.md {
+    gap: tokens.$space-24;
+  }
+}
+
+.home__local-top {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: tokens.$space-8;
+
+  @include breakpoints.md {
     flex-direction: row;
-    align-items: stretch;
+    align-items: center;
     justify-content: space-between;
     gap: tokens.$space-16;
   }
 }
 
-.home__local-col {
-  position: relative;
+.home__local-text {
   display: flex;
-  flex: 1 0 0;
   flex-direction: column;
-  align-items: flex-start;
-  gap: tokens.$space-12;
-  min-width: 0;
+  gap: tokens.$space-8;
+  padding-inline: tokens.$space-8;
 
-  // Figma Home desktop: 24px entre o seletor de hospital e o título.
   @include breakpoints.md {
-    gap: tokens.$space-24;
+    flex-direction: row;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: tokens.$space-16;
+    padding-inline: 0;
   }
 }
 
@@ -325,20 +336,6 @@
   align-items: center;
   align-self: stretch;
   gap: tokens.$space-16;
-}
-
-// Coluna da direita da linha do hospital: "Iniciar turno" acima da data, na extremidade direita.
-.home__local-aside {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: tokens.$space-8;
-
-  @include breakpoints.md {
-    align-items: flex-end;
-    align-self: stretch;
-    justify-content: space-between;
-  }
 }
 
 // Equipe em turno no hospital.
