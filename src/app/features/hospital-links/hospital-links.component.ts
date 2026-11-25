@@ -1,10 +1,11 @@
 import { ChangeDetectionStrategy, Component, inject, type OnInit, signal } from '@angular/core';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 
 import { ButtonComponent } from '../../shared/components/button/button.component';
 import { PageContainerComponent } from '../../shared/components/page-container/page-container.component';
 import { PageHeaderComponent } from '../../shared/components/page-header/page-header.component';
 import { PhIconComponent } from '../../shared/icons/ph-icon/ph-icon.component';
+import { ACCESS_BLOCKED_PARAM, ACCESS_BLOCKED_VALUE } from './approved-hospital-link.guard';
 import { HOSPITAL_LINK_STATUS_VIEW, HospitalLink } from './hospital-links.models';
 import { HospitalLinksSource } from './hospital-links-source';
 
@@ -28,6 +29,10 @@ export class HospitalLinksComponent implements OnInit {
   protected readonly status = signal<LoadStatus>('loading');
   protected readonly links = signal<readonly HospitalLink[]>([]);
   protected readonly statusView = HOSPITAL_LINK_STATUS_VIEW;
+
+  /** Aviso só no redirecionamento do Painel Metabólico, não numa visita normal (RN03). */
+  protected readonly accessBlocked =
+    inject(ActivatedRoute).snapshot.queryParamMap.get(ACCESS_BLOCKED_PARAM) === ACCESS_BLOCKED_VALUE;
 
   private readonly source = inject(HospitalLinksSource);
   private readonly router = inject(Router);

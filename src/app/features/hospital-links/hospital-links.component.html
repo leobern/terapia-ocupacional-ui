@@ -6,6 +6,13 @@
       subtitle="Acompanhe onde seu acesso está aprovado, pendente ou foi recusado."
     />
 
+    @if (accessBlocked) {
+      <p class="hospital-links__blocked" role="status">
+        Você ainda não tem acesso liberado ao Painel Metabólico. Aguarde a
+        aprovação de um hospital ou solicite um novo acesso.
+      </p>
+    }
+
     @switch (status()) {
       @case ('loading') {
         <p class="hospital-links__state" role="status">

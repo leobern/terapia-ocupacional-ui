@@ -1,5 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { Router } from '@angular/router';
+import { ActivatedRoute, convertToParamMap, provideRouter, Router } from '@angular/router';
 
 import { HospitalLinksComponent, REQUEST_HOSPITAL_LINK_URL } from './hospital-links.component';
 import { HospitalLink, HospitalLinkStatus } from './hospital-links.models';
@@ -32,7 +32,9 @@ describe('HospitalLinksComponent', () => {
 
   beforeEach(() => {
     list = jasmine.createSpy('list');
-    TestBed.configureTestingModule({ providers: [{ provide: HospitalLinksSource, useValue: { list } }] });
+    TestBed.configureTestingModule({
+      providers: [provideRouter([]), { provide: HospitalLinksSource, useValue: { list } }],
+    });
   });
 
   it('mostra o carregamento enquanto a lista não chega', () => {
@@ -78,6 +80,28 @@ describe('HospitalLinksComponent', () => {
     button('Solicitar acesso a um hospital')?.querySelector('button')?.click();
 
     expect(router.navigateByUrl).toHaveBeenCalledWith(REQUEST_HOSPITAL_LINK_URL);
+  });
+
+  it('mostra o aviso de acesso não liberado só quando veio do redirecionamento', async () => {
+    list.and.resolveTo({ hasApprovedLink: false, items: [link(2, 'Beta', 'pending')] });
+    await render();
+
+    expect(text()).not.toContain('ainda não tem acesso liberado');
+
+    TestBed.resetTestingModule();
+    TestBed.configureTestingModule({
+      providers: [
+        provideRouter([]),
+        { provide: HospitalLinksSource, useValue: { list } },
+        {
+          provide: ActivatedRoute,
+          useValue: { snapshot: { queryParamMap: convertToParamMap({ acesso: 'bloqueado' }) } },
+        },
+      ],
+    });
+    await render();
+
+    expect(text()).toContain('ainda não tem acesso liberado');
   });
 
   it('em caso de erro mostra o aviso e tenta de novo', async () => {

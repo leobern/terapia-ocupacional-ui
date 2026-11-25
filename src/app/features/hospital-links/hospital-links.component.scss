@@ -29,6 +29,16 @@
   @include typography.body-md;
 }
 
+.hospital-links__blocked {
+  margin: 0;
+  padding: tokens.$space-12 tokens.$space-16;
+  border-radius: tokens.$radius-sm;
+  background: tokens.c(surface);
+  color: tokens.c(content-1);
+
+  @include typography.body-md;
+}
+
 .hospital-links__empty {
   display: flex;
   flex-direction: column;
