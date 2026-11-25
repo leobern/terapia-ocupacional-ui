@@ -51,6 +51,8 @@ $duration-collapse: 90ms;
 .nav-menu__scrim {
   position: fixed;
   inset: 0;
+  // Altura grande (`lvh`): no iOS o fundo cobre também a área sob a barra do navegador, sem cortar embaixo.
+  height: 100lvh;
   z-index: var(--z-index-overlay);
   background: color-mix(in srgb, #{tokens.c(content-1)} 10%, transparent);
   opacity: 0;
@@ -88,7 +90,8 @@ $duration-collapse: 90ms;
   position: fixed;
   top: 0;
   left: 0;
-  bottom: 0;
+  // `lvh` em vez de `bottom: 0`: no iOS o painel desce até a borda da tela, por baixo da barra do navegador.
+  height: 100lvh;
   width: min(
     320px,
     calc(100vw - #{tokens.$space-16})
@@ -144,6 +147,7 @@ $duration-collapse: 90ms;
     top: 0;
     left: 0;
     bottom: 0;
+    height: auto;
     width: 100%;
     // Figma v2/NavRail: trilho de 72px com superfície glass e borda à direita.
     // Figma (2026-11-19): o fundo é um gradiente vertical — transparente no topo, cor cheia embaixo.

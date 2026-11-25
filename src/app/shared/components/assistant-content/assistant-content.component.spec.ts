@@ -491,7 +491,8 @@ describe('AssistantContentComponent', () => {
       fixture.detectChanges();
       finishTyping();
 
-      expect(Array.from(el().querySelectorAll('.assistant-content__body')).at(-1)?.textContent?.trim()).toBe(
+      // A pergunta da IA sai em negrito e um pouco maior (classe própria).
+      expect(Array.from(el().querySelectorAll('.assistant-content__ask')).at(-1)?.textContent?.trim()).toBe(
         'Qual o nome?',
       );
       assistant.ask('');
@@ -525,7 +526,7 @@ describe('AssistantContentComponent', () => {
       await Promise.resolve();
       fixture.detectChanges();
 
-      expect(text('.assistant-content__body:last-of-type')).toBe('Feito');
+      expect(text('.assistant-content__ask:last-of-type')).toBe('Feito');
     });
   });
 });

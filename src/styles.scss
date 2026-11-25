@@ -118,6 +118,35 @@ body::after {
   opacity: calc(var(--noise-alpha, 0.02) / 0.45);
 }
 
+// Tampas das áreas seguras do celular (Thiago, 2026-11-25): com `viewport-fit=cover` o conteúdo rola por baixo da barra de
+// status e da área do indicador; estas faixas fixas, na cor do fundo e levemente desfocadas, impedem que os cards
+// apareçam passando por trás delas. Valem 0 onde não há área segura (desktop).
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  // Abaixo de tudo que flutua (menu, barra inferior, sheets) e acima do conteúdo que rola.
+  z-index: 1;
+  pointer-events: none;
+  /* stylelint-disable-next-line property-no-vendor-prefix */
+  -webkit-backdrop-filter: blur(24px);
+  backdrop-filter: blur(24px);
+  background: color-mix(in srgb, var(--color-bg-gradient-1) 90%, transparent);
+  // Só as bordas: recorta o miolo, deixando as faixas do topo e da base.
+  /* stylelint-disable length-zero-no-unit -- dentro de `calc()` o zero precisa da unidade */
+  clip-path: polygon(
+    0 0,
+    100% 0,
+    100% env(safe-area-inset-top, 0px),
+    0 env(safe-area-inset-top, 0px),
+    0 calc(100% - env(safe-area-inset-bottom, 0px)),
+    100% calc(100% - env(safe-area-inset-bottom, 0px)),
+    100% 100%,
+    0 100%
+  );
+  /* stylelint-enable length-zero-no-unit */
+}
+
 @media print {
   body::after {
     display: none;
