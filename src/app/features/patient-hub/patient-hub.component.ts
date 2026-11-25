@@ -297,6 +297,17 @@ export class PatientHubComponent implements OnInit {
         const profile = this.profile();
         const actions: ScreenAction[] = [
           { id: 'daily-record', label: 'Evoluir paciente', navigate: (): void => this.editDailyRecord() },
+          { id: 'diagnosis', label: 'Registrar diagnóstico', navigate: (): void => this.editDiagnosis() },
+          {
+            id: 'clinical-assessment',
+            label: 'Avaliação clínica',
+            navigate: (): void => this.editClinicalAssessment(),
+          },
+          {
+            id: 'nutritional-assessment',
+            label: 'Avaliação nutricional e funcional',
+            navigate: (): void => this.editNutritionalFunctional(),
+          },
           this.messageAction(),
         ];
 

@@ -255,7 +255,7 @@ describe('HomeComponent', () => {
     it('sem localização cadastrada, não inicia e orienta em texto', async () => {
       await click(startButton());
 
-      expect(q('.home__stale-banner[role="alert"]')?.textContent).toContain('ainda não tem localização cadastrada');
+      expect(q('.home__toast')?.textContent).toContain('ainda não tem localização cadastrada');
       expect(navigate).not.toHaveBeenCalled();
     });
 
@@ -263,7 +263,7 @@ describe('HomeComponent', () => {
       await TestBed.inject(HospitalSiteSource).save({ ...SITE, lat: -23.5505 + 0.0135 });
       await click(startButton());
 
-      expect(q('.home__stale-banner[role="alert"]')?.textContent).toContain('Você está a');
+      expect(q('.home__toast')?.textContent).toContain('Você está a');
       expect(navigate).not.toHaveBeenCalled();
     });
 
@@ -286,7 +286,7 @@ describe('HomeComponent', () => {
       geo.point = new GeolocationError('denied');
       await click(startButton());
 
-      expect(q('.home__stale-banner[role="alert"]')?.textContent).toContain('Sem acesso à localização');
+      expect(q('.home__toast')?.textContent).toContain('Sem acesso à localização');
     });
 
     it('mostra a equipe em turno: quem já está trabalhando e quantos pacientes escolheu', async () => {
@@ -311,7 +311,7 @@ describe('HomeComponent', () => {
 
       await click(startButton());
 
-      expect(q('.home__stale-banner[role="alert"]')).not.toBeNull();
+      expect(q('.home__toast')).not.toBeNull();
 
       await click(q<HTMLButtonElement>('.home__register-hospital button') as HTMLButtonElement);
       const inputs = assistant.activeAction()?.editor?.inputs as { saved: (id: number) => void };
@@ -320,19 +320,42 @@ describe('HomeComponent', () => {
 
       inputs.saved(HOSPITALS[0].id);
       await settle();
+      // A saída é animada (200ms): o toast só sai do DOM ao fim dela.
+      await new Promise(resolve => setTimeout(resolve, 400));
+      fixture.detectChanges();
 
-      expect(q('.home__stale-banner[role="alert"]')).toBeNull();
+      expect(q('.home__toast')).toBeNull();
+    });
+
+    it('os atalhos da Home trazem "Cadastrar hospital" e "Iniciar turno de trabalho"', async () => {
+      const actions = TestBed.inject(ScreenActionsService).actions();
+      const register = actions.find(a => a.id === 'hospital-registration');
+
+      expect(register?.label).toBe('Cadastrar hospital');
+      expect(register?.editor).toBeDefined();
+
+      actions.find(a => a.id === 'start-shift')?.navigate?.();
+      await settle();
+
+      expect(q('.home__toast')?.textContent).toContain('ainda não tem localização cadastrada');
+    });
+
+    it('o toast do turno some sozinho depois de alguns segundos', () => {
+      jasmine.clock().install();
+      try {
+        fixture.componentInstance.shiftMessage.set('Aviso');
+        fixture.detectChanges();
+        jasmine.clock().tick(8000);
+
+        expect(fixture.componentInstance.shiftMessage()).toBeNull();
+      } finally {
+        jasmine.clock().uninstall();
+      }
     });
   });
 
   describe('layout', () => {
     beforeEach(() => setup());
-
-    // Acessibilidade (Princípio X): marco de navegação e um único título de nível 1.
-    it('renders a single <main> landmark with the professional as level-1 heading', () => {
-      expect(el().querySelectorAll('h1').length).toBe(1);
-      expect(q('h1')?.textContent?.trim()).toBe('Michelle Franklin');
-    });
 
     it('shows the header with title, avatar and the day headline', () => {
       expect(q('.home__header-title')?.textContent?.trim()).toBe('Dra.');

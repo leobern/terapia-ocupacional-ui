@@ -167,7 +167,13 @@
         </div>
 
         @if (shiftMessage(); as message) {
-          <p class="home__stale-banner" role="alert">
+          <!-- Toast flutuante: entra e sai com animação; some sozinho depois de alguns segundos. -->
+          <p
+            class="home__toast"
+            role="alert"
+            animate.enter="home__toast--enter"
+            animate.leave="home__toast--leave"
+          >
             <ph-icon name="map-pin" [size]="20" />
             <span>{{ message }}</span>
           </p>

@@ -6,6 +6,7 @@ import {
   ElementRef,
   inject,
   Injector,
+  NgZone,
   OnDestroy,
   OnInit,
   Signal,
@@ -24,7 +25,7 @@ import { PageContainerComponent } from '../../shared/components/page-container/p
 import { TagComponent } from '../../shared/components/tag/tag.component';
 import { PhIconComponent } from '../../shared/icons/ph-icon/ph-icon.component';
 import { AiAssistantService } from '../../shared/services/ai-assistant.service';
-import { ScreenActionsService } from '../../shared/services/screen-actions.service';
+import { type ScreenAction, ScreenActionsService } from '../../shared/services/screen-actions.service';
 import { HOME_CONTEXT } from '../../shared/services/screen-contexts';
 import { ViewportBreakpointService } from '../../shared/services/viewport-breakpoint.service';
 import { formatRelativeTime } from '../../shared/utils/relative-time';
@@ -61,6 +62,9 @@ function formatTodayLabel(): string {
 
   return `${capitalizedWeekday}, ${partValue('day')} de ${partValue('month')}`; // Figma v2: "Domingo, 28 de maio"
 }
+
+/** Tempo do toast de aviso do turno na tela antes de sair sozinho. */
+const TOAST_DURATION_MS = 8000;
 
 /**
  * Tela Home — layout validado contra o Figma (mobile `4360:7018`, desktop
@@ -152,6 +156,7 @@ export class HomeComponent implements OnInit, OnDestroy {
   private readonly screenActions = inject(ScreenActionsService);
   private readonly moveBed = inject(MoveBedAction);
   private readonly changeLocation = inject(ChangeLocationAction);
+  private readonly zone = inject(NgZone);
   private readonly managerAccess = inject(ManagerAccessReader, { optional: true });
   private readonly revocation = inject(LinkRevocationChecker);
   private readonly scrollSentinel = viewChild<ElementRef<HTMLElement>>('scrollSentinel');
@@ -181,6 +186,17 @@ export class HomeComponent implements OnInit, OnDestroy {
       );
     });
 
+    // Toast do turno: some sozinho depois de `TOAST_DURATION_MS`.
+    effect(onCleanup => {
+      if (this.shiftMessage() === null) {
+        return;
+      }
+      // Fora da zona: o timer longo não pode segurar a estabilidade da aplicação (`whenStable`).
+      const timer = this.zone.runOutsideAngular(() => setTimeout(() => this.shiftMessage.set(null), TOAST_DURATION_MS));
+
+      onCleanup(() => clearTimeout(timer));
+    });
+
     const profile = inject(ProfessionalProfileReader).read();
 
     this.professionalName = profile.name;
@@ -193,6 +209,9 @@ export class HomeComponent implements OnInit, OnDestroy {
 
       onCleanup(
         this.screenActions.register([
+          // Ações principais da Home: cadastrar hospital e iniciar o turno de trabalho (Thiago, 2026-11-25).
+          this.hospitalRegistrationAction(),
+          { id: 'start-shift', label: 'Iniciar turno de trabalho', navigate: (): void => void this.onShiftClick() },
           this.moveBed.buildByName(hospitalId),
           this.changeLocation.buildByName(hospitalId),
         ]),
@@ -330,25 +349,7 @@ export class HomeComponent implements OnInit, OnDestroy {
 
   /** "Cadastrar hospital": abre o cadastro conversacional no painel lateral. */
   onRegisterHospital(): void {
-    this.aiAssistant.openAction({
-      editor: {
-        component: HospitalEditorComponent,
-        description:
-          'Informe o nome e o endereço do hospital e, estando nele, use a minha localização atual. Com a localização ' +
-          'cadastrada, os profissionais podem iniciar o turno de trabalho ao chegar.',
-        hint: 'Você também pode enviar via áudio.',
-        inputs: {
-          initialName: '',
-          saved: (hospitalId: number): void => {
-            this.shiftMessage.set(null);
-            void this.shift.refresh(hospitalId);
-          },
-        },
-        title: 'Cadastrar hospital',
-      },
-      id: 'hospital-registration',
-      label: 'Cadastrar hospital',
-    });
+    this.aiAssistant.openAction(this.hospitalRegistrationAction());
   }
 
   async ngOnInit(): Promise<void> {
@@ -476,5 +477,27 @@ export class HomeComponent implements OnInit, OnDestroy {
     if (this.context.selected()?.id === hospitalId) {
       this.summary.set(summary);
     }
+  }
+
+  private hospitalRegistrationAction(): ScreenAction {
+    return {
+      editor: {
+        component: HospitalEditorComponent,
+        description:
+          'Informe o nome e o endereço do hospital e, estando nele, use a minha localização atual. Com a localização ' +
+          'cadastrada, os profissionais podem iniciar o turno de trabalho ao chegar.',
+        hint: 'Você também pode enviar via áudio.',
+        inputs: {
+          initialName: '',
+          saved: (hospitalId: number): void => {
+            this.shiftMessage.set(null);
+            void this.shift.refresh(hospitalId);
+          },
+        },
+        title: 'Cadastrar hospital',
+      },
+      id: 'hospital-registration',
+      label: 'Cadastrar hospital',
+    };
   }
 }
