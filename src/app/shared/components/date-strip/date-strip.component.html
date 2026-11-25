@@ -33,12 +33,11 @@
       </button>
     }
   }
-  <!-- Em "hoje" a seta da direita some (não há datas futuras), mas guarda o espaço para a faixa não pular. -->
+  <!-- Em "hoje" a seta da direita fica desabilitada (não há datas futuras), na cor de desabilitado do Figma. -->
   <button
     type="button"
     class="date-strip__arrow"
     aria-label="Próximo dia"
-    [class.date-strip__arrow--hidden]="!canGoForward()"
     [disabled]="!canGoForward()"
     (click)="shift(1)"
   >

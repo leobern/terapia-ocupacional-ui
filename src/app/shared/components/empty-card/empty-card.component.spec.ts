@@ -23,4 +23,15 @@ describe('EmptyCardComponent', () => {
 
     expect(activated).toBe(1);
   });
+
+  it('desabilitado (somente leitura) não aciona o cadastro', () => {
+    let activated = 0;
+
+    fixture.componentRef.setInput('disabled', true);
+    fixture.detectChanges();
+    fixture.componentInstance.activate.subscribe(() => activated++);
+    (fixture.nativeElement as HTMLElement).querySelector('button')?.click();
+
+    expect(activated).toBe(0);
+  });
 });

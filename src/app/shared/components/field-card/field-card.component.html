@@ -2,6 +2,7 @@
   <label class="field-card__title" [for]="inputId()">{{ label() }}</label>
   <div
     class="field-card__field"
+    [class.field-card__field--area]="rows() > 0"
     [class.field-card__field--error]="error() !== ''"
   >
     @if (options(); as list) {
@@ -19,6 +20,16 @@
           </option>
         }
       </select>
+    } @else if (rows() > 0) {
+      <textarea
+        class="field-card__input field-card__input--area"
+        [id]="inputId()"
+        [rows]="rows()"
+        [attr.maxlength]="maxLength()"
+        [placeholder]="placeholder()"
+        [value]="value()"
+        (input)="valueChange.emit(read($event))"
+      ></textarea>
     } @else {
       <input
         class="field-card__input"

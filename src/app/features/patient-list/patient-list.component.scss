@@ -25,51 +25,109 @@
   }
 }
 
-.patient-list__toolbar app-date-strip {
-  @include breakpoints.md {
-    width: 370px;
-  }
-}
-
+// Figma 4690:24100: faixa de datas acima da tabela (à esquerda); ordenação e busca à direita. No mobile empilha.
 .patient-list__toolbar {
   display: flex;
-  align-items: center;
+  flex-direction: column;
   gap: tokens.$space-16;
-}
-
-// Mobile (Figma v2/SelectTag + IconButton tonal): tag de ordenação à esquerda, atalhos à direita.
-.patient-list__sortbar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: tokens.$space-8;
 
   @include breakpoints.md {
-    display: none;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  app-date-strip {
+    @include breakpoints.md {
+      flex: none;
+      width: 346px;
+    }
   }
 }
 
-.patient-list__sort-tag {
-  display: inline-flex;
+.patient-list__filters {
+  display: flex;
   align-items: center;
   gap: tokens.$space-8;
-  min-height: 44px;
-  padding: 0 tokens.$space-12;
-  border: 0;
+
+  @include breakpoints.md {
+    gap: tokens.$space-16;
+  }
+}
+
+// Figma v2/SelectTag (tonal, 40px): o <select> nativo fica por cima, invisível, para abrir a lista de critérios.
+.patient-list__sort-select {
+  position: relative;
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: tokens.$space-8;
+  min-height: 40px;
+  padding: 0 tokens.$space-12 0 tokens.$space-16;
   border-radius: tokens.$radius-pill;
   background: tokens.c(surface-2);
   color: tokens.c(content-1);
   cursor: pointer;
 
   @include typography.label-md;
-  @include mixins.focus-ring;
+
+  select {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    cursor: pointer;
+  }
+
+  &:focus-within {
+    outline: var(--focus-ring-width) solid tokens.c(focus-ring);
+    outline-offset: var(--focus-ring-offset);
+  }
 }
 
-// Desktop: a data funciona como paginação, último elemento embaixo à direita da tabela.
-@include breakpoints.md {
-  .patient-list__toolbar {
-    justify-content: flex-end;
-    order: 10;
+// Campo de busca de 40px (pílula, borda), com a lupa dentro.
+.patient-list__search {
+  display: flex;
+  flex: 1 1 0;
+  align-items: center;
+  gap: tokens.$space-8;
+  box-sizing: border-box;
+  min-width: 0;
+  height: 40px;
+  padding: 0 tokens.$space-16;
+  border: 1px solid tokens.c(border-2);
+  border-radius: tokens.$radius-pill;
+  background: tokens.c(surface);
+  color: tokens.c(content-4);
+
+  @include breakpoints.md {
+    flex: none;
+    width: 280px;
+  }
+
+  input {
+    flex: 1 1 0;
+    min-width: 0;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: tokens.c(content-1);
+    outline: 0;
+
+    @include typography.body-md;
+  }
+
+  &:focus-within {
+    outline: var(--focus-ring-width) solid tokens.c(focus-ring);
+    outline-offset: var(--focus-ring-offset);
+  }
+}
+
+// Os atalhos ficam no cabeçalho no desktop; no mobile, ao lado da busca.
+.patient-list__apps {
+  @include breakpoints.md {
+    display: none;
   }
 }
 
@@ -587,4 +645,50 @@
 .patient-list__tr--finished {
   filter: grayscale(1);
   opacity: 0.75;
+}
+
+// Escolha dos pacientes do turno de trabalho.
+.patient-list__turn {
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$space-16;
+  padding: tokens.$space-16;
+  border: 1px solid tokens.c(secondary);
+  border-radius: tokens.$radius-md;
+  background: tokens.c(surface);
+
+  @include breakpoints.md {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+}
+
+.patient-list__turn-title {
+  margin: 0;
+  color: tokens.c(content-1);
+
+  @include typography.title-md;
+}
+
+.patient-list__turn-hint {
+  margin: 0;
+  color: tokens.c(content-4);
+
+  @include typography.body-md;
+}
+
+.patient-list__turn-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: tokens.$space-16;
+}
+
+.patient-list__check {
+  flex: none;
+  color: tokens.c(secondary);
+}
+
+.patient-list__tr--picked td {
+  background: tokens.c(surface-2);
 }

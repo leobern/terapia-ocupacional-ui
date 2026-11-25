@@ -20,12 +20,15 @@ export class FieldCardComponent {
   readonly inputMode = input<'decimal' | 'text'>('text');
   /** Lista de opções: o campo vira uma seleção. */
   readonly options = input<readonly string[] | null>(null);
+  /** Linhas de uma área de texto (0 = campo de uma linha). */
+  readonly rows = input(0);
+  readonly maxLength = input<number | null>(null);
   readonly caption = input('');
   readonly error = input('');
 
   readonly valueChange = output<string>();
 
   protected read(event: Event): string {
-    return (event.target as HTMLInputElement | HTMLSelectElement).value;
+    return (event.target as HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement).value;
   }
 }

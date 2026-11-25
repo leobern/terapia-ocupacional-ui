@@ -1,5 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 
+import { HospitalSiteSource } from '../shift/hospital-site-source';
 import { HospitalContextService } from './hospital-context.service';
 import { LinkedHospital, LinkedHospitalsReader } from './linked-hospitals';
 
@@ -165,5 +166,53 @@ describe('HospitalContextService', () => {
     await service.load();
 
     expect(service.revoked()).toBeNull();
+  });
+
+  describe('hospitais cadastrados localmente (Cadastrar hospital)', () => {
+    const withSites = async (
+      listLocal: () => Promise<readonly LinkedHospital[]>,
+      linked: readonly LinkedHospital[],
+    ): Promise<HospitalContextService> => {
+      TestBed.configureTestingModule({
+        providers: [
+          { provide: LinkedHospitalsReader, useValue: { read: hospitals(linked) } },
+          { provide: HospitalSiteSource, useValue: { listLocalHospitals: listLocal } },
+        ],
+      });
+      const service = TestBed.inject(HospitalContextService);
+
+      await service.load();
+
+      return service;
+    };
+
+    it('soma os hospitais locais aos vínculos do backend, sem repetir o mesmo id', async () => {
+      const local = { id: -5, name: 'Hospital Novo' };
+      const service = await withSites(() => Promise.resolve([local, A]), [A, B]);
+
+      expect(service.hospitals()).toEqual([A, B, local]);
+    });
+
+    it('falha ao ler os locais não impede os vínculos do backend', async () => {
+      const service = await withSites(() => Promise.reject(new Error('x')), [A]);
+
+      expect(service.status()).toBe('success');
+      expect(service.hospitals()).toEqual([A]);
+    });
+
+    it('addLocal inclui o hospital e o seleciona; repetir não duplica', async () => {
+      const service = await withSites(() => Promise.resolve([]), [A]);
+      const novo = { id: -9, name: 'Hospital Novo' };
+
+      service.addLocal(novo);
+      service.addLocal(novo);
+
+      expect(service.hospitals()).toEqual([A, novo]);
+      expect(service.selected()).toEqual(novo);
+
+      service.addLocal(A);
+
+      expect(service.selected()).toEqual(A);
+    });
   });
 });

@@ -1,5 +1,6 @@
 import { computed, inject, Injectable, signal } from '@angular/core';
 
+import { HospitalSiteSource } from '../shift/hospital-site-source';
 import { LinkedHospital, LinkedHospitalsReader } from './linked-hospitals';
 
 export type HospitalsLoadStatus = 'loading' | 'success' | 'error';
@@ -23,6 +24,7 @@ export class HospitalContextService {
   readonly revoked = signal<LinkedHospital | null>(null);
 
   private readonly reader = inject(LinkedHospitalsReader);
+  private readonly sites = inject(HospitalSiteSource, { optional: true });
   private readonly selectedId = signal<number | null>(null);
   private generation = 0;
 
@@ -38,7 +40,10 @@ export class HospitalContextService {
 
     this.status.set('loading');
     try {
-      const hospitals = await this.reader.read();
+      const linked = await this.reader.read();
+      // Hospitais criados em "Cadastrar hospital" (provisório) somam-se aos vínculos do backend.
+      const local = (await this.sites?.listLocalHospitals().catch((): readonly LinkedHospital[] => [])) ?? [];
+      const hospitals = [...linked, ...local.filter(l => !linked.some(h => h.id === l.id))];
 
       if (generation !== this.generation) {
         return;
@@ -74,6 +79,14 @@ export class HospitalContextService {
     if (this.selectedId() === id) {
       this.selectedId.set(remaining[0]?.id ?? null);
     }
+  }
+
+  /** Inclui um hospital recém-cadastrado e o seleciona (a lista seguinte já o traz do cadastro local). */
+  addLocal(hospital: LinkedHospital): void {
+    if (!this.hospitals().some(h => h.id === hospital.id)) {
+      this.hospitals.set([...this.hospitals(), hospital]);
+    }
+    this.selectedId.set(hospital.id);
   }
 
   /** Troca o hospital em contexto. Ignora o já selecionado e ids sem vínculo. */

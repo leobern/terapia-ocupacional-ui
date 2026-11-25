@@ -1,0 +1,40 @@
+<div class="hosp">
+  <app-field-card
+    label="Nome do hospital"
+    inputId="hosp-name"
+    placeholder="Ex.: Hospital Vila Nova Star"
+    [value]="name()"
+    (valueChange)="name.set($event)"
+  />
+  <app-field-card
+    label="Endereço"
+    inputId="hosp-address"
+    placeholder="Rua, número e cidade"
+    [value]="address()"
+    (valueChange)="address.set($event)"
+  />
+  <app-field-card
+    label="Raio de chegada"
+    inputId="hosp-radius"
+    unit="m"
+    inputMode="decimal"
+    caption="A que distância do hospital o profissional pode iniciar o turno."
+    [value]="radius()"
+    (valueChange)="radius.set($event)"
+  />
+  <div class="hosp__place" data-testid="hospital-location">
+    <span class="hosp__label">Localização do hospital</span>
+    <p class="hosp__point">{{ pointText() }}</p>
+    <p class="hosp__caption">
+      Estando no hospital, toque em "Usar minha localização atual". A posição só
+      é usada para conferir a chegada do profissional.
+    </p>
+  </div>
+
+  @if (busy()) {
+    <p class="hosp__status" role="status">Processando…</p>
+  }
+  @if (hint(); as message) {
+    <p class="hosp__status hosp__status--warning" role="alert">{{ message }}</p>
+  }
+</div>

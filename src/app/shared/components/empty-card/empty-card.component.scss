@@ -21,6 +21,11 @@
   cursor: pointer;
   text-align: center;
 
+  &:disabled {
+    border-style: solid;
+    cursor: default;
+  }
+
   @include typography.label-lg;
 }
 

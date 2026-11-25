@@ -335,24 +335,6 @@ async function setup(
 
 const text = (f: ComponentFixture<unknown>): string => (f.nativeElement as HTMLElement).textContent ?? '';
 
-const typeInto = (f: ComponentFixture<unknown>, id: string, value: string): void => {
-  const area = (f.nativeElement as HTMLElement).querySelector<HTMLTextAreaElement>(`#${id}`) as HTMLTextAreaElement;
-
-  area.value = value;
-  area.dispatchEvent(new Event('input'));
-  f.detectChanges();
-};
-
-const clickButton = async (f: ComponentFixture<unknown>, label: string): Promise<void> => {
-  const root = f.nativeElement as HTMLElement;
-
-  Array.from(root.querySelectorAll('button'))
-    .find(b => b.textContent?.includes(label))
-    ?.click();
-  await f.whenStable();
-  f.detectChanges();
-};
-
 /** Botão só com ícone (ex.: o lápis do título), achado pelo nome acessível. */
 const clickLabel = async (f: ComponentFixture<unknown>, label: string): Promise<void> => {
   (f.nativeElement as HTMLElement).querySelector<HTMLButtonElement>(`button[aria-label="${label}"]`)?.click();
@@ -585,7 +567,7 @@ describe('PatientHubComponent', () => {
     expect((f.nativeElement as HTMLElement).querySelector('textarea:not(.input-chat__field)')).toBeNull();
   });
 
-  it('sem Hipótese, só aparece o card de estado vazio do Diagnóstico (sem editar e sem os outros cards); tocar abre a colagem', async () => {
+  it('sem Hipótese, só aparece o card de estado vazio do Diagnóstico (sem editar e sem os outros cards); tocar abre o editor', async () => {
     const source = new FakeSource();
 
     source.hypothesis = null;
@@ -602,8 +584,7 @@ describe('PatientHubComponent', () => {
     root.querySelector<HTMLButtonElement>('app-empty-card button')?.click();
     f.detectChanges();
 
-    expect(text(f)).toContain('Ainda não há hipótese diagnóstica');
-    expect(root.querySelector('textarea:not(.input-chat__field)')).not.toBeNull();
+    expect(TestBed.inject(AiAssistantService).activeAction()?.id).toBe('diagnosis');
   });
 
   describe('% de adequação (FT-004-7, US3)', () => {
@@ -869,304 +850,85 @@ describe('PatientHubComponent', () => {
     expect(router.navigate).not.toHaveBeenCalled();
   });
 
-  describe('preenchimento da Hipótese', () => {
-    let f: ComponentFixture<PatientHubComponent>;
-    const el = (): HTMLElement => f.nativeElement as HTMLElement;
-    const area = (id: string): HTMLTextAreaElement =>
-      el().querySelector<HTMLTextAreaElement>(`#${id}`) as HTMLTextAreaElement;
-    const type = async (id: string, value: string): Promise<void> => {
-      area(id).value = value;
-      area(id).dispatchEvent(new Event('input'));
+  describe('cadastro do Diagnóstico no painel lateral', () => {
+    const el = (f: ComponentFixture<PatientHubComponent>): HTMLElement => f.nativeElement as HTMLElement;
+    const open = async (f: ComponentFixture<PatientHubComponent>): Promise<void> => {
       f.detectChanges();
-    };
-    const click = async (label: string): Promise<void> => {
-      const btn = Array.from(el().querySelectorAll('button')).find(b => b.textContent?.includes(label));
-
-      btn?.click();
       await f.whenStable();
       f.detectChanges();
     };
 
-    beforeEach(async () => {
-      synth.calls.length = 0;
-      synth.result = Promise.resolve('Texto da IA');
-      writer.saved.length = 0;
-      writer.fail = false;
+    it('tocar no card vazio abre o editor no painel (sem campos dentro do card)', async () => {
       const source = new FakeSource();
 
       source.hypothesis = null;
-      f = await setup(source);
-      // Sem hipótese, o card fica vazio: tocar nele abre o campo de colagem.
-      el().querySelector<HTMLButtonElement>('app-empty-card button')?.click();
-      f.detectChanges();
-      await f.whenStable();
-      f.detectChanges();
+      const f = await setup(source);
+      const assistant = TestBed.inject(AiAssistantService);
+
+      el(f).querySelector<HTMLButtonElement>('app-empty-card button')?.click();
+      await open(f);
+
+      expect(assistant.view()).toBe('editor');
+      expect(assistant.activeAction()?.id).toBe('diagnosis');
+      expect(el(f).querySelector('textarea:not(.input-chat__field)')).toBeNull();
     });
 
-    it('não aciona a IA com campo vazio ou só espaços e orienta a colar', async () => {
-      await click('Sintetizar com IA');
-      await type('paste-text', '   \n ');
-      await click('Sintetizar com IA');
+    it('o lápis abre o editor com o texto atual; o card ganha destaque e o lápis vira o ✓', async () => {
+      const f = await setup(new FakeSource());
+      const assistant = TestBed.inject(AiAssistantService);
 
-      expect(synth.calls).toEqual([]);
-      expect(text(f)).toContain('Cole um texto do prontuário antes de sintetizar.');
+      expect(el(f).querySelector('.hub__diag--editing')).toBeNull();
+      await clickLabel(f, 'Editar diagnóstico');
+      await open(f);
+
+      const inputs = assistant.activeAction()?.editor?.inputs as { initialText: string; responsibleName: string };
+
+      expect(assistant.activeAction()?.id).toBe('diagnosis');
+      expect(inputs.initialText).toContain('Insuficiência respiratória aguda.');
+      expect(inputs.responsibleName).toBe('Dr. Wanderson Romualdo');
+      expect(el(f).querySelector('.hub__diag--editing')).not.toBeNull();
+      expect(el(f).querySelector('[aria-label="Salvar diagnóstico"]')).not.toBeNull();
     });
 
-    it('envia o texto colado, mostra carregamento e depois o resultado marcado como gerado por IA', async () => {
-      const resolvers: ((v: string) => void)[] = [];
+    it('o ✓ do card pede o salvamento ao editor', async () => {
+      const f = await setup(new FakeSource());
 
-      synth.result = new Promise<string>(r => resolvers.push(r));
-      await type('paste-text', 'prontuário longo');
-      await click('Sintetizar com IA');
+      spyOn(TestBed.inject(AssistantEditorController), 'run');
 
-      expect(synth.calls).toEqual(['prontuário longo']);
-      expect(text(f)).toContain('Sintetizando');
-      expect(area('paste-text').disabled).toBeTrue();
+      await clickLabel(f, 'Editar diagnóstico');
+      await open(f);
+      await clickLabel(f, 'Salvar diagnóstico');
 
-      resolvers[0]('Resumo da IA');
-      await f.whenStable();
-      f.detectChanges();
-
-      expect(text(f)).toContain('Gerado por IA');
-      expect(area('draft-text').value).toBe('Resumo da IA');
-      expect(writer.saved).toEqual([]);
+      expect(TestBed.inject(AssistantEditorController).run).toHaveBeenCalledWith('save');
     });
 
-    it('confirma o texto editado (não o da IA), sem marca de IA, e grava origem ai-edited', async () => {
-      await type('paste-text', 'x');
-      await click('Sintetizar com IA');
-      await type('draft-text', '  Texto editado  ');
-      await click('Confirmar hipótese');
+    it('depois de salvar, o card mostra o novo diagnóstico e libera a próxima etapa', async () => {
+      const source = new FakeSource();
 
-      expect(writer.saved).toEqual([
-        jasmine.objectContaining({ author: 'Michelle', origin: 'ai-edited', patientId: 'p1', text: 'Texto editado' }),
-      ]);
+      source.hypothesis = null;
+      const f = await setup(source);
+      const assistant = TestBed.inject(AiAssistantService);
 
-      expect(text(f)).toContain('Texto editado');
-      expect(text(f)).not.toContain('Gerado por IA');
-      expect(el().querySelector('textarea:not(.input-chat__field)')).toBeNull();
-    });
+      el(f).querySelector<HTMLButtonElement>('app-empty-card button')?.click();
+      await open(f);
+      const inputs = assistant.activeAction()?.editor?.inputs as { saved: (text: string) => void };
 
-    it('confirmar sem editar grava a origem ai', async () => {
-      await type('paste-text', 'x');
-      await click('Sintetizar com IA');
-      await click('Confirmar hipótese');
+      inputs.saved('Diagnóstico novo.');
+      await open(f);
 
-      expect(writer.saved[0].origin).toBe('ai');
-    });
-
-    it('descartar volta ao texto colado sem gravar', async () => {
-      await type('paste-text', 'meu texto');
-      await click('Sintetizar com IA');
-      await click('Descartar');
-
-      expect(area('paste-text').value).toBe('meu texto');
-      expect(writer.saved).toEqual([]);
-    });
-
-    it('na falha da IA permite digitar e confirmar manualmente, mantendo o texto colado', async () => {
-      synth.result = Promise.reject(new Error('fora do ar'));
-      await type('paste-text', 'colado');
-      await click('Sintetizar com IA');
-
-      expect(text(f)).toContain('A síntese por IA falhou ou está indisponível');
-      expect(text(f)).not.toContain('Gerado por IA');
-      expect(area('paste-text').value).toBe('colado');
-
-      await click('Confirmar hipótese');
-
-      expect(text(f)).toContain('Escreva a hipótese diagnóstica antes de confirmar.');
-      expect(writer.saved).toEqual([]);
-
-      await type('draft-text', 'Digitado à mão');
-      await click('Confirmar hipótese');
-
-      expect(writer.saved[0]).toEqual(jasmine.objectContaining({ origin: 'manual', text: 'Digitado à mão' }));
-      expect(text(f)).toContain('Digitado à mão');
-    });
-
-    it('na falha permite tentar a síntese de novo', async () => {
-      synth.result = Promise.reject(new Error('x'));
-      await type('paste-text', 'colado');
-      await click('Sintetizar com IA');
-      synth.result = Promise.resolve('Agora foi');
-      await click('Tentar sintetizar de novo');
-
-      expect(area('draft-text').value).toBe('Agora foi');
-      expect(text(f)).toContain('Gerado por IA');
-    });
-
-    it('avisa quando a gravação falha e mantém o texto em revisão', async () => {
-      writer.fail = true;
-      await type('paste-text', 'x');
-      await click('Sintetizar com IA');
-      await click('Confirmar hipótese');
-
-      expect(text(f)).toContain('Não foi possível gravar');
-      expect(area('draft-text').value).toBe('Texto da IA');
-    });
-
-    it('offline: síntese e confirmação indisponíveis com mensagem de conexão necessária', async () => {
-      await type('paste-text', 'x');
-      await click('Sintetizar com IA');
-      TestBed.inject(ConnectivityService).online.set(false);
-      f.detectChanges();
-
-      expect(text(f)).toContain('Conexão necessária');
-      const buttons = Array.from(el().querySelectorAll('button'));
-
-      expect(buttons.find(b => b.textContent?.includes('Confirmar'))?.disabled).toBeTrue();
-
-      const instance = f.componentInstance as unknown as { confirm(): Promise<void>; synthesize(): Promise<void> };
-
-      await instance.confirm();
-      await instance.synthesize();
-
-      expect(writer.saved).toEqual([]);
-      expect(synth.calls.length).toBe(1);
-      TestBed.inject(ConnectivityService).online.set(true);
-    });
-  });
-
-  describe('atualização da Hipótese já preenchida', () => {
-    let f: ComponentFixture<PatientHubComponent>;
-    const el = (): HTMLElement => f.nativeElement as HTMLElement;
-    const area = (id: string): HTMLTextAreaElement =>
-      el().querySelector<HTMLTextAreaElement>(`#${id}`) as HTMLTextAreaElement;
-    const type = (id: string, value: string): void => typeInto(f, id, value);
-    const click = (label: string): Promise<void> => clickButton(f, label);
-
-    beforeEach(async () => {
-      synth.calls.length = 0;
-      synth.result = Promise.resolve('Texto da IA');
-      writer.saved.length = 0;
-      writer.fail = false;
-      f = await setup(new FakeSource());
-    });
-
-    it('o lápis do título abre a edição e "Recriar com IA" abre o fluxo da IA; o texto atual segue visível', async () => {
+      expect(text(f)).toContain('Diagnóstico novo.');
       expect(text(f)).toContain('Equipe responsável');
-      await clickLabel(f, 'Editar diagnóstico');
-
-      expect(text(f)).toContain('Recriar com IA');
-      expect(text(f)).not.toContain('Equipe responsável');
-      await click('Recriar com IA');
-
-      expect(text(f)).toContain('Insuficiência respiratória aguda.');
-      expect(text(f)).not.toContain('Ainda não há hipótese');
-      expect(text(f)).not.toContain('Recriar com IA');
+      expect(text(f)).toContain('Avaliação clínica');
     });
 
-    it('colar novo trecho → síntese → confirmar substitui a hipótese e grava origem ai', async () => {
-      await clickLabel(f, 'Editar diagnóstico');
-      await click('Recriar com IA');
-      type('paste-text', 'novo trecho');
-      await click('Sintetizar com IA');
+    it('sem perfil carregado, o lápis não abre nada', async () => {
+      const f = await setup(new FakeSource());
+      const hub = f.componentInstance as unknown as { profile: { set(v: null): void }; editDiagnosis(): void };
 
-      expect(text(f)).toContain('Gerado por IA');
-      await click('Confirmar hipótese');
+      hub.profile.set(null);
+      hub.editDiagnosis();
 
-      expect(writer.saved).toEqual([
-        jasmine.objectContaining({ author: 'Michelle', origin: 'ai', text: 'Texto da IA' }),
-      ]);
-
-      expect(writer.saved[0].at).toMatch(/^\d{4}-/);
-      expect(text(f)).toContain('Texto da IA');
-      expect(text(f)).toContain('Equipe responsável');
-      expect(el().querySelector('textarea:not(.input-chat__field)')).toBeNull();
-    });
-
-    it('cancelar mantém a hipótese anterior sem gravar', async () => {
-      await clickLabel(f, 'Editar diagnóstico');
-      await click('Recriar com IA');
-      await click('Cancelar');
-
-      expect(writer.saved).toEqual([]);
-      expect(text(f)).toContain('Insuficiência respiratória aguda.');
-      expect(el().querySelector('textarea:not(.input-chat__field)')).toBeNull();
-    });
-
-    it('texto vazio não aciona a IA; falha da IA libera digitação manual', async () => {
-      await clickLabel(f, 'Editar diagnóstico');
-      await click('Recriar com IA');
-      await click('Sintetizar com IA');
-
-      expect(synth.calls).toEqual([]);
-      synth.result = Promise.reject(new Error('x'));
-      type('paste-text', 'abc');
-      await click('Sintetizar com IA');
-      type('draft-text', 'Manual');
-      await click('Confirmar hipótese');
-
-      expect(writer.saved).toEqual([jasmine.objectContaining({ origin: 'manual', text: 'Manual' })]);
-    });
-
-    it('falha ao gravar mantém a hipótese anterior e informa', async () => {
-      writer.fail = true;
-      await clickLabel(f, 'Editar diagnóstico');
-      type('edit-text', 'Novo');
-      await click('Salvar');
-
-      expect(text(f)).toContain('Não foi possível gravar');
-      await click('Cancelar');
-
-      expect(text(f)).toContain('Insuficiência respiratória aguda.');
-    });
-
-    it('edição direta: mostra o texto atual editável e só substitui ao salvar (origem manual)', async () => {
-      await clickLabel(f, 'Editar diagnóstico');
-
-      expect(area('edit-text').value).toBe('Insuficiência respiratória aguda.');
-      expect(text(f)).not.toContain('Equipe responsável');
-      type('edit-text', '  Pneumonia  ');
-
-      expect(writer.saved).toEqual([]);
-      await click('Salvar');
-
-      expect(writer.saved).toEqual([
-        jasmine.objectContaining({ author: 'Michelle', origin: 'manual', patientId: 'p1', text: 'Pneumonia' }),
-      ]);
-
-      expect(text(f)).toContain('Pneumonia');
-      expect(el().querySelector('textarea:not(.input-chat__field)')).toBeNull();
-    });
-
-    it('edição direta: cancelar descarta; vazio não salva', async () => {
-      await clickLabel(f, 'Editar diagnóstico');
-      type('edit-text', '   ');
-      await click('Salvar');
-
-      expect(text(f)).toContain('Escreva a hipótese diagnóstica antes de confirmar.');
-      expect(writer.saved).toEqual([]);
-      await click('Cancelar');
-
-      expect(text(f)).toContain('Insuficiência respiratória aguda.');
-      expect(el().querySelector('textarea:not(.input-chat__field)')).toBeNull();
-    });
-
-    it('edição direta offline: salvar indisponível com mensagem; leitura continua', async () => {
-      await clickLabel(f, 'Editar diagnóstico');
-      TestBed.inject(ConnectivityService).online.set(false);
-      f.detectChanges();
-
-      expect(text(f)).toContain('Conexão necessária');
-      expect(text(f)).toContain('Insuficiência respiratória aguda.');
-      await (f.componentInstance as unknown as { confirm(): Promise<void> }).confirm();
-
-      expect(writer.saved).toEqual([]);
-      TestBed.inject(ConnectivityService).online.set(true);
-    });
-
-    it('a hipótese não muda sem ação explícita do profissional (FR-009)', async () => {
-      await clickLabel(f, 'Editar diagnóstico');
-      type('edit-text', 'rascunho não salvo');
-      f.detectChanges();
-      await f.whenStable();
-
-      expect(writer.saved).toEqual([]);
-      await click('Cancelar');
-
-      expect(text(f)).toContain('Insuficiência respiratória aguda.');
+      expect(TestBed.inject(AiAssistantService).view()).toBe('chat');
     });
   });
 
@@ -1260,6 +1022,55 @@ describe('PatientHubComponent', () => {
       expect(el().querySelector('[aria-label="Salvar avaliação nutricional e funcional"]')).not.toBeNull();
     });
 
+    it('o editor da Avaliação clínica avisa a tela ao salvar: os cards são lidos de novo', async () => {
+      const assistant = TestBed.inject(AiAssistantService);
+      const hub = f.componentInstance as unknown as { clinicalVersion(): number };
+
+      await clickLabel(f, 'Editar avaliação clínica');
+      const before = hub.clinicalVersion();
+      const inputs = assistant.activeAction()?.editor?.inputs as { saved: () => void };
+
+      inputs.saved();
+
+      expect(hub.clinicalVersion()).toBe(before + 1);
+    });
+
+    it('abrindo com ?data= de um dia anterior, o paciente fica em somente leitura: com os dados e sem botões de editar', async () => {
+      TestBed.resetTestingModule();
+      const g = await setup(new FakeSource(), 'p1', undefined, undefined, { data: '2026-05-20' });
+      const root = g.nativeElement as HTMLElement;
+      const hub = g.componentInstance as unknown as { day(): Date; readOnly(): boolean };
+
+      expect(hub.day().getDate()).toBe(20);
+      expect(hub.readOnly()).toBeTrue();
+      expect(root.textContent).toContain('Insuficiência respiratória aguda.');
+      expect(root.querySelectorAll('app-section-header app-icon-button').length).toBe(0);
+      expect(root.textContent).not.toContain('Evoluir Paciente');
+      expect(root.querySelector('app-empty-card button:not(:disabled)')).toBeNull();
+    });
+
+    for (const raw of ['lixo', '2999-01-01', '2026-13-45']) {
+      it(`?data=${raw} (inválida ou futura) abre em hoje, no modo normal`, async () => {
+        TestBed.resetTestingModule();
+        const g = await setup(new FakeSource(), 'p1', undefined, undefined, { data: raw });
+        const hub = g.componentInstance as unknown as { readOnly(): boolean };
+
+        expect(hub.readOnly()).toBeFalse();
+      });
+    }
+
+    it('voltar no tempo pela faixa de datas também leva ao modo somente leitura', async () => {
+      const hub = f.componentInstance as unknown as { day: { set(d: Date): void }; readOnly(): boolean };
+
+      expect(el().textContent).toContain('Evoluir Paciente');
+
+      hub.day.set(new Date(2026, 4, 20));
+      f.detectChanges();
+
+      expect(hub.readOnly()).toBeTrue();
+      expect(el().textContent).not.toContain('Evoluir Paciente');
+    });
+
     it('escolher outro dia na faixa de datas passa o dia às Evoluções', async () => {
       const before = el().querySelector('app-patient-evolutions');
       const strip = f.debugElement.query(By.directive(DateStripComponent)).componentInstance as DateStripComponent;
@@ -1291,11 +1102,12 @@ describe('PatientHubComponent', () => {
       f = await setup(new FakeSource());
     });
 
-    it('tem a faixa de datas no cabeçalho (3 dias) e outra na coluna do paciente (mobile)', () => {
-      const header = el().querySelector('app-page-header app-date-strip');
-      const column = el().querySelector('.hub__group app-date-strip');
+    it('a faixa de datas flutua na linha do leito (3 dias) e há outra na coluna do paciente (mobile)', () => {
+      const floating = el().querySelector('.hub__bed-row app-date-strip');
+      const column = el().querySelector('.hub__group > app-date-strip');
 
-      expect(header?.classList).toContain('date-strip--header');
+      expect(el().querySelector('app-page-header app-date-strip')).toBeNull();
+      expect(floating?.classList).toContain('date-strip--header');
       expect(column?.classList).not.toContain('date-strip--header');
     });
 

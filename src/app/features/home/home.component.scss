@@ -292,3 +292,59 @@
 
   @include typography.body-md;
 }
+
+// Linha do hospital: seletor, "Iniciar turno de trabalho" (16px ao lado) e, à direita, "Cadastrar hospital".
+.home__hospital-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  align-self: stretch;
+  gap: tokens.$space-16;
+}
+
+.home__register-hospital {
+  margin-inline-start: auto;
+}
+
+// Equipe em turno no hospital.
+.home__team {
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$space-8;
+}
+
+.home__team-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: tokens.$space-8;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.home__team-item {
+  display: flex;
+  align-items: center;
+  gap: tokens.$space-12;
+  padding: tokens.$space-12 tokens.$space-16;
+  border: 1px solid tokens.c(border);
+  border-radius: tokens.$radius-md;
+  background: tokens.c(surface);
+}
+
+.home__team-text {
+  display: flex;
+  flex-direction: column;
+}
+
+.home__team-name {
+  color: tokens.c(content-1);
+
+  @include typography.label-lg;
+}
+
+.home__team-meta {
+  color: tokens.c(content-4);
+
+  @include typography.caption;
+}
