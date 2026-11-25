@@ -54,7 +54,7 @@ export class CardPatientsComponent {
   // exibir a mensagem de "todos atendidos" (em vez do título, que fica
   // oculto) — decisão do usuário em 2026-07-25, substitui o comportamento
   // anterior (mensagem no título, subtítulo oculto).
-  protected readonly subtitle = computed(() => (this.isZero() ? 'metas médias do dia' : 'aguardando atendimento hoje'));
+  protected readonly subtitle = computed(() => 'aguardando atendimento hoje');
 
   // FR-004: CTA desabilitado quando não há pacientes OU quando o consumidor
   // desabilita explicitamente a ação.

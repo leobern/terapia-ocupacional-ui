@@ -85,6 +85,8 @@ export class GraphMetaComponent {
   readonly ariaLabel = input.required<string>();
   /** Texto no centro do anel (ex.: nº de pacientes) — só no size="large". */
   readonly centerLabel = input<string>('');
+  /** Os dois anéis ficam verdes (ex.: tudo concluído), em vez do verde e azul de cada aporte. */
+  readonly allSuccess = input(false);
 
   protected readonly clampedTop = computed(() => clamp(this.topPercentage()));
   protected readonly clampedBottom = computed(() => clamp(this.bottomPercentage()));
@@ -121,5 +123,10 @@ export class GraphMetaComponent {
   );
 
   protected readonly outerColor = computed(() => colorForPercentage(this.clampedTop(), 'var(--color-comm-success)'));
-  protected readonly innerColor = computed(() => colorForPercentage(this.clampedBottom(), 'var(--color-secondary)'));
+  protected readonly innerColor = computed(() =>
+    colorForPercentage(
+      this.clampedBottom(),
+      this.allSuccess() ? 'var(--color-comm-success)' : 'var(--color-secondary)',
+    ),
+  );
 }
