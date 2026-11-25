@@ -1,4 +1,4 @@
-import { Injectable, signal } from '@angular/core';
+import { computed, Injectable, signal } from '@angular/core';
 
 /**
  * Allowlist de preferências NÃO sensíveis que sobrevivem ao logout (único lugar a manter).
@@ -46,7 +46,11 @@ function readItem(key: string): string | null {
  */
 @Injectable({ providedIn: 'root' })
 export class LocalSessionStore {
+  /** Access token como sinal: quem deriva dele (ex.: perfil) reage a login, renovação e logout. */
+  readonly accessTokenSignal = computed(() => this.token());
+
   private readonly valid = signal(readItem(SESSION_REFRESH_TOKEN_KEY) !== null);
+  private readonly token = signal<string | null>(readItem(SESSION_ACCESS_TOKEN_KEY));
 
   isValid(): boolean {
     return this.valid();
@@ -64,12 +68,14 @@ export class LocalSessionStore {
   open(tokens: SessionTokens): void {
     localStorage.setItem(SESSION_ACCESS_TOKEN_KEY, tokens.accessToken);
     localStorage.setItem(SESSION_REFRESH_TOKEN_KEY, tokens.refreshToken);
+    this.token.set(tokens.accessToken);
     this.valid.set(true);
   }
 
   /** Troca só o `accessToken` (renovação transparente, RN-05). */
   updateAccessToken(accessToken: string): void {
     localStorage.setItem(SESSION_ACCESS_TOKEN_KEY, accessToken);
+    this.token.set(accessToken);
   }
 
   /**
@@ -79,6 +85,7 @@ export class LocalSessionStore {
    */
   clear(): void {
     this.valid.set(false);
+    this.token.set(null);
     removeAllExceptPreserved(localStorage);
     removeAllExceptPreserved(sessionStorage);
   }

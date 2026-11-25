@@ -8,7 +8,7 @@
     <app-nav-menu
       [activeItem]="activeNavItem()"
       [open]="menuOpen()"
-      [disabledItems]="disabledNavItems"
+      [disabledItems]="disabledNavItems()"
       (closed)="menuOpen.set(false)"
       (logoClick)="aiAssistant.openPanel()"
       (homeClick)="onHomeClick()"

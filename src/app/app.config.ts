@@ -47,8 +47,8 @@ import { HospitalInviteApiService } from './features/hospital-team/hospital-invi
 import { HospitalInvitePort, ManagerAccessReader } from './features/hospital-team/hospital-invite-port';
 import { ProfessionalAccessApiService } from './features/hospital-team/professional-access-api.service';
 import { ProfessionalAccessRevoker, ProfessionalAccessSource } from './features/hospital-team/professional-access-port';
-import { ProvisionalManagerAccess } from './features/hospital-team/provisional-manager-access';
 import { ProvisionalProfessionalAccess } from './features/hospital-team/provisional-professional-access';
+import { SessionManagerAccess } from './features/hospital-team/session-manager-access';
 import { AuthGateway } from './features/login/auth-gateway';
 import { HttpAuthGateway } from './features/login/http-auth-gateway';
 import { AnnouncementAssistant } from './features/notifications/assistant/announcement-assistant';
@@ -149,7 +149,7 @@ import { TutorialApiService } from './features/tutorial/tutorial-api.service';
 import { TutorialStateStore } from './features/tutorial/tutorial-state';
 import { WelcomeApiService } from './features/welcome/welcome-api.service';
 import { WelcomeSource } from './features/welcome/welcome-source';
-import { ProvisionalSessionRoleReader } from './shared/auth/provisional-session-role-reader';
+import { JwtSessionRoleReader } from './shared/auth/jwt-session-role-reader';
 import { SessionRoleReader } from './shared/auth/session-role';
 import { DEV_BACKEND_PROVIDERS } from './shared/dev-backend/dev-backend.providers';
 import { devTokenInterceptor } from './shared/dev-backend/dev-token.interceptor';
@@ -239,10 +239,10 @@ export const appConfig: ApplicationConfig = {
     ProvisionalProfessionalAccess,
     { provide: ProfessionalAccessSource, useExisting: ProvisionalProfessionalAccess },
     { provide: ProfessionalAccessRevoker, useClass: ProfessionalAccessApiService },
-    { provide: ManagerAccessReader, useClass: ProvisionalManagerAccess },
+    { provide: ManagerAccessReader, useClass: SessionManagerAccess },
     { provide: UserDirectory, useClass: ProvisionalUserDirectory },
     { provide: AnnouncementAssistant, useClass: ProvisionalAnnouncementAssistant },
-    { provide: SessionRoleReader, useClass: ProvisionalSessionRoleReader },
+    { provide: SessionRoleReader, useClass: JwtSessionRoleReader },
     { provide: PatientDuplicateSource, useClass: PatientDuplicateApiService },
     { provide: FormulasApi, useClass: ProvisionalFormulasApi },
     // Consultas de leitura do assistente (um resolvedor por intenção).

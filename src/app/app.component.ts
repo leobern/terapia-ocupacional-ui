@@ -71,8 +71,9 @@ export class AppComponent {
   readonly menuOpen = signal(false);
 
   /** Itens do menu sem acesso para o perfil atual (Farmácia é exclusiva do gestor). */
-  protected readonly disabledNavItems: readonly NavMenuItemKey[] =
-    inject(SessionRoleReader).read() === Role.GESTOR ? [] : ['farmacia'];
+  protected readonly disabledNavItems = computed<readonly NavMenuItemKey[]>(() =>
+    this.roleReader.read() === Role.GESTOR ? [] : ['farmacia'],
+  );
 
   protected readonly viewportBreakpoint = inject(ViewportBreakpointService);
   /** Rotas com `data.hideShell` (ex.: splash) ocultam a navegação e o assistente. */
@@ -149,6 +150,7 @@ export class AppComponent {
     { id: 'meta-nutricional', label: 'Pacientes fora da meta nutricional' },
   ];
 
+  private readonly roleReader = inject(SessionRoleReader);
   private readonly screenActions = inject(ScreenActionsService);
   private readonly logoutService = inject(LogoutService);
   private readonly router = inject(Router);

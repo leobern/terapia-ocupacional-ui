@@ -10,7 +10,6 @@ import { HospitalInviteComponent } from './hospital-invite.component';
 import { managerOnlyGuard } from './hospital-invite.guard';
 import { InviteLookup } from './hospital-invite.models';
 import { HospitalInvitePort, ManagerAccessReader } from './hospital-invite-port';
-import { ProvisionalManagerAccess } from './provisional-manager-access';
 
 class FakePort extends HospitalInvitePort {
   confirmed: number[] = [];
@@ -246,10 +245,6 @@ describe('HospitalInviteComponent', () => {
 });
 
 describe('Guarda de gestor', () => {
-  it('acesso provisório é de gestor', () => {
-    expect(new ProvisionalManagerAccess().isManager()).toBeTrue();
-  });
-
   it('guarda: gestor passa; outros perfis vão para a Home', () => {
     let manager = false;
 
