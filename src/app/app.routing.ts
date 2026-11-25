@@ -113,8 +113,14 @@ export const routes: Routes = [
     path: 'patients/:id',
     loadComponent: () => import('./features/patient-hub/patient-hub.component').then(m => m.PatientHubComponent),
   },
+  // LockScreen (US-001-1-08): bloqueio por inatividade, sem o shell de navegação.
+  {
+    path: 'lock',
+    data: { hideShell: true },
+    loadComponent: () => import('./features/auth/lock/lock-screen.component').then(m => m.LockScreenComponent),
+  },
   // Placeholders das telas de outras stories (ver PendingScreenComponent).
-  ...(['login', 'lock', 'hospital-links'] as const).map(path => ({
+  ...(['login', 'hospital-links'] as const).map(path => ({
     path,
     data: { screen: path },
     loadComponent: () =>

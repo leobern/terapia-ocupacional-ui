@@ -1,5 +1,5 @@
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
-import { ApplicationConfig, provideZoneChangeDetection } from '@angular/core';
+import { ApplicationConfig, inject, provideAppInitializer, provideZoneChangeDetection } from '@angular/core';
 import { provideRouter } from '@angular/router';
 import { environment } from '@environments/environment';
 import { provideEffects } from '@ngrx/effects';
@@ -7,6 +7,7 @@ import { provideRouterStore } from '@ngrx/router-store';
 import { provideStore } from '@ngrx/store';
 
 import { routes } from './app.routing';
+import { InactivityLockService } from './features/auth/lock/inactivity-lock.service';
 import { NoopSessionRevoker } from './features/auth/noop-session-revoker';
 import { SessionRevoker } from './features/auth/session-revoker';
 import {
@@ -231,6 +232,8 @@ export const appConfig: ApplicationConfig = {
     { provide: FormulasApi, useClass: ProvisionalFormulasApi },
     // Consultas de leitura do assistente (um resolvedor por intenção).
     { multi: true, provide: ASSISTANT_QUERY_RESOLVERS, useClass: PendingNotificationsQueryResolver },
+    // Observa segundo plano/primeiro plano para o bloqueio por inatividade (US-001-1-08).
+    provideAppInitializer(() => inject(InactivityLockService).start()),
     provideZoneChangeDetection({ eventCoalescing: true }),
     provideRouter(routes),
     provideHttpClient(withInterceptors(environment.devBackend ? [devTokenInterceptor] : [])),

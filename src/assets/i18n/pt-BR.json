@@ -51,6 +51,10 @@
     },
     "stale": "Os dados podem estar desatualizados. Sem conexão no momento."
   },
+  "lock": {
+    "title": "App bloqueado",
+    "message": "Por segurança, o app foi bloqueado após 30 minutos sem uso."
+  },
   "logout": {
     "cancel": "Cancelar",
     "confirm": "Sair",

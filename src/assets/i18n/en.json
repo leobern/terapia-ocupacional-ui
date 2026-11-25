@@ -51,6 +51,10 @@
     },
     "stale": "Data may be out of date. No connection right now."
   },
+  "lock": {
+    "title": "App locked",
+    "message": "For your security, the app was locked after 30 minutes of inactivity."
+  },
   "logout": {
     "cancel": "Cancel",
     "confirm": "Sign out",
