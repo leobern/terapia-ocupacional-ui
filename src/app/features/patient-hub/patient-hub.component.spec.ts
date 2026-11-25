@@ -35,6 +35,7 @@ import { FormulasApi } from '../pharmacy/formulas-api';
 import { AssessmentAiStructurer } from './assessment/assessment-ai-structurer';
 import { AssessmentSource } from './assessment/assessment-source';
 import { AssessmentWriter } from './assessment/assessment-writer';
+import { LocationChangePort, LocationExtractor } from './change-location/location-change.port';
 import { ClinicalAssessmentSource } from './clinical-assessment/clinical-assessment-source';
 import { ClinicalItemHistorySource } from './clinical-assessment/clinical-item-history-source';
 import { ProvisionalClinicalAssessmentSource } from './clinical-assessment/provisional-clinical-assessment-source';
@@ -45,7 +46,7 @@ import { DailyRecordWriter } from './daily-record/daily-record-writer';
 import { EvolutionAiStructurer } from './daily-record/evolution-ai-structurer';
 import { ParameterAiStructurer } from './daily-record/parameter-ai-structurer';
 import { MessageAiAssistant, PatientMessageSource, PatientTeamSource } from './messages/patient-message-source';
-import { BedMovementPort } from './move-bed/bed-movement.port';
+import { BedMovementPort, BedOccupancyPort } from './move-bed/bed-movement.port';
 import { BedNumberExtractor } from './move-bed/bed-number-extractor';
 import {
   DIAGNOSIS_FAILED_HINT,
@@ -244,7 +245,10 @@ async function setup(
       },
       { provide: PatientHubSource, useValue: source },
       { provide: BedMovementPort, useValue: { resolve: (): Promise<never> => Promise.reject(new Error('x')) } },
+      { provide: BedOccupancyPort, useValue: { check: (): Promise<never> => Promise.reject(new Error('x')) } },
       { provide: BedNumberExtractor, useValue: { extract: (): null => null } },
+      { provide: LocationChangePort, useValue: {} },
+      { provide: LocationExtractor, useValue: { extract: (): null => null } },
       { provide: LinkRevocationChecker, useValue: revocation },
       { provide: DailyAdequacyService, useValue: adequacy },
       { provide: HypothesisSynthesizer, useValue: synth },
@@ -457,6 +461,7 @@ describe('PatientHubComponent', () => {
         'Registro diário',
         'Observação ou mensagem',
         'Movimentar leito',
+        'Alterar unidade/ala',
         'Ajustar a prescrição',
         'Revisão da prescrição',
       ]);
@@ -500,7 +505,7 @@ describe('PatientHubComponent', () => {
         TestBed.inject(ScreenActionsService)
           .actions()
           .map(a => a.label),
-      ).toEqual(['Registro diário', 'Observação ou mensagem', 'Movimentar leito']);
+      ).toEqual(['Registro diário', 'Observação ou mensagem', 'Movimentar leito', 'Alterar unidade/ala']);
     });
 
     it('médico abre a revisão da prescrição pelos atalhos e fecha com Esc', async () => {

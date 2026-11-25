@@ -3,6 +3,9 @@ import { provideRouter, Router } from '@angular/router';
 
 import { ScreenActionsService } from '../../shared/services/screen-actions.service';
 import { ManagerAccessReader } from '../hospital-team/hospital-invite-port';
+import { LocationChangePort, LocationExtractor } from '../patient-hub/change-location/location-change.port';
+import { BedMovementPort, BedOccupancyPort } from '../patient-hub/move-bed/bed-movement.port';
+import { BedNumberExtractor } from '../patient-hub/move-bed/bed-number-extractor';
 import { DailyPatientsSource, DailyPatientsSummary } from './daily-patients';
 import { HomeComponent } from './home.component';
 import { HomeNotification, NotificationPage } from './home.models';
@@ -85,6 +88,12 @@ interface SetupOptions {
 }
 
 describe('HomeComponent', () => {
+  let byNameCalls: unknown[][] = [];
+
+  beforeEach(() => {
+    byNameCalls = [];
+  });
+
   let fixture: ComponentFixture<HomeComponent>;
   let patients: FakePatients;
   let navigate: jasmine.Spy;
@@ -118,6 +127,19 @@ describe('HomeComponent', () => {
     await TestBed.configureTestingModule({
       imports: [HomeComponent],
       providers: [
+        {
+          provide: BedMovementPort,
+          useValue: {
+            resolveByName: (...args: unknown[]): Promise<never> => (
+              byNameCalls.push(args),
+              Promise.reject(new Error('x'))
+            ),
+          },
+        },
+        { provide: BedNumberExtractor, useValue: {} },
+        { provide: LocationChangePort, useValue: {} },
+        { provide: LocationExtractor, useValue: { extract: (): null => null } },
+        { provide: BedOccupancyPort, useValue: {} },
         provideRouter([]),
         { provide: DailyPatientsSource, useValue: patients },
         { provide: HomeNotificationsSource, useValue: feed },
@@ -893,6 +915,19 @@ describe('HomeComponent', () => {
     });
   });
 
+  it('registra "Movimentar leito" citando o paciente e busca só no hospital ativo (US-002-2-02)', async () => {
+    await setup();
+    const action = TestBed.inject(ScreenActionsService)
+      .actions()
+      .find(a => a.id === 'move-bed');
+
+    await action?.conversation
+      ?.submit({ request: JSON.stringify({ bed: '210', name: 'Beatriz Ramos Costa' }) })
+      .catch(() => undefined);
+
+    expect(byNameCalls).toEqual([[1, 'Beatriz Ramos Costa', '210']]);
+  });
+
   describe('atalho do gestor (FT-009-1)', () => {
     it('gestor vê "Convidar profissional" nos atalhos e ele navega ao convite', async () => {
       await setup();
@@ -901,6 +936,11 @@ describe('HomeComponent', () => {
         imports: [HomeComponent],
         providers: [
           provideRouter([]),
+          { provide: BedMovementPort, useValue: {} },
+          { provide: BedNumberExtractor, useValue: {} },
+          { provide: LocationChangePort, useValue: {} },
+          { provide: LocationExtractor, useValue: { extract: (): null => null } },
+          { provide: BedOccupancyPort, useValue: {} },
           { provide: DailyPatientsSource, useValue: new FakePatients() },
           { provide: HomeNotificationsSource, useValue: new FakeNotifications() },
           { provide: LinkRevocationChecker, useValue: { isRevoked: (): Promise<boolean> => Promise.resolve(false) } },

@@ -29,6 +29,7 @@ import { LinkRevocationChecker } from '../home/link-revocation-checker';
 import { NOW, ProfessionalProfileReader } from '../home/professional-profile';
 import { UnreadNotificationsReader } from '../home/unread-notifications-reader';
 import { AssessmentSource } from './assessment/assessment-source';
+import { ChangeLocationAction } from './change-location/change-location.action';
 import { MeasureChartComponent } from './charts/measure-chart.component';
 import { ClinicalAssessmentEditorComponent } from './clinical-assessment/clinical-assessment-editor.component';
 import { ClinicalAssessmentSource } from './clinical-assessment/clinical-assessment-source';
@@ -232,6 +233,7 @@ export class PatientHubComponent implements OnInit {
   private readonly editing = signal<'paste' | 'edit' | null>(null);
   private readonly screenActions = inject(ScreenActionsService);
   private readonly moveBed = inject(MoveBedAction);
+  private readonly changeLocation = inject(ChangeLocationAction);
   private readonly source = inject(PatientHubSource);
   private readonly prescriptions = inject(PrescriptionSource);
   private readonly adequacyService = inject(DailyAdequacyService);
@@ -277,7 +279,10 @@ export class PatientHubComponent implements OnInit {
 
         // US-002-2-01: o paciente em contexto é o da tela; o pedido vai para a internação mais recente dele.
         if (profile) {
-          actions.push(this.moveBed.build({ id: profile.id, name: profile.name }));
+          actions.push(
+            this.moveBed.build({ id: profile.id, name: profile.name }),
+            this.changeLocation.build({ id: profile.id, name: profile.name }),
+          );
         }
         if (this.professional.read().role === 'doctor') {
           actions.push(

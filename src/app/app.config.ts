@@ -53,6 +53,9 @@ import { AssessmentSource } from './features/patient-hub/assessment/assessment-s
 import { AssessmentWriter } from './features/patient-hub/assessment/assessment-writer';
 import { ProvisionalAssessmentAiStructurer } from './features/patient-hub/assessment/provisional-assessment-ai-structurer';
 import { ProvisionalAssessmentSource } from './features/patient-hub/assessment/provisional-assessment-source';
+import { LocationChangePort, LocationExtractor } from './features/patient-hub/change-location/location-change.port';
+import { LocationChangeApiService } from './features/patient-hub/change-location/location-change-api.service';
+import { ProvisionalLocationExtractor } from './features/patient-hub/change-location/provisional-location-extractor';
 import { ClinicalAssessmentSource } from './features/patient-hub/clinical-assessment/clinical-assessment-source';
 import { ClinicalItemHistorySource } from './features/patient-hub/clinical-assessment/clinical-item-history-source';
 import { ProvisionalClinicalAssessmentSource } from './features/patient-hub/clinical-assessment/provisional-clinical-assessment-source';
@@ -76,10 +79,13 @@ import {
   ProvisionalPatientMessageSource,
   ProvisionalPatientTeamSource,
 } from './features/patient-hub/messages/provisional-patient-message';
-import { BedMovementPort } from './features/patient-hub/move-bed/bed-movement.port';
+import { BedMovementPort, BedOccupancyPort } from './features/patient-hub/move-bed/bed-movement.port';
 import { BedMovementApiService } from './features/patient-hub/move-bed/bed-movement-api.service';
 import { BedNumberExtractor } from './features/patient-hub/move-bed/bed-number-extractor';
+import { BedOccupancyApiService } from './features/patient-hub/move-bed/bed-occupancy-api.service';
+import { PatientNameExtractor } from './features/patient-hub/move-bed/patient-name-extractor';
 import { ProvisionalBedNumberExtractor } from './features/patient-hub/move-bed/provisional-bed-number-extractor';
+import { ProvisionalPatientNameExtractor } from './features/patient-hub/move-bed/provisional-patient-name-extractor';
 import {
   HypothesisSynthesizer,
   HypothesisWriter,
@@ -158,7 +164,11 @@ export const appConfig: ApplicationConfig = {
     { provide: PatientCreationPort, useClass: PacientesApiService },
     { provide: InternacaoCreationPort, useClass: InternacoesApiService },
     { provide: BedMovementPort, useClass: BedMovementApiService },
+    { provide: BedOccupancyPort, useClass: BedOccupancyApiService },
+    { provide: LocationChangePort, useClass: LocationChangeApiService },
+    { provide: LocationExtractor, useClass: ProvisionalLocationExtractor },
     { provide: BedNumberExtractor, useClass: ProvisionalBedNumberExtractor },
+    { provide: PatientNameExtractor, useClass: ProvisionalPatientNameExtractor },
     { provide: PatientListAiCommandPort, useClass: ProvisionalPatientListAiCommand },
     ProvisionalPatientMessages,
     { provide: PatientMessagesSource, useExisting: ProvisionalPatientMessages },

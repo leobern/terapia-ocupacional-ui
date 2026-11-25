@@ -139,6 +139,308 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/MovimentacaoLeitoErrorResponse"
+  /api/v1/pacientes/{pacienteId}/internacoes/{internacaoId}/movimentacao-leito/confirmar:
+    post:
+      operationId: confirmarMovimentacaoLeito
+      x-implemented: true
+      summary: Aplica a mudança de leito da internação após o usuário confirmar com "Sim"
+      description: >
+        US-002-2-03 (RN-02). Chamada somente depois que o chatbot exibiu o resumo da alteração
+        (paciente, campo, valor atual, valor novo; dados já devolvidos por resolverMovimentacaoLeito)
+        e o usuário respondeu "Sim". Atualiza bedNumber da internação informada e devolve a
+        internação atualizada. RN-03: responder "Não" cancela no cliente; nenhuma chamada é feita
+        e nada é alterado. A interpretação de "sim"/"não" é do chatbot (fora de escopo).
+        US-002-2-05 (RN-01, RN-02): na mesma transação, grava um registro de histórico
+        imutável (somente insert; sem operação de edição/remoção e sem endpoint de leitura,
+        a exibição é de outra US) com fieldChanged=LEITO (enum LEITO|UNIDADE|ALA),
+        previousValue (bedNumber anterior; vazio se não havia), newValue (não vazio),
+        changedAt (instante da confirmação, gerado no servidor) e changedBy (usuário do JWT).
+        Nada disso é enviado pelo cliente nem muda a resposta. O alerta de leito ocupado
+        (US-002-2-04) é uma consulta separada (verificarOcupacaoLeito) e não bloqueia. Requer vínculo aprovado com o hospital do paciente.
+        newBedNumber ausente, nulo ou em branco: 422 field=newBedNumber, code=MSG-12.
+        Internação inexistente ou de outro paciente: 404.
+      parameters:
+        - name: pacienteId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: internacaoId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ConfirmarMovimentacaoLeitoRequest"
+      responses:
+        "200":
+          description: Leito atualizado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Internacao"
+        "400":
+          $ref: "#/components/responses/Error"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          description: Profissional sem vínculo aprovado com o hospital do paciente
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Paciente ou internação não encontrados
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "422":
+          description: MSG-12 (leito não identificado)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MovimentacaoLeitoErrorResponse"
+  /api/v1/pacientes/{pacienteId}/internacoes/movimentacao-leito/ocupacao:
+    get:
+      operationId: verificarOcupacaoLeito
+      x-implemented: true
+      summary: Verifica se o leito de destino já está ocupado por outro paciente do mesmo hospital
+      description: >
+        US-002-2-04. Consulta sem efeito colateral, chamada antes de exibir a confirmação
+        da movimentação (US-002-2-03). Requer vínculo aprovado do profissional com o
+        hospital do paciente.
+        RN-01: o leito está ocupado quando o bedNumber da internação mais recente (maior
+        createdAt, desempate por maior id) de OUTRO paciente do mesmo hospital é igual a
+        newBedNumber (comparação após remover espaços nas pontas, sem distinguir
+        maiúsculas/minúsculas). A internação do próprio paciente é ignorada.
+        RN-02: ocupado => occupied=true e occupants com o nome de cada paciente que ocupa o
+        leito; o alerta não bloqueia a continuidade (nenhum erro é retornado).
+        RN-03: livre => occupied=false e occupants vazio.
+        newBedNumber ausente ou em branco => 422 field=newBedNumber, code=MSG-12.
+        Paciente sem internação => 422 code=MSG-11 (mesmas regras de resolverMovimentacaoLeito).
+      parameters:
+        - name: pacienteId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: newBedNumber
+          in: query
+          required: true
+          schema:
+            type: string
+            maxLength: 20
+      responses:
+        "200":
+          description: Situação de ocupação do leito de destino
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OcupacaoLeito"
+        "400":
+          $ref: "#/components/responses/Error"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          description: Profissional sem vínculo aprovado com o hospital do paciente
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Paciente não encontrado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "422":
+          description: MSG-11 (paciente sem internação) ou MSG-12 (leito não identificado)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MovimentacaoLeitoErrorResponse"
+  /api/v1/pacientes/movimentacao-leito/resolver-por-nome:
+    post:
+      operationId: resolverMovimentacaoLeitoPorNome
+      x-implemented: true
+      summary: Identifica o paciente pelo nome na mensagem e associa o pedido à internação mais recente
+      description: >
+        US-002-2-02. Para quando o usuário não está no contexto de um paciente. Sem efeito
+        colateral. A extração de nome e leito da mensagem é do chatbot (fora de escopo).
+        Requer vínculo aprovado com o hospital informado; a busca é restrita aos pacientes
+        desse hospital (RN-01), comparando fullName sem diferenciar acentuação, caixa e
+        espaços repetidos (mesma regra de checkPatientDuplicate).
+        RN-02: exatamente um paciente, 200 com status=ENCONTRADO e `resolvida` igual ao
+        resultado de resolverMovimentacaoLeito (internação mais recente). Nesse caso valem
+        os mesmos erros 422 dessa operação: MSG-11 (sem internação) e MSG-12 (leito não identificado).
+        RN-03: mais de um paciente, 200 com status=MULTIPLOS e `candidatos` (id, nome, data de
+        nascimento, SAME); o chatbot pede a escolha e então chama resolverMovimentacaoLeito
+        com o id escolhido. MSG-12 não é avaliada neste caso.
+        RN-04: nenhum paciente, 404 com code=MSG-13 e message
+        "Não encontrei nenhum paciente com esse nome neste hospital."
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ResolverMovimentacaoLeitoPorNomeRequest"
+      responses:
+        "200":
+          description: Um paciente (ENCONTRADO) ou mais de um (MULTIPLOS)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MovimentacaoLeitoPorNomeResultado"
+        "400":
+          $ref: "#/components/responses/Error"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          description: Profissional sem vínculo aprovado com o hospital informado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: MSG-13 (nenhum paciente com esse nome no hospital)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MovimentacaoLeitoErrorResponse"
+        "422":
+          description: MSG-11 (paciente sem internação) ou MSG-12 (leito não identificado)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MovimentacaoLeitoErrorResponse"
+  /api/v1/pacientes/{pacienteId}/internacoes/localizacao/resolver:
+    post:
+      operationId: resolverAlteracaoLocalizacao
+      x-implemented: true
+      summary: Prévia da alteração de unidade ou ala na internação mais recente do paciente
+      description: >
+        US-002-2-06 (RN-01, RN-03). Operação sem efeito colateral: não grava nada. A extração
+        do tipo (Unidade/Ala) e do valor da mensagem é do chatbot (fora de escopo); o cliente
+        envia locationType e locationValue já extraídos. Associa o pedido à internação mais
+        recente (maior createdAt, desempate por maior id) e devolve action=CREATE quando a
+        internação não tem linha do tipo informado (ex.: "Unidade: UTI") ou action=UPDATE quando
+        já tem (ex.: Ala Sul para Ala Norte, currentValue=Ala Sul). Como há no máximo uma linha
+        por tipo (US-002-1-07), o limite de 2 linhas nunca é excedido e não há erro de limite;
+        a terceira linha não é possível. Requer vínculo aprovado com o hospital do paciente.
+        Paciente sem internação: 422 code=MSG-11. locationType ausente ou fora do enum: 422
+        field=locationType, code=MSG-09. locationValue ausente/em branco: 422 field=locationValue,
+        code=MSG-10.
+      parameters:
+        - name: pacienteId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AlteracaoLocalizacaoRequest"
+      responses:
+        "200":
+          description: Prévia da alteração
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AlteracaoLocalizacaoResolvida"
+        "400":
+          $ref: "#/components/responses/Error"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          description: Profissional sem vínculo aprovado com o hospital do paciente
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Paciente não encontrado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "422":
+          description: MSG-11 (sem internação), MSG-09 (tipo inválido) ou MSG-10 (valor vazio)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AlteracaoLocalizacaoErrorResponse"
+  /api/v1/pacientes/{pacienteId}/internacoes/{internacaoId}/localizacao/confirmar:
+    post:
+      operationId: confirmarAlteracaoLocalizacao
+      x-implemented: true
+      summary: Cria ou atualiza a linha de unidade/ala da internação após o usuário confirmar com "Sim"
+      description: >
+        US-002-2-06 (RN-02, RN-03). Chamada somente depois da confirmação (padrão de
+        confirmarMovimentacaoLeito); "Não" cancela no cliente. Cria a linha do tipo informado
+        se não existir, ou atualiza o valor da existente. Na mesma transação grava o histórico
+        imutável (US-002-2-05) com fieldChanged=UNIDADE ou ALA, previousValue (vazio quando a
+        linha foi criada), newValue, changedAt (servidor) e changedBy (usuário do JWT).
+        Devolve a internação atualizada. Requer vínculo aprovado com o hospital do paciente.
+        Internação inexistente ou de outro paciente: 404. Validações como em resolverAlteracaoLocalizacao.
+      parameters:
+        - name: pacienteId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: internacaoId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AlteracaoLocalizacaoRequest"
+      responses:
+        "200":
+          description: Linha criada ou atualizada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Internacao"
+        "400":
+          $ref: "#/components/responses/Error"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          description: Profissional sem vínculo aprovado com o hospital do paciente
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Paciente ou internação não encontrados
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "422":
+          description: MSG-09 (tipo inválido) ou MSG-10 (valor vazio)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AlteracaoLocalizacaoErrorResponse"
 components:
   securitySchemes:
     bearerAuth:
@@ -255,6 +557,53 @@ components:
         createdAt:
           type: string
           format: date-time
+    AlteracaoLocalizacaoRequest:
+      type: object
+      required: [locationType, locationValue]
+      properties:
+        locationType:
+          type: string
+          enum: [UNIDADE, ALA]
+        locationValue:
+          type: string
+          maxLength: 100
+          description: Valor extraído pelo chatbot; não vazio (MSG-10)
+    AlteracaoLocalizacaoResolvida:
+      type: object
+      required: [pacienteId, internacaoId, locationType, action, newValue]
+      properties:
+        pacienteId:
+          type: integer
+          format: int64
+        internacaoId:
+          type: integer
+          format: int64
+        locationType:
+          type: string
+          enum: [UNIDADE, ALA]
+        action:
+          type: string
+          enum: [CREATE, UPDATE]
+          description: CREATE quando a internação não tem linha do tipo; UPDATE quando já tem
+        currentValue:
+          type: string
+          nullable: true
+          description: Valor atual da linha; nulo quando action=CREATE
+        newValue:
+          type: string
+    AlteracaoLocalizacaoErrorResponse:
+      allOf:
+        - $ref: "#/components/schemas/ErrorResponse"
+        - type: object
+          required: [code]
+          properties:
+            field:
+              type: string
+              enum: [locationType, locationValue]
+              description: Ausente em MSG-11
+            code:
+              type: string
+              enum: [MSG-09, MSG-10, MSG-11]
     ResolverMovimentacaoLeitoRequest:
       type: object
       properties:
@@ -263,6 +612,14 @@ components:
           nullable: true
           maxLength: 20
           description: Leito extraído pelo chatbot; ausente/nulo/em branco quando não identificado (MSG-12)
+    ConfirmarMovimentacaoLeitoRequest:
+      type: object
+      required: [newBedNumber]
+      properties:
+        newBedNumber:
+          type: string
+          maxLength: 20
+          description: Leito de destino confirmado pelo usuário; não vazio (MSG-12)
     MovimentacaoLeitoResolvida:
       type: object
       required: [pacienteId, internacaoId, newBedNumber]
@@ -290,4 +647,76 @@ components:
               description: Presente apenas em MSG-12
             code:
               type: string
-              enum: [MSG-11, MSG-12]
+              enum: [MSG-11, MSG-12, MSG-13]
+    OcupacaoLeito:
+      type: object
+      required: [newBedNumber, occupied, occupants]
+      properties:
+        newBedNumber:
+          type: string
+        occupied:
+          type: boolean
+        occupants:
+          type: array
+          description: Pacientes cuja internação mais recente está no leito (vazio quando livre)
+          items:
+            $ref: "#/components/schemas/OcupanteLeito"
+    OcupanteLeito:
+      type: object
+      required: [pacienteId, name]
+      properties:
+        pacienteId:
+          type: integer
+          format: int64
+        name:
+          type: string
+    ResolverMovimentacaoLeitoPorNomeRequest:
+      type: object
+      required: [hospitalId, fullName]
+      properties:
+        hospitalId:
+          type: integer
+          format: int64
+          description: Hospital ativo na sessão do usuário
+        fullName:
+          type: string
+          minLength: 1
+          maxLength: 150
+          description: Nome do paciente extraído da mensagem pelo chatbot
+        newBedNumber:
+          type: string
+          nullable: true
+          maxLength: 20
+          description: Leito extraído pelo chatbot; ausente/nulo/em branco quando não identificado (MSG-12)
+    PacienteCandidato:
+      type: object
+      required: [id, fullName, birthDate]
+      properties:
+        id:
+          type: integer
+          format: int64
+        fullName:
+          type: string
+        birthDate:
+          type: string
+          format: date
+        medicalRecordNumber:
+          type: string
+          nullable: true
+          description: SAME, quando preenchido
+    MovimentacaoLeitoPorNomeResultado:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [ENCONTRADO, MULTIPLOS]
+        resolvida:
+          description: Presente quando status=ENCONTRADO
+          allOf:
+            - $ref: "#/components/schemas/MovimentacaoLeitoResolvida"
+        candidatos:
+          type: array
+          description: Presente quando status=MULTIPLOS
+          items:
+            $ref: "#/components/schemas/PacienteCandidato"

@@ -7,6 +7,42 @@
       "retry": "Tentar novamente"
     }
   },
+  "changeLocation": {
+    "messages": {
+      "MSG-09": "Não identifiquei se é unidade ou ala. Pode informar, por exemplo, \"unidade UTI\" ou \"ala Sul\"?",
+      "MSG-10": "Não identifiquei o valor. Pode informar o nome da unidade ou da ala?",
+      "MSG-11": "Este paciente ainda não possui internação registrada. É necessário internar o paciente antes de alterar a localização.",
+      "MSG-13": "Não encontrei nenhum paciente com esse nome neste hospital.",
+      "birth": "nascimento",
+      "cancelled": "Alteração cancelada. Nada foi modificado em {type}.",
+      "chooseInvalid": "Escolha um dos pacientes listados, informando o número dele.",
+      "confirmChoice": "Responda sim ou não.",
+      "created": "Linha criada: {type}: {new}.",
+      "error": "Não foi possível processar a alteração de localização. Tente novamente.",
+      "multiple": "Encontrei mais de um paciente com esse nome:",
+      "nameMissing": "Não identifiquei o nome do paciente. Pode informá-lo?",
+      "noSame": "não informado",
+      "same": "SAME",
+      "summaryCreate": "Resumo da alteração: paciente {patient}; criar a linha \"{type}: {new}\" na internação.",
+      "summaryUpdate": "Resumo da alteração: paciente {patient}; atualizar a linha {type} de \"{current}\" para \"{new}\".",
+      "updated": "Linha atualizada: {type}: {new}."
+    },
+    "options": {
+      "no": "Não",
+      "yes": "Sim"
+    },
+    "prompts": {
+      "chooseOne": "Qual desses pacientes?",
+      "confirm": "Confirma a alteração da localização?",
+      "patientName": "De qual paciente é a alteração? Informe o nome.",
+      "request": "O que deseja alterar? Informe, por exemplo, \"unidade UTI\" ou \"ala Sul\"."
+    },
+    "title": "Alterar unidade/ala",
+    "types": {
+      "ALA": "Ala",
+      "UNIDADE": "Unidade"
+    }
+  },
   "home": {
     "error": {
       "description": "Verifique sua conexão de internet e tente novamente em alguns instantes.",
@@ -28,12 +64,30 @@
     "messages": {
       "MSG-11": "Este paciente ainda não possui internação registrada. É necessário internar o paciente antes de movimentar o leito.",
       "MSG-12": "Não consegui identificar o novo leito. Pode informar o número do leito?",
+      "MSG-13": "Não encontrei nenhum paciente com esse nome neste hospital.",
+      "applied": "Leito atualizado para {new}.",
+      "birth": "nascimento",
+      "cancelled": "Movimentação cancelada. O leito permanece {current}.",
+      "chooseInvalid": "Escolha um dos pacientes listados, informando o número dele.",
+      "confirmChoice": "Responda sim ou não.",
       "error": "Não foi possível processar a movimentação de leito. Tente novamente.",
+      "multiple": "Encontrei mais de um paciente com esse nome:",
+      "nameMissing": "Não identifiquei o nome do paciente. Pode informá-lo?",
       "noCurrentBed": "não informado",
-      "resolved": "Pedido associado à internação mais recente de {patient}. Leito atual: {current}. Novo leito: {new}. A mudança ainda não foi aplicada."
+      "noSame": "não informado",
+      "occupied": "Atenção: o leito {bed} já está ocupado por {occupants}. Você pode continuar mesmo assim.",
+      "same": "SAME",
+      "summary": "Resumo da alteração: paciente {patient}; campo: leito; valor atual: {current}; valor novo: {new}."
+    },
+    "options": {
+      "no": "Não",
+      "yes": "Sim"
     },
     "prompts": {
-      "bedNumber": "Para qual leito deseja movimentar o paciente?"
+      "bedNumber": "Para qual leito deseja movimentar o paciente?",
+      "chooseOne": "Qual desses pacientes?",
+      "confirm": "Confirma a movimentação do leito?",
+      "patientName": "De qual paciente é a movimentação de leito? Informe o nome."
     },
     "title": "Movimentar leito"
   },
