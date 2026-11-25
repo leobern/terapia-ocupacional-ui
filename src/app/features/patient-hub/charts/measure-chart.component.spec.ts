@@ -33,7 +33,6 @@ describe('MeasureChartComponent', () => {
   let fixture: ComponentFixture<HostComponent>;
   const el = (): HTMLElement => fixture.nativeElement;
   const dots = (): number => el().querySelectorAll('.trend__point').length;
-  const chips = (): HTMLButtonElement[] => Array.from(el().querySelectorAll('.trend__chip'));
   const create = (setup?: (host: HostComponent) => void): void => {
     fixture = TestBed.createComponent(HostComponent);
     setup?.(fixture.componentInstance);
@@ -59,21 +58,12 @@ describe('MeasureChartComponent', () => {
     expect(ticks[0]).toBe('50');
   });
 
-  it('começa na internação (todos os pontos) e filtra por 30 dias e 7 dias', () => {
+  it('mostra todos os pontos da internação, sem botões de período', () => {
     create();
 
     expect(dots()).toBe(10);
-
-    chips()[2].click();
-    fixture.detectChanges();
-
-    expect(dots()).toBe(7);
-    expect(chips()[2].getAttribute('aria-pressed')).toBe('true');
-
-    chips()[1].click();
-    fixture.detectChanges();
-
-    expect(dots()).toBe(10);
+    expect(el().querySelector('.trend__chip')).toBeNull();
+    expect(el().textContent).not.toContain('30 dias');
   });
 
   it('o ponto escolhido mostra o tooltip; o padrão é o penúltimo', () => {

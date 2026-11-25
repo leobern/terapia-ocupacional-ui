@@ -1,4 +1,5 @@
 import { inject, Injectable } from '@angular/core';
+import { Router } from '@angular/router';
 
 import { REGISTER_PATIENT_ACTION_ID } from '../../shared/services/assistant-action-router';
 import { I18nService } from '../../shared/services/i18n.service';
@@ -71,6 +72,7 @@ export class PatientRegistrationAction {
   private readonly port = inject(PatientCreationPort);
   private readonly internacaoPort = inject(InternacaoCreationPort);
   private readonly hospitals = inject(HospitalContextService);
+  private readonly router = inject(Router);
 
   /**
    * Paciente já criado cuja internação falhou: ao tentar de novo (ou corrigir a data), reaproveita-o em vez de
@@ -303,6 +305,8 @@ export class PatientRegistrationAction {
         await this.internacaoPort.create(patient.id, this.admissionRequest(values));
       }
       this.pending = null;
+      // Paciente cadastrado: leva à tela do paciente, onde o médico faz a avaliação clínica (peso, altura e demais itens).
+      void this.router.navigate(['/patients', patient.id], { queryParams: { avaliar: '1' } });
     } catch (error) {
       if (error instanceof PatientFieldError || error instanceof InternacaoFieldError) {
         const code = MESSAGE_BY_CODE[error.code];

@@ -20,18 +20,25 @@ describe('AssistantHeadingComponent', () => {
     fixture = TestBed.createComponent(AssistantHeadingComponent);
   });
 
-  it('shows the form title', () => {
+  it('mostra "Atalhos" na visão de atalhos, no lugar do logo', () => {
+    assistant.openShortcuts();
+    fixture.detectChanges();
+
+    expect(title()).toBe('Atalhos');
+  });
+
+  it('num cadastro o título sai do cabeçalho (vira o texto digitado no conteúdo)', () => {
     assistant.openAction(withForm);
     fixture.detectChanges();
 
-    expect(title()).toBe('Criar notificação');
+    expect(title()).toBe('');
   });
 
-  it('falls back to the action label when there is no form', () => {
+  it('também fica vazio num cadastro sem formulário', () => {
     assistant.openAction(plain);
     fixture.detectChanges();
 
-    expect(title()).toBe('Editar notificação');
+    expect(title()).toBe('');
   });
 
   it('is empty without an action and has no back arrow (the header is logo + title + close)', () => {

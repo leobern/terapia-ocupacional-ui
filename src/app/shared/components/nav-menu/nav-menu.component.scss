@@ -130,10 +130,11 @@ $duration-collapse: 90ms;
       transparent,
       #{tokens.c(surface-glass-1)}
     );
-    // Figma (2026-11-19): raio só no topo à direita, sem borda lateral, logo a 40px do topo.
+    // Figma (2026-11-24): raio só no topo à direita, sem borda lateral, logo a 32px do topo (centro em y = 52,
+    // a mesma linha do voltar/avatar do cabeçalho de 56px que começa a 24px).
     border-top-right-radius: tokens.$radius-md;
     border-bottom-right-radius: 0;
-    padding-top: 40px;
+    padding-top: 24px;
     box-shadow: none;
     z-index: auto;
     translate: 0 0;

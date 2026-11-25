@@ -1,4 +1,4 @@
-import { Injectable, type Signal, signal } from '@angular/core';
+import { Injectable, type Signal, signal, type Type } from '@angular/core';
 
 import { type DirectoryUser } from './user-directory';
 
@@ -41,8 +41,10 @@ export interface FormFieldDefinition {
 }
 
 export interface FormActionDefinition {
-  /** Título do painel enquanto o formulário está aberto (ex.: "Criar notificação"). */
+  /** Título do painel enquanto o formulário está aberto (ex.: "Criar notificação"); é digitado no topo do conteúdo. */
   readonly title: string;
+  /** Texto digitado abaixo do título, antes de surgirem os campos; ausente = texto padrão do cadastro. */
+  readonly description?: string;
   readonly submitLabel: string;
   readonly fields: readonly FormFieldDefinition[];
   /** Placeholder do campo de mensagem/áudio do rodapé (ex.: "Fale ou escreva a notificação"). */
@@ -104,6 +106,8 @@ export interface ConversationOutcome {
 
 export interface ConversationDefinition {
   readonly title: string;
+  /** Texto digitado abaixo do título, antes da primeira pergunta; ausente = texto padrão. */
+  readonly description?: string;
   readonly steps: readonly ConversationStep[];
   readonly skipLabel: string;
   readonly successMessage: string;
@@ -117,6 +121,19 @@ export interface ConversationDefinition {
   readonly seedFromMessage?: (message: string) => string;
 }
 
+/**
+ * Editor próprio no painel lateral (ex.: Avaliação clínica, Figma 4775:26535): título e descrição digitados e, depois,
+ * o componente com os campos. As ações do editor ficam no rodapé (chips) e a mensagem/áudio, embaixo.
+ */
+export interface AssistantEditorDefinition {
+  readonly title: string;
+  readonly description: string;
+  /** Linha pequena abaixo da descrição (ex.: "Você também pode enviar via áudio."). */
+  readonly hint?: string;
+  readonly component: Type<unknown>;
+  readonly inputs?: Readonly<Record<string, unknown>>;
+}
+
 export interface ScreenAction {
   readonly id: string;
   readonly label: string;
@@ -124,6 +141,8 @@ export interface ScreenAction {
   readonly conversation?: ConversationDefinition;
   /** Ausente = ação ainda não disponível (o painel avisa em vez de abrir um formulário). */
   readonly form?: FormActionDefinition;
+  /** Editor com componente próprio (itens dinâmicos, exclusão com confirmação...). */
+  readonly editor?: AssistantEditorDefinition;
   /** Ação de navegação (fluxo de outra feature): o painel fecha e `navigate` leva ao destino; sem formulário. */
   readonly navigate?: () => void;
 }

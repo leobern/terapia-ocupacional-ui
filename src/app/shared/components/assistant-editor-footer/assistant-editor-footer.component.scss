@@ -1,0 +1,28 @@
+@use '../../styles/tokens';
+@use '../../styles/typography';
+
+:host {
+  display: block;
+  width: 100%;
+}
+
+.assistant-editor-footer {
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$space-8;
+}
+
+// Figma 4775:27431: os chips de ação ficam lado a lado, logo acima do campo de mensagem.
+.assistant-editor-footer__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: tokens.$space-8;
+}
+
+.assistant-editor-footer__hint {
+  margin: 0;
+  color: tokens.c(content-4);
+
+  @include typography.caption;
+}

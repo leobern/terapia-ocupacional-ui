@@ -56,6 +56,11 @@
   background: tokens.c(comm-success);
 }
 
+// Figma v2/ProgressStat: calórico em verde, proteico em azul (secondary).
+.adequacy__item:nth-of-type(2) .adequacy__bar {
+  background: tokens.c(secondary);
+}
+
 .adequacy__text {
   grid-column: 1 / -1;
 

@@ -1,11 +1,16 @@
 import { Location } from '@angular/common';
+import { signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { ActivatedRoute, convertToParamMap, provideRouter, Router } from '@angular/router';
 import { of } from 'rxjs';
 
+import { DateStripComponent } from '../../shared/components/date-strip/date-strip.component';
+import { AiAssistantService } from '../../shared/services/ai-assistant.service';
+import { AssistantEditorController } from '../../shared/services/assistant-editor-controller.service';
 import { ConnectivityService } from '../../shared/services/connectivity.service';
 import { ScreenActionsService } from '../../shared/services/screen-actions.service';
+import { ViewportBreakpointService } from '../../shared/services/viewport-breakpoint.service';
 import { DailyAdequacy } from '../daily-evolution/adequacy/adequacy.models';
 import { DailyAdequacyService } from '../daily-evolution/adequacy/daily-adequacy.service';
 import { GlimReading } from '../diagnosis/diagnosis.models';
@@ -16,6 +21,7 @@ import { HospitalContextService } from '../home/hospital-context.service';
 import { LinkRevocationChecker } from '../home/link-revocation-checker';
 import { LinkedHospitalsReader } from '../home/linked-hospitals';
 import { NOW, ProfessionalProfileReader } from '../home/professional-profile';
+import { UnreadNotificationsReader } from '../home/unread-notifications-reader';
 import {
   PatientMessagesSource,
   PatientMessagesWriter,
@@ -25,19 +31,14 @@ import {
   ProvisionalPatientMessages,
   ProvisionalReplyTranscriber,
 } from '../patient-messages/provisional-patient-messages';
-import {
-  NutritionAddedCards,
-  NutritionHiddenCards,
-  NutritionHistorySource,
-  NutritionValueWriter,
-} from '../patients/nutrition-panel/nutrition-card-ports';
-import { NutritionValues } from '../patients/nutrition-panel/nutrition-panel.models';
-import { NutritionResultsSource } from '../patients/nutrition-panel/nutrition-results-source';
-import { ProvisionalNutritionCardStore } from '../patients/nutrition-panel/provisional-nutrition-card-store';
 import { FormulasApi } from '../pharmacy/formulas-api';
 import { AssessmentAiStructurer } from './assessment/assessment-ai-structurer';
 import { AssessmentSource } from './assessment/assessment-source';
 import { AssessmentWriter } from './assessment/assessment-writer';
+import { ClinicalAssessmentSource } from './clinical-assessment/clinical-assessment-source';
+import { ClinicalItemHistorySource } from './clinical-assessment/clinical-item-history-source';
+import { ProvisionalClinicalAssessmentSource } from './clinical-assessment/provisional-clinical-assessment-source';
+import { ProvisionalClinicalItemHistorySource } from './clinical-assessment/provisional-clinical-item-history-source';
 import { DailyEvolutionSource } from './daily-record/daily-evolution-source';
 import { DailyRecordSource } from './daily-record/daily-record-source';
 import { DailyRecordWriter } from './daily-record/daily-record-writer';
@@ -124,18 +125,6 @@ class FakeWriter extends HypothesisWriter {
   }
 }
 
-class FakeResults extends NutritionResultsSource {
-  values: NutritionValues = {};
-  fail = false;
-  calls = 0;
-
-  load(): Promise<NutritionValues> {
-    this.calls++;
-
-    return this.fail ? Promise.reject(new Error('x')) : Promise.resolve(this.values);
-  }
-}
-
 class FakePriorStays extends PriorStaysSource {
   has = false;
   fail = false;
@@ -197,8 +186,6 @@ const PRESCRIPTION: Prescription = {
   startTime: '08:00',
   volumeMl: 900,
 };
-let store = new ProvisionalNutritionCardStore();
-const results = new FakeResults();
 const synth = new FakeSynth();
 const writer = new FakeWriter();
 
@@ -231,11 +218,15 @@ const AVAILABLE: DailyAdequacy = {
   },
 };
 
+const desktop = signal(true);
+const unread = { countUnread: (): Promise<number> => Promise.resolve(3) };
+
 async function setup(
   source: FakeSource,
   id: string | null = 'p1',
   hospitals: unknown[] = [{ id: 1, name: 'Hospital Vila Nova Star' }],
   role = 'doctor',
+  query: Record<string, string> = {},
 ): Promise<ComponentFixture<PatientHubComponent>> {
   if (!jasmine.isSpy(Object.getOwnPropertyDescriptor(navigator, 'language')?.get as () => string)) {
     spyOnProperty(navigator, 'language').and.returnValue('pt-BR');
@@ -244,17 +235,18 @@ async function setup(
     providers: [
       provideRouter([]),
       { provide: Location, useValue: locationMock },
-      { provide: ActivatedRoute, useValue: { paramMap: of(convertToParamMap(id === null ? {} : { id })) } },
+      {
+        provide: ActivatedRoute,
+        useValue: {
+          paramMap: of(convertToParamMap(id === null ? {} : { id })),
+          snapshot: { queryParamMap: convertToParamMap(query) },
+        },
+      },
       { provide: PatientHubSource, useValue: source },
       { provide: BedMovementPort, useValue: { resolve: (): Promise<never> => Promise.reject(new Error('x')) } },
       { provide: BedNumberExtractor, useValue: { extract: (): null => null } },
       { provide: LinkRevocationChecker, useValue: revocation },
-      { provide: NutritionResultsSource, useValue: results },
       { provide: DailyAdequacyService, useValue: adequacy },
-      { provide: NutritionHistorySource, useFactory: (): ProvisionalNutritionCardStore => store },
-      { provide: NutritionValueWriter, useFactory: (): ProvisionalNutritionCardStore => store },
-      { provide: NutritionAddedCards, useFactory: (): ProvisionalNutritionCardStore => store },
-      { provide: NutritionHiddenCards, useFactory: (): ProvisionalNutritionCardStore => store },
       { provide: HypothesisSynthesizer, useValue: synth },
       { provide: HypothesisWriter, useValue: writer },
       { provide: DiagnosisSource, useValue: diagnosis },
@@ -275,7 +267,10 @@ async function setup(
       { provide: MessageAiAssistant, useValue: {} },
       { provide: ParameterAiStructurer, useValue: { suggest: (): Promise<readonly never[]> => Promise.resolve([]) } },
       { provide: RefeedingRiskSource, useValue: { load: (): Promise<null> => Promise.resolve(null) } },
-      { provide: AssessmentSource, useValue: { loadLatest: (): Promise<null> => Promise.resolve(null) } },
+      {
+        provide: AssessmentSource,
+        useValue: { loadLatest: (): Promise<object> => Promise.resolve({ previous: {}, values: { handgrip: '14' } }) },
+      },
       { provide: AssessmentAiStructurer, useValue: { structure: (): Promise<object> => Promise.resolve({}) } },
       { provide: AssessmentWriter, useValue: { save: (): Promise<void> => Promise.resolve() } },
       { provide: DailyRecordSource, useValue: { loadEntries: (): Promise<[]> => Promise.resolve([]) } },
@@ -314,6 +309,10 @@ async function setup(
         },
       },
       { provide: NOW, useValue: (): Date => new Date(2026, 4, 28, 12) },
+      { provide: UnreadNotificationsReader, useValue: unread },
+      { provide: ClinicalAssessmentSource, useClass: ProvisionalClinicalAssessmentSource },
+      { provide: ClinicalItemHistorySource, useClass: ProvisionalClinicalItemHistorySource },
+      { provide: ViewportBreakpointService, useValue: { isDesktop: desktop } },
       {
         provide: LinkedHospitalsReader,
         useValue: { read: (): Promise<unknown[]> => Promise.resolve(hospitals) },
@@ -350,20 +349,19 @@ const clickButton = async (f: ComponentFixture<unknown>, label: string): Promise
   f.detectChanges();
 };
 
-const cards = (f: ComponentFixture<unknown>): string[] =>
-  Array.from((f.nativeElement as HTMLElement).querySelectorAll('.nutrition-panel__value')).map(
-    v => v.textContent?.trim() ?? '',
-  );
+/** Botão só com ícone (ex.: o lápis do título), achado pelo nome acessível. */
+const clickLabel = async (f: ComponentFixture<unknown>, label: string): Promise<void> => {
+  (f.nativeElement as HTMLElement).querySelector<HTMLButtonElement>(`button[aria-label="${label}"]`)?.click();
+  await f.whenStable();
+  f.detectChanges();
+};
 
 describe('PatientHubComponent', () => {
   beforeEach(() => {
     revocation.revoked = true;
     prescriptionStore.fail = false;
     prescriptionStore.value = null;
-    store = new ProvisionalNutritionCardStore();
-    results.values = {};
-    results.fail = false;
-    results.calls = 0;
+    adequacy.calls = 0;
     adequacy.result = { reason: 'no-target', status: 'unavailable' };
     adequacy.fail = false;
     priorStays.has = false;
@@ -572,7 +570,8 @@ describe('PatientHubComponent', () => {
   it('mostra identificação e a Hipótese completa quando preenchida', async () => {
     const f = await setup(new FakeSource());
 
-    expect(text(f)).toContain('Hospital Vila Nova Star · Quinta-feira, 28 de maio');
+    expect(text(f)).toContain('Hospital Vila Nova Star');
+    expect(text(f)).not.toContain('Quinta-feira, 28 de maio');
     expect(text(f)).toContain('Ala 2 · Leito 35');
     expect(text(f)).toContain('José Raimundo Soares Neto');
     expect(text(f)).toContain('67 anos · 13/04/1959');
@@ -581,39 +580,39 @@ describe('PatientHubComponent', () => {
     expect((f.nativeElement as HTMLElement).querySelector('textarea:not(.input-chat__field)')).toBeNull();
   });
 
-  it('mostra o estado vazio com o campo de colagem quando não há Hipótese', async () => {
+  it('sem Hipótese, só aparece o card de estado vazio do Diagnóstico (sem editar e sem os outros cards); tocar abre a colagem', async () => {
     const source = new FakeSource();
 
     source.hypothesis = null;
     const f = await setup(source);
+    const root = f.nativeElement as HTMLElement;
+
+    expect(text(f)).toContain('Toque aqui e insira o diagnóstico.');
+    expect(root.querySelector('[aria-label="Editar diagnóstico"]')).toBeNull();
+    expect(root.querySelector('textarea:not(.input-chat__field)')).toBeNull();
+    expect(Array.from(root.querySelectorAll('app-section-header h2')).map(h => h.textContent.trim())).toEqual([
+      'Diagnóstico',
+    ]);
+
+    root.querySelector<HTMLButtonElement>('app-empty-card button')?.click();
+    f.detectChanges();
 
     expect(text(f)).toContain('Ainda não há hipótese diagnóstica');
-    expect((f.nativeElement as HTMLElement).querySelector('textarea:not(.input-chat__field)')).not.toBeNull();
-  });
-
-  it('mostra o Painel Nutricional com os 8 cards em "Sem dados" abaixo da Hipótese (FT-004-3)', async () => {
-    const f = await setup(new FakeSource());
-    const values = Array.from((f.nativeElement as HTMLElement).querySelectorAll('.nutrition-panel__value'));
-
-    expect(values.length).toBe(8);
-    expect(values.every(v => v.textContent?.trim() === 'Sem dados')).toBeTrue();
+    expect(root.querySelector('textarea:not(.input-chat__field)')).not.toBeNull();
   });
 
   describe('% de adequação (FT-004-7, US3)', () => {
-    it('Painel e resumo do Hub mostram o mesmo resultado calculado', async () => {
+    it('o resumo do Hub mostra o resultado calculado', async () => {
       adequacy.result = AVAILABLE;
       const f = await setup(new FakeSource());
 
-      expect(cards(f)).toContain('76%');
-      expect(cards(f)).toContain('73%');
       expect(text(f)).toContain('76% da meta (1.875 kcal)');
       expect(text(f)).toContain('73% da meta (112,5 g)');
     });
 
-    it('sem meta, painel em "Sem dados" e resumo indisponível com orientação, sem percentual', async () => {
+    it('sem meta, o resumo fica indisponível com orientação, sem percentual', async () => {
       const f = await setup(new FakeSource());
 
-      expect(cards(f).filter(v => v === 'Sem dados').length).toBe(8);
       expect(text(f)).toContain('defina a meta calórica e proteica no Plano de intervenção');
       expect(text(f)).not.toContain('% da meta');
     });
@@ -627,36 +626,27 @@ describe('PatientHubComponent', () => {
       await f.whenStable();
       f.detectChanges();
 
-      expect(cards(f)).toContain('76%');
+      expect(text(f)).toContain('76% da meta (1.875 kcal)');
     });
   });
 
-  describe('resultados do painel (FT-004-3, US2)', () => {
-    it('carrega ao abrir e mostra cada resultado; sem resultado o card segue em "Sem dados"', async () => {
-      results.values = { glim: 'Desnutrição' } as NutritionValues;
+  describe('recarga do aporte (foco, visibilidade e puxar para atualizar)', () => {
+    it('retomar o foco recarrega o aporte; falha mantém o que estava na tela', async () => {
+      adequacy.result = AVAILABLE;
       const f = await setup(new FakeSource());
+      const before = adequacy.calls;
 
-      expect(cards(f)).toContain('Desnutrição');
-      expect(cards(f).filter(v => v === 'Sem dados').length).toBe(7);
-    });
-
-    it('retomar o foco recarrega; falha mantém os valores exibidos', async () => {
-      results.values = { glim: 'Desnutrição' } as NutritionValues;
-      const f = await setup(new FakeSource());
-
-      results.values = { glim: 'Sem desnutrição' } as NutritionValues;
       window.dispatchEvent(new Event('focus'));
       await f.whenStable();
       f.detectChanges();
 
-      expect(cards(f)).toContain('Sem desnutrição');
-
-      results.fail = true;
+      expect(adequacy.calls).toBeGreaterThan(before);
+      adequacy.fail = true;
       window.dispatchEvent(new Event('focus'));
       await f.whenStable();
       f.detectChanges();
 
-      expect(cards(f)).toContain('Sem desnutrição');
+      expect(text(f)).toContain('76% da meta (1.875 kcal)');
     });
 
     it('regra de visibilidade: visível recarrega; oculto não', () => {
@@ -664,22 +654,23 @@ describe('PatientHubComponent', () => {
       expect(reloadsOnVisibility('hidden')).toBeFalse();
     });
 
-    it('sem id na rota não busca resultados', async () => {
+    it('sem id na rota não busca o aporte', async () => {
+      adequacy.calls = 0;
       await setup(new FakeSource(), null);
 
-      expect(results.calls).toBe(0);
+      expect(adequacy.calls).toBe(0);
     });
 
     it('o tratador de visibilidade e o puxar com a página rolada percorrem os dois ramos', async () => {
       const f = await setup(new FakeSource());
-      const before = results.calls;
+      const before = adequacy.calls;
       let state: DocumentVisibilityState = 'visible';
 
       Object.defineProperty(document, 'visibilityState', { configurable: true, get: () => state });
       const hub = f.componentInstance as unknown as { onVisibility(): void };
 
       hub.onVisibility();
-      const afterVisible = results.calls;
+      const afterVisible = adequacy.calls;
 
       state = 'hidden';
       hub.onVisibility();
@@ -696,7 +687,7 @@ describe('PatientHubComponent', () => {
 
     it('arrasto curto ou sem toque inicial não recarrega', async () => {
       const f = await setup(new FakeSource());
-      const before = results.calls;
+      const before = adequacy.calls;
       const el = f.nativeElement as HTMLElement;
       const touch = (type: string, y: number): TouchEvent => {
         const point = new Touch({ clientX: 0, clientY: y, identifier: 1, target: el });
@@ -709,12 +700,12 @@ describe('PatientHubComponent', () => {
       el.dispatchEvent(touch('touchend', 300));
       await f.whenStable();
 
-      expect(results.calls).toBe(before);
+      expect(adequacy.calls).toBe(before);
     });
 
     it('puxar para atualizar (arrasto > 80px a partir do topo) recarrega', async () => {
       const f = await setup(new FakeSource());
-      const before = results.calls;
+      const before = adequacy.calls;
       const touch = (type: string, y: number): TouchEvent =>
         new TouchEvent(type, {
           changedTouches: [new Touch({ clientX: 0, clientY: y, identifier: 1, target: f.nativeElement })],
@@ -728,7 +719,7 @@ describe('PatientHubComponent', () => {
       (f.nativeElement as HTMLElement).dispatchEvent(touch('touchend', 150));
       await f.whenStable();
 
-      expect(results.calls).toBeGreaterThan(before);
+      expect(adequacy.calls).toBeGreaterThan(before);
     });
   });
 
@@ -835,13 +826,19 @@ describe('PatientHubComponent', () => {
     it('o botão "Salvar avaliação" do formulário salva e dispara o fluxo do diagnóstico', async () => {
       const root = f.nativeElement as HTMLElement;
 
-      root.querySelector<HTMLButtonElement>('.assessment__row')?.click();
-      await f.whenStable();
-      f.detectChanges();
-      Array.from(root.querySelectorAll<HTMLButtonElement>('dialog app-button button'))
-        .find(b => b.textContent.includes('Salvar avaliação'))
-        ?.click();
-      await f.whenStable();
+      const press = async (label: string): Promise<void> => {
+        root.querySelector<HTMLButtonElement>(`[aria-label="${label}"]`)?.click();
+        await f.whenStable();
+        f.detectChanges();
+        await f.whenStable();
+      };
+
+      // lápis abre o editor no painel; o ✓ salva e dispara o fluxo do diagnóstico
+      await press('Editar avaliação nutricional e funcional');
+      // o editor (renderizado no painel do app) avisa a tela pelo callback `saved` ao gravar
+      const inputs = TestBed.inject(AiAssistantService).activeAction()?.editor?.inputs as { saved: () => void };
+
+      inputs.saved();
       await f.whenStable();
 
       expect(navigate).toHaveBeenCalledOnceWith(['/patients', 'p1', 'diagnosis']);
@@ -894,6 +891,11 @@ describe('PatientHubComponent', () => {
 
       source.hypothesis = null;
       f = await setup(source);
+      // Sem hipótese, o card fica vazio: tocar nele abre o campo de colagem.
+      el().querySelector<HTMLButtonElement>('app-empty-card button')?.click();
+      f.detectChanges();
+      await f.whenStable();
+      f.detectChanges();
     });
 
     it('não aciona a IA com campo vazio ou só espaços e orienta a colar', async () => {
@@ -1021,199 +1023,6 @@ describe('PatientHubComponent', () => {
     });
   });
 
-  describe('modal do card (US3)', () => {
-    const tile = (f: ComponentFixture<unknown>, label: string): HTMLButtonElement =>
-      Array.from((f.nativeElement as HTMLElement).querySelectorAll<HTMLButtonElement>('.nutrition-panel__card')).find(
-        b => b.textContent?.includes(label),
-      ) as HTMLButtonElement;
-    const modal = (f: ComponentFixture<unknown>): HTMLDialogElement =>
-      (f.nativeElement as HTMLElement).querySelector('.card-modal') as HTMLDialogElement;
-    const settle = async (f: ComponentFixture<unknown>): Promise<void> => {
-      f.detectChanges();
-      await f.whenStable();
-      f.detectChanges();
-    };
-    const type = async (f: ComponentFixture<unknown>, value: string): Promise<void> => {
-      const input = modal(f).querySelector('input') as HTMLInputElement;
-
-      input.value = value;
-      input.dispatchEvent(new Event('input'));
-      await settle(f);
-    };
-    const save = async (f: ComponentFixture<unknown>): Promise<void> => {
-      (modal(f).querySelector('app-button button') as HTMLButtonElement).click();
-      await settle(f);
-    };
-
-    it('abre ao tocar em cada um dos 8 cards, com o nome do indicador como título', async () => {
-      const f = await setup(new FakeSource());
-      const labels = Array.from((f.nativeElement as HTMLElement).querySelectorAll('.nutrition-panel__label')).map(
-        e => e.textContent?.trim() ?? '',
-      );
-
-      /* eslint-disable no-await-in-loop -- cada card é aberto e fechado em sequência */
-      for (const label of labels) {
-        tile(f, label).click();
-        await settle(f);
-
-        expect(modal(f).open).toBe(true);
-        expect(modal(f).querySelector('h2')?.textContent?.trim()).toBe(label);
-        (modal(f).querySelector('app-icon-button button') as HTMLButtonElement).click();
-        await settle(f);
-
-        expect(modal(f).open).toBe(false);
-      }
-      /* eslint-enable no-await-in-loop */
-    });
-
-    it('card Sem dados mostra "Ainda sem valor", sem seção de histórico, com ajuda e unidade', async () => {
-      const f = await setup(new FakeSource());
-
-      tile(f, 'Peso').click();
-      await settle(f);
-
-      expect(modal(f).textContent).toContain('Ainda sem valor');
-      expect(modal(f).textContent).not.toContain('Histórico desta internação');
-      expect(modal(f).textContent).toContain('Novo valor (kg)');
-      expect(modal(f).textContent).toContain('O valor anterior vai para o histórico.');
-    });
-
-    it('valor de outra feature mostra a origem; indicador sem unidade usa "Novo valor"', async () => {
-      results.values = { glim: 'Desnutrição' } as NutritionValues;
-      const f = await setup(new FakeSource());
-
-      tile(f, 'GLIM').click();
-      await settle(f);
-
-      expect(modal(f).textContent).toContain('Valor atual · resultado de outra feature');
-      expect(modal(f).querySelector('label')?.textContent?.trim()).toBe('Novo valor');
-    });
-
-    it('salvar mostra o valor na grid; reabrir mostra o anterior no histórico; audita autor e hora', async () => {
-      results.values = { glim: 'Desnutrição' } as NutritionValues;
-      const f = await setup(new FakeSource());
-
-      tile(f, 'GLIM').click();
-      await settle(f);
-      await type(f, '  Sem desnutrição ');
-      await save(f);
-
-      expect(modal(f).open).toBe(false);
-      expect(tile(f, 'GLIM').textContent).toContain('Sem desnutrição');
-      expect(store.auditTrail.length).toBe(1);
-      expect(store.auditTrail[0].author).toBe('Michelle');
-      expect(store.auditTrail[0].indicator).toBe('glim');
-      expect(store.auditTrail[0].previous?.value).toBe('Desnutrição');
-      expect(store.auditTrail[0].value).toBe('Sem desnutrição');
-      expect(store.auditTrail[0].at).toBe(new Date(2026, 4, 28, 12).toISOString());
-
-      tile(f, 'GLIM').click();
-      await settle(f);
-
-      expect(modal(f).textContent).toContain('Valor atual · informado pela equipe, 28/05');
-      expect(modal(f).textContent).toContain('Histórico desta internação');
-      expect(modal(f).querySelector('.card-modal__entry')?.textContent).toContain('Desnutrição');
-      expect(modal(f).querySelector('.card-modal__entry')?.textContent).toContain('resultado de outra feature');
-    });
-
-    it('card em Sem dados editado passa a exibir o valor, sem histórico', async () => {
-      const f = await setup(new FakeSource());
-
-      tile(f, 'Peso').click();
-      await settle(f);
-      await type(f, '51,0 kg');
-      await save(f);
-
-      expect(tile(f, 'Peso').textContent).toContain('51,0 kg');
-      expect(store.auditTrail[0].previous).toBeNull();
-      tile(f, 'Peso').click();
-      await settle(f);
-
-      expect(modal(f).textContent).not.toContain('Histórico desta internação');
-    });
-
-    it('campo vazio ou só espaços não grava e orienta a preencher', async () => {
-      const f = await setup(new FakeSource());
-
-      tile(f, 'Peso').click();
-      await settle(f);
-      await type(f, '   ');
-      await save(f);
-
-      expect(modal(f).open).toBe(true);
-      expect(modal(f).querySelector('[role="alert"]')?.textContent).toContain('Preencha um valor');
-      expect(modal(f).querySelector('input')?.getAttribute('aria-invalid')).toBe('true');
-      expect(store.auditTrail.length).toBe(0);
-      expect(tile(f, 'Peso').textContent).toContain('Sem dados');
-
-      await type(f, '5');
-
-      expect(modal(f).querySelector('[role="alert"]')).toBeNull();
-    });
-
-    it('falha ao salvar mostra erro no campo e mantém o botão ativo', async () => {
-      const f = await setup(new FakeSource());
-
-      spyOn(store, 'save').and.rejectWith(new Error('x'));
-      tile(f, 'Peso').click();
-      await settle(f);
-      await type(f, '50');
-      await save(f);
-
-      expect(modal(f).open).toBe(true);
-      expect(modal(f).querySelector('[role="alert"]')?.textContent).toContain('Não foi possível salvar');
-      expect((modal(f).querySelector('app-button button') as HTMLButtonElement).disabled).toBe(false);
-      expect(tile(f, 'Peso').textContent).toContain('Sem dados');
-    });
-
-    it('offline: salvar fica indisponível com mensagem de conexão necessária', async () => {
-      const f = await setup(new FakeSource());
-      const conn = TestBed.inject(ConnectivityService) as unknown as { online: { set(v: boolean): void } };
-
-      conn.online.set(false);
-      tile(f, 'Peso').click();
-      await settle(f);
-
-      expect((modal(f).querySelector('app-button button') as HTMLButtonElement).disabled).toBe(true);
-      expect(modal(f).textContent).toContain('Conexão necessária para salvar o valor.');
-      expect(modal(f).textContent).toContain('Ainda sem valor');
-    });
-
-    it('Esc e clique no scrim fecham sem alterar nada', async () => {
-      const f = await setup(new FakeSource());
-
-      tile(f, 'Peso').click();
-      await settle(f);
-      modal(f).dispatchEvent(new Event('cancel', { cancelable: true }));
-      await settle(f);
-
-      expect(modal(f).open).toBe(false);
-      tile(f, 'Peso').click();
-      await settle(f);
-      modal(f).click();
-      await settle(f);
-
-      expect(modal(f).open).toBe(false);
-      expect(store.auditTrail.length).toBe(0);
-    });
-
-    it('valor manual persiste ao reabrir o Hub e novo resultado de outra feature o substitui, indo ao histórico', async () => {
-      const f = await setup(new FakeSource());
-
-      tile(f, 'GLIM').click();
-      await settle(f);
-      await type(f, 'Manual');
-      await save(f);
-
-      results.values = { glim: 'Novo protocolo' } as NutritionValues;
-      await f.componentInstance.reloadResults();
-      await settle(f);
-
-      expect(tile(f, 'GLIM').textContent).toContain('Novo protocolo');
-      expect((await store.load('p1', 'glim')).map(e => e.value)).toEqual(['Manual']);
-    });
-  });
-
   describe('atualização da Hipótese já preenchida', () => {
     let f: ComponentFixture<PatientHubComponent>;
     const el = (): HTMLElement => f.nativeElement as HTMLElement;
@@ -1230,18 +1039,22 @@ describe('PatientHubComponent', () => {
       f = await setup(new FakeSource());
     });
 
-    it('mostra as ações de atualizar e o texto atual segue visível durante o fluxo', async () => {
-      expect(text(f)).toContain('Atualizar com novo texto');
-      expect(text(f)).toContain('Editar texto');
-      await click('Atualizar com novo texto');
+    it('o lápis do título abre a edição e "Recriar com IA" abre o fluxo da IA; o texto atual segue visível', async () => {
+      expect(text(f)).toContain('Equipe responsável');
+      await clickLabel(f, 'Editar diagnóstico');
+
+      expect(text(f)).toContain('Recriar com IA');
+      expect(text(f)).not.toContain('Equipe responsável');
+      await click('Recriar com IA');
 
       expect(text(f)).toContain('Insuficiência respiratória aguda.');
       expect(text(f)).not.toContain('Ainda não há hipótese');
-      expect(text(f)).not.toContain('Editar texto');
+      expect(text(f)).not.toContain('Recriar com IA');
     });
 
     it('colar novo trecho → síntese → confirmar substitui a hipótese e grava origem ai', async () => {
-      await click('Atualizar com novo texto');
+      await clickLabel(f, 'Editar diagnóstico');
+      await click('Recriar com IA');
       type('paste-text', 'novo trecho');
       await click('Sintetizar com IA');
 
@@ -1254,12 +1067,13 @@ describe('PatientHubComponent', () => {
 
       expect(writer.saved[0].at).toMatch(/^\d{4}-/);
       expect(text(f)).toContain('Texto da IA');
-      expect(text(f)).toContain('Editar texto');
+      expect(text(f)).toContain('Equipe responsável');
       expect(el().querySelector('textarea:not(.input-chat__field)')).toBeNull();
     });
 
     it('cancelar mantém a hipótese anterior sem gravar', async () => {
-      await click('Atualizar com novo texto');
+      await clickLabel(f, 'Editar diagnóstico');
+      await click('Recriar com IA');
       await click('Cancelar');
 
       expect(writer.saved).toEqual([]);
@@ -1268,7 +1082,8 @@ describe('PatientHubComponent', () => {
     });
 
     it('texto vazio não aciona a IA; falha da IA libera digitação manual', async () => {
-      await click('Atualizar com novo texto');
+      await clickLabel(f, 'Editar diagnóstico');
+      await click('Recriar com IA');
       await click('Sintetizar com IA');
 
       expect(synth.calls).toEqual([]);
@@ -1283,7 +1098,7 @@ describe('PatientHubComponent', () => {
 
     it('falha ao gravar mantém a hipótese anterior e informa', async () => {
       writer.fail = true;
-      await click('Editar texto');
+      await clickLabel(f, 'Editar diagnóstico');
       type('edit-text', 'Novo');
       await click('Salvar');
 
@@ -1294,10 +1109,10 @@ describe('PatientHubComponent', () => {
     });
 
     it('edição direta: mostra o texto atual editável e só substitui ao salvar (origem manual)', async () => {
-      await click('Editar texto');
+      await clickLabel(f, 'Editar diagnóstico');
 
       expect(area('edit-text').value).toBe('Insuficiência respiratória aguda.');
-      expect(text(f)).not.toContain('Atualizar com novo texto');
+      expect(text(f)).not.toContain('Equipe responsável');
       type('edit-text', '  Pneumonia  ');
 
       expect(writer.saved).toEqual([]);
@@ -1312,7 +1127,7 @@ describe('PatientHubComponent', () => {
     });
 
     it('edição direta: cancelar descarta; vazio não salva', async () => {
-      await click('Editar texto');
+      await clickLabel(f, 'Editar diagnóstico');
       type('edit-text', '   ');
       await click('Salvar');
 
@@ -1325,7 +1140,7 @@ describe('PatientHubComponent', () => {
     });
 
     it('edição direta offline: salvar indisponível com mensagem; leitura continua', async () => {
-      await click('Editar texto');
+      await clickLabel(f, 'Editar diagnóstico');
       TestBed.inject(ConnectivityService).online.set(false);
       f.detectChanges();
 
@@ -1338,7 +1153,7 @@ describe('PatientHubComponent', () => {
     });
 
     it('a hipótese não muda sem ação explícita do profissional (FR-009)', async () => {
-      await click('Editar texto');
+      await clickLabel(f, 'Editar diagnóstico');
       type('edit-text', 'rascunho não salvo');
       f.detectChanges();
       await f.whenStable();
@@ -1350,350 +1165,151 @@ describe('PatientHubComponent', () => {
     });
   });
 
-  describe('adicionar card pelo "+" (US5)', () => {
+  describe('layout do Figma (3 colunas) e evoluções', () => {
     let f: ComponentFixture<PatientHubComponent>;
-    const el = (): HTMLElement => f.nativeElement;
-    const plus = (): HTMLButtonElement =>
-      el().querySelector<HTMLButtonElement>('button[aria-label="Adicionar card ao painel"]') as HTMLButtonElement;
-    const option = (): HTMLButtonElement | null => el().querySelector<HTMLButtonElement>('.add-sheet__option');
-    const cardLabels = (): string[] =>
-      Array.from(el().querySelectorAll('.nutrition-panel__label')).map(n => n.textContent?.trim() ?? '');
-    const flush = async (): Promise<void> => {
-      f.detectChanges();
-      await f.whenStable();
-      await Promise.resolve();
-      f.detectChanges();
-    };
+    const el = (): HTMLElement => f.nativeElement as HTMLElement;
 
     beforeEach(async () => {
       f = await setup(new FakeSource());
     });
 
-    afterEach(() => {
-      TestBed.inject(ConnectivityService).online.set(true);
+    it('mostra as seções na ordem do Figma: Diagnóstico, Prescrição, Avaliação clínica, nutricional e funcional e Evoluções', () => {
+      const titles = Array.from(el().querySelectorAll('app-section-header h2')).map(h => h.textContent.trim());
+
+      // "Metas nutricionais" só aparece quando há aporte calculado (sem meta, não há o que mostrar).
+      expect(titles).toEqual([
+        'Diagnóstico',
+        'Metas nutricionais',
+        'Prescrição ativa',
+        'Avaliação clínica',
+        'Avaliação nutricional e funcional',
+        'Evoluções',
+      ]);
+
+      expect(el().querySelector('.hub__bed')?.textContent).toContain('Ala 2 · Leito 35');
+      expect(el().querySelector('app-date-strip')).not.toBeNull();
     });
 
-    it('o "+" abre a listagem com o tipo do catálogo e escolher adiciona o card em "Sem dados"', async () => {
-      plus().click();
-      await flush();
+    it('o lápis da Avaliação clínica abre o editor no painel; o card ganha destaque e o lápis vira o ✓ que salva', async () => {
+      const assistant = TestBed.inject(AiAssistantService);
 
-      expect(el().querySelector<HTMLDialogElement>('app-nutrition-add-card-sheet dialog')?.open).toBe(true);
-      expect(option()?.textContent).toContain('Calorimetria indireta');
-      option()?.click();
-      await flush();
+      expect(el().querySelector('.hub__diag--editing')).toBeNull();
+      await clickLabel(f, 'Editar avaliação clínica');
 
-      expect(el().querySelector<HTMLDialogElement>('app-nutrition-add-card-sheet dialog')?.open).toBe(false);
-      expect(cardLabels().at(-1)).toBe('Calorimetria indireta');
-      expect(cardLabels().length).toBe(9);
-      expect(Array.from(el().querySelectorAll('.nutrition-panel__card')).at(-1)?.textContent).toContain('Sem dados');
+      expect(assistant.view()).toBe('editor');
+      expect(assistant.activeAction()?.id).toBe('clinical-assessment');
+      expect(el().querySelector('.hub__diag--editing')).not.toBeNull();
+      expect(el().querySelector('button[aria-label="Editar avaliação clínica"]')).toBeNull();
+      expect(el().querySelector('button[aria-label="Salvar avaliação clínica"]')).not.toBeNull();
     });
 
-    it('tipo já adicionado não aparece de novo; sem opções mostra mensagem de lista vazia', async () => {
-      plus().click();
-      await flush();
-      option()?.click();
-      await flush();
-      plus().click();
-      await flush();
+    it('o ✓ salva pelo editor aberto, e ao fechar o painel o lápis volta', async () => {
+      const assistant = TestBed.inject(AiAssistantService);
+      const run = jasmine.createSpy('run');
 
-      expect(option()).toBeNull();
-      expect(text(f)).toContain('Todos os cards disponíveis já foram adicionados.');
+      await clickLabel(f, 'Editar avaliação clínica');
+      TestBed.inject(AssistantEditorController).attach({ actions: signal([]), placeholder: 'M', run });
+      await clickLabel(f, 'Salvar avaliação clínica');
+
+      expect(run).toHaveBeenCalledWith('save');
+      assistant.closePanel();
+      f.detectChanges();
+
+      expect(el().querySelector('button[aria-label="Editar avaliação clínica"]')).not.toBeNull();
+      expect(el().querySelector('.hub__diag--editing')).toBeNull();
     });
 
-    it('o card adicionado persiste ao reabrir o Hub', async () => {
-      plus().click();
-      await flush();
-      option()?.click();
-      await flush();
+    it('chegando do cadastro do paciente (?avaliar=1) abre a avaliação clínica uma vez e limpa o parâmetro', async () => {
       TestBed.resetTestingModule();
-      f = await setup(new FakeSource());
+      const navigate = spyOn(Router.prototype, 'navigate').and.resolveTo(true);
+      const g = await setup(new FakeSource(), 'p1', undefined, undefined, { avaliar: '1' });
+      const assistant = TestBed.inject(AiAssistantService);
 
-      expect(cardLabels()).toContain('Calorimetria indireta');
+      expect(assistant.view()).toBe('editor');
+      expect(assistant.activeAction()?.id).toBe('clinical-assessment');
+      expect(navigate).toHaveBeenCalledWith([], {
+        queryParams: { avaliar: null },
+        queryParamsHandling: 'merge',
+        replaceUrl: true,
+      });
+
+      expect(g.nativeElement).toBeTruthy();
     });
 
-    it('offline: mostra "conexão necessária" e não adiciona', async () => {
-      TestBed.inject(ConnectivityService).online.set(false);
-      plus().click();
-      await flush();
-
-      expect(text(f)).toContain('Conexão necessária para adicionar um card.');
-      expect(option()?.disabled).toBe(true);
-      await (f.componentInstance as unknown as { addCard(t: string): Promise<void> }).addCard('indirect-calorimetry');
-
-      expect(cardLabels().length).toBe(8);
+    it('sem o parâmetro, a tela abre sem o editor', () => {
+      expect(TestBed.inject(AiAssistantService).view()).toBe('chat');
     });
 
-    it('erro de gravação informa o profissional e não adiciona o card', async () => {
-      spyOn(store, 'add').and.rejectWith(new Error('x'));
-      plus().click();
-      await flush();
-      option()?.click();
-      await flush();
+    it('o lápis da Avaliação nutricional e funcional abre o editor no painel e destaca o card; o ✓ fecha', async () => {
+      const assistant = TestBed.inject(AiAssistantService);
 
-      expect(text(f)).toContain('Não foi possível adicionar o card.');
-      expect(cardLabels().length).toBe(8);
+      expect(el().querySelector('app-nutritional-functional-tiles')).not.toBeNull();
+      expect(el().querySelector('.hub__diag--editing')).toBeNull();
+      el().querySelector<HTMLButtonElement>('[aria-label="Editar avaliação nutricional e funcional"]')?.click();
+      f.detectChanges();
+      await f.whenStable();
+      f.detectChanges();
+
+      expect(assistant.activeAction()?.id).toBe('nutritional-functional');
+      expect(el().querySelector('.hub__diag--editing')).not.toBeNull();
+      expect(el().querySelector('[aria-label="Salvar avaliação nutricional e funcional"]')).not.toBeNull();
     });
 
-    it('fecha pelo botão Fechar e por Esc sem adicionar', async () => {
-      plus().click();
-      await flush();
-      el().querySelector<HTMLButtonElement>('.add-sheet__header button')?.click();
-      await flush();
+    it('escolher outro dia na faixa de datas passa o dia às Evoluções', async () => {
+      const before = el().querySelector('app-patient-evolutions');
+      const strip = f.debugElement.query(By.directive(DateStripComponent)).componentInstance as DateStripComponent;
+      const day = new Date(2026, 4, 20);
 
-      expect((el().querySelector('dialog.add-sheet') as HTMLDialogElement).open).toBe(false);
-      plus().click();
-      await flush();
-      el()
-        .querySelector('dialog.add-sheet')
-        ?.dispatchEvent(new Event('cancel', { cancelable: true }));
-      await flush();
+      strip.dateChange.emit(day);
+      f.detectChanges();
+      await f.whenStable();
 
-      expect(cardLabels().length).toBe(8);
-      expect((el().querySelector('dialog.add-sheet') as HTMLDialogElement).open).toBe(false);
+      expect(before).not.toBeNull();
+      expect((f.componentInstance as unknown as { day(): Date }).day()).toBe(day);
     });
 
-    it('clique no scrim fecha; clique dentro não', async () => {
-      plus().click();
-      await flush();
-      el().querySelector<HTMLElement>('.add-sheet__title')?.click();
-      await flush();
+    it('fechar o Registro diário lê as Evoluções de novo', () => {
+      const hub = f.componentInstance as unknown as { evolutionsVersion(): number; onDailyRecordClosed(): void };
+      const before = hub.evolutionsVersion();
 
-      expect((el().querySelector('dialog.add-sheet') as HTMLDialogElement).open).toBe(true);
-      el().querySelector<HTMLElement>('dialog.add-sheet')?.click();
-      await flush();
+      hub.onDailyRecordClosed();
 
-      expect((el().querySelector('dialog.add-sheet') as HTMLDialogElement).open).toBe(false);
-    });
-
-    it('o card adicionado abre o mesmo modal, editável com histórico (ticket 02)', async () => {
-      plus().click();
-      await flush();
-      option()?.click();
-      await flush();
-      Array.from(el().querySelectorAll<HTMLButtonElement>('.nutrition-panel__card')).at(-1)?.click();
-      await flush();
-
-      expect(el().querySelector('#card-modal-title')?.textContent).toContain('Calorimetria indireta');
-      expect(text(f)).toContain('Novo valor (kcal/dia)');
-      const input = el().querySelector<HTMLInputElement>('#card-modal-value') as HTMLInputElement;
-
-      input.value = '1800';
-      input.dispatchEvent(new Event('input'));
-      await clickButton(f, 'Salvar valor');
-      await flush();
-
-      expect(Array.from(el().querySelectorAll('.nutrition-panel__card')).at(-1)?.textContent).toContain('1800');
-      expect(store.auditTrail[0].indicator).toBe('indirect-calorimetry');
+      expect(hub.evolutionsVersion()).toBe(before + 1);
     });
   });
 
-  describe('ocultar card do painel (US6)', () => {
+  describe('cabeçalho do Figma (4608:4893)', () => {
     let f: ComponentFixture<PatientHubComponent>;
-    const el = (): HTMLElement => f.nativeElement;
-    const labels = (): string[] =>
-      Array.from(el().querySelectorAll('.nutrition-panel__label')).map(n => n.textContent?.trim() ?? '');
-    const flush = async (): Promise<void> => {
-      await f.whenStable();
-      await Promise.resolve();
-      f.detectChanges();
-    };
-    const openCardNamed = async (name: string): Promise<void> => {
-      Array.from(el().querySelectorAll<HTMLButtonElement>('.nutrition-panel__card'))
-        .find(b => b.textContent?.includes(name))
-        ?.click();
-      await flush();
-    };
-    const hideButton = (): HTMLButtonElement | undefined =>
-      Array.from(el().querySelectorAll('dialog button')).find(b => b.textContent?.includes('Ocultar do painel')) as
-        HTMLButtonElement | undefined;
+    const el = (): HTMLElement => f.nativeElement as HTMLElement;
 
     beforeEach(async () => {
-      results.values = { glim: 'Desnutrição' } as NutritionValues;
       f = await setup(new FakeSource());
     });
 
-    afterEach(() => {
-      TestBed.inject(ConnectivityService).online.set(true);
+    it('tem a faixa de datas no cabeçalho (3 dias) e outra na coluna do paciente (mobile)', () => {
+      const header = el().querySelector('app-page-header app-date-strip');
+      const column = el().querySelector('.hub__group app-date-strip');
+
+      expect(header?.classList).toContain('date-strip--header');
+      expect(column?.classList).not.toContain('date-strip--header');
     });
 
-    it('ocultar tira o card da grid e fecha o modal, sem apagar valor nem histórico', async () => {
-      await openCardNamed('GLIM');
-      hideButton()?.click();
-      await flush();
-
-      expect(labels()).not.toContain('GLIM');
-      expect(labels().length).toBe(7);
-      expect(el().querySelector<HTMLDialogElement>('.card-modal')?.open).toBe(false);
-      expect(await store.loadHidden('p1')).toEqual(['glim']);
-      expect(store.auditTrail.length).toBe(0);
-    });
-
-    it('resultado novo de outra feature atualiza o dado por baixo sem reaparecer na grid', async () => {
-      await openCardNamed('GLIM');
-      hideButton()?.click();
-      await flush();
-      results.values = { glim: 'Sem desnutrição' } as NutritionValues;
-      await f.componentInstance.reloadResults();
-      await flush();
-
-      expect(labels()).not.toContain('GLIM');
-      expect((f.componentInstance as unknown as { values(): NutritionValues }).values().glim).toBe('Sem desnutrição');
-    });
-
-    it('tipo do catálogo oculto continua contando como presente e não volta ao "+"', async () => {
-      el().querySelector<HTMLButtonElement>('button[aria-label="Adicionar card ao painel"]')?.click();
-      await flush();
-      el().querySelector<HTMLButtonElement>('app-nutrition-add-card-sheet .add-sheet__option')?.click();
-      await flush();
-      await openCardNamed('Calorimetria indireta');
-      hideButton()?.click();
-      await flush();
-      el().querySelector<HTMLButtonElement>('button[aria-label="Adicionar card ao painel"]')?.click();
-      await flush();
-
-      expect(labels()).not.toContain('Calorimetria indireta');
-      expect(el().querySelector('app-nutrition-add-card-sheet .add-sheet__option')).toBeNull();
-    });
-
-    it('offline: ocultar fica desabilitado com a mensagem de conexão necessária', async () => {
-      TestBed.inject(ConnectivityService).online.set(false);
-      await openCardNamed('GLIM');
-
-      expect(hideButton()?.disabled).toBe(true);
-
-      expect(el().textContent).toContain('Conexão necessária para ocultar o card.');
-      expect(labels()).toContain('GLIM');
-    });
-
-    it('erro de gravação mostra mensagem e o card continua visível', async () => {
-      spyOn(store, 'setHidden').and.rejectWith(new Error('x'));
-      await openCardNamed('GLIM');
-      hideButton()?.click();
-      await flush();
-
-      expect(el().textContent).toContain('Não foi possível ocultar o card. Tente novamente.');
-      expect(labels()).toContain('GLIM');
-      expect(el().querySelector<HTMLDialogElement>('.card-modal')?.open).toBe(true);
-    });
-
-    it('ao reabrir o Hub, os cards ocultos seguem fora da grid', async () => {
-      await store.setHidden('p1', 'weight', true);
-      TestBed.resetTestingModule();
-      f = await setup(new FakeSource());
-
-      expect(labels()).not.toContain('Peso');
-    });
-  });
-
-  describe('reexibir cards ocultos (US6, FR-021)', () => {
-    let f: ComponentFixture<PatientHubComponent>;
-    const el = (): HTMLElement => f.nativeElement;
-    const labels = (): string[] =>
-      Array.from(el().querySelectorAll('.nutrition-panel__label')).map(n => n.textContent?.trim() ?? '');
-    const access = (): HTMLButtonElement | null => el().querySelector('.nutrition-panel__hidden');
-    const sheetOption = (): HTMLButtonElement | null =>
-      el().querySelector('app-nutrition-hidden-cards-sheet button.add-sheet__option');
-    const settle = async (): Promise<void> => {
-      await f.whenStable();
-      f.detectChanges();
-      await Promise.resolve();
-      f.detectChanges();
-    };
-
-    beforeEach(async () => {
-      results.values = { glim: 'Desnutrição' } as NutritionValues;
-      await store.setHidden('p1', 'glim', true);
-      f = await setup(new FakeSource());
-    });
-
-    afterEach(() => {
-      TestBed.inject(ConnectivityService).online.set(true);
-    });
-
-    it('com card oculto mostra o acesso e a lista identifica o card por texto', async () => {
-      expect(access()?.textContent).toContain('Cards ocultos (1)');
-      access()?.click();
-      await settle();
-
-      expect(sheetOption()?.textContent).toContain('GLIM');
-    });
-
-    it('sem card oculto o acesso não aparece', async () => {
-      await store.setHidden('p1', 'glim', false);
-      await f.componentInstance.reloadResults();
+    it('no mobile o cabeçalho não tem o sino (só os atalhos)', async () => {
+      desktop.set(false);
       f.detectChanges();
 
-      expect(access()).toBeNull();
+      expect(el().querySelector('.page-header__bell')).toBeNull();
+      desktop.set(true);
     });
 
-    it('card oculto não pode ser aberto (não está na grid)', () => {
-      const panelCards = Array.from(el().querySelectorAll('.nutrition-panel__card'));
+    it('mostra o sino com as não lidas e abre as notificações', async () => {
+      const router = TestBed.inject(Router);
+      const navigate = spyOn(router, 'navigate').and.resolveTo(true);
 
-      expect(panelCards.some(c => c.textContent?.includes('GLIM'))).toBe(false);
-    });
+      await clickLabel(f, 'Notificações');
 
-    it('escolher o card o devolve à grid com valor e histórico íntegros', async () => {
-      access()?.click();
-      await settle();
-      sheetOption()?.click();
-      await settle();
-
-      expect(labels()).toContain('GLIM');
-      expect(
-        Array.from(el().querySelectorAll('.nutrition-panel__card')).find(c => c.textContent?.includes('GLIM'))
-          ?.textContent,
-      ).toContain('Desnutrição');
-
-      expect(access()).toBeNull();
-      expect(await store.loadHidden('p1')).toEqual([]);
-    });
-
-    it('resultado novo recebido enquanto oculto aparece ao reexibir', async () => {
-      results.values = { glim: 'Sem desnutrição' } as NutritionValues;
-      await f.componentInstance.reloadResults();
-      access()?.click();
-      await settle();
-      sheetOption()?.click();
-      await settle();
-
-      expect(el().textContent).toContain('Sem desnutrição');
-    });
-
-    it('offline: reexibir fica desabilitado com a mensagem de conexão necessária', async () => {
-      TestBed.inject(ConnectivityService).online.set(false);
-      access()?.click();
-      await settle();
-
-      expect(sheetOption()?.disabled).toBe(true);
-      expect(el().textContent).toContain('Conexão necessária para reexibir um card.');
-      await (f.componentInstance as unknown as { showCard(i: string): Promise<void> }).showCard('glim');
-
-      expect(await store.loadHidden('p1')).toEqual(['glim']);
-    });
-
-    it('erro de gravação mostra mensagem e o card segue oculto', async () => {
-      spyOn(store, 'setHidden').and.rejectWith(new Error('x'));
-      access()?.click();
-      await settle();
-      sheetOption()?.click();
-      await settle();
-
-      expect(el().textContent).toContain('Não foi possível reexibir o card. Tente novamente.');
-      expect(labels()).not.toContain('GLIM');
-    });
-
-    it('fechar a lista pelo botão e pelo Esc a esconde', async () => {
-      access()?.click();
-      await settle();
-      const dialog = el().querySelector<HTMLDialogElement>(
-        'app-nutrition-hidden-cards-sheet dialog',
-      ) as HTMLDialogElement;
-
-      expect(dialog.open).toBe(true);
-      dialog.dispatchEvent(new Event('cancel', { cancelable: true }));
-      await settle();
-
-      expect(dialog.open).toBe(false);
+      expect(el().querySelector('app-badge')?.textContent).toContain('3');
+      expect(navigate).toHaveBeenCalledWith(['/notifications']);
     });
   });
 });

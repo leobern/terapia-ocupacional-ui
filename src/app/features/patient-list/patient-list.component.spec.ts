@@ -156,7 +156,6 @@ describe('PatientListComponent', () => {
     ).toContain('date-strip__day--selected');
     q('[aria-label="Dia anterior"]')?.click();
     fixture.detectChanges();
-    (document.querySelectorAll('.confirm-dialog__actions button')[0] as HTMLElement).click();
     await fixture.whenStable();
     fixture.detectChanges();
 
@@ -235,7 +234,6 @@ describe('PatientListComponent', () => {
 
       source.result = new Promise<readonly CensusPatient[]>(() => undefined);
       fixture.componentInstance.selectDate(new Date(Date.now() - 86_400_000));
-      fixture.componentInstance.confirmPendingDate();
       fixture.detectChanges();
 
       expect(q('.patient-list__skeleton')).not.toBeNull();
@@ -290,17 +288,11 @@ describe('PatientListComponent', () => {
       expect(spy).not.toHaveBeenCalled();
     });
 
-    it('persiste ao trocar a data e cancelar o alerta não altera o critério', async () => {
+    it('persiste ao trocar a data: o critério de ordenação não muda', async () => {
       const yesterday = new Date(Date.now() - 86_400_000);
 
       sort()?.select('priority');
       fixture.componentInstance.selectDate(yesterday);
-      fixture.componentInstance.cancelPendingDate();
-
-      expect(sort()?.active()).toBe('priority');
-
-      fixture.componentInstance.selectDate(yesterday);
-      fixture.componentInstance.confirmPendingDate();
       fixture.detectChanges();
       await fixture.whenStable();
       fixture.detectChanges();
@@ -316,7 +308,6 @@ describe('PatientListComponent', () => {
 
     it('em data retroativa as ações somem, mas os chips de ordenação continuam', async () => {
       fixture.componentInstance.selectDate(new Date(Date.now() - 86_400_000));
-      fixture.componentInstance.confirmPendingDate();
       fixture.detectChanges();
 
       expect(TestBed.inject(ScreenActionsService).actions()).toEqual([]);
@@ -785,7 +776,6 @@ describe('PatientListComponent', () => {
 
       day.setDate(day.getDate() - 1);
       fixture.componentInstance.selectDate(day);
-      fixture.componentInstance.confirmPendingDate();
       fixture.detectChanges();
 
       expect(actionByLabel('Cadastrar paciente')).toBeUndefined();
@@ -877,8 +867,6 @@ describe('PatientListComponent', () => {
         .actions()
         .map(a => a.label);
     const dialog = (): HTMLElement | null => q('[role="alertdialog"].confirm-dialog__panel, .confirm-dialog__panel');
-    const buttons = (): HTMLButtonElement[] =>
-      Array.from(dialog()?.querySelectorAll('button') ?? []) as HTMLButtonElement[];
 
     async function settle(): Promise<void> {
       fixture.detectChanges();
@@ -894,7 +882,7 @@ describe('PatientListComponent', () => {
       expect(dialog()).toBeNull();
     });
 
-    it('pede confirmação antes de aplicar e não muda data nem lista enquanto aberto', async () => {
+    it('navega direto para a data anterior, sem pedir confirmação', async () => {
       source.result = Promise.resolve(census(2));
       await create();
       const before = fixture.componentInstance.selectedDate();
@@ -902,14 +890,12 @@ describe('PatientListComponent', () => {
       fixture.componentInstance.selectDate(yesterday());
       await settle();
 
-      expect(dialog()).not.toBeNull();
-      expect(dialog()?.textContent).toContain(`Ver o dia ${yesterday().getDate()} de`);
-      expect(dialog()?.textContent).toContain('somente para leitura, em preto e branco');
-      expect(fixture.componentInstance.selectedDate()).toBe(before);
-      expect(fixture.componentInstance.readOnly()).toBeFalse();
+      expect(dialog()).toBeNull();
+      expect(fixture.componentInstance.selectedDate()).not.toBe(before);
+      expect(fixture.componentInstance.readOnly()).toBeTrue();
     });
 
-    it('confirmar recarrega a lista da data, entra em somente leitura e remove as ações de escrita', async () => {
+    it('ir para uma data anterior recarrega a lista, entra em somente leitura e remove as ações de escrita', async () => {
       const days: Date[] = [];
 
       source.loadCensus = (_?: number, day?: Date): Promise<readonly CensusPatient[]> => {
@@ -919,8 +905,6 @@ describe('PatientListComponent', () => {
       };
       await create();
       fixture.componentInstance.selectDate(yesterday());
-      await settle();
-      buttons()[0].click();
       await settle();
 
       expect(days.at(-1)?.getDate()).toBe(yesterday().getDate());
@@ -936,39 +920,16 @@ describe('PatientListComponent', () => {
       source.result = Promise.resolve(census(2));
       await create();
       fixture.componentInstance.selectDate(yesterday());
-      fixture.componentInstance.confirmPendingDate();
       await settle();
       (q('.patient-list__row') as HTMLElement).click();
 
       expect(router.navigate).toHaveBeenCalledWith(['/patients', jasmine.any(String)]);
     });
 
-    it('cancelar (botão ou Esc) mantém tudo como estava', async () => {
-      source.result = Promise.resolve(census(2));
-      await create();
-      fixture.componentInstance.selectDate(yesterday());
-      await settle();
-      buttons()[1].click();
-      await settle();
-
-      expect(dialog()).toBeNull();
-      expect(fixture.componentInstance.readOnly()).toBeFalse();
-      expect(labels().length).toBe(4);
-
-      fixture.componentInstance.selectDate(yesterday());
-      await settle();
-      document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
-      await settle();
-
-      expect(dialog()).toBeNull();
-      expect(fixture.componentInstance.readOnly()).toBeFalse();
-    });
-
     it('voltar a hoje restaura o modo normal sem alerta', async () => {
       source.result = Promise.resolve(census(2));
       await create();
       fixture.componentInstance.selectDate(yesterday());
-      fixture.componentInstance.confirmPendingDate();
       await settle();
       fixture.componentInstance.selectDate(new Date());
       await settle();
@@ -978,15 +939,6 @@ describe('PatientListComponent', () => {
       expect(q('.patient-list--read-only')).toBeNull();
       expect(labels().length).toBe(4);
       expect(q('.patient-list__register')).not.toBeNull();
-    });
-
-    it('confirmar sem data pendente não faz nada e Esc sem alerta é ignorado', async () => {
-      source.result = Promise.resolve(census(1));
-      await create();
-      fixture.componentInstance.confirmPendingDate();
-      document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
-
-      expect(fixture.componentInstance.readOnly()).toBeFalse();
     });
   });
 
@@ -1121,7 +1073,6 @@ describe('PatientListComponent', () => {
     it('somente leitura: sem ação e sem navegação', async () => {
       source.result = Promise.resolve(census(1));
       await create();
-      fixture.componentInstance.pendingDate.set(null);
       fixture.componentInstance.selectedDate.set(new Date(2020, 0, 1));
       fixture.detectChanges();
       await fixture.whenStable();
@@ -1236,7 +1187,6 @@ describe('PatientListComponent', () => {
       source.result = Promise.resolve(census(1));
       await create();
       fixture.componentInstance.selectDate(new Date(Date.now() - 86_400_000));
-      fixture.componentInstance.confirmPendingDate();
       fixture.detectChanges();
 
       TestBed.inject(AiAssistantService).ask('só do convênio');

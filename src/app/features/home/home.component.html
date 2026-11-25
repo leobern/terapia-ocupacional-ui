@@ -11,44 +11,46 @@
         <h1 class="home__header-name">{{ professionalName }}</h1>
       </div>
 
-      <span class="home__notify-wrapper">
-        <app-icon-button
-          kind="primary"
-          appearance="icon"
-          icon="bell"
-          [solid]="true"
-          [ariaLabel]="bellLabel()"
-          (click)="onViewAllNotifications()"
-        />
-        @if (unreadCount() > 0) {
-          <app-badge
-            class="home__notify-badge"
-            type="numeral"
-            [value]="unreadCount()"
+      <div class="home__header-actions">
+        <span class="home__notify-wrapper">
+          <app-icon-button
+            kind="primary"
+            appearance="icon"
+            size="small"
+            icon="bell"
+            [ariaLabel]="bellLabel()"
+            (click)="onViewAllNotifications()"
           />
-        }
-      </span>
+          @if (unreadCount() > 0) {
+            <app-badge
+              class="home__notify-badge"
+              type="numeral"
+              [value]="unreadCount()"
+            />
+          }
+        </span>
 
-      <!--
-        Só no desktop: no mobile/tablet o mesmo destino (abrir o assistente de
-        IA) já é o botão central da bottom-nav-bar — duplicar aqui criaria dois
-        acionadores para a mesma ação na mesma tela. Wrapper `<span>` (não a
-        classe direto no host do `app-icon-button`) porque o host do botão é
-        `display: contents` — esconder um `display: contents` com
-        `display: none` externo depende de qual dos dois vence a cascata;
-        escondendo o wrapper em vez disso, o resultado não depende disso.
-      -->
-      <span class="home__shortcuts-wrapper">
-        <app-icon-button
-          kind="primary"
-          appearance="icon"
-          icon="squares-four"
-          ariaLabel="Ações da tela"
-          [solid]="true"
-          [disabled]="aiAssistant.shortcutsOpen()"
-          (click)="aiAssistant.openShortcuts()"
-        />
-      </span>
+        <!--
+          Só no desktop: no mobile/tablet o mesmo destino (abrir o assistente de
+          IA) já é o botão central da bottom-nav-bar — duplicar aqui criaria dois
+          acionadores para a mesma ação na mesma tela. Wrapper `<span>` (não a
+          classe direto no host do `app-icon-button`) porque o host do botão é
+          `display: contents` — esconder um `display: contents` com
+          `display: none` externo depende de qual dos dois vence a cascata;
+          escondendo o wrapper em vez disso, o resultado não depende disso.
+        -->
+        <span class="home__shortcuts-wrapper">
+          <app-icon-button
+            kind="primary"
+            appearance="icon"
+            size="small"
+            icon="squares-four"
+            ariaLabel="Ações da tela"
+            [disabled]="aiAssistant.shortcutsOpen()"
+            (click)="aiAssistant.openShortcuts()"
+          />
+        </span>
+      </div>
     </header>
 
     @if (stale()) {

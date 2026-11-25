@@ -1,7 +1,7 @@
 @if (open()) {
   <!-- Figma v2/Dialog Type=confirm: título, texto e duas ações md. Padrão dos modais (Thiago, 2026-11-23): ação
        primária à ESQUERDA da secundária, na mesma linha, alinhadas à direita, com 16px entre elas. -->
-  <div class="confirm-dialog__scrim">
+  <div #scrim class="confirm-dialog__scrim" popover="manual">
     <div
       class="confirm-dialog__panel"
       role="alertdialog"

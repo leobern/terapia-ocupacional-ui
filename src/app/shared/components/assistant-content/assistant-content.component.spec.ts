@@ -1,4 +1,4 @@
-import { signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, input, signal } from '@angular/core';
 import { type ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { Router } from '@angular/router';
@@ -27,6 +27,13 @@ describe('AssistantContentComponent', () => {
 
   const el = (): HTMLElement => fixture.nativeElement;
   const text = (selector: string): string => el().querySelector(selector)?.textContent?.trim() ?? '';
+  /** Deixa o título e a descrição do cadastro terminarem de ser digitados (os componentes surgem depois). */
+  const finishTyping = (): void => {
+    for (let i = 0; i < 4; i++) {
+      jasmine.clock().tick(3000);
+      fixture.detectChanges();
+    }
+  };
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
@@ -151,7 +158,8 @@ describe('AssistantContentComponent', () => {
     assistant.openShortcuts();
     fixture.detectChanges();
 
-    expect(text('.assistant-content__title')).toBe('Atalhos');
+    // O título "Atalhos" fica no cabeçalho do painel (no lugar do logo), não no conteúdo.
+    expect(el().querySelector('.assistant-content__title')).toBeNull();
     expect(text('.assistant-content__body')).toContain('Qual ação você deseja executar nessa tela');
     expect(
       Array.from(el().querySelectorAll('.assistant-content__actions button')).map(b => b.textContent?.trim()),
@@ -191,14 +199,51 @@ describe('AssistantContentComponent', () => {
     expect(text('.assistant-content__actions')).toContain('Nenhuma ação disponível');
   });
 
-  it('choosing a registration opens its form (the heading and back arrow live in the panel header)', () => {
+  it('choosing a registration opens its form: título e descrição são digitados e só depois surgem os campos', () => {
+    jasmine.clock().install();
     assistant.openShortcuts();
     fixture.detectChanges();
     (el().querySelectorAll('.assistant-content__actions button')[0] as HTMLButtonElement).click();
     fixture.detectChanges();
 
     expect(assistant.view()).toBe('form');
+    expect(el().querySelector('app-assistant-form')).toBeNull();
+    finishTyping();
+
     expect(el().querySelector('app-assistant-form')).toBeTruthy();
+    jasmine.clock().uninstall();
+  });
+
+  it('editor: título e descrição digitados, a linha de apoio e só depois o componente do editor', () => {
+    @Component({
+      changeDetection: ChangeDetectionStrategy.OnPush,
+      selector: 'app-fake-editor',
+      template: '<p class="fake-editor">{{ label() }}</p>',
+    })
+    class FakeEditorComponent {
+      readonly label = input('');
+    }
+    jasmine.clock().install();
+    assistant.openAction({
+      editor: {
+        component: FakeEditorComponent,
+        description: 'Descrição do editor',
+        hint: 'Apoio do editor',
+        inputs: { label: 'Campos do editor' },
+        title: 'Avaliação clínica',
+      },
+      id: 'clinical',
+      label: 'Avaliação clínica',
+    });
+    fixture.detectChanges();
+
+    expect(assistant.view()).toBe('editor');
+    expect(el().querySelector('.fake-editor')).toBeNull();
+    finishTyping();
+
+    expect(el().querySelector('.fake-editor')?.textContent).toBe('Campos do editor');
+    expect(text('.assistant-content__hint')).toBe('Apoio do editor');
+    jasmine.clock().uninstall();
   });
 
   it('an action without a form says it is not available yet', () => {
@@ -209,12 +254,15 @@ describe('AssistantContentComponent', () => {
   });
 
   it('after the registration is saved the panel goes back to the shortcuts', () => {
+    jasmine.clock().install();
     assistant.openAction(create);
     fixture.detectChanges();
+    finishTyping();
     fixture.debugElement.query(By.directive(AssistantFormComponent)).componentInstance.submitted.emit();
     fixture.detectChanges();
 
     expect(assistant.view()).toBe('shortcuts');
+    jasmine.clock().uninstall();
   });
 
   describe('helpers de resposta', () => {
@@ -346,6 +394,47 @@ describe('AssistantContentComponent', () => {
       expect(live(0)).toBe('Como eu posso te ajudar?');
     });
 
+    it('trocar de tela com o painel aberto não reinicia a digitação nem muda o texto já escrito', () => {
+      const screen = TestBed.inject(ScreenActionsService);
+
+      screen.registerContext({ description: 'Descrição A', title: 'Título A' });
+      assistant.openPanel();
+      fixture.detectChanges();
+      for (const ms of [1000, 3000, 2500]) {
+        jasmine.clock().tick(ms);
+        fixture.detectChanges();
+      }
+
+      expect(live(0)).toBe('Título A');
+      expect(live(1)).toBe('Descrição A');
+
+      screen.registerContext({ description: 'Descrição B', title: 'Título B' });
+      fixture.detectChanges();
+      jasmine.clock().tick(50);
+      fixture.detectChanges();
+
+      expect(live(0)).toBe('Título A');
+      expect(live(1)).toBe('Descrição A');
+      expect(hint().classList).toContain('assistant-content__hint--visible');
+    });
+
+    it('uma nova abertura lê a tela de novo e escreve o texto da tela atual', () => {
+      const screen = TestBed.inject(ScreenActionsService);
+
+      screen.registerContext({ description: 'Descrição A', title: 'Título A' });
+      assistant.openPanel();
+      fixture.detectChanges();
+      assistant.closePanel();
+      fixture.detectChanges();
+      screen.registerContext({ description: 'Descrição B', title: 'Título B' });
+      assistant.openPanel();
+      fixture.detectChanges();
+      jasmine.clock().tick(14 * 'Título B'.length);
+      fixture.detectChanges();
+
+      expect(live(0)).toBe('Título B');
+    });
+
     it('fechar e reabrir o painel escreve tudo de novo e esconde o aviso', () => {
       assistant.openPanel();
       fixture.detectChanges();
@@ -393,11 +482,18 @@ describe('AssistantContentComponent', () => {
     const buttons = (): string[] =>
       Array.from(el().querySelectorAll<HTMLButtonElement>('button')).map(b => b.textContent?.trim() ?? '');
 
+    beforeEach(() => jasmine.clock().install());
+
+    afterEach(() => jasmine.clock().uninstall());
+
     it('shows the question, answers, errors and the options/skip buttons', () => {
       assistant.openAction(chat);
       fixture.detectChanges();
+      finishTyping();
 
-      expect(text('.assistant-content__body')).toBe('Qual o nome?');
+      expect(Array.from(el().querySelectorAll('.assistant-content__body')).at(-1)?.textContent?.trim()).toBe(
+        'Qual o nome?',
+      );
       assistant.ask('');
       assistant.ask('Ana');
       fixture.detectChanges();
@@ -418,13 +514,15 @@ describe('AssistantContentComponent', () => {
       assistant.openAction(chat);
       assistant.ask('Ana');
       assistant.ask('');
-      await new Promise(resolve => setTimeout(resolve));
+      fixture.detectChanges();
+      finishTyping();
+      await Promise.resolve();
       fixture.detectChanges();
       submit.and.resolveTo();
 
       expect(buttons()).toEqual([jasmine.stringMatching(/Tentar novamente|Try again/)]);
       el().querySelector('button')?.click();
-      await new Promise(resolve => setTimeout(resolve));
+      await Promise.resolve();
       fixture.detectChanges();
 
       expect(text('.assistant-content__body:last-of-type')).toBe('Feito');

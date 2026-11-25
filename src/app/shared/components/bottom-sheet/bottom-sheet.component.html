@@ -29,15 +29,14 @@
       (pointerup)="onPointerUp($event)"
       (pointercancel)="onPointerCancel()"
     >
-      <!-- Cabeçalho padrão (Figma 4722:10998): logo + título + fechar. No cadastro o logo fica compacto e o
-           título da ação vem ao lado. -->
-      <app-icon-logo
-        class="bottom-sheet__logo"
-        state="default"
-        sparkle="solid"
-        [class.bottom-sheet__logo--compact]="!showLogo()"
-      />
-      @if (!showLogo()) {
+      <!-- Cabeçalho: logo da IA (conversa e cadastros) ou, nos Atalhos, o título no lugar do logo. -->
+      @if (showLogo()) {
+        <app-icon-logo
+          class="bottom-sheet__logo"
+          state="default"
+          sparkle="solid"
+        />
+      } @else {
         <ng-content select="[bottomSheetHeaderStart]" />
       }
 

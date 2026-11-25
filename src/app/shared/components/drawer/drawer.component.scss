@@ -28,10 +28,13 @@ $icon-hit-inset: ($min-touch-target - tokens.$control-height-md) * 0.5;
 
 .drawer {
   background: var(--color-surface);
+  // Figma 4775:27420 (Thiago, 2026-11-24): borda azul (secondary) de 4px só no lado esquerdo e **sem raio** (0, ajuste
+  // posterior do Thiago). Vale para toda sidebar de chat com IA.
   border: 0;
+  border-inline-start: 4px solid var(--color-secondary);
   // Figma v2/AssistantPanel: sombra elevation-bottomsheet.
   box-shadow: var(--shadow-elevation-bottomsheet);
-  border-radius: tokens.$radius-lg 0 0 tokens.$radius-lg; // Figma v2 (side-IA): 32px
+  border-radius: 0;
   color: var(--color-content-1);
   display: none;
   flex-direction: column;
@@ -89,10 +92,14 @@ $icon-hit-inset: ($min-touch-target - tokens.$control-height-md) * 0.5;
 // Linha única: logo (ou título + voltar) à esquerda e expandir/fechar à direita, TODOS centralizados
 // na vertical. O padding de cima/esquerda é 16px menor que o antigo (24 -> 8) — a logo sobe e vai
 // para a esquerda —, e o de baixo cresce 16px para o texto abaixo ficar onde estava.
+// A faixa tem 56px (como o cabeçalho das telas): o centro do logo fica na mesma linha do voltar/avatar e do logo do
+// menu. O logo (caixa de 84px com o brilho) passa da faixa, centralizado, sem aumentá-la.
 .drawer__header {
   align-items: center;
+  box-sizing: content-box;
   display: flex;
   flex-shrink: 0;
+  height: var(--header-band-height);
   justify-content: space-between;
   padding: 0 0 var(--space-24);
 }

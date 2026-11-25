@@ -197,15 +197,15 @@ describe('BottomSheetComponent', () => {
     expect(closed).not.toHaveBeenCalled();
   });
 
-  it('com showLogo=false (cadastro) o logo continua no cabeçalho, compacto, junto com o fechar', () => {
+  it('com showLogo=false (Atalhos) o logo sai do cabeçalho e o título projetado ocupa o lugar; o fechar continua', () => {
     openSheet();
 
-    expect(fixture.nativeElement.querySelector('.bottom-sheet__logo--compact')).toBeNull();
+    expect(fixture.nativeElement.querySelector('.bottom-sheet__logo')).not.toBeNull();
 
     fixture.componentRef.setInput('showLogo', false);
     fixture.detectChanges();
 
-    expect(fixture.nativeElement.querySelector('.bottom-sheet__logo--compact')).not.toBeNull();
+    expect(fixture.nativeElement.querySelector('.bottom-sheet__logo')).toBeNull();
     expect(fixture.nativeElement.querySelector('.bottom-sheet__close')).not.toBeNull();
   });
 

@@ -1,0 +1,285 @@
+@use '../../../shared/styles/tokens';
+@use '../../../shared/styles/tones';
+@use '../../../shared/styles/typography';
+
+:host {
+  display: block;
+}
+
+// Figma 4775:27490: cards v2/FormField (surface, raio 24, padding 16, gap 8) lado a lado (2 por linha no painel de
+// 416px). Flex: o número de cards por linha e a largura de cada um se ajustam ao painel (Thiago, 2026-11-24).
+.clin__grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: tokens.$space-8;
+}
+
+.clin__card {
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$space-8;
+  flex: 1 1 180px;
+  min-width: 0;
+  padding: tokens.$space-16;
+  border: 1px solid tokens.c(border);
+  border-radius: tokens.$radius-md;
+  background: tokens.c(surface);
+
+  // Item novo ocupa a linha toda (tem mais campos).
+  &--new {
+    flex-basis: 100%;
+  }
+}
+
+.clin__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: tokens.$space-8;
+  min-height: 24px;
+}
+
+.clin__title {
+  flex: 1 0 0;
+  min-width: 0;
+  color: tokens.c(content-1);
+
+  @include typography.title-md;
+}
+
+// Campo (48px, raio 16, borda) com a unidade à direita.
+.clin__field {
+  display: flex;
+  align-items: center;
+  gap: tokens.$space-8;
+  box-sizing: border-box;
+  height: 48px;
+  padding: 0 tokens.$space-12 0 tokens.$space-16;
+  border: 1px solid tokens.c(border-2);
+  border-radius: tokens.$radius-sm;
+  background: tokens.c(surface);
+
+  &:focus-within {
+    outline: var(--focus-ring-width) solid tokens.c(focus-ring);
+    outline-offset: var(--focus-ring-offset);
+  }
+
+  &--error {
+    border-color: tokens.c(comm-alert);
+  }
+}
+
+.clin__input {
+  flex: 1 0 0;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: tokens.c(content-1);
+  outline: 0;
+
+  @include typography.body-lg;
+
+  // Título do item novo: mesma altura dos campos (48px, Figma 4781:31732).
+  &--title {
+    flex: none;
+    box-sizing: border-box;
+    height: 48px;
+    padding-inline: tokens.$space-16;
+    border: 1px solid tokens.c(border-2);
+    border-radius: tokens.$radius-sm;
+  }
+
+  &--unit {
+    flex: 0 0 96px;
+    text-align: end;
+    color: tokens.c(content-4);
+  }
+
+  &--small {
+    flex: 0 0 64px;
+    box-sizing: border-box;
+    height: 48px;
+    padding-inline: tokens.$space-12;
+    border: 1px solid tokens.c(border-2);
+    border-radius: tokens.$radius-sm;
+
+    @include typography.body-lg;
+  }
+
+  &--grow {
+    flex: 1 0 96px;
+  }
+}
+
+.clin__unit {
+  flex: none;
+  color: tokens.c(content-4);
+
+  @include typography.caption;
+}
+
+.clin__caption {
+  margin: 0;
+  color: tokens.c(content-4);
+
+  @include typography.caption;
+}
+
+.clin__error {
+  margin: 0;
+  color: tokens.c(comm-alert);
+
+  @include typography.caption;
+}
+
+// Status em texto com o ponto de cor (a cor nunca é o único sinal).
+.clin__status-line {
+  display: flex;
+  align-items: center;
+  gap: tokens.$space-4;
+  margin: 0;
+  color: tokens.c(content-1);
+
+  @include typography.caption;
+}
+
+.clin__dot {
+  flex: none;
+  width: 8px;
+  height: 8px;
+  border-radius: tokens.$radius-pill;
+  background: tokens.c(secondary);
+
+  @include tones.dot-tones;
+
+  // Ponto que abre o seletor de cor (alvo de toque maior que o ponto).
+  &--button {
+    box-sizing: content-box;
+    width: 16px;
+    height: 16px;
+    padding: 4px;
+    border: 0;
+    background-clip: content-box;
+    cursor: pointer;
+  }
+}
+
+.clin__range {
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$space-4;
+}
+
+.clin__tone {
+  display: flex;
+  align-items: center;
+  gap: tokens.$space-4;
+}
+
+.clin__range-row {
+  display: flex;
+  align-items: center;
+  gap: tokens.$space-4;
+}
+
+// Fundo escuro de 10% sobre o sistema todo (popover = camada superior do navegador); só as tags ficam em destaque.
+.clin__scrim {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: none;
+  height: 100%;
+  max-height: none;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  overflow: visible;
+  background: rgb(0 0 0 / 10%);
+
+  &:not(:popover-open) {
+    display: none;
+  }
+}
+
+.clin__palette {
+  position: fixed;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: tokens.$space-8;
+}
+
+.clin__swatch {
+  display: inline-flex;
+  align-items: center;
+  gap: tokens.$space-8;
+  min-height: 32px;
+  padding: 0 tokens.$space-12;
+  border: 0;
+  border-radius: tokens.$radius-pill;
+  background: tokens.c(surface);
+  box-shadow: 0 4px 12px rgb(0 0 0 / 24%);
+  color: tokens.c(content-1);
+  cursor: pointer;
+
+  @include typography.label-md;
+}
+
+.clin__actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: tokens.$space-8;
+}
+
+.clin__link {
+  margin-inline-end: auto;
+  min-height: 40px;
+  padding: 0 tokens.$space-8;
+  border: 0;
+  background: transparent;
+  color: tokens.c(content-3);
+  cursor: pointer;
+
+  @include typography.label-md;
+}
+
+.clin__status {
+  margin: 0;
+  padding: tokens.$space-16;
+  border-radius: tokens.$radius-md;
+  background: tokens.c(surface);
+  color: tokens.c(content-4);
+
+  @include typography.body-md;
+
+  &--warning {
+    color: tokens.c(content-1);
+  }
+}
+
+// Sugestões de novo item (histórico do usuário e tipos padrão): chips de 40px.
+.clin__suggest {
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$space-8;
+  margin-top: tokens.$space-16;
+}
+
+.clin__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: tokens.$space-8;
+}
+
+.clin__chip {
+  min-height: 40px;
+  padding: 0 tokens.$space-16;
+  border: 1px solid tokens.c(secondary);
+  border-radius: tokens.$radius-12;
+  background: transparent;
+  color: tokens.c(secondary);
+  cursor: pointer;
+
+  @include typography.label-md;
+}

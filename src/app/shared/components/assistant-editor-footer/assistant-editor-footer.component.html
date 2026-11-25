@@ -1,0 +1,19 @@
+<div class="assistant-editor-footer">
+  @if (actions().length > 0) {
+    <div class="assistant-editor-footer__actions">
+      @for (action of actions(); track action.id) {
+        <app-tip [label]="action.label" (click)="controller.run(action.id)" />
+      }
+    </div>
+  }
+  @if (controller.hint(); as hint) {
+    <p class="assistant-editor-footer__hint" role="status">{{ hint }}</p>
+  }
+  <app-input-chat
+    [placeholder]="placeholder()"
+    [(value)]="value"
+    [(mode)]="mode"
+    (send)="onSend()"
+    (audioSend)="onSend()"
+  />
+</div>

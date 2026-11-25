@@ -27,6 +27,8 @@ const UNAVAILABLE_HINTS = {
   templateUrl: './adequacy-summary.component.html',
 })
 export class AdequacySummaryComponent {
+  /** O Hub mostra o aporte dentro do card "Prescrição ativa" e dispensa o título próprio. */
+  readonly showTitle = input(true);
   readonly adequacy = input.required<DailyAdequacy>();
 
   protected readonly hint = computed(() => {

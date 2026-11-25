@@ -7,6 +7,7 @@ import { LogoutService } from './features/auth/logout.service';
 import { LogoutConfirmComponent } from './features/auth/logout-confirm.component';
 import { Role, SessionRoleReader } from './shared/auth/session-role';
 import { AssistantContentComponent } from './shared/components/assistant-content/assistant-content.component';
+import { AssistantEditorFooterComponent } from './shared/components/assistant-editor-footer/assistant-editor-footer.component';
 import { AssistantFormFooterComponent } from './shared/components/assistant-form-footer/assistant-form-footer.component';
 import { AssistantHeadingComponent } from './shared/components/assistant-header/assistant-heading.component';
 import {
@@ -46,6 +47,7 @@ const ACTION_SHORTCUT_PREFIX = 'action:';
   imports: [
     AssistantContentComponent,
     AssistantHeadingComponent,
+    AssistantEditorFooterComponent,
     AssistantFormFooterComponent,
     BackgroundMeshComponent,
     BottomNavBarComponent,
@@ -121,10 +123,8 @@ export class AppComponent {
   protected readonly aiChatMode = signal<InputChatMode>('text');
 
   /** Faixa de botões do painel: perguntas rápidas só no chat; as ações da tela aparecem no próprio conteúdo. */
-  /** Ação aberta (formulário ou aviso): o cabeçalho do painel mostra título + voltar no lugar da logo. */
-  protected readonly showAssistantHeading = computed(() =>
-    ['form', 'conversation', 'unavailable'].includes(this.aiAssistant.view()),
-  );
+  /** Atalhos: o cabeçalho mostra o título "Atalhos" no lugar do logo (e não há redimensionar). */
+  protected readonly showAssistantHeading = computed(() => this.aiAssistant.view() === 'shortcuts');
 
   // Figma (seção 09): os chips ficam junto do campo de mensagem e somem quando a
   // resposta já foi exibida (tela A2); continuam durante a busca e no aviso de falha.

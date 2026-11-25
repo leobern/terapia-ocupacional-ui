@@ -237,3 +237,35 @@
   @include typography.label-md;
   @include mixins.focus-ring;
 }
+
+// Os componentes de entrada surgem depois do texto digitado, com fade (parte da "digitação").
+.assistant-content__reveal {
+  display: block;
+  margin-top: tokens.$space-16;
+  animation: assistant-reveal 0.5s ease both;
+
+  @media (prefers-reduced-motion: reduce) {
+    animation: none;
+  }
+}
+
+@keyframes assistant-reveal {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+// A linha de apoio (ex.: "Você também pode enviar via áudio.") entra com fade depois do texto.
+.assistant-content__fade {
+  animation: assistant-reveal 0.5s ease both;
+
+  @media (prefers-reduced-motion: reduce) {
+    animation: none;
+  }
+}

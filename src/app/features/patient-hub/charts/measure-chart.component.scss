@@ -233,34 +233,3 @@
     color: tokens.c(content-1);
   }
 }
-
-.trend__periods {
-  display: flex;
-  gap: tokens.$space-8;
-}
-
-// v2/FilterChip: 32px, pílula, padding 12, gap 6; ativo = primário com texto claro e check.
-.trend__chip {
-  display: inline-flex;
-  gap: 6px;
-  align-items: center;
-  height: 32px;
-  padding: 0 tokens.$space-12;
-  border: 0;
-  border-radius: tokens.$radius-pill;
-  background: tokens.c(surface-2);
-  color: tokens.c(content-1);
-  cursor: pointer;
-
-  @include typography.label-md;
-
-  &--active {
-    background: tokens.c(primary);
-    color: tokens.c(content-6);
-  }
-
-  &:focus-visible {
-    outline: var(--focus-ring-width) solid tokens.c(focus-ring);
-    outline-offset: var(--focus-ring-offset);
-  }
-}

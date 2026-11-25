@@ -25,6 +25,12 @@
   }
 }
 
+.patient-list__toolbar app-date-strip {
+  @include breakpoints.md {
+    width: 370px;
+  }
+}
+
 .patient-list__toolbar {
   display: flex;
   align-items: center;

@@ -1,0 +1,51 @@
+@switch (state()) {
+  @case ('loading') {
+    <p class="nf__status" role="status">Carregando a avaliação…</p>
+  }
+  @case ('error') {
+    <p class="nf__status nf__status--warning" role="alert">
+      {{ loadFailedHint }}
+    </p>
+  }
+  @default {
+    <div class="nf">
+      @for (field of fields; track field.id) {
+        <app-field-card
+          data-testid="nutritional-item"
+          [label]="titleOf(field)"
+          [inputId]="'nf-' + field.id"
+          [value]="valueOf(field.id)"
+          [unit]="field.unit ?? ''"
+          [placeholder]="field.placeholder"
+          [inputMode]="field.options ? 'text' : 'decimal'"
+          [options]="field.options ?? null"
+          [caption]="field.sideId ? '' : helpOf(field)"
+          [error]="missingSide(field) ? 'Informe o membro aferido.' : ''"
+          (valueChange)="edit(field.id, $event)"
+        >
+          @if (field.sideId; as sideId) {
+            <!-- Membro aferido: dois botões; nenhum ativo no início, e depois só se troca de um para o outro. -->
+            <span class="nf__caption">Membro aferido</span>
+            <div class="nf__sides" role="group" aria-label="Membro aferido">
+              @for (side of limbSides; track side) {
+                <button
+                  type="button"
+                  class="nf__side"
+                  [attr.aria-pressed]="valueOf(sideId) === side"
+                  (click)="edit(sideId, side)"
+                >
+                  {{ side }}
+                </button>
+              }
+            </div>
+          }
+        </app-field-card>
+      }
+      @if (saveFailed()) {
+        <p class="nf__status nf__status--warning" role="alert">
+          {{ saveFailedHint }}
+        </p>
+      }
+    </div>
+  }
+}

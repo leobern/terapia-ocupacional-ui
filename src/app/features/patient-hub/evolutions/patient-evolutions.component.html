@@ -1,0 +1,71 @@
+<section
+  #scroller
+  class="evo"
+  aria-label="Evoluções"
+  appScrollReveal
+  (scroll)="onScroll()"
+>
+  @switch (state()) {
+    @case ('loading') {
+      <p class="evo__status" role="status">Carregando a evolução…</p>
+    }
+    @case ('error') {
+      <p class="evo__status" role="alert">{{ loadFailedHint }}</p>
+    }
+    @default {
+      @for (entry of entries(); track entry.key) {
+        <article
+          class="evo__card"
+          data-testid="evolution-card"
+          [attr.data-day]="entry.key"
+        >
+          <header class="evo__head">
+            <app-avatar
+              size="medium"
+              type="user"
+              [name]="entry.evolution.author"
+            />
+            <div class="evo__who">
+              <p class="evo__author">{{ entry.evolution.author }}</p>
+              <p class="evo__meta">{{ entry.registered }}</p>
+            </div>
+          </header>
+          <p class="evo__text">{{ entry.evolution.text }}</p>
+
+          @if (entry.items.length > 0) {
+            <h3 class="evo__label">Avaliar</h3>
+            <ul class="evo__list">
+              @for (item of entry.items; track item.id) {
+                <li class="evo__item" data-testid="reevaluation">
+                  <div class="evo__item-text">
+                    <p class="evo__item-name">{{ item.name }}</p>
+                    <p class="evo__item-meta">
+                      Última avaliação {{ item.lastAssessed }}
+                    </p>
+                  </div>
+                  <span
+                    class="evo__tag"
+                    data-testid="reevaluation-status"
+                    [class.evo__tag--overdue]="item.status.kind === 'overdue'"
+                  >
+                    <ph-icon
+                      [name]="
+                        item.status.kind === 'overdue'
+                          ? 'warning-diamond'
+                          : 'calendar-blank'
+                      "
+                      [size]="16"
+                    />
+                    {{ item.status.label }}
+                  </span>
+                </li>
+              }
+            </ul>
+          }
+        </article>
+      } @empty {
+        <p class="evo__empty" data-testid="evolution-empty">{{ emptyText }}</p>
+      }
+    }
+  }
+</section>

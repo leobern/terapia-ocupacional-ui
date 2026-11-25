@@ -9,18 +9,10 @@ export interface MeasurePoint {
   readonly value: number;
 }
 
-export type MeasurePeriod = 'stay' | '30d' | '7d';
-
 export interface MeasureBadge {
   readonly icon: 'arrow-up' | 'arrow-down' | 'check';
   readonly text: string;
 }
-
-const PERIODS: readonly { readonly key: MeasurePeriod; readonly label: string; readonly count: number }[] = [
-  { count: Number.POSITIVE_INFINITY, key: 'stay', label: 'Internação' },
-  { count: 30, key: '30d', label: '30 dias' },
-  { count: 7, key: '7d', label: '7 dias' },
-];
 
 // Geometria do v2/TrendChart (Figma 4623:5273, quadro "grafico" 501x148): linhas de grade em y 8 / 60,5 / 113, base da
 // área em y 126; o gráfico começa 32px à direita da borda (rótulos do eixo) e passa 5px da borda direita.
@@ -64,17 +56,11 @@ export class MeasureChartComponent {
   readonly reference = input<{ readonly label: string; readonly value: number } | null>(null);
   readonly decimals = input(1);
 
-  protected readonly periods = PERIODS;
-  protected readonly period = signal<MeasurePeriod>('stay');
   protected readonly picked = signal<number | null>(null);
   protected readonly areaBase = CHART_AREA_BASE;
 
-  protected readonly visible = computed<readonly MeasurePoint[]>(() => {
-    const count = PERIODS.find(p => p.key === this.period())?.count ?? Number.POSITIVE_INFINITY;
-    const all = this.series();
-
-    return Number.isFinite(count) ? all.slice(-count) : all;
-  });
+  /** Todos os pontos da internação (sem filtro de período, como no Figma). */
+  protected readonly visible = computed<readonly MeasurePoint[]>(() => this.series());
 
   protected readonly current = computed(() => this.format(this.series().at(-1)?.value ?? null));
 
@@ -176,11 +162,6 @@ export class MeasureChartComponent {
         .map(p => `${p.label} ${this.format(p.value)}`)
         .join(', ')}`,
   );
-
-  protected select(key: MeasurePeriod): void {
-    this.period.set(key);
-    this.picked.set(null);
-  }
 
   protected pick(index: number): void {
     this.picked.set(index);

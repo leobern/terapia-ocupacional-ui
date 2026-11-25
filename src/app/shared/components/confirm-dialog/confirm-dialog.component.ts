@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, effect, type ElementRef, input, output, viewChild } from '@angular/core';
 
 import { ButtonComponent } from '../button/button.component';
 
@@ -30,6 +30,19 @@ export class ConfirmDialogComponent {
 
   readonly confirmed = output();
   readonly cancelled = output();
+
+  private readonly scrim = viewChild<ElementRef<HTMLElement>>('scrim');
+
+  constructor() {
+    // Vai para a camada superior do navegador (popover): fica acima de tudo, mesmo aberto de dentro do sidebar.
+    effect(() => {
+      const element = this.scrim()?.nativeElement;
+
+      if (element !== undefined && !element.matches(':popover-open')) {
+        element.showPopover();
+      }
+    });
+  }
 
   protected onEscape(): void {
     if (this.open()) {

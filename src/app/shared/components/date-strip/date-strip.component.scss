@@ -1,23 +1,24 @@
 @use '../../styles/tokens';
-@use '../../styles/breakpoints';
 
-// Figma v2/DateStrip: 72px de altura, borda, raio md, padding 4. No desktop a largura é
-// fixa em 370px; no mobile ocupa a largura disponível.
+// Figma v2/DateStrip (4598:1613, estados "hoje" e "outras"): 56px de altura, borda, raio md, sem padding e gap 4. Ocupa
+// 100% da coluna (os dias se distribuem sozinhos) e mostra de 5 a 1 dia conforme a largura (Thiago, 2026-11-24).
 :host {
   display: block;
   width: 100%;
+}
 
-  @include breakpoints.md {
-    width: 370px;
-  }
+// No cabeçalho (Figma 4772:25062): 250px, 3 dias.
+:host(.date-strip--header) {
+  flex: none;
+  width: 250px;
 }
 
 .date-strip {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  height: 72px;
-  padding: tokens.$space-4;
+  height: 56px;
+  padding: 0 1px;
   border: 1px solid tokens.c(border);
   border-radius: tokens.$radius-md;
   background: tokens.c(surface);
@@ -47,9 +48,15 @@
   }
 }
 
-// Todos os dias têm o tamanho do selecionado (48×60, Label 12 / Title 20); só o selecionado tem fundo.
+// Em "hoje" a seta da direita some; o espaço fica reservado.
+.date-strip__arrow--hidden {
+  visibility: hidden;
+}
+
+// Todos os dias têm 48×60 (Label 12 / Title 20) e passam 2px da borda, como no desenho; só o selecionado tem fundo.
 .date-strip__day {
   flex-direction: column;
+  flex: none;
   width: 48px;
   height: 60px;
   padding: 0;
@@ -66,12 +73,33 @@
   }
 }
 
-// Dia selecionado em azul (secondary), como no Figma.
+// Dia selecionado em azul (secondary) quando é hoje.
 .date-strip__day--selected {
   background: tokens.c(secondary);
 
   .date-strip__weekday,
   .date-strip__number {
+    color: tokens.c(content-6);
+  }
+}
+
+// Ao voltar no tempo o selecionado fica cinza (state/disabled) e o texto esmaece (content-4).
+.date-strip__day--selected.date-strip__day--past {
+  background: tokens.c(state-disabled);
+
+  .date-strip__weekday,
+  .date-strip__number {
+    color: tokens.c(content-4);
+  }
+}
+
+// Atalho "Hoje →": azul, com a seta que leva direto a hoje.
+.date-strip__day--today {
+  gap: 2px;
+  background: tokens.c(secondary);
+  color: tokens.c(content-6);
+
+  .date-strip__weekday {
     color: tokens.c(content-6);
   }
 }

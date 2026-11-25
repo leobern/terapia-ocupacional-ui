@@ -3,9 +3,8 @@ import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/c
 import { AiAssistantService } from '../../services/ai-assistant.service';
 
 /**
- * Título do painel quando uma ação está aberta (formulário de cadastro ou aviso de ação indisponível),
- * ao lado do logo e antes do fechar (Figma 4722:10998; padrão de cadastro —
- * docs/regras-de-negocio/padrao-de-cadastro.md). Projetado no cabeçalho do bottom sheet / drawer.
+ * Título "Atalhos" no cabeçalho do painel, na posição do logo (a IA não conversa na visão de atalhos). Projetado no
+ * cabeçalho do bottom sheet / drawer, que só o exibe quando o logo está escondido.
  */
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -16,9 +15,6 @@ import { AiAssistantService } from '../../services/ai-assistant.service';
 export class AssistantHeadingComponent {
   protected readonly assistant = inject(AiAssistantService);
 
-  protected readonly title = computed(() => {
-    const action = this.assistant.activeAction();
-
-    return action?.conversation?.title ?? action?.form?.title ?? action?.label ?? '';
-  });
+  /** "Atalhos": no lugar do logo (a IA não conversa nessa visão). Os cadastros têm o logo da IA e o título digitado. */
+  protected readonly title = computed(() => (this.assistant.view() === 'shortcuts' ? 'Atalhos' : ''));
 }

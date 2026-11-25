@@ -33,11 +33,12 @@
 .home__header {
   display: flex;
   align-items: center;
-  gap: tokens.$space-12;
+  gap: tokens.$space-8;
 
-  // Desktop (Figma Home): mesmo padding do header de Pacientes (16 em cima, embaixo e à esquerda).
+  // Desktop (Figma Home): mesma faixa do header de Pacientes (88px, centralizada) e recuo de 16 à esquerda.
   @include breakpoints.md {
-    padding: tokens.$space-16 0 tokens.$space-16 tokens.$space-16;
+    min-height: var(--header-band-height);
+    padding: 0 0 0 tokens.$space-16;
   }
 }
 
@@ -62,16 +63,23 @@
   @include typography.headline;
 }
 
+// Sino e atalhos: ghost de 40px colados, o mesmo padrão do `app-page-header` (Figma "actions").
+.home__header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0;
+}
+
 .home__notify-wrapper {
   position: relative;
   display: inline-flex;
 }
 
-// Figma: badge a 26px da esquerda e 4px do topo do botão de 48px.
+// Badge no canto superior direito do botão de 40px.
 .home__notify-badge {
   position: absolute;
-  top: tokens.$space-4;
-  left: 26px;
+  top: 0;
+  left: 20px;
 }
 
 .home__shortcuts-wrapper {

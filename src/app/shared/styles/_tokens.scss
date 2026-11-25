@@ -494,6 +494,9 @@ $shadow-elevation-bottomsheet: 0 -4px 24px rgba($color-primary, 0.08);
   // Coleção "Layout" do Figma (modos Mobile/Tablet/Desktop). O valor base é o
   // Mobile; os breakpoints abaixo trocam para Tablet (sm) e Desktop (md).
   --layout-page-margin: 16px;
+  // Faixa do cabeçalho no desktop (Figma v2/PageHeader, 56px): voltar/avatar, logo do menu e logo do sidebar têm o centro
+  // na mesma linha (y = 24 + 28 = 52).
+  --header-band-height: 56px;
   --layout-grid-gap: 12px;
   --layout-section-gap: 24px;
   --layout-card-padding: 16px;
@@ -553,7 +556,8 @@ $shadow-elevation-bottomsheet: 0 -4px 24px rgba($color-primary, 0.08);
   --color-state-disabled-2: #a0b1b9;
   --color-border: #445259;
   --color-border-2: #667880;
-  --color-surface: #182125;
+  // Card externo mais escuro que o fundo (Thiago, 2026-11-24): antes #182125, igual ao fim do gradiente de fundo, e o card sumia.
+  --color-surface: #0f171a;
   --color-surface-2: #273237;
   --color-surface-glass-1: #273237;
   --color-surface-glass-2: #3a474e;

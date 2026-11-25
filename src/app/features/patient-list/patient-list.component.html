@@ -54,16 +54,6 @@
       />
     </div>
 
-    <app-confirm-dialog
-      message="Datas anteriores abrem somente para leitura, em preto e branco."
-      cancelLabel="Cancelar"
-      [open]="pendingDate() !== null"
-      [title]="pendingTitle()"
-      [confirmLabel]="pendingConfirmLabel()"
-      (confirmed)="confirmPendingDate()"
-      (cancelled)="cancelPendingDate()"
-    />
-
     @switch (status()) {
       @case ('loading') {
         <ul
