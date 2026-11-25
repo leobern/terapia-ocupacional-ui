@@ -20,7 +20,7 @@ describe('devTokenInterceptor + DevTokenService', () => {
 
   it('busca o token uma vez e o envia como Bearer nas chamadas à API', () => {
     http.get('/api/v1/a').subscribe();
-    controller.expectOne('/api/v1/dev/token').flush({ accessToken: 'jwt-teste' });
+    controller.expectOne('/api/v1/dev/token?email=almira@conductia.com').flush({ accessToken: 'jwt-teste' });
     const first = controller.expectOne('/api/v1/a');
 
     expect(first.request.headers.get('Authorization')).toBe('Bearer jwt-teste');
