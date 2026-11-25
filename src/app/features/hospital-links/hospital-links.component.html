@@ -32,27 +32,12 @@
       }
       @default {
         @if (links().length === 0) {
-          <section
-            class="hospital-links__empty"
-            aria-labelledby="hospital-links-empty-title"
-          >
-            <ph-icon name="hospital" [size]="40" />
-            <h2
-              id="hospital-links-empty-title"
-              class="hospital-links__empty-title"
-            >
-              Você ainda não tem vínculos
-            </h2>
-            <p class="hospital-links__empty-hint">
-              Solicite acesso ao seu primeiro hospital para começar a usar o
-              app.
-            </p>
-            <app-button
-              iconLeft="plus"
-              label="Solicitar acesso a um hospital"
-              (click)="requestAccess()"
-            />
-          </section>
+          <app-empty-state
+            title="Você ainda não tem vínculos"
+            hint="Solicite acesso ao seu primeiro hospital para começar a usar o app."
+            actionLabel="Solicitar acesso a um hospital"
+            (action)="requestAccess()"
+          />
         } @else {
           <ul class="hospital-links__list">
             @for (link of links(); track link.id) {

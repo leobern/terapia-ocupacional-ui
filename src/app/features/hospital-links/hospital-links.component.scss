@@ -39,31 +39,6 @@
   @include typography.body-md;
 }
 
-.hospital-links__empty {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: tokens.$space-12;
-  padding: tokens.$space-24 tokens.$space-16;
-  border-radius: tokens.$radius-sm;
-  background: tokens.c(surface);
-  color: tokens.c(content-2);
-  text-align: center;
-}
-
-.hospital-links__empty-title {
-  margin: 0;
-  color: tokens.c(content-1);
-
-  @include typography.title-lg;
-}
-
-.hospital-links__empty-hint {
-  margin: 0;
-
-  @include typography.body-md;
-}
-
 .hospital-links__list {
   display: grid;
   gap: tokens.$space-8;

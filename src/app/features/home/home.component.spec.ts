@@ -407,6 +407,16 @@ describe('HomeComponent', () => {
       expect(navigate).toHaveBeenCalledWith(['/notifications'], { queryParams: { hospitalId: 1 } });
     });
 
+    it('sem hospital cadastrado mostra só o cartão "Nenhum hospital cadastrado" com o CTA, sem título nem data', async () => {
+      await setup({ hospitals: [] });
+
+      expect(q('app-empty-state')?.textContent).toContain('Nenhum hospital cadastrado');
+      expect(q('.home__headline')).toBeNull();
+      expect(q('.home__date')).toBeNull();
+      expect(q('.home__shift')).toBeNull();
+      expect(q('app-empty-state button')?.textContent).toContain('Cadastrar hospital');
+    });
+
     it('passes no hospital when there is none in context', async () => {
       await setup({ hospitals: [] });
       bell().click();
