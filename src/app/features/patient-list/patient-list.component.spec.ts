@@ -14,6 +14,8 @@ import { HospitalContextService } from '../home/hospital-context.service';
 import { LinkedHospitalsReader } from '../home/linked-hospitals';
 import { ProfessionalProfileReader } from '../home/professional-profile';
 import { UnreadNotificationsReader } from '../home/unread-notifications-reader';
+import { BedMovementPort } from '../patient-hub/move-bed/bed-movement.port';
+import { BedNumberExtractor } from '../patient-hub/move-bed/bed-number-extractor';
 import { InternacaoCreationPort } from '../patient-registration/internacao-creation.port';
 import { PatientCreationPort } from '../patient-registration/patient-creation.port';
 import { PatientListComponent, refreshesOnVisibility } from './patient-list.component';
@@ -55,6 +57,12 @@ class FakeSource extends PatientListSource {
 }
 
 describe('PatientListComponent', () => {
+  let byNameCalls: unknown[][] = [];
+
+  beforeEach(() => {
+    byNameCalls = [];
+  });
+
   let source: FakeSource;
   let ai: FakeAi;
   let fixture: ComponentFixture<PatientListComponent>;
@@ -79,6 +87,16 @@ describe('PatientListComponent', () => {
     ai = new FakeAi();
     TestBed.configureTestingModule({
       providers: [
+        {
+          provide: BedMovementPort,
+          useValue: {
+            resolveByName: (...args: unknown[]): Promise<never> => (
+              byNameCalls.push(args),
+              Promise.reject(new Error('x'))
+            ),
+          },
+        },
+        { provide: BedNumberExtractor, useValue: {} },
         provideRouter([]),
         { provide: PatientListSource, useValue: source },
         { provide: FollowUpClosureWriter, useValue: closureWriter },
@@ -644,6 +662,19 @@ describe('PatientListComponent', () => {
     expect((info.firstElementChild as HTMLElement).className).toContain('patient-list__first');
   });
 
+  it('registra "Movimentar leito" citando o paciente e busca só no hospital ativo (US-002-2-02)', async () => {
+    await create();
+    const action = TestBed.inject(ScreenActionsService)
+      .actions()
+      .find(a => a.id === 'move-bed');
+
+    await action?.conversation
+      ?.submit({ request: JSON.stringify({ bed: '210', name: 'Beatriz Ramos Costa' }) })
+      .catch(() => undefined);
+
+    expect(byNameCalls).toEqual([[1, 'Beatriz Ramos Costa', '210']]);
+  });
+
   it('registra as ações principais da tela nos atalhos', async () => {
     await create();
 
@@ -651,7 +682,7 @@ describe('PatientListComponent', () => {
       TestBed.inject(ScreenActionsService)
         .actions()
         .map(a => a.label),
-    ).toEqual(['Cadastrar paciente', 'Alterar dados de paciente', 'Encerrar acompanhamento', 'Alterar leito']);
+    ).toEqual(['Cadastrar paciente', 'Movimentar leito', 'Alterar dados de paciente', 'Encerrar acompanhamento']);
   });
 
   it('tabela desktop: colunas sem data de nascimento, metas com texto e clique na linha abre o Hub', async () => {

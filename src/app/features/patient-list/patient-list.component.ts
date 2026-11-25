@@ -29,6 +29,7 @@ import { PATIENTS_CONTEXT } from '../../shared/services/screen-contexts';
 import { ClosurePatient, FollowUpClosureSheetComponent } from '../follow-up-closure/follow-up-closure-sheet.component';
 import { HospitalContextService } from '../home/hospital-context.service';
 import { UnreadNotificationsReader } from '../home/unread-notifications-reader';
+import { MoveBedAction } from '../patient-hub/move-bed/move-bed.action';
 import { PatientRegistrationAction } from '../patient-registration/patient-registration.action';
 import { adequacyLabel, goalLabel, hasAdequacy, therapyStartLabel } from './patient-card-labels';
 import { PatientCard, TherapyType } from './patient-list.models';
@@ -118,10 +119,7 @@ export function refreshesOnVisibility(state: DocumentVisibilityState): boolean {
 
 export type PatientListStatus = 'loading' | 'ready' | 'error';
 
-const PATIENT_LIST_ACTIONS: readonly ScreenAction[] = [
-  { id: 'end-follow-up', label: 'Encerrar acompanhamento' },
-  { id: 'change-bed', label: 'Alterar leito' },
-];
+const PATIENT_LIST_ACTIONS: readonly ScreenAction[] = [{ id: 'end-follow-up', label: 'Encerrar acompanhamento' }];
 
 const THERAPY_LABEL: Record<TherapyType, string> = { MISTA: 'VO · NE · NP', NE: 'NE', NP: 'NP', VO: 'VO' };
 
@@ -278,6 +276,7 @@ export class PatientListComponent implements OnInit {
   private readonly unread = inject(UnreadNotificationsReader);
   private readonly screenActions = inject(ScreenActionsService);
   private readonly patientRegistration = inject(PatientRegistrationAction);
+  private readonly moveBed = inject(MoveBedAction);
   private readonly aiCommand = inject(PatientListAiCommandPort);
   private readonly priorityGroups = computed<readonly PatientGroup[]>(() => {
     const out = this.patients()
@@ -326,6 +325,8 @@ export class PatientListComponent implements OnInit {
         ? []
         : [
             this.patientRegistration.build(),
+            // US-002-2-02: fora da tela do paciente, o leito é movido citando o nome (hospital ativo).
+            this.moveBed.buildByName(() => this.context.selected()?.id),
             { id: 'edit-patient', label: 'Alterar dados de paciente', navigate: (): void => this.editPatient() },
             ...PATIENT_LIST_ACTIONS,
           ];

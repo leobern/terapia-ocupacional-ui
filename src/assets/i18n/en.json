@@ -28,11 +28,18 @@
     "messages": {
       "MSG-11": "This patient has no registered hospital stay yet. You must admit the patient before moving the bed.",
       "MSG-12": "I couldn't identify the new bed. Can you tell me the bed number?",
+      "MSG-13": "I couldn't find any patient with that name in this hospital.",
       "applied": "Bed updated to {new}.",
+      "birth": "birth date",
       "cancelled": "Movement cancelled. The bed remains {current}.",
+      "chooseInvalid": "Choose one of the listed patients by its number.",
       "confirmChoice": "Answer yes or no.",
       "error": "Couldn't process the bed move. Please try again.",
+      "multiple": "I found more than one patient with that name:",
+      "nameMissing": "I couldn't identify the patient's name. Could you provide it?",
       "noCurrentBed": "not set",
+      "noSame": "not provided",
+      "same": "SAME",
       "summary": "Change summary: patient {patient}; field: bed; current value: {current}; new value: {new}."
     },
     "options": {
@@ -41,7 +48,9 @@
     },
     "prompts": {
       "bedNumber": "Which bed should the patient be moved to?",
-      "confirm": "Do you confirm the bed movement?"
+      "chooseOne": "Which of these patients?",
+      "confirm": "Do you confirm the bed movement?",
+      "patientName": "Which patient is the bed move for? Please give the name."
     },
     "title": "Move bed"
   },
