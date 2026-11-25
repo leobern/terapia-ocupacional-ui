@@ -20,6 +20,7 @@ import { BadgeComponent } from '../../shared/components/badge/badge.component';
 import { ButtonComponent } from '../../shared/components/button/button.component';
 import { CardNotifyComponent } from '../../shared/components/card-notify/card-notify.component';
 import { CardPatientsComponent } from '../../shared/components/card-patients/card-patients.component';
+import { EmptyStateComponent } from '../../shared/components/empty-state/empty-state.component';
 import { IconButtonComponent } from '../../shared/components/icon-button/icon-button.component';
 import { PageContainerComponent } from '../../shared/components/page-container/page-container.component';
 import { TagComponent } from '../../shared/components/tag/tag.component';
@@ -86,6 +87,7 @@ const TOAST_DURATION_MS = 8000;
     ButtonComponent,
     CardNotifyComponent,
     CardPatientsComponent,
+    EmptyStateComponent,
     HomeErrorComponent,
     HomeSkeletonComponent,
     IconButtonComponent,

@@ -177,21 +177,6 @@
   animation: home-toast-out 200ms ease-in forwards;
 }
 
-// Sem hospital cadastrado: aviso no lugar do seletor.
-.home__no-hospital {
-  display: flex;
-  align-items: center;
-  gap: tokens.$space-8;
-  margin: 0;
-  color: tokens.c(content-1);
-
-  @include typography.label-md;
-
-  ph-icon {
-    flex-shrink: 0;
-  }
-}
-
 // --- contexto (hospital + turno + frase + data) --------------------------------------
 // Mobile (Figma 4591:216): seletor e "Iniciar turno" um sob o outro (gap 8), depois o bloco de texto (gap 12 acima, 8 entre
 // frase e data, recuo lateral 8). Desktop: seletor à esquerda e turno à direita na mesma linha; frase e data na linha de baixo.

@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, inject, type OnInit, signal } from 
 import { ActivatedRoute, Router } from '@angular/router';
 
 import { ButtonComponent } from '../../shared/components/button/button.component';
+import { EmptyStateComponent } from '../../shared/components/empty-state/empty-state.component';
 import { PageContainerComponent } from '../../shared/components/page-container/page-container.component';
 import { PageHeaderComponent } from '../../shared/components/page-header/page-header.component';
 import { PhIconComponent } from '../../shared/icons/ph-icon/ph-icon.component';
@@ -23,7 +24,7 @@ export const REQUEST_HOSPITAL_LINK_URL = '/hospital-links/request';
  */
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ButtonComponent, PageContainerComponent, PageHeaderComponent, PhIconComponent],
+  imports: [ButtonComponent, EmptyStateComponent, PageContainerComponent, PageHeaderComponent, PhIconComponent],
   selector: 'app-hospital-links',
   styleUrl: './hospital-links.component.scss',
   templateUrl: './hospital-links.component.html',
