@@ -23,6 +23,7 @@ import {
 import { DrawerComponent, type DrawerSnap } from './shared/components/drawer/drawer.component';
 import { InputChatComponent, type InputChatMode } from './shared/components/input-chat/input-chat.component';
 import { NavMenuComponent, type NavMenuItemKey } from './shared/components/nav-menu/nav-menu.component';
+import { PrivacyOverlayComponent } from './shared/components/privacy-overlay/privacy-overlay.component';
 import { AiAssistantService } from './shared/services/ai-assistant.service';
 import { ScreenActionsService } from './shared/services/screen-actions.service';
 import { ViewportBreakpointService } from './shared/services/viewport-breakpoint.service';
@@ -56,6 +57,7 @@ const ACTION_SHORTCUT_PREFIX = 'action:';
     InputChatComponent,
     LogoutConfirmComponent,
     NavMenuComponent,
+    PrivacyOverlayComponent,
     RouterOutlet,
   ],
   selector: 'app-root',
