@@ -51,6 +51,15 @@
     },
     "stale": "Data may be out of date. No connection right now."
   },
+  "lock": {
+    "biometricFailed": "Biometrics were not recognized. Try again.",
+    "message": "For your security, the app was locked after 30 minutes of inactivity.",
+    "passwordError": "Incorrect password. Try again.",
+    "passwordLabel": "Account password",
+    "title": "App locked",
+    "unlock": "Unlock",
+    "useBiometric": "Use biometrics"
+  },
   "logout": {
     "cancel": "Cancel",
     "confirm": "Sign out",
@@ -212,6 +221,9 @@
     },
     "skip": "Skip",
     "title": "Register patient"
+  },
+  "session": {
+    "expired": "Your session has expired. Please sign in again."
   },
   "settings": {
     "reviewTutorial": "Review tutorial",

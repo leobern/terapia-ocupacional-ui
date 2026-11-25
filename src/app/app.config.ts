@@ -1,5 +1,5 @@
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
-import { ApplicationConfig, provideZoneChangeDetection } from '@angular/core';
+import { ApplicationConfig, inject, provideAppInitializer, provideZoneChangeDetection } from '@angular/core';
 import { provideRouter } from '@angular/router';
 import { environment } from '@environments/environment';
 import { provideEffects } from '@ngrx/effects';
@@ -7,8 +7,16 @@ import { provideRouterStore } from '@ngrx/router-store';
 import { provideStore } from '@ngrx/store';
 
 import { routes } from './app.routing';
+import { AccountPasswordVerifier } from './features/auth/lock/account-password-verifier';
+import { BiometricAuth } from './features/auth/lock/biometric-auth';
+import { InactivityLockService } from './features/auth/lock/inactivity-lock.service';
+import { ProvisionalAccountPasswordVerifier } from './features/auth/lock/provisional-account-password-verifier';
+import { ProvisionalBiometricAuth } from './features/auth/lock/provisional-biometric-auth';
 import { NoopSessionRevoker } from './features/auth/noop-session-revoker';
+import { ProvisionalTokenRefresher } from './features/auth/provisional-token-refresher';
+import { sessionAuthInterceptor } from './features/auth/session-auth.interceptor';
 import { SessionRevoker } from './features/auth/session-revoker';
+import { TokenRefresher } from './features/auth/token-refresher';
 import {
   FoodRecallSource,
   InfusedIntakeSource,
@@ -148,6 +156,7 @@ import { devTokenInterceptor } from './shared/dev-backend/dev-token.interceptor'
 import { ASSISTANT_QUERY_RESOLVERS } from './shared/services/assistant-query-resolver';
 import { AudioTranscriber } from './shared/services/audio-transcriber';
 import { FormAssistant } from './shared/services/form-assistant';
+import { PrivacyOverlayService } from './shared/services/privacy-overlay.service';
 import { ProvisionalAudioTranscriber } from './shared/services/provisional-audio-transcriber';
 import { ProvisionalFormAssistant } from './shared/services/provisional-form-assistant';
 import { ProvisionalUserDirectory } from './shared/services/provisional-user-directory';
@@ -157,6 +166,11 @@ export const appConfig: ApplicationConfig = {
   providers: [
     { provide: ProfessionalProfileReader, useClass: LocalProfessionalProfileReader },
     { provide: PasswordResetGateway, useClass: HttpPasswordResetGateway },
+    // Biometria e senha da conta do desbloqueio: provisórios até haver shell nativo e API de login.
+    { provide: BiometricAuth, useClass: ProvisionalBiometricAuth },
+    { provide: AccountPasswordVerifier, useClass: ProvisionalAccountPasswordVerifier },
+    // Renovação de token: provisória até haver contrato OpenAPI (recusa toda renovação).
+    { provide: TokenRefresher, useClass: ProvisionalTokenRefresher },
     { provide: SessionRevoker, useClass: NoopSessionRevoker },
     { provide: StartupStateReader, useClass: LocalStartupStateReader },
     { provide: WelcomeSource, useClass: WelcomeApiService },
@@ -231,9 +245,15 @@ export const appConfig: ApplicationConfig = {
     { provide: FormulasApi, useClass: ProvisionalFormulasApi },
     // Consultas de leitura do assistente (um resolvedor por intenção).
     { multi: true, provide: ASSISTANT_QUERY_RESOLVERS, useClass: PendingNotificationsQueryResolver },
+    // Observa segundo plano/primeiro plano para o bloqueio por inatividade (US-001-1-08).
+    provideAppInitializer(() => inject(InactivityLockService).start()),
+    // Tela de privacidade: cobre o conteúdo quando o app vai para segundo plano (RN-03).
+    provideAppInitializer(() => inject(PrivacyOverlayService).start()),
     provideZoneChangeDetection({ eventCoalescing: true }),
     provideRouter(routes),
-    provideHttpClient(withInterceptors(environment.devBackend ? [devTokenInterceptor] : [])),
+    provideHttpClient(
+      withInterceptors([sessionAuthInterceptor, ...(environment.devBackend ? [devTokenInterceptor] : [])]),
+    ),
     provideStore(),
     provideEffects(),
     provideRouterStore(),

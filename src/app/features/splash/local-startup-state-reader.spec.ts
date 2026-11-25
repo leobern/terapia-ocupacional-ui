@@ -30,6 +30,14 @@ describe('LocalStartupStateReader', () => {
     expect(reader.readLocal().isSessionValid).toBeFalse();
   });
 
+  it('reports locked after 30 minutes in the background with a valid session', () => {
+    TestBed.inject(LocalSessionStore).open({ accessToken: 'a', refreshToken: 'r' });
+    localStorage.setItem('session.backgroundedAt', String(Date.now() - 31 * 60 * 1000));
+
+    expect(reader.readLocal().isLocked).toBeTrue();
+    TestBed.inject(LocalSessionStore).clear();
+  });
+
   it('reads hasApprovedLink from GET /v1/vinculos and caches it', async () => {
     const done = reader.initialize();
 

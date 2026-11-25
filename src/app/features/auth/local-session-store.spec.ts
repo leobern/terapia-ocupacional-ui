@@ -20,6 +20,38 @@ describe('LocalSessionStore', () => {
     expect(store.isValid()).toBeFalse();
   });
 
+  it('persists the session across openings and exposes the tokens', () => {
+    store.open({ accessToken: 'a1', refreshToken: 'r1' });
+
+    expect(store.isValid()).toBeTrue();
+    expect(store.accessToken()).toBe('a1');
+    expect(store.refreshToken()).toBe('r1');
+    expect(TestBed.runInInjectionContext(() => new LocalSessionStore()).isValid()).toBeTrue();
+  });
+
+  it('replaces only the access token on renewal', () => {
+    store.open({ accessToken: 'a1', refreshToken: 'r1' });
+    store.updateAccessToken('a2');
+
+    expect(store.accessToken()).toBe('a2');
+    expect(store.refreshToken()).toBe('r1');
+  });
+
+  it('clear ends the persisted session', () => {
+    store.open({ accessToken: 'a1', refreshToken: 'r1' });
+    store.clear();
+
+    expect(store.isValid()).toBeFalse();
+    expect(store.accessToken()).toBeNull();
+    expect(TestBed.runInInjectionContext(() => new LocalSessionStore()).isValid()).toBeFalse();
+  });
+
+  it('treats unavailable storage as no session', () => {
+    spyOn(Storage.prototype, 'getItem').and.throwError('blocked');
+
+    expect(store.accessToken()).toBeNull();
+  });
+
   it('fails closed: removes every arbitrary key from both storages', () => {
     ARBITRARY_KEYS.forEach(key => {
       localStorage.setItem(key, 'v');

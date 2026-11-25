@@ -51,6 +51,15 @@
     },
     "stale": "Os dados podem estar desatualizados. Sem conexão no momento."
   },
+  "lock": {
+    "biometricFailed": "Não foi possível reconhecer a biometria. Tente novamente.",
+    "message": "Por segurança, o app foi bloqueado após 30 minutos sem uso.",
+    "passwordError": "Senha incorreta. Tente novamente.",
+    "passwordLabel": "Senha da conta",
+    "title": "App bloqueado",
+    "unlock": "Desbloquear",
+    "useBiometric": "Usar biometria"
+  },
   "logout": {
     "cancel": "Cancelar",
     "confirm": "Sair",
@@ -212,6 +221,9 @@
     },
     "skip": "Pular",
     "title": "Cadastrar paciente"
+  },
+  "session": {
+    "expired": "Sua sessão expirou. Faça login novamente."
   },
   "settings": {
     "reviewTutorial": "Rever tutorial",

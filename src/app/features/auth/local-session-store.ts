@@ -20,17 +20,56 @@ function removeAllExceptPreserved(storage: Storage): void {
   keys.filter(key => !isPreserved(key)).forEach(key => storage.removeItem(key));
 }
 
+/** Chaves da sessão persistida (fora da allowlist: apagadas por `clear`). */
+export const SESSION_ACCESS_TOKEN_KEY = 'session.accessToken';
+export const SESSION_REFRESH_TOKEN_KEY = 'session.refreshToken';
+
+/** Tokens da sessão local (RN-05). */
+export interface SessionTokens {
+  readonly accessToken: string;
+  readonly refreshToken: string;
+}
+
+function readItem(key: string): string | null {
+  try {
+    return localStorage.getItem(key);
+  } catch {
+    return null;
+  }
+}
+
 /**
  * Estado local da sessão do dispositivo e do cache sensível (token, perfil, dados
- * clínicos, vínculos). Provisório até US-001-1-08: nenhuma sessão é criada ainda,
- * então `isValid` nasce `false`; `clear` já é a limpeza definitiva (RN03).
+ * clínicos, vínculos). A sessão persiste entre aberturas (US-001-1-08, RN-01): os tokens
+ * ficam em `localStorage` e `isValid` considera apenas dados locais (RN-06). Quem abre a
+ * sessão (login, US-001-1-03) chama `open`; `clear` é a limpeza definitiva (RN03).
  */
 @Injectable({ providedIn: 'root' })
 export class LocalSessionStore {
-  private readonly valid = signal(false);
+  private readonly valid = signal(readItem(SESSION_REFRESH_TOKEN_KEY) !== null);
 
   isValid(): boolean {
     return this.valid();
+  }
+
+  accessToken(): string | null {
+    return readItem(SESSION_ACCESS_TOKEN_KEY);
+  }
+
+  refreshToken(): string | null {
+    return readItem(SESSION_REFRESH_TOKEN_KEY);
+  }
+
+  /** Abre a sessão persistida com os tokens recebidos do login. */
+  open(tokens: SessionTokens): void {
+    localStorage.setItem(SESSION_ACCESS_TOKEN_KEY, tokens.accessToken);
+    localStorage.setItem(SESSION_REFRESH_TOKEN_KEY, tokens.refreshToken);
+    this.valid.set(true);
+  }
+
+  /** Troca só o `accessToken` (renovação transparente, RN-05). */
+  updateAccessToken(accessToken: string): void {
+    localStorage.setItem(SESSION_ACCESS_TOKEN_KEY, accessToken);
   }
 
   /**

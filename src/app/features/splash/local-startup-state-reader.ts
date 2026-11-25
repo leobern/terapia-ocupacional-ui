@@ -4,6 +4,7 @@ import { environment } from '@environments/environment';
 import { firstValueFrom } from 'rxjs';
 
 import { LocalSessionStore } from '../auth/local-session-store';
+import { InactivityLockService } from '../auth/lock/inactivity-lock.service';
 import { LocalStartupState, StartupStateReader } from './startup-state';
 
 /** Chave do cache local do último `hasApprovedLink` conhecido (apagada no logout, fora da allowlist). */
@@ -15,20 +16,21 @@ interface VinculoListResponse {
 }
 
 /**
- * Estado de abertura: a sessão vem de `LocalSessionStore` (provisório até US-001-1-08) e o
+ * Estado de abertura: a sessão vem de `LocalSessionStore`, o bloqueio de `InactivityLockService` e o
  * vínculo aprovado de `GET /api/v1/vinculos`. O último valor conhecido fica em cache local;
  * qualquer falha (rede, 401, 403) mantém esse valor e nunca quebra a splash.
  */
 @Injectable()
 export class LocalStartupStateReader extends StartupStateReader {
   private readonly store = inject(LocalSessionStore);
+  private readonly lock = inject(InactivityLockService);
   private readonly http = inject(HttpClient);
   private readonly url = `${environment.apiBaseUrl}/v1/vinculos`;
 
   readLocal(): LocalStartupState {
     return {
       hasApprovedHospitalLink: this.cached(),
-      isLocked: false,
+      isLocked: this.lock.evaluate() === 'LOCKED',
       isSessionValid: this.store.isValid(),
     };
   }
