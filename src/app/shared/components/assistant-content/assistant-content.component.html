@@ -89,7 +89,8 @@
               <p>{{ message.text }}</p>
             </div>
           } @else {
-            <p class="assistant-content__body">{{ message.text }}</p>
+            <!-- Pergunta da IA no cadastro: em negrito e um pouco maior. -->
+            <p class="assistant-content__ask">{{ message.text }}</p>
           }
         }
         @if (flow.options().length || flow.canSkip()) {

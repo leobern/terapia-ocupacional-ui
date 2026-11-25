@@ -158,6 +158,16 @@
   );
 }
 
+// Pergunta da IA no cadastro conversacional (Thiago, 2026-11-25): Lora Bold, um pouco maior que o corpo.
+@mixin chat-question {
+  @include text-style(
+    tokens.$font-family-chat,
+    tokens.$font-weight-bold,
+    tokens.$font-size-title-lg,
+    tokens.$line-height-28
+  );
+}
+
 @mixin chat-hint {
   @include text-style(
     tokens.$font-family-chat,

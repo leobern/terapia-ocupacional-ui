@@ -43,6 +43,14 @@
   @include typography.chat-body;
 }
 
+.assistant-content__ask {
+  margin: 0;
+  padding-inline: var(--assistant-text-inset, 0);
+  color: tokens.c(content-1);
+
+  @include typography.chat-question;
+}
+
 .assistant-content__hint {
   margin: 0;
   padding-inline: var(--assistant-text-inset, 0);
