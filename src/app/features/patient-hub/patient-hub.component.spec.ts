@@ -44,7 +44,7 @@ import { DailyRecordWriter } from './daily-record/daily-record-writer';
 import { EvolutionAiStructurer } from './daily-record/evolution-ai-structurer';
 import { ParameterAiStructurer } from './daily-record/parameter-ai-structurer';
 import { MessageAiAssistant, PatientMessageSource, PatientTeamSource } from './messages/patient-message-source';
-import { BedMovementPort } from './move-bed/bed-movement.port';
+import { BedMovementPort, BedOccupancyPort } from './move-bed/bed-movement.port';
 import { BedNumberExtractor } from './move-bed/bed-number-extractor';
 import {
   DIAGNOSIS_FAILED_HINT,
@@ -247,6 +247,7 @@ async function setup(
       { provide: ActivatedRoute, useValue: { paramMap: of(convertToParamMap(id === null ? {} : { id })) } },
       { provide: PatientHubSource, useValue: source },
       { provide: BedMovementPort, useValue: { resolve: (): Promise<never> => Promise.reject(new Error('x')) } },
+      { provide: BedOccupancyPort, useValue: { check: (): Promise<never> => Promise.reject(new Error('x')) } },
       { provide: BedNumberExtractor, useValue: { extract: (): null => null } },
       { provide: LinkRevocationChecker, useValue: revocation },
       { provide: NutritionResultsSource, useValue: results },

@@ -12,6 +12,7 @@ import {
 import {
   BedMovementPort,
   BedNotIdentifiedError,
+  BedOccupancyPort,
   PatientWithoutInternacaoError,
   type ResolvedBedMovement,
 } from './bed-movement.port';
@@ -25,6 +26,7 @@ import { BedNumberExtractor } from './bed-number-extractor';
 export class MoveBedAction {
   private readonly i18n = inject(I18nService);
   private readonly port = inject(BedMovementPort);
+  private readonly occupancy = inject(BedOccupancyPort);
   private readonly extractor = inject(BedNumberExtractor);
 
   build(patient: { readonly id: string; readonly name: string }): ScreenAction {
@@ -63,10 +65,18 @@ export class MoveBedAction {
     }
     try {
       const result = await this.port.resolve(Number(patient.id), bed);
-      const summary = t('messages.summary')
+      // US-002-2-04 RN-01: a ocupação é consultada antes de exibir a confirmação; RN-02: o alerta não bloqueia.
+      const occupancy = await this.occupancy.check(Number(patient.id), result.newBedNumber);
+      let summary = t('messages.summary')
         .replace('{patient}', patient.name)
         .replace('{current}', result.currentBedNumber ?? t('messages.noCurrentBed'))
         .replace('{new}', result.newBedNumber);
+
+      if (occupancy.occupied && occupancy.occupants.length > 0) {
+        const names = occupancy.occupants.map(o => o.name).join(', ');
+
+        summary += ` ${t('messages.occupied').replace('{bed}', result.newBedNumber).replace('{occupants}', names)}`;
+      }
 
       // RN-01: nada é gravado aqui; só o "Sim" da etapa de confirmação aplica a mudança.
       return {

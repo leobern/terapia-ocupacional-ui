@@ -33,6 +33,7 @@
       "confirmChoice": "Responda sim ou não.",
       "error": "Não foi possível processar a movimentação de leito. Tente novamente.",
       "noCurrentBed": "não informado",
+      "occupied": "Atenção: o leito {bed} já está ocupado por {occupants}. Você pode continuar mesmo assim.",
       "summary": "Resumo da alteração: paciente {patient}; campo: leito; valor atual: {current}; valor novo: {new}."
     },
     "options": {

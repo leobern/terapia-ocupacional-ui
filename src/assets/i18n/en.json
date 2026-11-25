@@ -33,6 +33,7 @@
       "confirmChoice": "Answer yes or no.",
       "error": "Couldn't process the bed move. Please try again.",
       "noCurrentBed": "not set",
+      "occupied": "Warning: bed {bed} is already occupied by {occupants}. You can continue anyway.",
       "summary": "Change summary: patient {patient}; field: bed; current value: {current}; new value: {new}."
     },
     "options": {
