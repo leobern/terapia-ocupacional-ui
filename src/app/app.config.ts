@@ -53,6 +53,9 @@ import { AssessmentSource } from './features/patient-hub/assessment/assessment-s
 import { AssessmentWriter } from './features/patient-hub/assessment/assessment-writer';
 import { ProvisionalAssessmentAiStructurer } from './features/patient-hub/assessment/provisional-assessment-ai-structurer';
 import { ProvisionalAssessmentSource } from './features/patient-hub/assessment/provisional-assessment-source';
+import { LocationChangePort, LocationExtractor } from './features/patient-hub/change-location/location-change.port';
+import { LocationChangeApiService } from './features/patient-hub/change-location/location-change-api.service';
+import { ProvisionalLocationExtractor } from './features/patient-hub/change-location/provisional-location-extractor';
 import { DailyEvolutionSource } from './features/patient-hub/daily-record/daily-evolution-source';
 import { DailyRecordSource } from './features/patient-hub/daily-record/daily-record-source';
 import { DailyRecordWriter } from './features/patient-hub/daily-record/daily-record-writer';
@@ -167,6 +170,8 @@ export const appConfig: ApplicationConfig = {
     { provide: InternacaoCreationPort, useClass: InternacoesApiService },
     { provide: BedMovementPort, useClass: BedMovementApiService },
     { provide: BedOccupancyPort, useClass: BedOccupancyApiService },
+    { provide: LocationChangePort, useClass: LocationChangeApiService },
+    { provide: LocationExtractor, useClass: ProvisionalLocationExtractor },
     { provide: BedNumberExtractor, useClass: ProvisionalBedNumberExtractor },
     { provide: PatientNameExtractor, useClass: ProvisionalPatientNameExtractor },
     { provide: PatientListAiCommandPort, useClass: ProvisionalPatientListAiCommand },

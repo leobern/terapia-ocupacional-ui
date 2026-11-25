@@ -321,6 +321,126 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/MovimentacaoLeitoErrorResponse"
+  /api/v1/pacientes/{pacienteId}/internacoes/localizacao/resolver:
+    post:
+      operationId: resolverAlteracaoLocalizacao
+      x-implemented: true
+      summary: Prévia da alteração de unidade ou ala na internação mais recente do paciente
+      description: >
+        US-002-2-06 (RN-01, RN-03). Operação sem efeito colateral: não grava nada. A extração
+        do tipo (Unidade/Ala) e do valor da mensagem é do chatbot (fora de escopo); o cliente
+        envia locationType e locationValue já extraídos. Associa o pedido à internação mais
+        recente (maior createdAt, desempate por maior id) e devolve action=CREATE quando a
+        internação não tem linha do tipo informado (ex.: "Unidade: UTI") ou action=UPDATE quando
+        já tem (ex.: Ala Sul para Ala Norte, currentValue=Ala Sul). Como há no máximo uma linha
+        por tipo (US-002-1-07), o limite de 2 linhas nunca é excedido e não há erro de limite;
+        a terceira linha não é possível. Requer vínculo aprovado com o hospital do paciente.
+        Paciente sem internação: 422 code=MSG-11. locationType ausente ou fora do enum: 422
+        field=locationType, code=MSG-09. locationValue ausente/em branco: 422 field=locationValue,
+        code=MSG-10.
+      parameters:
+        - name: pacienteId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AlteracaoLocalizacaoRequest"
+      responses:
+        "200":
+          description: Prévia da alteração
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AlteracaoLocalizacaoResolvida"
+        "400":
+          $ref: "#/components/responses/Error"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          description: Profissional sem vínculo aprovado com o hospital do paciente
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Paciente não encontrado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "422":
+          description: MSG-11 (sem internação), MSG-09 (tipo inválido) ou MSG-10 (valor vazio)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AlteracaoLocalizacaoErrorResponse"
+  /api/v1/pacientes/{pacienteId}/internacoes/{internacaoId}/localizacao/confirmar:
+    post:
+      operationId: confirmarAlteracaoLocalizacao
+      x-implemented: true
+      summary: Cria ou atualiza a linha de unidade/ala da internação após o usuário confirmar com "Sim"
+      description: >
+        US-002-2-06 (RN-02, RN-03). Chamada somente depois da confirmação (padrão de
+        confirmarMovimentacaoLeito); "Não" cancela no cliente. Cria a linha do tipo informado
+        se não existir, ou atualiza o valor da existente. Na mesma transação grava o histórico
+        imutável (US-002-2-05) com fieldChanged=UNIDADE ou ALA, previousValue (vazio quando a
+        linha foi criada), newValue, changedAt (servidor) e changedBy (usuário do JWT).
+        Devolve a internação atualizada. Requer vínculo aprovado com o hospital do paciente.
+        Internação inexistente ou de outro paciente: 404. Validações como em resolverAlteracaoLocalizacao.
+      parameters:
+        - name: pacienteId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: internacaoId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AlteracaoLocalizacaoRequest"
+      responses:
+        "200":
+          description: Linha criada ou atualizada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Internacao"
+        "400":
+          $ref: "#/components/responses/Error"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          description: Profissional sem vínculo aprovado com o hospital do paciente
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Paciente ou internação não encontrados
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "422":
+          description: MSG-09 (tipo inválido) ou MSG-10 (valor vazio)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AlteracaoLocalizacaoErrorResponse"
 components:
   securitySchemes:
     bearerAuth:
@@ -437,6 +557,53 @@ components:
         createdAt:
           type: string
           format: date-time
+    AlteracaoLocalizacaoRequest:
+      type: object
+      required: [locationType, locationValue]
+      properties:
+        locationType:
+          type: string
+          enum: [UNIDADE, ALA]
+        locationValue:
+          type: string
+          maxLength: 100
+          description: Valor extraído pelo chatbot; não vazio (MSG-10)
+    AlteracaoLocalizacaoResolvida:
+      type: object
+      required: [pacienteId, internacaoId, locationType, action, newValue]
+      properties:
+        pacienteId:
+          type: integer
+          format: int64
+        internacaoId:
+          type: integer
+          format: int64
+        locationType:
+          type: string
+          enum: [UNIDADE, ALA]
+        action:
+          type: string
+          enum: [CREATE, UPDATE]
+          description: CREATE quando a internação não tem linha do tipo; UPDATE quando já tem
+        currentValue:
+          type: string
+          nullable: true
+          description: Valor atual da linha; nulo quando action=CREATE
+        newValue:
+          type: string
+    AlteracaoLocalizacaoErrorResponse:
+      allOf:
+        - $ref: "#/components/schemas/ErrorResponse"
+        - type: object
+          required: [code]
+          properties:
+            field:
+              type: string
+              enum: [locationType, locationValue]
+              description: Ausente em MSG-11
+            code:
+              type: string
+              enum: [MSG-09, MSG-10, MSG-11]
     ResolverMovimentacaoLeitoRequest:
       type: object
       properties:

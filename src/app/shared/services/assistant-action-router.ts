@@ -10,13 +10,16 @@ export interface KnownAssistantAction {
 
 export const REGISTER_PATIENT_ACTION_ID = 'register-patient';
 export const MOVE_BED_ACTION_ID = 'move-bed';
+export const LOCATION_ACTION_ID = 'change-location';
 
 const REGISTER_PATIENT = /\b(cadastr\w*|registr\w*|criar|adicionar|incluir)\b.*\bpaciente\b/;
 const MOVE_BED = /\b(mov\w+|trocar|transferir|mudar|mudanca|alterar)\b.*\bleito\b|\bmudar\b.*\b(coisa|aqui|algo)\b/;
+const CHANGE_LOCATION = /\b(unidade|ala)\b/;
 
 /** Ações conhecidas, em ordem de prioridade. Roteamento simples e substituível pelo motor de IA. */
 export const KNOWN_ASSISTANT_ACTIONS: readonly KnownAssistantAction[] = [
   { id: MOVE_BED_ACTION_ID, label: 'Movimentar leito', matches: m => MOVE_BED.test(m) },
+  { id: LOCATION_ACTION_ID, label: 'Alterar unidade/ala', matches: m => CHANGE_LOCATION.test(m) },
   { id: REGISTER_PATIENT_ACTION_ID, label: 'Cadastrar paciente', matches: m => REGISTER_PATIENT.test(m) },
 ];
 
