@@ -299,6 +299,15 @@ describe('MoveBedAction (US-002-2-01)', () => {
     expect(texts().at(-2)).toContain('ocupado por Helena Duarte Ramos, Paulo Lima.');
   });
 
+  it('US-002-2-04: occupied flag without occupants shows no alert', async () => {
+    setup();
+    check.and.resolveTo({ newBedNumber: '412', occupants: [], occupied: true });
+    assistant.ask('mudar para o leito 412');
+    await settle();
+
+    expect(texts().at(-2)).not.toContain('Atenção');
+  });
+
   it('US-002-2-04 scenario 2: free bed shows the confirmation without any alert', async () => {
     setup();
     assistant.ask('mudar para o leito 415');
