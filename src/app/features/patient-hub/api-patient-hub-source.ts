@@ -45,7 +45,7 @@ export function toHubProfile(dto: PacienteDetalheDto): PatientHubProfile {
 /**
  * Hub com identificação real: id numérico vai a `GET /api/v1/pacientes/{id}` (`getPaciente`); 404 (inexistente
  * ou de hospital sem vínculo) = `null` (estado "não encontrado"). Outros erros sobem (403/rede viram o estado de
- * erro/revogação da tela). Ids de exemplo e o conteúdo clínico sem backend (hipótese) seguem no provisório.
+ * erro/revogação da tela). Ids de exemplo seguem no provisório.
  */
 @Injectable()
 export class ApiPatientHubSource extends PatientHubSource {
@@ -67,7 +67,20 @@ export class ApiPatientHubSource extends PatientHubSource {
     }
   }
 
-  loadHypothesis(patientId: string): Promise<string | null> {
-    return this.provisional.loadHypothesis(patientId);
+  /** Id numérico: `GET /api/v1/pacientes/{id}/diagnostico`; 204 = ainda não preenchida (`null`). */
+  async loadHypothesis(patientId: string): Promise<string | null> {
+    if (!API_ID.test(patientId)) {
+      return this.provisional.loadHypothesis(patientId);
+    }
+    const response = await firstValueFrom(
+      this.http.get<{ readonly text: string } | null>(`${this.url}/${patientId}/diagnostico`, { observe: 'response' }),
+    );
+
+    return response.status === 204 ? null : (response.body?.text ?? null);
   }
+}
+
+/** Identifica o paciente que existe no backend (inteiro positivo); ids de exemplo ("p1") ficam no provisório. */
+export function isApiPatientId(patientId: string): boolean {
+  return API_ID.test(patientId);
 }

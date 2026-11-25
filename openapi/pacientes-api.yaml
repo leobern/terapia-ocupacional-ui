@@ -249,6 +249,155 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+  /api/v1/pacientes/{pacienteId}/diagnostico:
+    get:
+      operationId: getDiagnosticoPaciente
+      x-implemented: true
+      summary: Hipótese/Diagnóstico mais recente do paciente
+      description: >
+        Devolve o texto vigente (o último gravado). 204 quando ainda não foi preenchido: é o estado
+        vazio do card, não um erro. Mesma regra de acesso de getPaciente (vínculo APROVADO com o
+        hospital do paciente; inexistente e de outro hospital respondem ambos 404).
+      parameters:
+        - name: pacienteId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        "200":
+          description: Hipótese vigente
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DiagnosticoHipotese"
+        "204":
+          description: Hipótese ainda não preenchida
+        "401":
+          $ref: "#/components/responses/Error"
+        "404":
+          description: Paciente inexistente ou de hospital sem vínculo aprovado do profissional
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    put:
+      operationId: saveDiagnosticoPaciente
+      x-implemented: true
+      summary: Grava uma nova versão da Hipótese/Diagnóstico
+      description: >
+        Cada gravação cria um registro imutável (trilha de auditoria); a leitura devolve sempre o
+        último. Autor e data/hora vêm do servidor (token e relógio), nunca do corpo. Mesma regra de
+        acesso de getPaciente.
+      parameters:
+        - name: pacienteId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SalvarDiagnosticoRequest"
+      responses:
+        "200":
+          description: Versão gravada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DiagnosticoHipotese"
+        "400":
+          description: Texto em branco ou longo demais, ou origem inválida
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationErrorResponse"
+        "401":
+          $ref: "#/components/responses/Error"
+        "404":
+          description: Paciente inexistente ou de hospital sem vínculo aprovado do profissional
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/v1/pacientes/{pacienteId}/avaliacao-clinica:
+    get:
+      operationId: getAvaliacaoClinica
+      x-implemented: true
+      summary: Avaliação clínica mais recente do paciente
+      description: >
+        Devolve a última avaliação gravada. Paciente sem avaliação responde 200 com a avaliação
+        vazia (textos vazios, peso e altura nulos, sem itens). previousWeight é o peso mais
+        recente, entre as gravações anteriores, que difere do atual; nulo se não houver. Mesma regra
+        de acesso de getPaciente.
+      parameters:
+        - name: pacienteId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        "200":
+          description: Avaliação clínica vigente (ou vazia)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AvaliacaoClinica"
+        "401":
+          $ref: "#/components/responses/Error"
+        "404":
+          description: Paciente inexistente ou de hospital sem vínculo aprovado do profissional
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    put:
+      operationId: saveAvaliacaoClinica
+      x-implemented: true
+      summary: Grava uma nova versão da avaliação clínica
+      description: >
+        Substitui a avaliação vigente por uma nova versão imutável (trilha de auditoria com autor e
+        data/hora do servidor). Nenhum campo é obrigatório no servidor: a obrigatoriedade de tipo
+        de TN, dispositivo, peso e altura é regra da tela. Mesma regra de acesso de getPaciente.
+      parameters:
+        - name: pacienteId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SalvarAvaliacaoClinicaRequest"
+      responses:
+        "200":
+          description: Versão gravada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AvaliacaoClinica"
+        "400":
+          description: Valor fora dos limites (peso, altura, tamanhos, faixas ou cor inválidos)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationErrorResponse"
+        "401":
+          $ref: "#/components/responses/Error"
+        "404":
+          description: Paciente inexistente ou de hospital sem vínculo aprovado do profissional
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 components:
   securitySchemes:
     bearerAuth:
@@ -485,3 +634,123 @@ components:
         createdAt:
           type: string
           format: date-time
+    DiagnosticoHipotese:
+      type: object
+      required: [text, origin, author, at]
+      properties:
+        text:
+          type: string
+        origin:
+          type: string
+          enum: [AI, AI_EDITED, MANUAL]
+        author:
+          type: string
+          description: Nome do profissional que gravou
+        at:
+          type: string
+          format: date-time
+    SalvarDiagnosticoRequest:
+      type: object
+      required: [text, origin]
+      properties:
+        text:
+          type: string
+          minLength: 1
+          maxLength: 20000
+        origin:
+          type: string
+          enum: [AI, AI_EDITED, MANUAL]
+    ClinicalStatusRange:
+      type: object
+      required: [from, to, label, tone]
+      properties:
+        from:
+          type: number
+        to:
+          type: number
+        label:
+          type: string
+          maxLength: 50
+        tone:
+          type: string
+          enum: [alert, focus, info, primary, secondary, success, tertiary, warning]
+    ClinicalItem:
+      type: object
+      required: [id, title, value, unit, ranges]
+      properties:
+        id:
+          type: string
+          maxLength: 60
+        title:
+          type: string
+          minLength: 1
+          maxLength: 100
+        value:
+          type: string
+          maxLength: 100
+        unit:
+          type: string
+          maxLength: 30
+        ranges:
+          type: array
+          maxItems: 20
+          items:
+            $ref: "#/components/schemas/ClinicalStatusRange"
+        fixed:
+          type: boolean
+          description: "Protocolo fixo (NRS-2002, GLIM, SARC-F...), não se exclui"
+    SalvarAvaliacaoClinicaRequest:
+      type: object
+      required: [tnType, device, items]
+      properties:
+        tnType:
+          type: string
+          maxLength: 50
+        device:
+          type: string
+          maxLength: 50
+        weightKg:
+          type: number
+          nullable: true
+          exclusiveMinimum: true
+          minimum: 0
+          maximum: 500
+        heightCm:
+          type: number
+          nullable: true
+          exclusiveMinimum: true
+          minimum: 0
+          maximum: 300
+        items:
+          type: array
+          maxItems: 100
+          items:
+            $ref: "#/components/schemas/ClinicalItem"
+    AvaliacaoClinica:
+      type: object
+      required: [tnType, device, weightKg, heightCm, previousWeight, items]
+      properties:
+        tnType:
+          type: string
+        device:
+          type: string
+        weightKg:
+          type: number
+          nullable: true
+        heightCm:
+          type: number
+          nullable: true
+        previousWeight:
+          type: object
+          nullable: true
+          required: [kg, at]
+          properties:
+            kg:
+              type: number
+            at:
+              type: string
+              format: date-time
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/ClinicalItem"

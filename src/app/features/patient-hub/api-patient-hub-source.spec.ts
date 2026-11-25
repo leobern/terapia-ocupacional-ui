@@ -65,6 +65,29 @@ describe('ApiPatientHubSource', () => {
     expect(await source.loadProfile('0')).toBeNull();
     expect(await source.loadHypothesis('p1')).toContain('Insuficiência respiratória');
   });
+
+  it('hipótese de id numérico lê GET diagnostico; 204 = ainda não preenchida', async () => {
+    const filled = source.loadHypothesis('42');
+    const req = http.expectOne('/api/v1/pacientes/42/diagnostico');
+
+    expect(req.request.method).toBe('GET');
+    req.flush({ at: '2026-11-25T10:00:00-03:00', author: 'Dra. X', origin: 'MANUAL', text: 'Pós-operatório' });
+
+    expect(await filled).toBe('Pós-operatório');
+
+    const empty = source.loadHypothesis('43');
+
+    http.expectOne('/api/v1/pacientes/43/diagnostico').flush(null, { status: 204, statusText: 'No Content' });
+
+    expect(await empty).toBeNull();
+  });
+
+  it('falha ao ler a hipótese sobe (a tela mantém o que já tem)', async () => {
+    const result = source.loadHypothesis('44');
+
+    http.expectOne('/api/v1/pacientes/44/diagnostico').flush({}, { status: 404, statusText: 'Not Found' });
+    await expectAsync(result).toBeRejected();
+  });
 });
 
 describe('toHubProfile', () => {

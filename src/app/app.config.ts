@@ -56,6 +56,7 @@ import { PendingNotificationsQueryResolver } from './features/notifications/assi
 import { ProvisionalAnnouncementAssistant } from './features/notifications/assistant/provisional-announcement-assistant';
 import { HttpPasswordResetGateway } from './features/password-recovery/http-password-reset-gateway';
 import { PasswordResetGateway } from './features/password-recovery/password-reset-gateway';
+import { ApiHypothesisWriter } from './features/patient-hub/api-hypothesis-writer';
 import { ApiPatientHubSource } from './features/patient-hub/api-patient-hub-source';
 import { AssessmentAiStructurer } from './features/patient-hub/assessment/assessment-ai-structurer';
 import { AssessmentSource } from './features/patient-hub/assessment/assessment-source';
@@ -65,6 +66,7 @@ import { ProvisionalAssessmentSource } from './features/patient-hub/assessment/p
 import { LocationChangePort, LocationExtractor } from './features/patient-hub/change-location/location-change.port';
 import { LocationChangeApiService } from './features/patient-hub/change-location/location-change-api.service';
 import { ProvisionalLocationExtractor } from './features/patient-hub/change-location/provisional-location-extractor';
+import { ApiClinicalAssessmentSource } from './features/patient-hub/clinical-assessment/api-clinical-assessment-source';
 import { ClinicalAssessmentSource } from './features/patient-hub/clinical-assessment/clinical-assessment-source';
 import { ClinicalItemHistorySource } from './features/patient-hub/clinical-assessment/clinical-item-history-source';
 import { ProvisionalClinicalAssessmentSource } from './features/patient-hub/clinical-assessment/provisional-clinical-assessment-source';
@@ -205,10 +207,12 @@ export const appConfig: ApplicationConfig = {
     ProvisionalPatientHubSource,
     { provide: PatientHubSource, useClass: ApiPatientHubSource },
     { provide: HypothesisSynthesizer, useClass: ProvisionalHypothesisSynthesizer },
-    { provide: HypothesisWriter, useClass: ProvisionalHypothesisWriter },
+    ProvisionalHypothesisWriter,
+    { provide: HypothesisWriter, useClass: ApiHypothesisWriter },
     ProvisionalAssessmentSource,
     { provide: AssessmentAiStructurer, useClass: ProvisionalAssessmentAiStructurer },
-    { provide: ClinicalAssessmentSource, useClass: ProvisionalClinicalAssessmentSource },
+    ProvisionalClinicalAssessmentSource,
+    { provide: ClinicalAssessmentSource, useClass: ApiClinicalAssessmentSource },
     { provide: ClinicalItemHistorySource, useClass: ProvisionalClinicalItemHistorySource },
     { provide: AssessmentSource, useExisting: ProvisionalAssessmentSource },
     { provide: AssessmentWriter, useExisting: ProvisionalAssessmentSource },
