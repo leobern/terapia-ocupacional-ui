@@ -18,10 +18,13 @@
   flex-wrap: wrap;
   align-items: center;
   gap: tokens.$space-8;
+  // Alinhado às mensagens e aos cards da rolagem (mesmo recuo lateral do conteúdo do painel).
+  padding-inline: var(--assistant-content-inset, #{tokens.$space-16});
 }
 
 .assistant-editor-footer__hint {
   margin: 0;
+  padding-inline: var(--assistant-content-inset, #{tokens.$space-16});
   color: tokens.c(content-4);
 
   @include typography.caption;

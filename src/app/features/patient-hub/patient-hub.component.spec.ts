@@ -1022,6 +1022,19 @@ describe('PatientHubComponent', () => {
       expect(el().querySelector('[aria-label="Salvar avaliação nutricional e funcional"]')).not.toBeNull();
     });
 
+    it('o editor da Avaliação clínica avisa a tela ao salvar: os cards são lidos de novo', async () => {
+      const assistant = TestBed.inject(AiAssistantService);
+      const hub = f.componentInstance as unknown as { clinicalVersion(): number };
+
+      await clickLabel(f, 'Editar avaliação clínica');
+      const before = hub.clinicalVersion();
+      const inputs = assistant.activeAction()?.editor?.inputs as { saved: () => void };
+
+      inputs.saved();
+
+      expect(hub.clinicalVersion()).toBe(before + 1);
+    });
+
     it('abrindo com ?data= de um dia anterior, o paciente fica em somente leitura: com os dados e sem botões de editar', async () => {
       TestBed.resetTestingModule();
       const g = await setup(new FakeSource(), 'p1', undefined, undefined, { data: '2026-05-20' });

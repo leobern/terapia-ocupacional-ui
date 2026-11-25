@@ -16,6 +16,7 @@ import { Router } from '@angular/router';
 
 import { AvatarComponent, type AvatarType } from '../../shared/components/avatar/avatar.component';
 import { BadgeComponent } from '../../shared/components/badge/badge.component';
+import { ButtonComponent } from '../../shared/components/button/button.component';
 import { CardNotifyComponent } from '../../shared/components/card-notify/card-notify.component';
 import { CardPatientsComponent } from '../../shared/components/card-patients/card-patients.component';
 import { IconButtonComponent } from '../../shared/components/icon-button/icon-button.component';
@@ -29,6 +30,8 @@ import { formatRelativeTime } from '../../shared/utils/relative-time';
 import { ManagerAccessReader } from '../hospital-team/hospital-invite-port';
 import { ChangeLocationAction } from '../patient-hub/change-location/change-location.action';
 import { MoveBedAction } from '../patient-hub/move-bed/move-bed.action';
+import { HospitalEditorComponent } from '../shift/hospital-editor.component';
+import { shiftFailureMessage, ShiftService } from '../shift/shift.service';
 import { HomeErrorComponent } from './components/home-error/home-error.component';
 import { HomeSkeletonComponent } from './components/home-skeleton/home-skeleton.component';
 import { DailyPatientsSource, DailyPatientsSummary } from './daily-patients';
@@ -75,6 +78,7 @@ function formatTodayLabel(): string {
   imports: [
     AvatarComponent,
     BadgeComponent,
+    ButtonComponent,
     CardNotifyComponent,
     CardPatientsComponent,
     HomeErrorComponent,
@@ -91,6 +95,11 @@ function formatTodayLabel(): string {
 export class HomeComponent implements OnInit, OnDestroy {
   // public: o spec abre o assistente e dispara o estado diretamente na instância.
   readonly aiAssistant = inject(AiAssistantService);
+  /** Turno de trabalho (geolocalização): iniciar, retomar e ver quem já está em turno no hospital. */
+  readonly shift = inject(ShiftService);
+  /** Motivo de o turno não ter começado (fora do raio, sem localização cadastrada...), em texto. */
+  readonly shiftMessage = signal<string | null>(null);
+  readonly shiftBusy = signal(false);
   /** Estado de carregamento inicial, compartilhado com as stories irmãs via HomeStateService. */
   readonly loadState = computed<HomeLoadState>(() => {
     const hospitals = this.context.status();
@@ -194,6 +203,14 @@ export class HomeComponent implements OnInit, OnDestroy {
     effect(() => {
       const hospitalId = this.context.selected()?.id;
 
+      if (hospitalId !== undefined) {
+        void this.shift.refresh(hospitalId);
+      }
+    });
+
+    effect(() => {
+      const hospitalId = this.context.selected()?.id;
+
       if (hospitalId === undefined) {
         this.summary.set(null);
         this.resetFeed();
@@ -260,6 +277,59 @@ export class HomeComponent implements OnInit, OnDestroy {
         this.loadingMore = false;
       }
     }
+  }
+
+  /**
+   * "Iniciar turno de trabalho": só dentro do raio do hospital; depois leva à lista de pacientes para escolher quem
+   * visitar. Com o turno já iniciado, o botão vira "Retomar turno de trabalho" e leva direto à lista.
+   */
+  async onShiftClick(): Promise<void> {
+    const hospitalId = this.context.selected()?.id;
+
+    if (hospitalId === undefined || this.shiftBusy()) {
+      return;
+    }
+    this.shiftMessage.set(null);
+    if (this.shift.mine() !== null) {
+      void this.router.navigate(['/patients'], { queryParams: { turno: '1' } });
+
+      return;
+    }
+    this.shiftBusy.set(true);
+    try {
+      const result = await this.shift.start(hospitalId);
+
+      if (result.ok) {
+        void this.router.navigate(['/patients'], { queryParams: { turno: '1' } });
+      } else {
+        this.shiftMessage.set(shiftFailureMessage(result));
+      }
+    } finally {
+      this.shiftBusy.set(false);
+    }
+  }
+
+  /** "Cadastrar hospital": abre o cadastro conversacional no painel lateral. */
+  onRegisterHospital(): void {
+    this.aiAssistant.openAction({
+      editor: {
+        component: HospitalEditorComponent,
+        description:
+          'Informe o nome e o endereço do hospital e, estando nele, use a minha localização atual. Com a localização ' +
+          'cadastrada, os profissionais podem iniciar o turno de trabalho ao chegar.',
+        hint: 'Você também pode enviar via áudio.',
+        inputs: {
+          initialName: '',
+          saved: (hospitalId: number): void => {
+            this.shiftMessage.set(null);
+            void this.shift.refresh(hospitalId);
+          },
+        },
+        title: 'Cadastrar hospital',
+      },
+      id: 'hospital-registration',
+      label: 'Cadastrar hospital',
+    });
   }
 
   async ngOnInit(): Promise<void> {

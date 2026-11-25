@@ -81,28 +81,51 @@
       @default {
         <div class="home__local">
           <div class="home__local-col">
-            @if (context.canSwitch() && controlsEnabled()) {
-              <button
-                type="button"
-                class="home__hospital-trigger"
-                aria-haspopup="listbox"
-                [attr.aria-expanded]="listOpen()"
-                [attr.aria-controls]="listOpen() ? listId : null"
-                (click)="onTrigger()"
-              >
+            <!-- Seletor de hospital, "Iniciar turno de trabalho" (16px ao lado, outline) e, à direita, "Cadastrar hospital". -->
+            <div class="home__hospital-row">
+              @if (context.canSwitch() && controlsEnabled()) {
+                <button
+                  type="button"
+                  class="home__hospital-trigger"
+                  aria-haspopup="listbox"
+                  [attr.aria-expanded]="listOpen()"
+                  [attr.aria-controls]="listOpen() ? listId : null"
+                  (click)="onTrigger()"
+                >
+                  <app-tag
+                    type="default"
+                    iconLeftName="map-pin"
+                    [label]="selectedHospitalName()"
+                  />
+                </button>
+              } @else {
                 <app-tag
                   type="default"
                   iconLeftName="map-pin"
                   [label]="selectedHospitalName()"
                 />
-              </button>
-            } @else {
-              <app-tag
-                type="default"
-                iconLeftName="map-pin"
-                [label]="selectedHospitalName()"
+              }
+              <app-button
+                class="home__shift"
+                size="md"
+                appearance="outlined"
+                iconLeft="map-pin"
+                [label]="
+                  shift.mine()
+                    ? 'Retomar turno de trabalho'
+                    : 'Iniciar turno de trabalho'
+                "
+                [disabled]="shiftBusy() || context.selected() === null"
+                (click)="onShiftClick()"
               />
-            }
+              <app-button
+                class="home__register-hospital"
+                size="md"
+                iconLeft="plus"
+                label="Cadastrar hospital"
+                (click)="onRegisterHospital()"
+              />
+            </div>
 
             @if (listOpen()) {
               <ul
@@ -136,6 +159,45 @@
           </div>
           <p class="home__date">{{ todayLabel() }}</p>
         </div>
+
+        @if (shiftMessage(); as message) {
+          <p class="home__stale-banner" role="alert">
+            <ph-icon name="map-pin" [size]="20" />
+            <span>{{ message }}</span>
+          </p>
+        }
+
+        @if (shift.mine() || shift.others().length > 0) {
+          <!-- Equipe multidisciplinar: quem já está em turno neste hospital e quantos pacientes escolheu. -->
+          <section class="home__team" aria-label="Equipe em turno">
+            <h2 class="home__feed-heading">Equipe em turno</h2>
+            <ul class="home__team-list">
+              @for (member of shift.shifts(); track member.id) {
+                <li class="home__team-item" data-testid="shift-member">
+                  <app-avatar
+                    size="small"
+                    type="user"
+                    [name]="member.professionalName"
+                  />
+                  <span class="home__team-text">
+                    <span class="home__team-name">{{
+                      member.professionalName
+                    }}</span>
+                    <span class="home__team-meta"
+                      >{{ member.professionalRole }} ·
+                      {{ member.patientIds.length }}
+                      {{
+                        member.patientIds.length === 1
+                          ? 'paciente'
+                          : 'pacientes'
+                      }}</span
+                    >
+                  </span>
+                </li>
+              }
+            </ul>
+          </section>
+        }
 
         <div class="home__grid">
           @if (summary(); as s) {

@@ -131,6 +131,10 @@ import { PatientDuplicateApiService } from './features/patient-registration/pati
 import { PatientDuplicateSource } from './features/patient-registration/patient-duplicate-source';
 import { FormulasApi } from './features/pharmacy/formulas-api';
 import { ProvisionalFormulasApi } from './features/pharmacy/provisional-formulas-api';
+import { HospitalSiteSource } from './features/shift/hospital-site-source';
+import { ProvisionalHospitalSiteSource } from './features/shift/provisional-hospital-site-source';
+import { ProvisionalShiftSource } from './features/shift/provisional-shift-source';
+import { ShiftSource } from './features/shift/shift-source';
 import { LocalStartupStateReader } from './features/splash/local-startup-state-reader';
 import { StartupStateReader } from './features/splash/startup-state';
 import { TutorialApiService } from './features/tutorial/tutorial-api.service';
@@ -158,6 +162,9 @@ export const appConfig: ApplicationConfig = {
     { provide: WelcomeSource, useClass: WelcomeApiService },
     { provide: TutorialStateStore, useClass: TutorialApiService },
     { provide: LinkedHospitalsReader, useClass: HomeHospitalsApiService },
+    // Turno de trabalho e localização do hospital: provisórios (localStorage) até haver backend.
+    { provide: HospitalSiteSource, useClass: ProvisionalHospitalSiteSource },
+    { provide: ShiftSource, useClass: ProvisionalShiftSource },
     { provide: LinkRevocationChecker, useClass: ApiLinkRevocationChecker },
     { provide: UnreadNotificationsReader, useClass: ApiUnreadNotificationsReader },
     { provide: DailyPatientsSource, useClass: ProvisionalDailyPatientsSource },

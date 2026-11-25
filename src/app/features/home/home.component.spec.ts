@@ -1,11 +1,18 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter, Router } from '@angular/router';
 
+import { AiAssistantService } from '../../shared/services/ai-assistant.service';
+import { GeolocationError, GeolocationService, GeoPoint } from '../../shared/services/geolocation.service';
 import { ScreenActionsService } from '../../shared/services/screen-actions.service';
 import { ManagerAccessReader } from '../hospital-team/hospital-invite-port';
 import { LocationChangePort, LocationExtractor } from '../patient-hub/change-location/location-change.port';
 import { BedMovementPort, BedOccupancyPort } from '../patient-hub/move-bed/bed-movement.port';
 import { BedNumberExtractor } from '../patient-hub/move-bed/bed-number-extractor';
+import { HospitalSiteSource } from '../shift/hospital-site-source';
+import { ProvisionalHospitalSiteSource } from '../shift/provisional-hospital-site-source';
+import { ProvisionalShiftSource } from '../shift/provisional-shift-source';
+import { ShiftService } from '../shift/shift.service';
+import { ShiftSource } from '../shift/shift-source';
 import { DailyPatientsSource, DailyPatientsSummary } from './daily-patients';
 import { HomeComponent } from './home.component';
 import { HomeNotification, NotificationPage } from './home.models';
@@ -87,12 +94,29 @@ interface SetupOptions {
   linkRevoked?: boolean;
 }
 
+const geo = {
+  point: { lat: -23.5505, lng: -46.6333 } as GeoPoint | GeolocationError,
+  locate(): Promise<GeoPoint> {
+    return this.point instanceof GeolocationError ? Promise.reject(this.point) : Promise.resolve(this.point);
+  },
+};
+
+const shiftProviders = [
+  { provide: GeolocationService, useValue: geo },
+  { provide: HospitalSiteSource, useClass: ProvisionalHospitalSiteSource },
+  { provide: ShiftSource, useClass: ProvisionalShiftSource },
+];
+
 describe('HomeComponent', () => {
   let byNameCalls: unknown[][] = [];
 
   beforeEach(() => {
     byNameCalls = [];
+    localStorage.clear();
+    geo.point = { lat: -23.5505, lng: -46.6333 };
   });
+
+  afterEach(() => localStorage.clear());
 
   let fixture: ComponentFixture<HomeComponent>;
   let patients: FakePatients;
@@ -140,6 +164,7 @@ describe('HomeComponent', () => {
         { provide: LocationChangePort, useValue: {} },
         { provide: LocationExtractor, useValue: { extract: (): null => null } },
         { provide: BedOccupancyPort, useValue: {} },
+        ...shiftProviders,
         provideRouter([]),
         { provide: DailyPatientsSource, useValue: patients },
         { provide: HomeNotificationsSource, useValue: feed },
@@ -183,6 +208,101 @@ describe('HomeComponent', () => {
   const trigger = (): HTMLButtonElement | null => q<HTMLButtonElement>('.home__hospital-trigger');
   const options = (): HTMLElement[] => Array.from(el().querySelectorAll('[role="option"]'));
   const grid = (): HTMLElement[] => Array.from(el().querySelectorAll('.home__grid > *'));
+
+  describe('turno de trabalho (geolocalização)', () => {
+    const SITE = { address: '', hospitalId: HOSPITALS[0].id, lat: -23.5505, lng: -46.6333, radiusMeters: 300 };
+    const startButton = (): HTMLButtonElement => q<HTMLButtonElement>('.home__shift button') as HTMLButtonElement;
+    const click = async (button: HTMLButtonElement): Promise<void> => {
+      button.click();
+      await settle();
+      // Sem zona, o `whenStable` não espera a cadeia de promessas da gravação: cede a vez antes de olhar a tela.
+      await new Promise<void>(resolve => setTimeout(resolve, 0));
+      await settle();
+    };
+
+    beforeEach(() => setup());
+
+    it('na linha do hospital: "Iniciar turno de trabalho" (outline) ao lado do seletor e "Cadastrar hospital" à direita', () => {
+      const row = q('.home__hospital-row') as HTMLElement;
+      const labels = Array.from(row.querySelectorAll('app-button')).map(b => b.textContent.trim());
+
+      expect(labels).toEqual(['Iniciar turno de trabalho', 'Cadastrar hospital']);
+      expect(q('.home__shift')?.classList.toString()).toContain('home__shift');
+      expect(q('.home__shift button')?.className).toContain('outlined');
+    });
+
+    it('sem localização cadastrada, não inicia e orienta em texto', async () => {
+      await click(startButton());
+
+      expect(q('.home__stale-banner[role="alert"]')?.textContent).toContain('ainda não tem localização cadastrada');
+      expect(navigate).not.toHaveBeenCalled();
+    });
+
+    it('fora do raio, não inicia e diz a distância', async () => {
+      await TestBed.inject(HospitalSiteSource).save({ ...SITE, lat: -23.5505 + 0.0135 });
+      await click(startButton());
+
+      expect(q('.home__stale-banner[role="alert"]')?.textContent).toContain('Você está a');
+      expect(navigate).not.toHaveBeenCalled();
+    });
+
+    it('dentro do raio, inicia o turno, leva à lista de pacientes e o botão vira "Retomar turno de trabalho"', async () => {
+      await TestBed.inject(HospitalSiteSource).save(SITE);
+      await click(startButton());
+
+      expect(navigate).toHaveBeenCalledWith(['/patients'], { queryParams: { turno: '1' } });
+      expect(q('.home__shift')?.textContent).toContain('Retomar turno de trabalho');
+      expect(q('[data-testid="shift-member"]')?.textContent).toContain('Michelle Franklin');
+
+      navigate.calls.reset();
+      await click(startButton());
+
+      expect(navigate).toHaveBeenCalledOnceWith(['/patients'], { queryParams: { turno: '1' } });
+    });
+
+    it('sem permissão de localização, avisa em texto', async () => {
+      await TestBed.inject(HospitalSiteSource).save(SITE);
+      geo.point = new GeolocationError('denied');
+      await click(startButton());
+
+      expect(q('.home__stale-banner[role="alert"]')?.textContent).toContain('Sem acesso à localização');
+    });
+
+    it('mostra a equipe em turno: quem já está trabalhando e quantos pacientes escolheu', async () => {
+      const shifts = TestBed.inject(ShiftSource);
+      const other = await shifts.start({
+        hospitalId: HOSPITALS[0].id,
+        professionalName: 'Dr. Bruno Lima',
+        professionalRole: 'Médico',
+        startedAt: new Date().toISOString(),
+      });
+
+      await shifts.selectPatients(other.id, ['p1', 'p2']);
+      await TestBed.inject(ShiftService).refresh(HOSPITALS[0].id);
+      await settle();
+
+      expect(q('.home__team')?.textContent).toContain('Dr. Bruno Lima');
+      expect(q('.home__team')?.textContent).toContain('Médico · 2 pacientes');
+    });
+
+    it('"Cadastrar hospital" abre o cadastro no painel lateral; ao salvar, limpa o aviso', async () => {
+      const assistant = TestBed.inject(AiAssistantService);
+
+      await click(startButton());
+
+      expect(q('.home__stale-banner[role="alert"]')).not.toBeNull();
+
+      await click(q<HTMLButtonElement>('.home__register-hospital button') as HTMLButtonElement);
+      const inputs = assistant.activeAction()?.editor?.inputs as { saved: (id: number) => void };
+
+      expect(assistant.activeAction()?.id).toBe('hospital-registration');
+
+      inputs.saved(HOSPITALS[0].id);
+      await settle();
+
+      expect(q('.home__stale-banner[role="alert"]')).toBeNull();
+    });
+  });
 
   describe('layout', () => {
     beforeEach(() => setup());
@@ -941,6 +1061,7 @@ describe('HomeComponent', () => {
           { provide: LocationChangePort, useValue: {} },
           { provide: LocationExtractor, useValue: { extract: (): null => null } },
           { provide: BedOccupancyPort, useValue: {} },
+          ...shiftProviders,
           { provide: DailyPatientsSource, useValue: new FakePatients() },
           { provide: HomeNotificationsSource, useValue: new FakeNotifications() },
           { provide: LinkRevocationChecker, useValue: { isRevoked: (): Promise<boolean> => Promise.resolve(false) } },

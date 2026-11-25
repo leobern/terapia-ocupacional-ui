@@ -1,0 +1,56 @@
+@use '../../shared/styles/tokens';
+@use '../../shared/styles/typography';
+
+:host {
+  display: block;
+}
+
+.hosp {
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$space-8;
+}
+
+.hosp__place {
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$space-8;
+  padding: tokens.$space-16;
+  border: 1px solid tokens.c(border);
+  border-radius: tokens.$radius-md;
+  background: tokens.c(surface);
+}
+
+.hosp__label {
+  color: tokens.c(content-1);
+
+  @include typography.title-md;
+}
+
+.hosp__point {
+  margin: 0;
+  color: tokens.c(content-1);
+
+  @include typography.body-lg;
+}
+
+.hosp__caption {
+  margin: 0;
+  color: tokens.c(content-4);
+
+  @include typography.caption;
+}
+
+.hosp__status {
+  margin: 0;
+  padding: tokens.$space-16;
+  border-radius: tokens.$radius-md;
+  background: tokens.c(surface);
+  color: tokens.c(content-4);
+
+  @include typography.body-md;
+
+  &--warning {
+    color: tokens.c(content-1);
+  }
+}

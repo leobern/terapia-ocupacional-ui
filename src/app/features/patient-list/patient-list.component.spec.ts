@@ -802,6 +802,49 @@ describe('PatientListComponent', () => {
     });
   });
 
+  it('o seletor "Ordenar" troca o critério (prioridade e leito) e mostra o escolhido', async () => {
+    source.result = Promise.resolve(census(3));
+    await create();
+    const select = q('.patient-list__sort-select select') as HTMLSelectElement;
+
+    select.value = 'bed';
+    select.dispatchEvent(new Event('change'));
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.sortKey()).toBe('location');
+    expect(q('.patient-list__sort-select > span[aria-hidden]')?.textContent).toContain('leito');
+
+    select.value = 'priority';
+    select.dispatchEvent(new Event('change'));
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.sortKey()).toBe('priority');
+  });
+
+  it('encerramento gravado recarrega a lista; fechar o modal limpa o alvo; voltar a ficar visível rebusca', async () => {
+    source.result = Promise.resolve(census(2));
+    await create();
+    const loads = spyOn(source, 'loadCensus').and.callThrough();
+
+    fixture.componentInstance.closureSaved();
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    expect(loads).toHaveBeenCalledWith(jasmine.any(Number), jasmine.any(Date));
+
+    fixture.componentInstance.endFollowUp('p0');
+    fixture.componentInstance.closeClosure();
+
+    expect(fixture.componentInstance.closureTarget()).toBeNull();
+
+    loads.calls.reset();
+    document.dispatchEvent(new Event('visibilitychange'));
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    expect(loads).toHaveBeenCalledWith(jasmine.any(Number), jasmine.any(Date));
+  });
+
   it('usa singular com um paciente', async () => {
     source.result = Promise.resolve(census(1));
     await create();
