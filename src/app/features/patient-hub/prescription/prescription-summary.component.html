@@ -7,6 +7,15 @@
     @if (title()) {
       <h3 class="rx-summary__title">{{ title() }}</h3>
     }
+    @if (showAuthor()) {
+      <div class="rx-summary__author" data-testid="rx-summary-author">
+        <app-avatar size="medium" type="user" [name]="l.author" />
+        <div class="rx-summary__author-text">
+          <p class="rx-summary__author-name">{{ l.author }}</p>
+          <p class="rx-summary__author-meta">{{ l.authorMeta }}</p>
+        </div>
+      </div>
+    }
     @if (l.routeTitle; as via) {
       <p class="rx-summary__route" data-testid="rx-summary-route">{{ via }}</p>
     }

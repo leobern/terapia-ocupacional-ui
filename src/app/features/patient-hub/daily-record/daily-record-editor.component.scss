@@ -1,0 +1,26 @@
+@use '../../../shared/styles/tokens';
+@use '../../../shared/styles/typography';
+
+:host {
+  display: block;
+}
+
+.dre {
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$space-8;
+}
+
+.dre__status {
+  margin: 0;
+  padding: tokens.$space-16;
+  border-radius: tokens.$radius-md;
+  background: tokens.c(surface);
+  color: tokens.c(content-4);
+
+  @include typography.body-md;
+
+  &--warning {
+    color: tokens.c(content-1);
+  }
+}

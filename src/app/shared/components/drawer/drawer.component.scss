@@ -73,19 +73,39 @@ $icon-hit-inset: ($min-touch-target - tokens.$control-height-md) * 0.5;
   &::backdrop {
     background: transparent;
   }
+
+  // Sidebar sistêmica (Atalhos): sem a borda azul.
+  &.drawer--plain {
+    border-inline-start: 0;
+  }
 }
 
 // Expandido: o chat vira uma coluna central travada em 640px (Figma 4480:7718 — cabeçalho,
 // conversa, atalhos e campo de mensagem com 640px, centralizados no painel).
 .drawer--expanded {
+  // Sidebar em 100% da tela: sem a borda azul (Thiago, 2026-11-25).
+  border-inline-start: 0;
+
   .drawer__header,
-  .drawer__content,
   .drawer__actions,
   .drawer__footer {
     align-self: center;
     box-sizing: border-box;
     max-width: 100%;
     width: tokens.$content-max-width;
+  }
+
+  // A rolagem ocupa a largura toda (barra colada na direita da tela) e o texto segue na coluna central de 640px.
+  .drawer__content {
+    align-self: stretch;
+    box-sizing: border-box;
+    margin-inline: calc(-1 * var(--space-24));
+    padding-inline: max(
+      var(--space-24),
+      calc((100% - #{tokens.$content-max-width}) / 2)
+    );
+    scrollbar-color: var(--color-border-2) transparent;
+    scrollbar-width: thin;
   }
 }
 
@@ -147,6 +167,20 @@ $icon-hit-inset: ($min-touch-target - tokens.$control-height-md) * 0.5;
   overflow-y: auto;
   overscroll-behavior: contain;
   padding: 0;
+
+  // A barra de rolagem fica oculta e só aparece enquanto se rola (`appScrollReveal`); `auto` devolve o controle ao
+  // ::-webkit-scrollbar (o `*` global com scrollbar-color/width o desativaria).
+  scrollbar-color: auto;
+  scrollbar-width: auto;
+
+  &::-webkit-scrollbar-thumb {
+    background: transparent;
+  }
+
+  &[data-scrolling='true']::-webkit-scrollbar-thumb {
+    background: var(--color-border-2);
+    background-clip: content-box;
+  }
 }
 
 // Faixa de atalhos: some inteira (padding incluído) quando não há atalhos —

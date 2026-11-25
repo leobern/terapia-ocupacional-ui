@@ -6,6 +6,7 @@
     #dialogEl
     class="drawer"
     [class.drawer--expanded]="isModal()"
+    [class.drawer--plain]="plain()"
     [attr.role]="roleAttr()"
     [attr.aria-modal]="ariaModalAttr()"
     [attr.aria-label]="ariaLabel()"
@@ -57,7 +58,7 @@
       </div>
     </div>
 
-    <div class="drawer__content">
+    <div class="drawer__content" appScrollReveal>
       <ng-content select="[drawerContent]" />
     </div>
 

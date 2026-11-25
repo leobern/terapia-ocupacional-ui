@@ -66,7 +66,6 @@ import { NutritionTargetsReader } from './plan/nutrition-targets-reader';
 import { PlanSource } from './plan/plan-source';
 import { RefeedingRiskSource } from './plan/refeeding-risk-source';
 import { Prescription } from './prescription/prescription.models';
-import { PrescriptionSheetComponent } from './prescription/prescription-sheet.component';
 import { PrescriptionSource } from './prescription/prescription-source';
 
 const PROFILE: PatientHubProfile = {
@@ -405,9 +404,10 @@ describe('PatientHubComponent', () => {
 
       expect(text(f)).toContain('Fórmula Hub');
       prescriptionStore.value = { ...PRESCRIPTION, formulaName: 'Fórmula nova' };
-      (
-        f.debugElement.query(By.directive(PrescriptionSheetComponent)).componentInstance as PrescriptionSheetComponent
-      ).saved.emit();
+      const assistant = TestBed.inject(AiAssistantService);
+
+      (f.componentInstance as unknown as { editPrescription(): void }).editPrescription();
+      (assistant.activeAction()?.editor?.inputs as { saved: () => void }).saved();
       await f.whenStable();
       f.detectChanges();
 
@@ -433,11 +433,10 @@ describe('PatientHubComponent', () => {
   });
 
   describe('Registro diário', () => {
-    it('registra a ação "Registro diário" nos atalhos e abre o registro ao escolhê-la', async () => {
+    it('registra a ação "Registro diário" nos atalhos e abre a evolução no painel lateral', async () => {
       const f = await setup(new FakeSource());
       const actions = TestBed.inject(ScreenActionsService).actions();
-      const dialog = (): HTMLDialogElement =>
-        (f.nativeElement as HTMLElement).querySelector('app-daily-record-sheet dialog') as HTMLDialogElement;
+      const assistant = TestBed.inject(AiAssistantService);
 
       expect(actions.map(a => a.label)).toEqual([
         'Registro diário',
@@ -448,16 +447,12 @@ describe('PatientHubComponent', () => {
         'Revisão da prescrição',
       ]);
 
-      expect(dialog().open).toBe(false);
       actions[0].navigate?.();
       f.detectChanges();
-      await f.whenStable();
 
-      expect(dialog().open).toBe(true);
-      dialog().dispatchEvent(new Event('cancel', { cancelable: true }));
-      f.detectChanges();
-
-      expect(dialog().open).toBe(false);
+      expect(assistant.activeAction()?.id).toBe('daily-record');
+      expect(assistant.activeAction()?.editor?.title).toBe('Evolução');
+      (assistant.activeAction()?.editor?.inputs as { saved: () => void }).saved();
     });
 
     it('a ação "Observação ou mensagem" abre o registro do assistente e o fecha com Esc', async () => {
@@ -490,43 +485,55 @@ describe('PatientHubComponent', () => {
       ).toEqual(['Registro diário', 'Observação ou mensagem', 'Movimentar leito', 'Alterar unidade/ala']);
     });
 
-    it('médico abre a revisão da prescrição pelos atalhos e fecha com Esc', async () => {
+    it('médico abre a Meta nutricional no painel lateral pelos atalhos', async () => {
       const f = await setup(new FakeSource());
+      const assistant = TestBed.inject(AiAssistantService);
       const action = TestBed.inject(ScreenActionsService)
         .actions()
         .find(a => a.id === 'prescription-review');
-      const dialog = (): HTMLDialogElement =>
-        (f.nativeElement as HTMLElement).querySelector('app-prescription-review dialog') as HTMLDialogElement;
 
       action?.navigate?.();
       f.detectChanges();
-      await f.whenStable();
 
-      expect(dialog().open).toBe(true);
-      dialog().dispatchEvent(new Event('cancel', { cancelable: true }));
-      f.detectChanges();
+      expect(assistant.activeAction()?.id).toBe('prescription-review');
+      expect(assistant.activeAction()?.editor?.title).toBe('Meta nutricional');
+      const inputs = assistant.activeAction()?.editor?.inputs as { routeSaved: () => void; targetsSaved: () => void };
 
-      expect(dialog().open).toBe(false);
+      inputs.routeSaved();
+      inputs.targetsSaved();
     });
 
-    it('"Ajustar a prescrição" abre a revisão da prescrição e só existe para o médico', async () => {
+    it('"Ajustar a prescrição" abre a prescrição no painel lateral e só existe para o médico', async () => {
       const f = await setup(new FakeSource());
-      const dialog = (): HTMLDialogElement =>
-        (f.nativeElement as HTMLElement).querySelector('app-prescription-sheet dialog') as HTMLDialogElement;
+      const assistant = TestBed.inject(AiAssistantService);
       const action = TestBed.inject(ScreenActionsService)
         .actions()
         .find(a => a.id === 'adjust-prescription');
 
-      expect(dialog().open).toBe(false);
       action?.navigate?.();
       f.detectChanges();
-      await f.whenStable();
 
-      expect(dialog().open).toBe(true);
-      dialog().dispatchEvent(new Event('cancel', { cancelable: true }));
-      f.detectChanges();
+      expect(assistant.activeAction()?.id).toBe('adjust-prescription');
+      expect(assistant.activeAction()?.editor?.title).toBe('Prescrição');
+    });
 
-      expect(dialog().open).toBe(false);
+    it('os cadastros do painel não abrem sem o dado de que precisam (hospital, paciente ou perfil de médico)', async () => {
+      const noHospital = await setup(new FakeSource(), 'p1', []);
+      const assistant = TestBed.inject(AiAssistantService);
+
+      (noHospital.componentInstance as unknown as { editPrescription(): void }).editPrescription();
+
+      expect(assistant.activeAction()).toBeNull();
+      noHospital.destroy();
+    });
+
+    it('a Meta nutricional é só do médico', async () => {
+      TestBed.resetTestingModule();
+      const f = await setup(new FakeSource(), 'p1', undefined, 'nurse');
+
+      (f.componentInstance as unknown as { editNutritionReview(): void }).editNutritionReview();
+
+      expect(TestBed.inject(AiAssistantService).activeAction()).toBeNull();
     });
 
     it('sem hospital com vínculo em contexto, a ação não é oferecida', async () => {
@@ -1084,11 +1091,12 @@ describe('PatientHubComponent', () => {
       expect((f.componentInstance as unknown as { day(): Date }).day()).toBe(day);
     });
 
-    it('fechar o Registro diário lê as Evoluções de novo', () => {
-      const hub = f.componentInstance as unknown as { evolutionsVersion(): number; onDailyRecordClosed(): void };
+    it('salvar a evolução lê as Evoluções de novo', () => {
+      const hub = f.componentInstance as unknown as { evolutionsVersion(): number; editDailyRecord(): void };
       const before = hub.evolutionsVersion();
 
-      hub.onDailyRecordClosed();
+      hub.editDailyRecord();
+      (TestBed.inject(AiAssistantService).activeAction()?.editor?.inputs as { saved: () => void }).saved();
 
       expect(hub.evolutionsVersion()).toBe(before + 1);
     });
@@ -1102,13 +1110,13 @@ describe('PatientHubComponent', () => {
       f = await setup(new FakeSource());
     });
 
-    it('a faixa de datas flutua na linha do leito (3 dias) e há outra na coluna do paciente (mobile)', () => {
-      const floating = el().querySelector('.hub__bed-row app-date-strip');
-      const column = el().querySelector('.hub__group > app-date-strip');
+    it('há uma só faixa de datas, abaixo do card do paciente (Figma 4792:32862)', () => {
+      const strips = el().querySelectorAll('app-date-strip');
+      const identity = el().querySelector('.hub__identity') as HTMLElement;
 
+      expect(strips.length).toBe(1);
       expect(el().querySelector('app-page-header app-date-strip')).toBeNull();
-      expect(floating?.classList).toContain('date-strip--header');
-      expect(column?.classList).not.toContain('date-strip--header');
+      expect(identity.nextElementSibling).toBe(strips[0]);
     });
 
     it('no mobile o cabeçalho não tem o sino (só os atalhos)', async () => {

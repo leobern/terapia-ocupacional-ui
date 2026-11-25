@@ -12,25 +12,34 @@
       </div>
 
       <div class="home__header-actions">
-        <span class="home__notify-wrapper">
-          <app-icon-button
-            kind="primary"
-            appearance="icon"
-            size="small"
-            icon="bell"
-            [ariaLabel]="bellLabel()"
-            (click)="onViewAllNotifications()"
-          />
-          @if (unreadCount() > 0) {
-            <app-badge
-              class="home__notify-badge"
-              type="numeral"
-              [value]="unreadCount()"
+        <!-- CTA principal da tela: sempre no topo, ao lado do sino (mesmo lugar do "Cadastrar paciente"). -->
+        <app-button
+          class="home__register-hospital"
+          size="md"
+          iconLeft="plus"
+          label="Cadastrar hospital"
+          (click)="onRegisterHospital()"
+        />
+        <div class="home__header-icons">
+          <span class="home__notify-wrapper">
+            <app-icon-button
+              kind="primary"
+              appearance="icon"
+              size="small"
+              icon="bell"
+              [ariaLabel]="bellLabel()"
+              (click)="onViewAllNotifications()"
             />
-          }
-        </span>
+            @if (unreadCount() > 0) {
+              <app-badge
+                class="home__notify-badge"
+                type="numeral"
+                [value]="unreadCount()"
+              />
+            }
+          </span>
 
-        <!--
+          <!--
           Só no desktop: no mobile/tablet o mesmo destino (abrir o assistente de
           IA) já é o botão central da bottom-nav-bar — duplicar aqui criaria dois
           acionadores para a mesma ação na mesma tela. Wrapper `<span>` (não a
@@ -39,17 +48,18 @@
           `display: none` externo depende de qual dos dois vence a cascata;
           escondendo o wrapper em vez disso, o resultado não depende disso.
         -->
-        <span class="home__shortcuts-wrapper">
-          <app-icon-button
-            kind="primary"
-            appearance="icon"
-            size="small"
-            icon="squares-four"
-            ariaLabel="Ações da tela"
-            [disabled]="aiAssistant.shortcutsOpen()"
-            (click)="aiAssistant.openShortcuts()"
-          />
-        </span>
+          <span class="home__shortcuts-wrapper">
+            <app-icon-button
+              kind="primary"
+              appearance="icon"
+              size="small"
+              icon="squares-four"
+              ariaLabel="Ações da tela"
+              [disabled]="aiAssistant.shortcutsOpen()"
+              (click)="aiAssistant.openShortcuts()"
+            />
+          </span>
+        </div>
       </div>
     </header>
 
@@ -81,7 +91,7 @@
       @default {
         <div class="home__local">
           <div class="home__local-col">
-            <!-- Seletor de hospital, "Iniciar turno de trabalho" (16px ao lado, outline) e, à direita, "Cadastrar hospital". -->
+            <!-- Seletor de hospital; o "Iniciar turno de trabalho" fica à direita, acima da data. -->
             <div class="home__hospital-row">
               @if (context.canSwitch() && controlsEnabled()) {
                 <button
@@ -105,26 +115,6 @@
                   [label]="selectedHospitalName()"
                 />
               }
-              <app-button
-                class="home__shift"
-                size="md"
-                appearance="outlined"
-                iconLeft="map-pin"
-                [label]="
-                  shift.mine()
-                    ? 'Retomar turno de trabalho'
-                    : 'Iniciar turno de trabalho'
-                "
-                [disabled]="shiftBusy() || context.selected() === null"
-                (click)="onShiftClick()"
-              />
-              <app-button
-                class="home__register-hospital"
-                size="md"
-                iconLeft="plus"
-                label="Cadastrar hospital"
-                (click)="onRegisterHospital()"
-              />
             </div>
 
             @if (listOpen()) {
@@ -157,7 +147,21 @@
 
             <p class="home__headline">Tarefas diárias do hospital</p>
           </div>
-          <p class="home__date">{{ todayLabel() }}</p>
+          <div class="home__local-aside">
+            <app-button
+              class="home__shift"
+              size="md"
+              appearance="outlined"
+              [label]="
+                shift.mine()
+                  ? 'Retomar turno de trabalho'
+                  : 'Iniciar turno de trabalho'
+              "
+              [disabled]="shiftBusy() || context.selected() === null"
+              (click)="onShiftClick()"
+            />
+            <p class="home__date">{{ todayLabel() }}</p>
+          </div>
         </div>
 
         @if (shiftMessage(); as message) {
@@ -203,7 +207,7 @@
           @if (summary(); as s) {
             <app-card-patients
               class="home__patients"
-              actionAriaLabel="Ver listagem de pacientes (em breve)"
+              actionAriaLabel="Ver listagem de pacientes"
               [patientCount]="s.patientCount"
               [averageCaloricPercentage]="s.averageCaloricPercentage"
               [averageProteinPercentage]="s.averageProteinPercentage"

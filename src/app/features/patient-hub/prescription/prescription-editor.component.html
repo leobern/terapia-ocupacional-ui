@@ -1,0 +1,98 @@
+<div class="rx">
+  <app-field-card
+    label="Fórmula"
+    inputId="rx-formula"
+    placeholder="Escolha uma fórmula"
+    [options]="formulaNames()"
+    [value]="draft().formula?.name ?? ''"
+    [caption]="density()"
+    [error]="touched() ? (evaluation().errors.formula ?? '') : ''"
+    (valueChange)="selectFormula($event)"
+  />
+  @if (formulaNames().length === 0) {
+    <p class="rx__status" data-testid="rx-empty-catalog">
+      {{ emptyCatalogHint }}
+    </p>
+  }
+
+  <app-field-card
+    label="Volume diário"
+    inputId="rx-volume"
+    unit="mL"
+    inputMode="decimal"
+    [value]="draft().volume"
+    [error]="touched() ? (evaluation().errors.volume ?? '') : ''"
+    (valueChange)="setVolume($event)"
+  />
+
+  <app-field-card
+    label="Modalidade"
+    inputId="rx-modality"
+    [options]="modalityLabels"
+    [value]="modalityLabel()"
+    [caption]="
+      continuous() ? 'Modalidade contínua: 24 h de administração.' : ''
+    "
+    (valueChange)="setModality($event)"
+  />
+
+  <app-field-card
+    label="Horário previsto de início"
+    inputId="rx-start"
+    placeholder="hh:mm"
+    [value]="draft().startTime"
+    [error]="touched() ? (evaluation().errors.startTime ?? '') : ''"
+    (valueChange)="setStart($event)"
+  />
+
+  @for (pause of draft().pauseTimes; track $index) {
+    <app-field-card
+      placeholder="hh:mm"
+      [label]="'Horário de pausa ' + ($index + 1)"
+      [inputId]="'rx-pause-' + $index"
+      [value]="pause"
+      [error]="evaluation().errors.pauseTimes ?? ''"
+      (valueChange)="setPause($index, $event)"
+    >
+      <app-button
+        size="md"
+        kind="primary"
+        appearance="outlined"
+        label="Remover horário"
+        (click)="removePause($index)"
+      />
+    </app-field-card>
+  }
+
+  <app-field-card
+    label="Orientações de enfermagem"
+    inputId="rx-notes"
+    placeholder="Opcional. Ficam visíveis na Evolução Diária."
+    [rows]="3"
+    [value]="draft().nursingNotes"
+    (valueChange)="setNotes($event)"
+  />
+
+  <div class="rx__intake" aria-live="polite" data-testid="rx-intake">
+    <span class="rx__label">Aporte previsto</span>
+    @if (intakeLines(); as lines) {
+      <p class="rx__line">{{ lines.kcal }}</p>
+      <p class="rx__line">{{ lines.protein }}</p>
+      <p class="rx__help">{{ lines.rate }}</p>
+      @if (!targets()) {
+        <p class="rx__help" data-testid="rx-no-target">{{ noTargetHint }}</p>
+      }
+    } @else {
+      <p class="rx__help">
+        Informe fórmula, volume e horários para calcular o aporte.
+      </p>
+    }
+  </div>
+
+  @if (busy()) {
+    <p class="rx__status" role="status">Salvando…</p>
+  }
+  @if (hint(); as message) {
+    <p class="rx__status rx__status--warning" role="alert">{{ message }}</p>
+  }
+</div>

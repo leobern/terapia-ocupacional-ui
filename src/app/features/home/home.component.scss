@@ -67,6 +67,13 @@
 .home__header-actions {
   display: flex;
   align-items: center;
+  gap: tokens.$space-8;
+}
+
+// Sino e atalhos colados entre si; o CTA da tela fica 8px afastado deles (mesmo padrão do `app-page-header`).
+.home__header-icons {
+  display: flex;
+  align-items: center;
   gap: 0;
 }
 
@@ -116,7 +123,7 @@
 
   @include breakpoints.md {
     flex-direction: row;
-    align-items: flex-end;
+    align-items: stretch;
     justify-content: space-between;
     gap: tokens.$space-16;
   }
@@ -295,6 +302,7 @@
 
 // Linha do hospital: seletor, "Iniciar turno de trabalho" (16px ao lado) e, à direita, "Cadastrar hospital".
 .home__hospital-row {
+  min-height: 40px;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -302,8 +310,18 @@
   gap: tokens.$space-16;
 }
 
-.home__register-hospital {
-  margin-inline-start: auto;
+// Coluna da direita da linha do hospital: "Iniciar turno" acima da data, na extremidade direita.
+.home__local-aside {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: tokens.$space-8;
+
+  @include breakpoints.md {
+    align-items: flex-end;
+    align-self: stretch;
+    justify-content: space-between;
+  }
 }
 
 // Equipe em turno no hospital.

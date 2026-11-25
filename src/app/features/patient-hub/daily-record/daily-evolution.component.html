@@ -33,7 +33,9 @@
           [value]="draft()"
           (input)="onDraft($event)"
         ></textarea>
-        <p id="evolution-help" class="evolution__help">{{ help }}</p>
+        @if (!embedded()) {
+          <p id="evolution-help" class="evolution__help">{{ help }}</p>
+        }
         <!-- Avaliações: o que reavaliar e quando. Vira o selo "Prazo"/"Vencida" no card da evolução. -->
         <div class="evolution__reevaluations" data-testid="reevaluations">
           <span class="evolution__label">Avaliar de novo</span>
@@ -110,60 +112,67 @@
     </div>
 
     @if (isDoctor) {
-      @if (aiProcessing()) {
-        <p class="evolution__status" role="status">{{ aiProcessingHint }}</p>
-      }
-      @if (!connectivity.online()) {
-        <p class="evolution__status evolution__status--warning" role="status">
-          {{ aiUnavailableHint }}
-        </p>
-      } @else if (aiNotice(); as notice) {
-        <p class="evolution__status evolution__status--warning" role="alert">
-          {{ notice }}
-        </p>
-      }
-      <!-- Offline: o campo é recriado desabilitado (libera o microfone de uma gravação em curso). -->
-      @if (connectivity.online()) {
-        <app-input-chat
-          class="evolution__chat"
-          placeholder="Grave um áudio com a evolução do dia"
-          [disabled]="aiProcessing() || state() === 'loading'"
-          (audioSend)="onAudio($event)"
-          (audioModeError)="onAudioError($event)"
+      @if (!embedded()) {
+        @if (aiProcessing()) {
+          <p class="evolution__status" role="status">{{ aiProcessingHint }}</p>
+        }
+        @if (!connectivity.online()) {
+          <p class="evolution__status evolution__status--warning" role="status">
+            {{ aiUnavailableHint }}
+          </p>
+        } @else if (aiNotice(); as notice) {
+          <p class="evolution__status evolution__status--warning" role="alert">
+            {{ notice }}
+          </p>
+        }
+        <!-- Offline: o campo é recriado desabilitado (libera o microfone de uma gravação em curso). -->
+        @if (connectivity.online()) {
+          <app-input-chat
+            class="evolution__chat"
+            placeholder="Grave um áudio com a evolução do dia"
+            [disabled]="aiProcessing() || state() === 'loading'"
+            (audioSend)="onAudio($event)"
+            (audioModeError)="onAudioError($event)"
+          />
+        } @else {
+          <app-input-chat
+            class="evolution__chat"
+            placeholder="Grave um áudio com a evolução do dia"
+            [disabled]="true"
+          />
+        }
+        @if (!connectivity.online()) {
+          <p class="evolution__status evolution__status--warning" role="status">
+            {{ offlineHint }}
+          </p>
+        }
+        @if (saveFailed()) {
+          <p class="evolution__status evolution__status--warning" role="alert">
+            {{ saveFailedHint }}
+          </p>
+        }
+        <app-button
+          [label]="
+            suggestion() === null ? 'Salvar evolução' : 'Confirmar evolução'
+          "
+          [fullWidth]="true"
+          [disabled]="!canSave()"
+          (click)="save()"
         />
-      } @else {
-        <app-input-chat
-          class="evolution__chat"
-          placeholder="Grave um áudio com a evolução do dia"
-          [disabled]="true"
-        />
+        @if (suggestion() !== null) {
+          <app-button
+            kind="primary"
+            appearance="outlined"
+            label="Descartar sugestão"
+            [fullWidth]="true"
+            (click)="discard()"
+          />
+        }
       }
-      @if (!connectivity.online()) {
-        <p class="evolution__status evolution__status--warning" role="status">
-          {{ offlineHint }}
-        </p>
-      }
-      @if (saveFailed()) {
+      @if (embedded() && saveFailed()) {
         <p class="evolution__status evolution__status--warning" role="alert">
           {{ saveFailedHint }}
         </p>
-      }
-      <app-button
-        [label]="
-          suggestion() === null ? 'Salvar evolução' : 'Confirmar evolução'
-        "
-        [fullWidth]="true"
-        [disabled]="!canSave()"
-        (click)="save()"
-      />
-      @if (suggestion() !== null) {
-        <app-button
-          kind="primary"
-          appearance="outlined"
-          label="Descartar sugestão"
-          [fullWidth]="true"
-          (click)="discard()"
-        />
       }
     }
   </section>

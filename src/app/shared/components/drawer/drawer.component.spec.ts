@@ -85,9 +85,13 @@ describe('DrawerComponent', () => {
     expect(dialog().getAttribute('aria-label')).toBe('Assistente de IA');
   });
 
-  it('expanded: trava cabeçalho, conversa, atalhos e campo de mensagem em 640px centralizados', () => {
+  it('expanded: trava cabeçalho, atalhos e campo de mensagem em 640px centralizados; a rolagem ocupa a largura toda', () => {
     openDrawer('expanded');
-    const parts = ['.drawer__header', '.drawer__content', '.drawer__footer'].map(
+    const content = fixture.nativeElement.querySelector('.drawer__content') as HTMLElement;
+
+    expect(content.getBoundingClientRect().width).toBe(dialog().getBoundingClientRect().width);
+    expect(dialog().classList).toContain('drawer--expanded');
+    const parts = ['.drawer__header', '.drawer__footer'].map(
       selector => fixture.nativeElement.querySelector(selector) as HTMLElement,
     );
     const panelWidth = dialog().clientWidth;
@@ -142,6 +146,16 @@ describe('DrawerComponent', () => {
   // ---------------------------------------------------------------------------
   // T006 — toggle de snap
   // ---------------------------------------------------------------------------
+
+  it('plain (sidebar de Atalhos) tira a borda azul; a conversacional mantém', () => {
+    openDrawer();
+
+    expect(dialog().classList.contains('drawer--plain')).toBeFalse();
+    fixture.componentRef.setInput('plain', true);
+    fixture.detectChanges();
+
+    expect(dialog().classList.contains('drawer--plain')).toBeTrue();
+  });
 
   it('expandable=false (Atalhos) esconde o botão de redimensionar; o fechar continua', () => {
     fixture.componentRef.setInput('expandable', false);

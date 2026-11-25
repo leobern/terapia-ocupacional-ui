@@ -31,6 +31,7 @@ import { FollowUpClosureSource, FollowUpClosureWriter } from './features/follow-
 import { ProvisionalFollowUpClosureSource } from './features/follow-up-closure/provisional-follow-up-closure';
 import { ApiLinkRevocationChecker } from './features/home/api-link-revocation-checker';
 import { ApiUnreadNotificationsReader } from './features/home/api-unread-notifications-reader';
+import { CensusDailyPatientsSource } from './features/home/census-daily-patients';
 import { DailyPatientsSource } from './features/home/daily-patients';
 import { HomeHospitalsApiService } from './features/home/data-access/home-hospitals-api.service';
 import { HomeNotificationsApiService } from './features/home/data-access/home-notifications-api.service';
@@ -39,7 +40,6 @@ import { LinkRevocationChecker } from './features/home/link-revocation-checker';
 import { LinkedHospitalsReader } from './features/home/linked-hospitals';
 import { LocalProfessionalProfileReader } from './features/home/local-professional-profile-reader';
 import { ProfessionalProfileReader } from './features/home/professional-profile';
-import { ProvisionalDailyPatientsSource } from './features/home/provisional-daily-patients';
 import { UnreadNotificationsReader } from './features/home/unread-notifications-reader';
 import { HospitalLinksApiService } from './features/hospital-links/hospital-links-api.service';
 import { HospitalLinksSource } from './features/hospital-links/hospital-links-source';
@@ -187,7 +187,7 @@ export const appConfig: ApplicationConfig = {
     { provide: HospitalLinksSource, useClass: HospitalLinksApiService },
     { provide: LinkRevocationChecker, useClass: ApiLinkRevocationChecker },
     { provide: UnreadNotificationsReader, useClass: ApiUnreadNotificationsReader },
-    { provide: DailyPatientsSource, useClass: ProvisionalDailyPatientsSource },
+    { provide: DailyPatientsSource, useClass: CensusDailyPatientsSource },
     { provide: PatientCreationPort, useClass: PacientesApiService },
     { provide: InternacaoCreationPort, useClass: InternacoesApiService },
     { provide: BedMovementPort, useClass: BedMovementApiService },

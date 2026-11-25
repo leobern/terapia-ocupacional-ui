@@ -35,6 +35,21 @@ describe('PrescriptionSummaryComponent', () => {
     expect(text).toContain('Não desconectar a bolsa');
   });
 
+  it('com showAuthor mostra o médico que prescreveu e quando; sem ele não mostra', () => {
+    const f = TestBed.createComponent(PrescriptionSummaryComponent);
+    const el = f.nativeElement as HTMLElement;
+
+    f.componentRef.setInput('prescriptions', [rx]);
+    f.detectChanges();
+
+    expect(el.querySelector('[data-testid="rx-summary-author"]')).toBeNull();
+    f.componentRef.setInput('showAuthor', true);
+    f.detectChanges();
+
+    expect(el.querySelector('[data-testid="rx-summary-author"]')?.textContent).toContain('Dra. Ana');
+    expect(el.querySelector('[data-testid="rx-summary-author"]')?.textContent).toContain('Médico ·');
+  });
+
   it('sem orientações não mostra o campo; contínua mostra só o início; sem prescrição não renderiza', () => {
     const f = TestBed.createComponent(PrescriptionSummaryComponent);
 

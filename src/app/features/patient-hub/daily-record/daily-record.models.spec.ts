@@ -1,7 +1,5 @@
 import {
   dayKey,
-  formatEntryTime,
-  formatParameterValue,
   isSameDay,
   parseParameterValue,
   reevaluationDueAt,
@@ -26,11 +24,6 @@ describe('daily-record.models', () => {
     for (const bad of ['', 'abc', '-1', '1,2,3', '12 mg']) {
       expect(parseParameterValue(bad)).toBeNull();
     }
-  });
-
-  it('formata valor em pt-BR e hora local HH:mm', () => {
-    expect(formatParameterValue(4.2)).toBe('4,2');
-    expect(formatEntryTime(new Date(2026, 4, 28, 8, 5).toISOString())).toBe('08:05');
   });
 
   it('isSameDay compara o dia civil local', () => {

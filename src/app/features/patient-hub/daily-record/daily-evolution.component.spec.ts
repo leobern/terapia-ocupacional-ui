@@ -130,6 +130,36 @@ describe('DailyEvolutionComponent', () => {
       await setup('doctor');
     });
 
+    describe('embutida na sidebar de Evolução', () => {
+      beforeEach(async () => {
+        fixture.componentRef.setInput('embedded', true);
+        await openIt();
+      });
+
+      it('não tem campo de mensagem, botões nem texto de ajuda próprios', () => {
+        expect(chat()).toBeUndefined();
+        expect(saveButton()).toBeNull();
+        expect(text()).not.toContain('Só médico registra');
+        expect(area()).not.toBeNull();
+      });
+
+      it('save() grava e devolve true; sem texto devolve false; falha aparece em texto', async () => {
+        const evolution = fixture.componentInstance;
+
+        expect(await evolution.save()).toBeFalse();
+        await type('Estável');
+
+        expect(await evolution.save()).toBeTrue();
+        source.saveFails = true;
+        await type('Outra');
+
+        expect(await evolution.save()).toBeFalse();
+        await settle();
+
+        expect(text()).toContain('Não foi possível salvar a evolução');
+      });
+    });
+
     describe('avaliar de novo', () => {
       const rowsEls = (): HTMLElement[] =>
         Array.from(el().querySelectorAll<HTMLElement>('[data-testid="reevaluation-row"]'));

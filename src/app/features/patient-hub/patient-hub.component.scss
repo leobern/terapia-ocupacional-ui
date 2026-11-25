@@ -62,32 +62,7 @@ $hub-three-columns: 1100px;
   }
 }
 
-// Linha da legenda Ala · Leito (40px); no desktop a faixa de datas flutua à direita dela (Figma 4781:31588).
-.hub__bed-row {
-  position: relative;
-  display: flex;
-  align-items: center;
-  min-height: 40px;
-}
-
-.hub__strip--float {
-  display: none;
-}
-
 @container hub (width >= #{$hub-two-columns}) {
-  .hub__strip--float {
-    position: absolute;
-    inset-block-start: 50%;
-    inset-inline-end: 0;
-    z-index: 1;
-    display: block;
-    transform: translateY(-50%);
-  }
-
-  .hub__strip--column {
-    display: none;
-  }
-
   .hub__bed {
     min-height: 40px;
   }
@@ -183,17 +158,19 @@ $hub-three-columns: 1100px;
 
 .hub__tiles {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+
+  // Figma 4784:32611: uma linha de 4 tiles (rótulo, valor e unidade em 3 linhas); Calorias e Proteína até 72px e as
+  // metas ocupam o espaço que sobra.
+  grid-template-columns: minmax(0, 72px) minmax(0, 1fr) minmax(0, 72px) minmax(
+      0,
+      1fr
+    );
   gap: tokens.$space-8;
   margin: 0;
   padding: tokens.$space-16;
   border-radius: tokens.$radius-md;
   background: tokens.c(surface);
   list-style: none;
-
-  @include breakpoints.md {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-  }
 }
 
 .hub__tile {
@@ -217,6 +194,7 @@ $hub-three-columns: 1100px;
   @include typography.headline;
 
   small {
+    display: block;
     color: tokens.c(content-4);
 
     @include typography.caption;

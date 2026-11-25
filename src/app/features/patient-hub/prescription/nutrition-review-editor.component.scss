@@ -1,0 +1,130 @@
+@use '../../../shared/styles/tokens';
+@use '../../../shared/styles/typography';
+
+:host {
+  display: block;
+}
+
+.nr {
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$space-8;
+}
+
+.nr__card {
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$space-12;
+  padding: tokens.$space-16;
+  border: 1px solid tokens.c(border);
+  border-radius: tokens.$radius-md;
+  background: tokens.c(surface);
+}
+
+.nr__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: tokens.$space-8;
+  min-height: 40px;
+}
+
+.nr__title {
+  margin: 0;
+  color: tokens.c(content-1);
+
+  @include typography.title-md;
+}
+
+.nr__confirm {
+  display: flex;
+  gap: tokens.$space-8;
+}
+
+.nr__tiles {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: tokens.$space-8;
+  margin: 0;
+}
+
+.nr__tile {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: tokens.$space-12;
+  border-radius: tokens.$radius-sm;
+  background: tokens.c(surface-2);
+
+  dt {
+    color: tokens.c(content-4);
+
+    @include typography.label-sm;
+  }
+
+  dd {
+    margin: 0;
+    color: tokens.c(content-1);
+
+    @include typography.headline;
+  }
+
+  small {
+    color: tokens.c(content-4);
+
+    @include typography.caption;
+  }
+}
+
+.nr__select {
+  display: flex;
+  align-items: center;
+  min-height: 48px;
+  padding: 0 tokens.$space-16;
+  border: 1px solid tokens.c(border);
+  border-radius: tokens.$radius-sm;
+  background: tokens.c(surface-2);
+  color: tokens.c(content-1);
+  text-align: start;
+  cursor: pointer;
+
+  @include typography.body-lg;
+}
+
+.nr__options {
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$space-4;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.nr__option {
+  display: flex;
+  align-items: center;
+  gap: tokens.$space-12;
+  min-height: 44px;
+  padding: 0 tokens.$space-8;
+  color: tokens.c(content-1);
+  cursor: pointer;
+
+  @include typography.body-md;
+}
+
+.nr__help {
+  margin: 0;
+  color: tokens.c(content-4);
+
+  @include typography.caption;
+}
+
+.nr__status {
+  margin: 0;
+  padding: tokens.$space-16;
+  border-radius: tokens.$radius-md;
+  background: tokens.c(surface);
+  color: tokens.c(content-1);
+
+  @include typography.body-md;
+}

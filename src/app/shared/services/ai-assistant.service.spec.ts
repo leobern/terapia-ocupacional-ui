@@ -33,6 +33,16 @@ describe('AiAssistantService', () => {
     expect([service.isOpen(), service.view()]).toEqual([true, 'shortcuts']);
   });
 
+  it('shortcutsOpen só vale na sidebar de Atalhos: o cadastro conversacional não desabilita o botão', () => {
+    expect(service.shortcutsOpen()).toBeFalse();
+    service.openShortcuts();
+
+    expect(service.shortcutsOpen()).toBeTrue();
+    service.openAction(withForm);
+
+    expect(service.shortcutsOpen()).toBeFalse();
+  });
+
   it('openAction shows the form for a registration and the notice for an action without one', () => {
     service.openAction(withForm);
 

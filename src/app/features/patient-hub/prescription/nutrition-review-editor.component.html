@@ -1,0 +1,148 @@
+<div class="nr">
+  <section class="nr__card" aria-labelledby="nr-targets-title">
+    <div class="nr__head">
+      <h3 id="nr-targets-title" class="nr__title">Meta vigente</h3>
+      @if (adjusting()) {
+        <div class="nr__confirm">
+          <app-icon-button
+            kind="secondary"
+            appearance="tonal"
+            icon="x"
+            ariaLabel="Cancelar o ajuste da meta"
+            [disabled]="busy()"
+            (click)="cancelTargets()"
+          />
+          <app-icon-button
+            kind="secondary"
+            appearance="tonal"
+            icon="check"
+            ariaLabel="Salvar a meta"
+            [disabled]="busy() || !online()"
+            (click)="saveTargets()"
+          />
+        </div>
+      }
+    </div>
+    @if (targets(); as t) {
+      <dl class="nr__tiles" data-testid="targets">
+        <div class="nr__tile">
+          <dt>Meta calórica</dt>
+          <dd>{{ formatNumber(t.kcalPerDay) }} <small>kcal/dia</small></dd>
+        </div>
+        <div class="nr__tile">
+          <dt>Meta proteica</dt>
+          <dd>
+            {{ formatNumber(t.proteinPerDay, 0, 1) }} <small>g/dia</small>
+          </dd>
+        </div>
+      </dl>
+    } @else {
+      <p class="nr__help" data-testid="no-targets">{{ noTargetsText }}</p>
+    }
+    @if (adjusting()) {
+      <app-targets-editor [patientId]="patientId()" [editable]="true" />
+    } @else {
+      <app-button
+        kind="secondary"
+        label="Ajustar meta"
+        data-testid="adjust-targets"
+        [disabled]="!online() || busy()"
+        (click)="startTargets()"
+      />
+    }
+  </section>
+
+  <section class="nr__card" aria-labelledby="nr-route-title">
+    <div class="nr__head">
+      <h3 id="nr-route-title" class="nr__title">Via de nutrição</h3>
+      @if (routeDirty() && routeOpen()) {
+        <div class="nr__confirm">
+          <app-icon-button
+            kind="secondary"
+            appearance="tonal"
+            icon="x"
+            ariaLabel="Cancelar a via"
+            [disabled]="busy()"
+            (click)="cancelRoute()"
+          />
+          <app-icon-button
+            kind="secondary"
+            appearance="tonal"
+            icon="check"
+            ariaLabel="Salvar a via"
+            [disabled]="busy() || !online()"
+            (click)="saveRoute()"
+          />
+        </div>
+      }
+    </div>
+    <!-- Seleção múltipla: ao tocar, abre as opções; cada toque marca ou desmarca uma via. -->
+    <button
+      type="button"
+      class="nr__select"
+      aria-haspopup="listbox"
+      [attr.aria-expanded]="routeOpen()"
+      (click)="routeOpen.set(!routeOpen())"
+    >
+      <span data-testid="route-current">{{ selectionText() }}</span>
+    </button>
+    @if (routeOpen()) {
+      <ul
+        class="nr__options"
+        role="listbox"
+        aria-multiselectable="true"
+        aria-label="Vias de nutrição"
+      >
+        @for (option of options; track option.id) {
+          <li>
+            <label class="nr__option">
+              <input
+                type="checkbox"
+                [checked]="isSelected(option.id)"
+                [attr.data-route]="option.id"
+                (change)="toggleRoute(option.id)"
+              />
+              <span
+                ><strong>{{ option.id }}</strong> · {{ option.label }}</span
+              >
+            </label>
+          </li>
+        }
+      </ul>
+    }
+  </section>
+
+  <section class="nr__card" aria-labelledby="nr-rx-title">
+    <h3 id="nr-rx-title" class="nr__title">Prescrição ativa</h3>
+    @if (prescriptions().length > 0) {
+      <app-prescription-summary
+        title=""
+        [showAuthor]="true"
+        [prescriptions]="prescriptions()"
+      />
+    } @else {
+      <p class="nr__help" data-testid="no-prescription">
+        Nenhuma prescrição ativa para este paciente.
+      </p>
+    }
+    <app-button
+      label="Manter prescrição ativa"
+      [disabled]="!canKeep()"
+      (click)="keep()"
+    />
+    @if (review()) {
+      <p class="nr__help" role="status" data-testid="reviewed">
+        {{ reviewedText() }}
+      </p>
+    }
+  </section>
+
+  @if (hint(); as message) {
+    <p class="nr__status" role="alert" data-testid="hint">{{ message }}</p>
+  }
+  @if (!online()) {
+    <p class="nr__status" role="status" data-testid="offline">
+      {{ offlineHint }}
+    </p>
+  }
+</div>
