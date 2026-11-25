@@ -20,15 +20,16 @@ export interface CensusPatient {
   readonly birthDate: string;
   readonly ward: string;
   readonly bed: string;
-  readonly therapy: TherapyType;
+  /** `null` = o backend ainda não informa a terapia (paciente real): a tela mostra "Não informada". */
+  readonly therapy: TherapyType | null;
   readonly registeredInConductia: boolean;
   readonly admissionStatus: AdmissionStatus;
-  /** Data (AAAA-MM-DD) de início da terapia nutricional, do acompanhamento do paciente. */
-  readonly therapyStartDate: string;
+  /** Data (AAAA-MM-DD) de início da terapia nutricional; `null` = não informada na internação. */
+  readonly therapyStartDate: string | null;
   /** Adequação espelhada da prescrição ativa; `null` quando não há prescrição ativa. */
   readonly adequacy: Adequacy | null;
-  /** Ciclos triagem→avaliação→diagnóstico→plano concluídos. */
-  readonly completedCycles: number;
+  /** Ciclos triagem→avaliação→diagnóstico→plano concluídos; `null` = desconhecido (nunca vira "primeira avaliação"). */
+  readonly completedCycles: number | null;
   /**
    * Data (AAAA-MM-DD) de efeito de um encerramento de acompanhamento confirmado na FT-004-9 (FR-031).
    * Ausente = acompanhamento ativo. Só leitura: esta tela nunca grava.
@@ -60,9 +61,9 @@ export interface PatientCard {
   readonly birthDate: string;
   readonly ward: string;
   readonly bed: string;
-  readonly therapy: TherapyType;
-  /** Dias desde o início da terapia nutricional até a data selecionada (FR-003). */
-  readonly therapyDays: number;
+  readonly therapy: TherapyType | null;
+  /** Dias desde o início da terapia nutricional até a data selecionada (FR-003); `null` = início não informado. */
+  readonly therapyDays: number | null;
   /** Espelho da prescrição ativa, sem recálculo (FR-004). */
   readonly adequacy: Adequacy | null;
   /** FR-005: nenhum ciclo concluído ainda. */

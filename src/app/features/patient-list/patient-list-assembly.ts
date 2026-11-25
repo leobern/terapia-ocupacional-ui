@@ -58,12 +58,12 @@ export function assemblePatientList(
       bed: p.bed,
       birthDate: p.birthDate,
       finished: p.pendingTasks === 0 && !reassessmentDue,
-      firstEvaluation: p.completedCycles === 0,
+      firstEvaluation: p.completedCycles === 0, // `null` (desconhecido) nunca vira primeira avaliação
       id: p.id,
       name: p.name,
       reassessmentDue,
       therapy: p.therapy,
-      therapyDays: daysBetween(p.therapyStartDate, day),
+      therapyDays: p.therapyStartDate === null ? null : daysBetween(p.therapyStartDate, day),
       ward: p.ward,
     }))
     .sort((a, b) => a.ward.localeCompare(b.ward, 'pt-BR') || a.bed.localeCompare(b.bed, 'pt-BR', { numeric: true }));

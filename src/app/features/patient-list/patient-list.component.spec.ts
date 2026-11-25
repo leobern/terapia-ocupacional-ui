@@ -170,6 +170,18 @@ describe('PatientListComponent', () => {
     expect(fixture.nativeElement.querySelectorAll('.patient-list__row').length).toBe(3);
   });
 
+  it('paciente real sem terapia nem início informados mostra rótulos neutros e ordena por terapia', async () => {
+    source.result = Promise.resolve([
+      { ...census(1)[0], completedCycles: null, id: 'r', therapy: null, therapyStartDate: null },
+      ...census(1),
+    ]);
+    await create();
+
+    expect(text()).toContain('Não informada');
+    expect(text()).toContain('Início da TN não informado');
+    expect(text()).not.toContain('Primeira avaliação');
+  });
+
   it('mostra início da terapia, gauge (sem rótulo de adequação) e primeira avaliação', async () => {
     source.result = Promise.resolve([
       ...census(2),

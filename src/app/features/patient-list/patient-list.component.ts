@@ -146,6 +146,11 @@ const PATIENT_LIST_ACTIONS: readonly ScreenAction[] = [{ id: 'end-follow-up', la
 
 const THERAPY_LABEL: Record<TherapyType, string> = { MISTA: 'VO · NE · NP', NE: 'NE', NP: 'NP', VO: 'VO' };
 
+/** Terapia ainda não informada pelo backend (paciente real): rótulo neutro, nunca um tipo inventado. */
+function therapyLabelOf(therapy: TherapyType | null): string {
+  return therapy === null ? 'Não informada' : THERAPY_LABEL[therapy];
+}
+
 /** Valor de ordenação de cada coluna; `null` = indisponível. */
 const SORT_VALUE: Readonly<Record<SortKey, (p: PatientCard) => number | string | null>> = {
   age: p => p.age,
@@ -160,7 +165,7 @@ const SORT_VALUE: Readonly<Record<SortKey, (p: PatientCard) => number | string |
 
     return labels.length === 0 ? null : labels.join(' · ');
   },
-  therapy: p => THERAPY_LABEL[p.therapy],
+  therapy: p => therapyLabelOf(p.therapy),
 };
 
 const SORT_LABEL: Readonly<Record<SortKey, string>> = {
@@ -821,8 +826,8 @@ export class PatientListComponent implements OnInit {
     return this.sortDir() === 'asc' ? 'ascending' : 'descending';
   }
 
-  protected therapyLabel(therapy: TherapyType): string {
-    return THERAPY_LABEL[therapy];
+  protected therapyLabel(therapy: TherapyType | null): string {
+    return therapyLabelOf(therapy);
   }
 
   protected onVisibility(): void {

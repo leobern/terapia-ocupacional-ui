@@ -1,6 +1,6 @@
-import { inject, Injectable } from '@angular/core';
+import { Injectable } from '@angular/core';
 
-import { PatientListSource } from '../patient-list/patient-list-source';
+import { provisionalCensusSeed } from '../patient-list/provisional-patient-list';
 import { HypothesisSaveRequest, PatientHubProfile } from './patient-hub.models';
 import {
   HypothesisSynthesizer,
@@ -22,23 +22,23 @@ const SEED: Readonly<Record<string, string>> = {
  */
 @Injectable()
 export class ProvisionalPatientHubSource extends PatientHubSource {
-  private readonly census = inject(PatientListSource);
+  loadProfile(patientId: string): Promise<PatientHubProfile | null> {
+    // Independe do censo real (`PatientListSource`): usa só a semente de exemplo.
+    const found = provisionalCensusSeed().find(p => p.id === patientId);
 
-  async loadProfile(patientId: string): Promise<PatientHubProfile | null> {
-    const census = await this.census.loadCensus(0, new Date());
-    const found = census.find(p => p.id === patientId);
-
-    return found === undefined
-      ? null
-      : {
-          bed: found.bed,
-          birthDate: found.birthDate,
-          id: found.id,
-          name: found.name,
-          therapy: found.therapy,
-          therapyStartDate: found.therapyStartDate,
-          ward: found.ward,
-        };
+    return Promise.resolve(
+      found === undefined
+        ? null
+        : {
+            bed: found.bed,
+            birthDate: found.birthDate,
+            id: found.id,
+            name: found.name,
+            therapy: found.therapy,
+            therapyStartDate: found.therapyStartDate,
+            ward: found.ward,
+          },
+    );
   }
 
   loadHypothesis(patientId: string): Promise<string | null> {

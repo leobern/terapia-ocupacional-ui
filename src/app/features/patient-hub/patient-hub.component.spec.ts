@@ -581,6 +581,19 @@ describe('PatientHubComponent', () => {
     expect(text(g)).not.toContain('Internações anteriores');
   });
 
+  it('paciente real sem terapia, início, ala e leito não mostra tag nem tempo de terapia', async () => {
+    const source = new FakeSource();
+
+    source.profile = { ...PROFILE, bed: '', therapy: null, therapyStartDate: null, ward: 'Ala 2' };
+    const f = await setup(source);
+
+    expect(text(f)).toContain('Ala 2');
+    expect(text(f)).not.toContain('Leito');
+    expect(text(f)).not.toContain('Terapia há');
+    expect((f.nativeElement as HTMLElement).querySelector('.hub__pill')).toBeNull();
+    expect((f.nativeElement as HTMLElement).querySelector('.hub__tags app-therapy-tag')).toBeNull();
+  });
+
   it('mostra identificação e a Hipótese completa quando preenchida', async () => {
     const f = await setup(new FakeSource());
 

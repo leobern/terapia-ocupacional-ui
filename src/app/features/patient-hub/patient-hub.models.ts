@@ -8,9 +8,10 @@ export interface PatientHubProfile {
   readonly bed: string;
   /** AAAA-MM-DD */
   readonly birthDate: string;
-  readonly therapy: TherapyType;
-  /** AAAA-MM-DD: início da terapia nutricional. */
-  readonly therapyStartDate: string;
+  /** `null` = terapia não informada (paciente real: o backend ainda não fornece). */
+  readonly therapy: TherapyType | null;
+  /** AAAA-MM-DD: início da terapia nutricional; `null` = não informado na internação. */
+  readonly therapyStartDate: string | null;
 }
 
 /** Origem do texto gravado: alimenta a trilha de auditoria feita no backend (Princípio V). */

@@ -228,13 +228,21 @@ export class PatientHubComponent implements OnInit {
       return null;
     }
     const [y, m, d] = p.birthDate.split('-');
-    const days = Math.max(0, Math.floor((this.now().getTime() - new Date(p.therapyStartDate).getTime()) / DAY_MS));
+    const days =
+      p.therapyStartDate === null
+        ? null
+        : Math.max(0, Math.floor((this.now().getTime() - new Date(p.therapyStartDate).getTime()) / DAY_MS));
     const plural = days === 1 ? 'dia' : 'dias';
+    let therapyDays = '';
+
+    if (days !== null) {
+      therapyDays = days === 0 ? 'Terapia iniciada hoje' : `Terapia há ${days} ${plural}`;
+    }
 
     return {
-      bed: `${p.ward} · Leito ${p.bed}`,
+      bed: [p.ward, p.bed === '' ? '' : `Leito ${p.bed}`].filter(part => part !== '').join(' · '),
       details: `${this.ageOf(p.birthDate)} anos · ${d}/${m}/${y}`,
-      therapyDays: days === 0 ? 'Terapia iniciada hoje' : `Terapia há ${days} ${plural}`,
+      therapyDays,
     };
   });
 

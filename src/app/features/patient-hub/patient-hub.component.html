@@ -25,8 +25,12 @@
                 <h2 class="hub__name">{{ profile()?.name }}</h2>
                 <p class="hub__details">{{ header()?.details }}</p>
                 <div class="hub__tags">
-                  <span class="hub__pill">{{ header()?.therapyDays }}</span>
-                  <app-therapy-tag [label]="profile()?.therapy ?? ''" />
+                  @if (header()?.therapyDays; as therapyDays) {
+                    <span class="hub__pill">{{ therapyDays }}</span>
+                  }
+                  @if (profile()?.therapy; as therapy) {
+                    <app-therapy-tag [label]="therapy" />
+                  }
                 </div>
               </section>
               <!-- Figma 4792:32862: a faixa de datas fica abaixo do card do paciente (sem apertar a legenda Ala · Leito). -->

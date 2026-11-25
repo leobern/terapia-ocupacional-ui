@@ -56,6 +56,7 @@ import { PendingNotificationsQueryResolver } from './features/notifications/assi
 import { ProvisionalAnnouncementAssistant } from './features/notifications/assistant/provisional-announcement-assistant';
 import { HttpPasswordResetGateway } from './features/password-recovery/http-password-reset-gateway';
 import { PasswordResetGateway } from './features/password-recovery/password-reset-gateway';
+import { ApiPatientHubSource } from './features/patient-hub/api-patient-hub-source';
 import { AssessmentAiStructurer } from './features/patient-hub/assessment/assessment-ai-structurer';
 import { AssessmentSource } from './features/patient-hub/assessment/assessment-source';
 import { AssessmentWriter } from './features/patient-hub/assessment/assessment-writer';
@@ -120,9 +121,9 @@ import {
   ProvisionalPriorStaysSource,
   ProvisionalPriorStaysSynthesizer,
 } from './features/patient-hub/provisional-patient-hub';
+import { ApiPatientListSource } from './features/patient-list/api-patient-list-source';
 import { PatientListAiCommandPort } from './features/patient-list/patient-list-ai-command';
 import { PatientListSource } from './features/patient-list/patient-list-source';
-import { ProvisionalPatientListSource } from './features/patient-list/provisional-patient-list';
 import { ProvisionalPatientListAiCommand } from './features/patient-list/provisional-patient-list-ai-command';
 import {
   PatientMessagesSource,
@@ -200,8 +201,9 @@ export const appConfig: ApplicationConfig = {
     ProvisionalFollowUpClosureSource,
     { provide: FollowUpClosureSource, useExisting: ProvisionalFollowUpClosureSource },
     { provide: FollowUpClosureWriter, useExisting: ProvisionalFollowUpClosureSource },
-    { provide: PatientListSource, useClass: ProvisionalPatientListSource },
-    { provide: PatientHubSource, useClass: ProvisionalPatientHubSource },
+    { provide: PatientListSource, useClass: ApiPatientListSource },
+    ProvisionalPatientHubSource,
+    { provide: PatientHubSource, useClass: ApiPatientHubSource },
     { provide: HypothesisSynthesizer, useClass: ProvisionalHypothesisSynthesizer },
     { provide: HypothesisWriter, useClass: ProvisionalHypothesisWriter },
     ProvisionalAssessmentSource,

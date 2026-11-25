@@ -150,6 +150,105 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ValidationErrorResponse"
+  /api/v1/hospitais/{hospitalId}/pacientes:
+    get:
+      operationId: listHospitalPacientes
+      x-implemented: true
+      summary: Censo do hospital - pacientes com internação vigente na data
+      description: >
+        Leitura para a lista de pacientes. Devolve, para o hospital e a data informados, cada
+        paciente com internação vigente, ordenado por ala, leito e nome (ala e leito sem valor
+        vão por último; números do leito comparam como número, então 2 vem antes de 10; sem
+        distinguir maiúsculas).
+
+        Vigência: vale a internação mais recente do paciente (createdAt, depois id) entre as que
+        já começaram em `data`. O início é `hospitalAdmissionDate` ou, se ela não foi informada,
+        o dia em que o registro da internação foi criado. O modelo ainda não tem data de alta:
+        sem alta, a internação segue vigente em toda data posterior ao início. Paciente sem
+        internação, ou cuja primeira internação começa depois de `data`, não entra. Ala, unidade
+        e leito são os valores atuais da internação (o modelo não guarda a localização por data).
+
+        Sem paginação por ora: a lista traz todos os pacientes vigentes do hospital, calculada
+        em lote (4 consultas, sem N+1). Paginação entra quando o volume pedir.
+
+        O contrato traz apenas campos que existem no cadastro. Tipo de terapia, adequação
+        calórica/proteica e demais indicadores clínicos não fazem parte desta resposta: são
+        fornecidos por outras features.
+
+        Requer vínculo APROVADO do profissional com o hospital (403 caso contrário, inclusive
+        para hospital inexistente).
+      parameters:
+        - name: hospitalId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: data
+          in: query
+          required: false
+          description: Data do censo (yyyy-MM-dd). Omitida = hoje.
+          schema:
+            type: string
+            format: date
+      responses:
+        "200":
+          description: Censo do hospital na data (lista vazia quando não há pacientes vigentes)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CensoHospital"
+        "400":
+          description: Data fora do formato yyyy-MM-dd
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          description: Profissional sem vínculo aprovado com o hospital informado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/v1/pacientes/{pacienteId}:
+    get:
+      operationId: getPaciente
+      x-implemented: true
+      summary: Identificação do paciente e internação mais recente
+      description: >
+        Leitura para o Hub do paciente. Devolve a identificação (a mesma de createPaciente) e a
+        internação mais recente (createdAt, depois id) com ala, unidade, leito, convênio, nº de
+        admissão, data de internação e início da terapia nutricional; `internacao` é nulo se o
+        paciente nunca foi internado. Tipo de terapia, adequação e demais dados clínicos ficam
+        fora do contrato (fornecidos por outras features).
+
+        Requer vínculo APROVADO do profissional com o hospital do paciente. Para não revelar a
+        existência de pacientes de outros hospitais, paciente inexistente e paciente de hospital
+        sem vínculo aprovado respondem ambos 404.
+      parameters:
+        - name: pacienteId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        "200":
+          description: Paciente
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PacienteDetalhe"
+        "401":
+          $ref: "#/components/responses/Error"
+        "404":
+          description: Paciente inexistente ou de hospital sem vínculo aprovado do profissional
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 components:
   securitySchemes:
     bearerAuth:
@@ -272,3 +371,117 @@ components:
           type: string
           nullable: true
           description: SAME, quando preenchido
+    CensoHospital:
+      type: object
+      required: [hospitalId, date, patients]
+      properties:
+        hospitalId:
+          type: integer
+          format: int64
+        date:
+          type: string
+          format: date
+          description: Data efetivamente usada (a informada ou hoje)
+        patients:
+          type: array
+          description: Ordenados por ala, leito e nome
+          items:
+            $ref: "#/components/schemas/CensoPaciente"
+    CensoPaciente:
+      type: object
+      required: [id, fullName, birthDate, sex, internacaoId]
+      properties:
+        id:
+          type: integer
+          format: int64
+        fullName:
+          type: string
+        birthDate:
+          type: string
+          format: date
+        sex:
+          $ref: "#/components/schemas/Sex"
+        medicalRecordNumber:
+          type: string
+          nullable: true
+          description: SAME, quando preenchido
+        internacaoId:
+          type: integer
+          format: int64
+          description: Internação vigente na data
+        ward:
+          type: string
+          nullable: true
+          description: Ala (localização ALA da internação)
+        unit:
+          type: string
+          nullable: true
+          description: Unidade (localização UNIDADE da internação)
+        bedNumber:
+          type: string
+          nullable: true
+        nutritionalTherapyStartDate:
+          type: string
+          format: date
+          nullable: true
+    PacienteDetalhe:
+      type: object
+      required: [id, hospitalId, fullName, birthDate, sex, createdAt]
+      properties:
+        id:
+          type: integer
+          format: int64
+        hospitalId:
+          type: integer
+          format: int64
+        fullName:
+          type: string
+        birthDate:
+          type: string
+          format: date
+        sex:
+          $ref: "#/components/schemas/Sex"
+        medicalRecordNumber:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        internacao:
+          nullable: true
+          description: Internação mais recente; nulo se o paciente nunca foi internado
+          allOf:
+            - $ref: "#/components/schemas/InternacaoResumo"
+    InternacaoResumo:
+      type: object
+      required: [id, createdAt]
+      properties:
+        id:
+          type: integer
+          format: int64
+        ward:
+          type: string
+          nullable: true
+        unit:
+          type: string
+          nullable: true
+        bedNumber:
+          type: string
+          nullable: true
+        healthInsurance:
+          type: string
+          nullable: true
+        admissionNumber:
+          type: string
+          nullable: true
+        hospitalAdmissionDate:
+          type: string
+          format: date
+          nullable: true
+        nutritionalTherapyStartDate:
+          type: string
+          format: date
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time

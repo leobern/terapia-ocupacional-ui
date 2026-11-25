@@ -7,6 +7,7 @@ describe('patient-card-labels', () => {
     expect(therapyStartLabel(9)).toBe('TN há 9 dias');
     expect(therapyStartLabel(30)).toBe('TN há 1 mês');
     expect(therapyStartLabel(75)).toBe('TN há 2 meses');
+    expect(therapyStartLabel(null)).toBe('Início da TN não informado');
   });
 
   it('adequação: indisponível, parcial e completa', () => {

@@ -1,7 +1,10 @@
 import { Adequacy } from './patient-list.models';
 
 /** Início da terapia nutricional em texto: tempo decorrido até a data selecionada (FR-003). */
-export function therapyStartLabel(days: number): string {
+export function therapyStartLabel(days: number | null): string {
+  if (days === null) {
+    return 'Início da TN não informado';
+  }
   if (days === 0) {
     return 'TN iniciada hoje';
   }
