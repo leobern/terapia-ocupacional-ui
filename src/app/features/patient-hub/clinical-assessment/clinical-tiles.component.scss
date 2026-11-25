@@ -64,3 +64,72 @@
 
   @include tones.dot-tones;
 }
+
+// Card que expande para mostrar a progressão do valor (gráfico no padrão de Peso e IMC) e minimiza no X.
+.tiles__tile--open {
+  flex-basis: 100%;
+}
+
+.tiles__face {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.tiles__face--button {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.tiles__trend {
+  display: grid;
+  grid-template-rows: 1fr;
+}
+
+.tiles__trend-inner {
+  min-height: 0;
+  overflow: hidden;
+}
+
+.tiles__bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 32px;
+  margin-bottom: tokens.$space-8;
+}
+
+@keyframes tiles-trend-in {
+  from {
+    grid-template-rows: 0fr;
+    opacity: 0;
+  }
+}
+
+@keyframes tiles-trend-out {
+  to {
+    grid-template-rows: 0fr;
+    opacity: 0;
+  }
+}
+
+.tiles__trend--enter {
+  animation: tiles-trend-in 320ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.tiles__trend--leave {
+  animation: tiles-trend-out 220ms ease-in forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tiles__trend--enter,
+  .tiles__trend--leave {
+    animation-duration: 1ms;
+  }
+}

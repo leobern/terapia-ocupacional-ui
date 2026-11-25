@@ -1,16 +1,80 @@
 @if (tiles().length > 0) {
   <ul class="tiles" aria-label="Itens da avaliação clínica">
     @for (tile of tiles(); track tile.id) {
-      <li class="tiles__tile" data-testid="clinical-tile">
-        <span class="tiles__label">{{ tile.label }}</span>
-        <span class="tiles__value"
-          >{{ tile.value }} <small>{{ tile.unit }}</small></span
-        >
-        @if (tile.status; as status) {
-          <span class="tiles__status">
-            <span class="tiles__dot" [attr.data-tone]="status.tone"></span
-            >{{ status.label }}
-          </span>
+      <li
+        class="tiles__tile"
+        data-testid="clinical-tile"
+        [class.tiles__tile--open]="openId() === tile.id"
+      >
+        @if (tile.trend.length > 0 && openId() !== tile.id) {
+          <button
+            type="button"
+            class="tiles__face tiles__face--button"
+            [attr.aria-expanded]="openId() === tile.id"
+            [attr.aria-label]="'Ver a progressão de ' + tile.label"
+            (click)="toggle(tile)"
+          >
+            <span class="tiles__label">{{ tile.label }}</span>
+            <span class="tiles__value"
+              >{{ tile.value }} <small>{{ tile.unit }}</small></span
+            >
+            @if (tile.status; as status) {
+              <span class="tiles__status">
+                <span class="tiles__dot" [attr.data-tone]="status.tone"></span
+                >{{ status.label }}
+              </span>
+            }
+          </button>
+        } @else if (tile.trend.length === 0) {
+          <div class="tiles__face">
+            <span class="tiles__label">{{ tile.label }}</span>
+            <span class="tiles__value"
+              >{{ tile.value }} <small>{{ tile.unit }}</small></span
+            >
+            @if (tile.status; as status) {
+              <span class="tiles__status">
+                <span class="tiles__dot" [attr.data-tone]="status.tone"></span
+                >{{ status.label }}
+              </span>
+            }
+          </div>
+        }
+        @if (openId() === tile.id) {
+          <div
+            class="tiles__trend"
+            animate.enter="tiles__trend--enter"
+            animate.leave="tiles__trend--leave"
+          >
+            <div class="tiles__trend-inner">
+              <div class="tiles__bar">
+                @if (tile.status; as status) {
+                  <span class="tiles__status">
+                    <span
+                      class="tiles__dot"
+                      [attr.data-tone]="status.tone"
+                    ></span
+                    >{{ status.label }}
+                  </span>
+                }
+                <app-icon-button
+                  icon="x"
+                  kind="secondary"
+                  appearance="tonal"
+                  size="small"
+                  [ariaLabel]="'Minimizar ' + tile.label"
+                  (click)="close()"
+                />
+              </div>
+              <app-measure-chart
+                [title]="tile.label"
+                [unit]="tile.unit"
+                [caption]="tile.trend.length + ' medições'"
+                [series]="tile.trend"
+                [badge]="badge(tile.trend)"
+                [decimals]="decimals(tile.trend)"
+              />
+            </div>
+          </div>
         }
       </li>
     }
