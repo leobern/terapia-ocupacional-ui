@@ -1,4 +1,5 @@
 @use '../../../shared/styles/tokens';
+@use '../../../shared/styles/input-shell';
 @use '../../../shared/styles/typography';
 
 .lock {
@@ -38,4 +39,45 @@
   color: tokens.c(content-4);
 
   @include typography.body-lg;
+}
+
+.lock__actions,
+.lock__form {
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$space-8;
+  width: 100%;
+  max-width: 320px;
+  text-align: start;
+}
+
+.lock__label {
+  font-size: tokens.$font-size-label;
+  font-weight: tokens.$font-weight-medium;
+}
+
+.lock__input {
+  @include input-shell.chrome;
+
+  align-items: center;
+  min-height: 44px;
+  padding: tokens.$space-8 tokens.$space-16;
+  color: tokens.$color-content-1;
+  font-family: tokens.$font-family-interactive;
+  font-size: tokens.$font-size-interactive;
+
+  &[aria-invalid='true'] {
+    border-color: tokens.$color-comm-alert;
+  }
+
+  &:focus-visible {
+    outline: tokens.$focus-ring-width solid tokens.$color-focus-ring;
+    outline-offset: tokens.$focus-ring-offset;
+  }
+}
+
+.lock__error {
+  margin: 0;
+  color: tokens.$color-comm-alert;
+  font-size: tokens.$font-size-label;
 }

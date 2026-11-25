@@ -7,7 +7,11 @@ import { provideRouterStore } from '@ngrx/router-store';
 import { provideStore } from '@ngrx/store';
 
 import { routes } from './app.routing';
+import { AccountPasswordVerifier } from './features/auth/lock/account-password-verifier';
+import { BiometricAuth } from './features/auth/lock/biometric-auth';
 import { InactivityLockService } from './features/auth/lock/inactivity-lock.service';
+import { ProvisionalAccountPasswordVerifier } from './features/auth/lock/provisional-account-password-verifier';
+import { ProvisionalBiometricAuth } from './features/auth/lock/provisional-biometric-auth';
 import { NoopSessionRevoker } from './features/auth/noop-session-revoker';
 import { SessionRevoker } from './features/auth/session-revoker';
 import {
@@ -158,6 +162,9 @@ export const appConfig: ApplicationConfig = {
   providers: [
     { provide: ProfessionalProfileReader, useClass: LocalProfessionalProfileReader },
     { provide: PasswordResetGateway, useClass: HttpPasswordResetGateway },
+    // Biometria e senha da conta do desbloqueio: provisórios até haver shell nativo e API de login.
+    { provide: BiometricAuth, useClass: ProvisionalBiometricAuth },
+    { provide: AccountPasswordVerifier, useClass: ProvisionalAccountPasswordVerifier },
     { provide: SessionRevoker, useClass: NoopSessionRevoker },
     { provide: StartupStateReader, useClass: LocalStartupStateReader },
     { provide: WelcomeSource, useClass: WelcomeApiService },

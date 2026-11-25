@@ -1,5 +1,5 @@
 import { DOCUMENT } from '@angular/common';
-import { inject, Injectable, signal } from '@angular/core';
+import { DestroyRef, inject, Injectable, signal } from '@angular/core';
 import { Router } from '@angular/router';
 
 import { LocalSessionStore } from '../local-session-store';
@@ -44,6 +44,7 @@ export class InactivityLockService {
   private readonly store = inject(LocalSessionStore);
   private readonly router = inject(Router);
   private readonly document = inject(DOCUMENT);
+  private readonly destroyRef = inject(DestroyRef);
   private readonly state = signal<LockState>(read(LOCK_STATE_KEY) === 'LOCKED' ? 'LOCKED' : 'UNLOCKED');
   private started = false;
 
@@ -68,14 +69,22 @@ export class InactivityLockService {
     }
 
     this.started = true;
-    this.document.addEventListener('visibilitychange', () => {
+    const onVisibility = (): void => {
       if (this.document.visibilityState === 'hidden') {
         this.markBackgrounded();
       } else {
         this.resume();
       }
+    };
+    const onPageHide = (): void => this.markBackgrounded();
+    const view = this.document.defaultView;
+
+    this.document.addEventListener('visibilitychange', onVisibility);
+    view?.addEventListener('pagehide', onPageHide);
+    this.destroyRef.onDestroy(() => {
+      this.document.removeEventListener('visibilitychange', onVisibility);
+      view?.removeEventListener('pagehide', onPageHide);
     });
-    this.document.defaultView?.addEventListener('pagehide', () => this.markBackgrounded());
   }
 
   /** O app foi para segundo plano: persiste o instante. */

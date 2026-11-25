@@ -52,8 +52,13 @@
     "stale": "Os dados podem estar desatualizados. Sem conexão no momento."
   },
   "lock": {
+    "biometricFailed": "Não foi possível reconhecer a biometria. Tente novamente.",
+    "message": "Por segurança, o app foi bloqueado após 30 minutos sem uso.",
+    "passwordError": "Senha incorreta. Tente novamente.",
+    "passwordLabel": "Senha da conta",
     "title": "App bloqueado",
-    "message": "Por segurança, o app foi bloqueado após 30 minutos sem uso."
+    "unlock": "Desbloquear",
+    "useBiometric": "Usar biometria"
   },
   "logout": {
     "cancel": "Cancelar",

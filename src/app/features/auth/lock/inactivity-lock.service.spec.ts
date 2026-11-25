@@ -13,7 +13,7 @@ import {
 describe('InactivityLockService', () => {
   const T0 = 1_000_000;
   let service: InactivityLockService;
-  let router: jasmine.SpyObj<Router>; // eslint-disable-line jasmine/no-unsafe-spy
+  let router: jasmine.SpyObj<Router>;
 
   function setup(url = '/patients/1', valid = true): void {
     router = jasmine.createSpyObj<Router>('Router', ['navigateByUrl'], { url });
@@ -122,20 +122,32 @@ describe('InactivityLockService', () => {
   });
 
   it('reacts to the page lifecycle events once', () => {
+    let visibility = 'hidden';
+
+    Object.defineProperty(document, 'visibilityState', { configurable: true, get: () => visibility });
     setup();
     service.start();
     service.start();
-    spyOnProperty(document, 'visibilityState').and.returnValue('hidden');
     document.dispatchEvent(new Event('visibilitychange'));
 
     expect(localStorage.getItem(BACKGROUNDED_AT_KEY)).not.toBeNull();
 
     localStorage.setItem(BACKGROUNDED_AT_KEY, String(Date.now() - INACTIVITY_LIMIT_MS));
-    (Object.getOwnPropertyDescriptor(document, 'visibilityState')?.get as jasmine.Spy).and.returnValue('visible');
+    visibility = 'visible';
     document.dispatchEvent(new Event('visibilitychange'));
+    delete (document as unknown as Record<string, unknown>)['visibilityState'];
 
     expect(service.isLocked()).toBeTrue();
     expect(router.navigateByUrl).toHaveBeenCalledTimes(1);
+  });
+
+  it('stops listening when destroyed', () => {
+    setup();
+    service.start();
+    TestBed.resetTestingModule();
+    window.dispatchEvent(new Event('pagehide'));
+
+    expect(localStorage.getItem(BACKGROUNDED_AT_KEY)).toBeNull();
   });
 
   it('persists the timestamp on pagehide', () => {

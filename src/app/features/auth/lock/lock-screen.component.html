@@ -6,4 +6,47 @@
     <h1 class="lock__title">{{ i18n.t('lock.title') }}</h1>
     <p class="lock__hint">{{ i18n.t('lock.message') }}</p>
   </div>
+
+  @if (mode() === 'biometric') {
+    <div class="lock__actions">
+      @if (biometricFailed()) {
+        <p class="lock__error" role="alert">
+          {{ i18n.t('lock.biometricFailed') }}
+        </p>
+      }
+      <app-button
+        [fullWidth]="true"
+        [disabled]="busy()"
+        [label]="i18n.t('lock.useBiometric')"
+        (click)="tryBiometric()"
+      />
+    </div>
+  } @else if (mode() === 'password') {
+    <form class="lock__form" novalidate (submit)="submitPassword($event)">
+      <label class="lock__label" for="lock-password">{{
+        i18n.t('lock.passwordLabel')
+      }}</label>
+      <input
+        id="lock-password"
+        class="lock__input"
+        type="password"
+        name="password"
+        autocomplete="current-password"
+        [attr.aria-invalid]="passwordError() ? 'true' : null"
+        [attr.aria-describedby]="passwordError() ? 'lock-password-error' : null"
+        (input)="onPasswordInput($event)"
+      />
+      @if (passwordError()) {
+        <p id="lock-password-error" class="lock__error" role="alert">
+          {{ i18n.t('lock.passwordError') }}
+        </p>
+      }
+      <app-button
+        htmlType="submit"
+        [fullWidth]="true"
+        [disabled]="busy()"
+        [label]="i18n.t('lock.unlock')"
+      />
+    </form>
+  }
 </main>

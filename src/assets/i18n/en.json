@@ -52,8 +52,13 @@
     "stale": "Data may be out of date. No connection right now."
   },
   "lock": {
+    "biometricFailed": "Biometrics were not recognized. Try again.",
+    "message": "For your security, the app was locked after 30 minutes of inactivity.",
+    "passwordError": "Incorrect password. Try again.",
+    "passwordLabel": "Account password",
     "title": "App locked",
-    "message": "For your security, the app was locked after 30 minutes of inactivity."
+    "unlock": "Unlock",
+    "useBiometric": "Use biometrics"
   },
   "logout": {
     "cancel": "Cancel",
