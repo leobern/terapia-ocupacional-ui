@@ -12,7 +12,7 @@ import { PhIconComponent } from '../../icons/ph-icon/ph-icon.component';
   selector: 'app-empty-card',
   styleUrl: './empty-card.component.scss',
   template: `
-    <button type="button" class="empty-card" (click)="activate.emit()">
+    <button type="button" class="empty-card" [disabled]="disabled()" (click)="activate.emit()">
       <ph-icon name="plus" [size]="24" />
       <span class="empty-card__text">{{ text() }}</span>
     </button>
@@ -20,5 +20,7 @@ import { PhIconComponent } from '../../icons/ph-icon/ph-icon.component';
 })
 export class EmptyCardComponent {
   readonly text = input.required<string>();
+  /** Somente leitura (data anterior): o card só informa que não há registro. */
+  readonly disabled = input(false);
   readonly activate = output();
 }

@@ -34,7 +34,7 @@ describe('assemblePatientList', () => {
     expect(list.map(p => p.id)).toEqual(['a']);
   });
 
-  it('calcula a idade antes e depois do aniversário e não expõe data de nascimento', () => {
+  it('calcula a idade antes e depois do aniversário e expõe a data de nascimento', () => {
     const before = assemblePatientList([base], 1, new Date(2026, 0, 18))[0];
     const after = assemblePatientList([base], 1, new Date(2026, 0, 19))[0];
     const earlierMonth = assemblePatientList([base], 1, new Date(2026, 0, 1))[0];
@@ -42,7 +42,7 @@ describe('assemblePatientList', () => {
     expect(before.age).toBe(25);
     expect(after.age).toBe(26);
     expect(earlierMonth.age).toBe(25);
-    expect('birthDate' in before).toBe(false);
+    expect(before.birthDate).toBe(base.birthDate);
   });
 
   it('ordena por ala e leito numericamente', () => {

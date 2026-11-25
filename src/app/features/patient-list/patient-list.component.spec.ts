@@ -142,7 +142,7 @@ describe('PatientListComponent', () => {
     expect(text()).toContain('Hospital Um');
     expect(text()).toContain('Ala 1 · Leito 1');
     expect(text()).toContain('VO · NE · NP');
-    expect(text()).not.toContain('01/01/1980');
+    expect(text()).toContain('46 anos · 01/01/1980');
     expect(fixture.nativeElement.querySelectorAll('.patient-list__row').length).toBe(3);
   });
 
@@ -240,8 +240,9 @@ describe('PatientListComponent', () => {
       await create();
     });
 
-    it('a tag mostra o critério ativo, abre o painel e aparece também carregando', async () => {
-      const tag = (): string => q('.patient-list__sort-tag')?.textContent?.replace(/\s+/g, ' ').trim() ?? '';
+    it('o seletor mostra o critério ativo e aparece também carregando', async () => {
+      const tag = (): string =>
+        q('.patient-list__sort-select > span[aria-hidden]')?.textContent?.replace(/\s+/g, ' ').trim() ?? '';
 
       expect(tag()).toBe('Ordenar: prioridade');
 
@@ -249,10 +250,6 @@ describe('PatientListComponent', () => {
       fixture.detectChanges();
 
       expect(tag()).toBe('Ordenar: leito');
-
-      q('.patient-list__sort-tag')?.click();
-
-      expect(TestBed.inject(AiAssistantService).view()).toBe('shortcuts');
 
       source.result = new Promise<readonly CensusPatient[]>(() => undefined);
       fixture.componentInstance.selectDate(new Date(Date.now() - 86_400_000));
@@ -464,7 +461,7 @@ describe('PatientListComponent', () => {
       expect(fixture.componentInstance.widths()).toEqual({
         age: 150,
         caloric: 170,
-        first: 170,
+        status: 170,
         location: 170,
         name: 280,
         protein: 170,
@@ -478,7 +475,7 @@ describe('PatientListComponent', () => {
       expect(fixture.componentInstance.widths()).toEqual({
         age: 110,
         caloric: 130,
-        first: 170,
+        status: 170,
         location: 130,
         name: 180,
         protein: 130,
@@ -561,7 +558,12 @@ describe('PatientListComponent', () => {
       await create();
     });
 
-    it('começa ordenada por localização, crescente (ala e leito numérico), com a seta na coluna', () => {
+    it('começa ordenada por prioridade; "Por leito" ordena por localização, crescente (ala e leito numérico)', () => {
+      expect(fixture.componentInstance.sortKey()).toBe('priority');
+
+      fixture.componentInstance.selectSort('bed');
+      fixture.detectChanges();
+
       expect(rowNames()).toEqual(['Carla', 'Ana', 'Bruna']);
       expect(fixture.componentInstance.sortKey()).toBe('location');
       expect(arrow().length).toBe(1);
@@ -686,23 +688,118 @@ describe('PatientListComponent', () => {
     ]);
   });
 
-  it('tabela desktop: colunas sem data de nascimento, metas com texto e clique na linha abre o Hub', async () => {
+  it('tabela desktop: idade e nascimento, metas com texto e clique na linha abre o Hub', async () => {
     source.result = Promise.resolve([...census(2), { ...census(1)[0], adequacy: null, id: 'n' }]);
     await create();
     const heads = Array.from(fixture.nativeElement.querySelectorAll('th')).map(th =>
       (th as HTMLElement).textContent?.trim(),
     );
 
-    expect(heads).toContain('Adequação calórica');
+    expect(heads).toContain('Meta calórica');
+    expect(heads).toContain('Idade / nascimento');
+    expect(heads).toContain('Status');
     expect(text()).toContain('80% · na meta');
     expect(text()).toContain('Indisponível');
-    expect(text()).not.toContain('01/01/1980');
+    expect(text()).toContain('01/01/1980');
     q('.patient-list__tr')?.click();
 
     expect(router.navigate).toHaveBeenCalledWith(['/patients', 'p0']);
     (fixture.nativeElement.querySelector('.patient-list__open') as HTMLElement).click();
 
     expect(router.navigate).toHaveBeenCalledTimes(2);
+  });
+
+  describe('busca e coluna Status (Figma 4690:24100)', () => {
+    const names = (): string[] =>
+      Array.from(fixture.nativeElement.querySelectorAll('.patient-list__tr .patient-list__name')).map(
+        n => (n as HTMLElement).textContent?.trim() ?? '',
+      );
+    const search = async (value: string): Promise<void> => {
+      const input = q('.patient-list__search input') as HTMLInputElement;
+
+      input.value = value;
+      input.dispatchEvent(new Event('input'));
+      fixture.detectChanges();
+      await fixture.whenStable();
+      fixture.detectChanges();
+    };
+
+    beforeEach(async () => {
+      source.result = Promise.resolve([
+        { ...census(1)[0], id: 'a', name: 'Ana Souza', bed: '10', ward: 'Ala 1', completedCycles: 0 },
+        {
+          ...census(1)[0],
+          id: 'b',
+          name: 'Bruno Lima',
+          bed: '20',
+          ward: 'Subsolo',
+          completedCycles: 2,
+          pendingTasks: 0,
+          reassessmentDone: true,
+        },
+        { ...census(1)[0], id: 'c', name: 'Carla Dias', bed: '30', ward: 'Ala 1', completedCycles: 2 },
+      ]);
+      await create();
+    });
+
+    it('filtra por paciente, leito ou ala (sem acento nem caixa); sem resultado avisa em texto', async () => {
+      await search('bruno');
+
+      expect(names()).toEqual(['Bruno Lima']);
+
+      await search('ala 1');
+
+      expect(names().sort((a, b) => a.localeCompare(b))).toEqual(['Ana Souza', 'Carla Dias']);
+
+      await search('leito 30');
+
+      expect(names()).toEqual(['Carla Dias']);
+
+      await search('subsolo');
+
+      expect(names()).toEqual(['Bruno Lima']);
+
+      await search('zzz');
+
+      expect(text()).toContain('Nenhum paciente encontrado');
+      expect(text()).toContain('3 pacientes');
+
+      await search('');
+
+      expect(names().length).toBe(3);
+    });
+
+    it('todas as tags de status (menos a terapia) ficam na coluna Status; linha normal não tem tag', () => {
+      const rows = Array.from(fixture.nativeElement.querySelectorAll('.patient-list__tr')) as HTMLElement[];
+      const statusOf = (name: string): string =>
+        rows
+          .find(r => r.textContent?.includes(name))
+          ?.querySelector('.patient-list__cell-first')
+          ?.textContent?.trim() ?? '';
+
+      expect(statusOf('Ana Souza')).toBe('Primeira avaliação');
+      expect(statusOf('Bruno Lima')).toBe('Finalizado');
+      expect(statusOf('Carla Dias')).toBe('');
+      expect(
+        rows.find(r => r.textContent?.includes('Bruno'))?.querySelector('.patient-list__name-cell')?.textContent,
+      ).not.toContain('Finalizado');
+    });
+
+    it('ordena pela coluna Status; linhas sem tag ficam sempre no fim', () => {
+      const header = Array.from(fixture.nativeElement.querySelectorAll('th .patient-list__sort')).find(b =>
+        (b as HTMLElement).textContent?.includes('Status'),
+      ) as HTMLButtonElement;
+
+      header.click();
+      fixture.detectChanges();
+
+      expect(names()).toEqual(['Bruno Lima', 'Ana Souza', 'Carla Dias']);
+
+      header.click();
+      fixture.detectChanges();
+
+      expect(names()).toEqual(['Ana Souza', 'Bruno Lima', 'Carla Dias']);
+    });
   });
 
   it('usa singular com um paciente', async () => {
@@ -964,7 +1061,9 @@ describe('PatientListComponent', () => {
       await settle();
       (q('.patient-list__row') as HTMLElement).click();
 
-      expect(router.navigate).toHaveBeenCalledWith(['/patients', jasmine.any(String)]);
+      expect(router.navigate).toHaveBeenCalledWith(['/patients', jasmine.any(String)], {
+        queryParams: { data: jasmine.stringMatching(/^\d{4}-\d{2}-\d{2}$/u) },
+      });
     });
 
     it('voltar a hoje restaura o modo normal sem alerta', async () => {

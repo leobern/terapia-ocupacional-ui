@@ -31,7 +31,14 @@ import { UnreadNotificationsReader } from '../home/unread-notifications-reader';
 import { ChangeLocationAction } from '../patient-hub/change-location/change-location.action';
 import { MoveBedAction } from '../patient-hub/move-bed/move-bed.action';
 import { PatientRegistrationAction } from '../patient-registration/patient-registration.action';
-import { adequacyLabel, goalLabel, hasAdequacy, therapyStartLabel } from './patient-card-labels';
+import {
+  adequacyLabel,
+  birthLabel,
+  goalLabel,
+  hasAdequacy,
+  statusTags,
+  therapyStartLabel,
+} from './patient-card-labels';
 import { PatientCard, TherapyType } from './patient-list.models';
 import { PatientListAiCommandPort } from './patient-list-ai-command';
 import { assemblePatientList } from './patient-list-assembly';
@@ -54,37 +61,45 @@ function isOutOfTarget(adequacy: PatientCard['adequacy']): boolean {
   return lowestGoal(adequacy) < 50;
 }
 
+function normalize(text: string): string {
+  return text
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/gu, '')
+    .toLowerCase()
+    .trim();
+}
+
 function isSameDay(a: Date, b: Date): boolean {
   return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
 }
 
-export type ColumnKey = 'name' | 'age' | 'therapy' | 'caloric' | 'protein' | 'location' | 'first';
+export type ColumnKey = 'name' | 'age' | 'therapy' | 'caloric' | 'protein' | 'location' | 'status';
 
 /** Larguras padrão (px) da tabela do desktop; o usuário ajusta arrastando a divisória do cabeçalho. */
 const DEFAULT_WIDTHS: Readonly<Record<ColumnKey, number>> = {
   age: 150,
   caloric: 170,
-  first: 170,
   location: 170,
   name: 280,
   protein: 170,
+  status: 170,
   therapy: 120,
 };
 const MIN_WIDTH: Readonly<Record<ColumnKey, number>> = {
   age: 110,
   caloric: 130,
-  first: 170,
   location: 130,
   name: 180,
   protein: 130,
+  status: 170,
   therapy: 130,
 };
-const COLUMN_ORDER: readonly ColumnKey[] = ['name', 'age', 'therapy', 'caloric', 'protein', 'location', 'first'];
+const COLUMN_ORDER: readonly ColumnKey[] = ['name', 'age', 'therapy', 'caloric', 'protein', 'location', 'status'];
 const MAX_WIDTH = 560;
 const ACTION_COLUMN_WIDTH = 72;
 const KEY_STEP = 16;
 
-export type SortKey = 'name' | 'age' | 'therapy' | 'caloric' | 'protein' | 'location';
+export type SortKey = 'name' | 'age' | 'therapy' | 'caloric' | 'protein' | 'location' | 'status' | 'priority';
 export type SortDirection = 'asc' | 'desc';
 
 /** Critérios pré-definidos dos chips do painel de Atalhos (FR-019). */
@@ -114,8 +129,26 @@ const SORT_VALUE: Readonly<Record<SortKey, (p: PatientCard) => number | string |
   caloric: p => p.adequacy?.caloric ?? null,
   location: p => `${p.ward} ${p.bed}`,
   name: p => p.name,
+  priority: p => (Number.isFinite(lowestGoal(p.adequacy)) ? lowestGoal(p.adequacy) : null),
   protein: p => p.adequacy?.protein ?? null,
+  // Sem tag de status (linha normal) fica sempre no fim, em qualquer direção.
+  status: p => {
+    const labels = statusTags(p).map(t => t.label);
+
+    return labels.length === 0 ? null : labels.join(' · ');
+  },
   therapy: p => THERAPY_LABEL[p.therapy],
+};
+
+const SORT_LABEL: Readonly<Record<SortKey, string>> = {
+  age: 'idade',
+  caloric: 'meta calórica',
+  location: 'leito',
+  name: 'paciente',
+  priority: 'prioridade',
+  protein: 'meta proteica',
+  status: 'status',
+  therapy: 'terapia',
 };
 
 /**
@@ -192,22 +225,34 @@ export class PatientListComponent implements OnInit {
   // Padrão: prioridade (Fora/Dentro da meta), como no Figma "Ordenar: prioridade".
   readonly presetSort = signal<PresetSort | null>('priority');
   /** Texto da tag "Ordenar: …" (padrão: prioridade, ver `presetSort`). */
-  readonly sortLabel = computed(() => (this.presetSort() === 'priority' ? 'prioridade' : 'leito'));
+  readonly sortLabel = computed(() => SORT_LABEL[this.sortKey()]);
   readonly activeSort = computed<string | null>(() => this.presetSort());
   /** Prioridade: quem está fora da meta primeiro, do mais crítico ao menos. Leito: grupos por ala, leitos em ordem numérica. */
   readonly groups = computed<readonly PatientGroup[]>(() =>
     this.presetSort() === 'priority' ? this.priorityGroups() : this.bedGroups(),
   );
   /** Ordenação da tabela: uma coluna ordena todas as outras. Padrão: localização, crescente. */
-  readonly sortKey = signal<SortKey>('location');
+  readonly sortKey = signal<SortKey>('priority');
   readonly sortDir = signal<SortDirection>('asc');
+  /** Texto da busca (Figma 4690:24100): paciente, leito ou ala. */
+  readonly query = signal('');
+  /** Pacientes que passam na busca (o título continua contando todos). */
+  readonly filtered = computed(() => {
+    const term = normalize(this.query());
+
+    return term === ''
+      ? this.patients()
+      : this.patients().filter(p =>
+          normalize(`${p.name} ${p.ward} ${p.bed} leito ${p.ward} leito ${p.bed}`).includes(term),
+        );
+  });
   readonly sorted = computed(() => {
     const value = SORT_VALUE[this.sortKey()];
     const sign = this.sortDir() === 'asc' ? 1 : -1;
     const collator = new Intl.Collator('pt-BR', { numeric: true, sensitivity: 'base' });
-    const present = this.patients().filter(p => value(p) !== null);
+    const present = this.filtered().filter(p => value(p) !== null);
     // Sem dado (indisponível) fica sempre no fim, em qualquer direção.
-    const missing = this.patients().filter(p => value(p) === null);
+    const missing = this.filtered().filter(p => value(p) === null);
 
     present.sort((a, b) => {
       const x = value(a) as number | string;
@@ -241,6 +286,8 @@ export class PatientListComponent implements OnInit {
   });
 
   protected readonly therapyStartLabel = therapyStartLabel;
+  protected readonly birthLabel = birthLabel;
+  protected readonly statusTags = statusTags;
   protected readonly adequacyLabel = adequacyLabel;
   protected readonly hasAdequacy = hasAdequacy;
   protected readonly goalLabel = goalLabel;
@@ -260,10 +307,10 @@ export class PatientListComponent implements OnInit {
   private readonly changeLocation = inject(ChangeLocationAction);
   private readonly aiCommand = inject(PatientListAiCommandPort);
   private readonly priorityGroups = computed<readonly PatientGroup[]>(() => {
-    const out = this.patients()
+    const out = this.filtered()
       .filter(p => isOutOfTarget(p.adequacy))
       .sort((a, b) => lowestGoal(a.adequacy) - lowestGoal(b.adequacy));
-    const within = this.patients().filter(p => !isOutOfTarget(p.adequacy));
+    const within = this.filtered().filter(p => !isOutOfTarget(p.adequacy));
 
     return [
       { key: 'out', patients: out, title: 'Fora da meta' },
@@ -273,7 +320,7 @@ export class PatientListComponent implements OnInit {
   private readonly bedGroups = computed<readonly PatientGroup[]>(() => {
     const byWard = new Map<string, PatientCard[]>();
 
-    for (const patient of this.patients()) {
+    for (const patient of this.filtered()) {
       byWard.set(patient.ward, [...(byWard.get(patient.ward) ?? []), patient]);
     }
 
@@ -416,6 +463,19 @@ export class PatientListComponent implements OnInit {
   /** Chip acionado: o novo critério substitui o anterior; acionar o ativo o mantém (FR-021). */
   selectSort(sort: PresetSort): void {
     this.presetSort.set(sort);
+    // A tabela do desktop acompanha o critério pré-definido (prioridade ou leito).
+    this.sortKey.set(sort === 'priority' ? 'priority' : 'location');
+    this.sortDir.set('asc');
+  }
+
+  /** Digitação na busca. */
+  onSearch(event: Event): void {
+    this.query.set((event.target as HTMLInputElement).value);
+  }
+
+  /** Escolha no seletor "Ordenar". */
+  onSortSelect(event: Event): void {
+    this.selectSort((event.target as HTMLSelectElement).value as PresetSort);
   }
 
   retry(): void {
@@ -574,7 +634,20 @@ export class PatientListComponent implements OnInit {
     void this.router.navigate(['/patients', id, 'change-bed']);
   }
 
+  /**
+   * Abre o paciente. Numa data anterior à de hoje, leva a data filtrada junto (`?data=aaaa-mm-dd`): o paciente abre
+   * naquele dia, em somente leitura (Thiago, 2026-11-25).
+   */
   openPatient(id: string): void {
+    if (this.readOnly()) {
+      const d = this.selectedDate();
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+
+      void this.router.navigate(['/patients', id], { queryParams: { data: `${d.getFullYear()}-${month}-${day}` } });
+
+      return;
+    }
     void this.router.navigate(['/patients', id]);
   }
 

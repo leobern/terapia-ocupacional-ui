@@ -51,11 +51,13 @@ export interface CensusPatient {
   readonly reassessmentDone?: boolean;
 }
 
-/** Projeção somente leitura "paciente em visão de card" (sem data de nascimento — FR-003). */
+/** Projeção somente leitura "paciente em visão de card" (FR-003). */
 export interface PatientCard {
   readonly id: string;
   readonly name: string;
   readonly age: number;
+  /** Data de nascimento (AAAA-MM-DD), mostrada junto da idade na tabela (Figma 4690:24100). */
+  readonly birthDate: string;
   readonly ward: string;
   readonly bed: string;
   readonly therapy: TherapyType;

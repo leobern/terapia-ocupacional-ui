@@ -57,3 +57,26 @@ export function goalLabel(value: number | null): string {
 
   return `${value}% · ${status}`;
 }
+
+/** Data de nascimento em texto (dd/mm/aaaa). */
+export function birthLabel(isoDate: string): string {
+  const [year, month, day] = isoDate.split('-');
+
+  return `${day}/${month}/${year}`;
+}
+
+/** Tag de status da linha da tabela (fora a terapia): Finalizado e Primeira avaliação. Linha normal não tem tag. */
+export interface StatusTag {
+  readonly label: string;
+  readonly tone: 'active' | 'neutral';
+}
+
+export function statusTags(patient: {
+  readonly finished: boolean;
+  readonly firstEvaluation: boolean;
+}): readonly StatusTag[] {
+  return [
+    ...(patient.finished ? [{ label: 'Finalizado', tone: 'neutral' as const }] : []),
+    ...(patient.firstEvaluation ? [{ label: 'Primeira avaliação', tone: 'active' as const }] : []),
+  ];
+}

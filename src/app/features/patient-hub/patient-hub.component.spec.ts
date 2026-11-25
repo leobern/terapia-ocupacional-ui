@@ -1022,6 +1022,42 @@ describe('PatientHubComponent', () => {
       expect(el().querySelector('[aria-label="Salvar avaliação nutricional e funcional"]')).not.toBeNull();
     });
 
+    it('abrindo com ?data= de um dia anterior, o paciente fica em somente leitura: com os dados e sem botões de editar', async () => {
+      TestBed.resetTestingModule();
+      const g = await setup(new FakeSource(), 'p1', undefined, undefined, { data: '2026-05-20' });
+      const root = g.nativeElement as HTMLElement;
+      const hub = g.componentInstance as unknown as { day(): Date; readOnly(): boolean };
+
+      expect(hub.day().getDate()).toBe(20);
+      expect(hub.readOnly()).toBeTrue();
+      expect(root.textContent).toContain('Insuficiência respiratória aguda.');
+      expect(root.querySelectorAll('app-section-header app-icon-button').length).toBe(0);
+      expect(root.textContent).not.toContain('Evoluir Paciente');
+      expect(root.querySelector('app-empty-card button:not(:disabled)')).toBeNull();
+    });
+
+    for (const raw of ['lixo', '2999-01-01', '2026-13-45']) {
+      it(`?data=${raw} (inválida ou futura) abre em hoje, no modo normal`, async () => {
+        TestBed.resetTestingModule();
+        const g = await setup(new FakeSource(), 'p1', undefined, undefined, { data: raw });
+        const hub = g.componentInstance as unknown as { readOnly(): boolean };
+
+        expect(hub.readOnly()).toBeFalse();
+      });
+    }
+
+    it('voltar no tempo pela faixa de datas também leva ao modo somente leitura', async () => {
+      const hub = f.componentInstance as unknown as { day: { set(d: Date): void }; readOnly(): boolean };
+
+      expect(el().textContent).toContain('Evoluir Paciente');
+
+      hub.day.set(new Date(2026, 4, 20));
+      f.detectChanges();
+
+      expect(hub.readOnly()).toBeTrue();
+      expect(el().textContent).not.toContain('Evoluir Paciente');
+    });
+
     it('escolher outro dia na faixa de datas passa o dia às Evoluções', async () => {
       const before = el().querySelector('app-patient-evolutions');
       const strip = f.debugElement.query(By.directive(DateStripComponent)).componentInstance as DateStripComponent;

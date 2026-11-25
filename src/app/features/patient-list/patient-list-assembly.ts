@@ -56,6 +56,7 @@ export function assemblePatientList(
       adequacy: p.adequacy,
       age: ageOn(p.birthDate, day),
       bed: p.bed,
+      birthDate: p.birthDate,
       finished: p.pendingTasks === 0 && !reassessmentDue,
       firstEvaluation: p.completedCycles === 0,
       id: p.id,

@@ -58,6 +58,22 @@ type HubStatus = 'loading' | 'ready' | 'not-found' | 'error' | 'revoked';
 
 const PULL_THRESHOLD = 80;
 
+function sameDay(a: Date, b: Date): boolean {
+  return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+}
+
+/** Lê `?data=aaaa-mm-dd` (a data filtrada na lista de pacientes); inválida ou futura = hoje. */
+function dayFromQuery(raw: string | null | undefined, today: Date): Date {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/u.exec(raw ?? '');
+
+  if (match === null) {
+    return today;
+  }
+  const day = new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
+
+  return Number.isNaN(day.getTime()) || day > today ? today : day;
+}
+
 /** Voltar a ficar visível recarrega os resultados do painel; oculto não (sem polling nem stream). */
 export function reloadsOnVisibility(state: DocumentVisibilityState): boolean {
   return state === 'visible';
@@ -120,6 +136,18 @@ export class PatientHubComponent implements OnInit {
   /** "Hoje" (relógio injetável): é o último dia da faixa e o dia aberto por padrão. */
   protected readonly today = inject(NOW)();
   protected readonly day = signal(this.today);
+  /**
+   * Somente leitura (Thiago, 2026-11-25): numa data anterior à de hoje o paciente mostra todos os dados, com as cores,
+   * mas sem botões de editar nem de cadastrar. Vale também quando se volta no tempo pela faixa de datas.
+   */
+  protected readonly readOnly = computed(() => !sameDay(this.day(), this.today));
+  protected readonly noRecordText = 'Sem registro nesta data.';
+  /** Ícone da ação do título de cada seção: nenhum em somente leitura; ✓ com o editor aberto; senão o lápis. */
+  protected readonly diagnosisActionIcon = computed(() =>
+    this.actionIcon(this.mode() === 'empty', this.diagnosisEditing()),
+  );
+  protected readonly clinicalActionIcon = computed(() => this.actionIcon(false, this.clinicalEditing()));
+  protected readonly nutritionalActionIcon = computed(() => this.actionIcon(false, this.nutritionalEditing()));
   /** Muda quando o Registro diário fecha: a evolução do dia é lida de novo. */
   protected readonly evolutionsVersion = signal(0);
   /** Muda quando o editor da Avaliação clínica salva: os cards são lidos de novo. */
@@ -241,13 +269,14 @@ export class PatientHubComponent implements OnInit {
   });
 
   constructor() {
+    this.day.set(dayFromQuery(this.route.snapshot?.queryParamMap?.get('data'), this.today));
     effect(onCleanup => {
       onCleanup(this.screenActions.registerContext(PATIENT_HUB_CONTEXT));
     });
 
     // A ação só existe com o paciente carregado e hospital com vínculo aprovado em contexto.
     effect(onCleanup => {
-      if (this.status() === 'ready' && this.hospitalId() !== null) {
+      if (this.status() === 'ready' && this.hospitalId() !== null && !this.readOnly()) {
         const profile = this.profile();
         const actions: ScreenAction[] = [
           { id: 'daily-record', label: 'Registro diário', navigate: (): void => this.dailyRecordOpen.set(true) },
@@ -529,6 +558,14 @@ export class PatientHubComponent implements OnInit {
     }
     this.editClinicalAssessment();
     void this.router.navigate([], { queryParams: { avaliar: null }, queryParamsHandling: 'merge', replaceUrl: true });
+  }
+
+  private actionIcon(hidden: boolean, editing: boolean): string | null {
+    if (hidden || this.readOnly()) {
+      return null;
+    }
+
+    return editing ? 'check' : 'pencil-simple-line';
   }
 
   private async load(): Promise<void> {

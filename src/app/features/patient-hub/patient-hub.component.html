@@ -52,13 +52,7 @@
               <app-section-header
                 title="Diagnóstico"
                 headingId="hypothesis-title"
-                [actionIcon]="
-                  mode() === 'empty'
-                    ? null
-                    : diagnosisEditing()
-                      ? 'check'
-                      : 'pencil-simple-line'
-                "
+                [actionIcon]="diagnosisActionIcon()"
                 [actionLabel]="
                   diagnosisEditing()
                     ? 'Salvar diagnóstico'
@@ -68,7 +62,12 @@
               />
               @if (mode() === 'empty') {
                 <app-empty-card
-                  text="Toque aqui e insira o diagnóstico."
+                  [text]="
+                    readOnly()
+                      ? noRecordText
+                      : 'Toque aqui e insira o diagnóstico.'
+                  "
+                  [disabled]="readOnly()"
                   (activate)="editDiagnosis()"
                 />
               } @else {
@@ -101,8 +100,8 @@
                 <div class="hub__group hub__o-5">
                   <app-section-header
                     title="Metas nutricionais"
-                    actionIcon="pencil-simple-line"
                     actionLabel="Editar metas nutricionais"
+                    [actionIcon]="readOnly() ? null : 'pencil-simple-line'"
                     (actionClick)="prescriptionReviewOpen.set(true)"
                   />
                   <ul class="hub__tiles">
@@ -120,7 +119,12 @@
                 <div class="hub__group hub__o-5">
                   <app-section-header title="Metas nutricionais" />
                   <app-empty-card
-                    text="Toque aqui e insira as metas nutricionais."
+                    [text]="
+                      readOnly()
+                        ? noRecordText
+                        : 'Toque aqui e insira as metas nutricionais.'
+                    "
+                    [disabled]="readOnly()"
                     (activate)="prescriptionReviewOpen.set(true)"
                   />
                 </div>
@@ -130,8 +134,8 @@
                 <div class="hub__group hub__o-6">
                   <app-section-header
                     title="Prescrição ativa"
-                    actionIcon="pencil-simple-line"
                     actionLabel="Ajustar a prescrição"
+                    [actionIcon]="readOnly() ? null : 'pencil-simple-line'"
                     (actionClick)="prescriptionOpen.set(true)"
                   />
                   <div class="hub__rx">
@@ -151,7 +155,12 @@
                 <div class="hub__group hub__o-6">
                   <app-section-header title="Prescrição ativa" />
                   <app-empty-card
-                    text="Toque aqui e insira a prescrição."
+                    [text]="
+                      readOnly()
+                        ? noRecordText
+                        : 'Toque aqui e insira a prescrição.'
+                    "
+                    [disabled]="readOnly()"
                     (activate)="prescriptionOpen.set(true)"
                   />
                 </div>
@@ -165,9 +174,7 @@
                 @if (clinicalFilled()) {
                   <app-section-header
                     title="Avaliação clínica"
-                    [actionIcon]="
-                      clinicalEditing() ? 'check' : 'pencil-simple-line'
-                    "
+                    [actionIcon]="clinicalActionIcon()"
                     [actionLabel]="
                       clinicalEditing()
                         ? 'Salvar avaliação clínica'
@@ -216,7 +223,12 @@
                 } @else {
                   <app-section-header title="Avaliação clínica" />
                   <app-empty-card
-                    text="Toque aqui e insira a avaliação clínica."
+                    [text]="
+                      readOnly()
+                        ? noRecordText
+                        : 'Toque aqui e insira a avaliação clínica.'
+                    "
+                    [disabled]="readOnly()"
                     (activate)="editClinicalAssessment()"
                   />
                 }
@@ -228,9 +240,7 @@
                 @if (nutritionalFilled()) {
                   <app-section-header
                     title="Avaliação nutricional e funcional"
-                    [actionIcon]="
-                      nutritionalEditing() ? 'check' : 'pencil-simple-line'
-                    "
+                    [actionIcon]="nutritionalActionIcon()"
                     [actionLabel]="
                       nutritionalEditing()
                         ? 'Salvar avaliação nutricional e funcional'
@@ -252,7 +262,12 @@
                     title="Avaliação nutricional e funcional"
                   />
                   <app-empty-card
-                    text="Toque aqui e insira a avaliação nutricional e funcional."
+                    [text]="
+                      readOnly()
+                        ? noRecordText
+                        : 'Toque aqui e insira a avaliação nutricional e funcional.'
+                    "
+                    [disabled]="readOnly()"
                     (activate)="editNutritionalFunctional()"
                   />
                 }
@@ -300,12 +315,14 @@
               <!-- Figma 4781:31588: o CTA fica ao lado do título (40px); a lista rola à parte e acompanha a faixa de datas. -->
               <div class="hub__group hub__o-7">
                 <app-section-header title="Evoluções">
-                  <app-button
-                    class="hub__evolve hub__evolve--header"
-                    size="md"
-                    label="Evoluir Paciente"
-                    (click)="dailyRecordOpen.set(true)"
-                  />
+                  @if (!readOnly()) {
+                    <app-button
+                      class="hub__evolve hub__evolve--header"
+                      size="md"
+                      label="Evoluir Paciente"
+                      (click)="dailyRecordOpen.set(true)"
+                    />
+                  }
                 </app-section-header>
                 <app-patient-evolutions
                   [patientId]="p.id"
@@ -317,12 +334,14 @@
             }
           </div>
           <!-- Mobile (Figma 4608:4375): a ação primária fica no fim da tela, em largura total. -->
-          <app-button
-            class="hub__evolve hub__evolve--bottom hub__o-10"
-            label="Evoluir Paciente"
-            [fullWidth]="true"
-            (click)="dailyRecordOpen.set(true)"
-          />
+          @if (!readOnly()) {
+            <app-button
+              class="hub__evolve hub__evolve--bottom hub__o-10"
+              label="Evoluir Paciente"
+              [fullWidth]="true"
+              (click)="dailyRecordOpen.set(true)"
+            />
+          }
         </div>
 
         @if (profile(); as p) {

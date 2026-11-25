@@ -27,31 +27,47 @@
       }
     </app-page-header>
 
+    <!-- Figma 4690:24100: a faixa de datas fica ACIMA da tabela (à esquerda) e, à direita, ordenação e busca. -->
     <div class="patient-list__toolbar">
       <app-date-strip
         [selected]="selectedDate()"
         (dateChange)="selectDate($event)"
       />
-    </div>
-
-    <!-- Figma v2/SelectTag (tonal, 40px) + atalhos: critério de ordenação ativo; visível em qualquer estado. -->
-    <div class="patient-list__sortbar">
-      <button
-        type="button"
-        class="patient-list__sort-tag"
-        (click)="aiAssistant.openShortcuts()"
-      >
-        <span>Ordenar: {{ sortLabel() }}</span>
-        <ph-icon name="caret-down" [size]="20" />
-      </button>
-      <app-icon-button
-        kind="primary"
-        appearance="tonal"
-        icon="squares-four"
-        ariaLabel="Ações da tela"
-        [disabled]="aiAssistant.shortcutsOpen()"
-        (click)="aiAssistant.openShortcuts()"
-      />
+      <div class="patient-list__filters">
+        <label class="patient-list__sort-select">
+          <span class="patient-list__sr">Ordenar</span>
+          <span aria-hidden="true">Ordenar: {{ sortLabel() }}</span>
+          <ph-icon name="caret-down" [size]="20" />
+          <select aria-label="Ordenar" (change)="onSortSelect($event)">
+            <option value="priority" [selected]="presetSort() === 'priority'">
+              Por prioridade
+            </option>
+            <option value="bed" [selected]="presetSort() === 'bed'">
+              Por leito
+            </option>
+          </select>
+        </label>
+        <label class="patient-list__search">
+          <ph-icon name="magnifying-glass" [size]="20" />
+          <input
+            type="search"
+            autocomplete="off"
+            placeholder="Buscar paciente, leito ou ala"
+            aria-label="Buscar paciente, leito ou ala"
+            [value]="query()"
+            (input)="onSearch($event)"
+          />
+        </label>
+        <app-icon-button
+          class="patient-list__apps"
+          kind="primary"
+          appearance="tonal"
+          icon="squares-four"
+          ariaLabel="Ações da tela"
+          [disabled]="aiAssistant.shortcutsOpen()"
+          (click)="aiAssistant.openShortcuts()"
+        />
+      </div>
     </div>
 
     @switch (status()) {
@@ -79,7 +95,17 @@
         </div>
       }
       @default {
-        @if (patients().length === 0) {
+        @if (patients().length > 0 && filtered().length === 0) {
+          <div class="patient-list__state" role="status">
+            <ph-icon name="magnifying-glass" [size]="48" />
+            <h2 class="patient-list__state-title">
+              Nenhum paciente encontrado
+            </h2>
+            <p class="patient-list__state-text">
+              Tente outro nome, leito ou ala.
+            </p>
+          </div>
+        } @else if (patients().length === 0) {
           <div class="patient-list__state" role="status">
             <ph-icon name="users-three" [size]="48" />
             <h2 class="patient-list__state-title">
@@ -109,7 +135,7 @@
                 <col [style.width.px]="widths().caloric" />
                 <col [style.width.px]="widths().protein" />
                 <col [style.width.px]="widths().location" />
-                <col [style.width.px]="widths().first" />
+                <col [style.width.px]="widths().status" />
                 <col class="patient-list__col-action" />
               </colgroup>
               <thead>
@@ -160,7 +186,7 @@
                       class="patient-list__sort"
                       (click)="sortBy('age')"
                     >
-                      <span>Idade<br />Início da terapia</span>
+                      <span>Idade / nascimento</span>
                       @if (sortKey() === 'age') {
                         <ph-icon
                           [name]="
@@ -181,7 +207,7 @@
                       class="patient-list__resizer"
                       role="separator"
                       aria-orientation="vertical"
-                      aria-label="Ajustar a largura da coluna Idade e início da terapia"
+                      aria-label="Ajustar a largura da coluna Idade e nascimento"
                       tabindex="0"
                       [class.patient-list__resizer--active]="
                         resizing() === 'age'
@@ -230,7 +256,7 @@
                       class="patient-list__sort"
                       (click)="sortBy('caloric')"
                     >
-                      <span>Adequação calórica</span>
+                      <span>Meta calórica</span>
                       @if (sortKey() === 'caloric') {
                         <ph-icon
                           [name]="
@@ -251,7 +277,7 @@
                       class="patient-list__resizer"
                       role="separator"
                       aria-orientation="vertical"
-                      aria-label="Ajustar a largura da coluna Adequação calórica"
+                      aria-label="Ajustar a largura da coluna Meta calórica"
                       tabindex="0"
                       [class.patient-list__resizer--active]="
                         resizing() === 'caloric'
@@ -265,7 +291,7 @@
                       class="patient-list__sort"
                       (click)="sortBy('protein')"
                     >
-                      <span>Adequação proteica</span>
+                      <span>Meta proteica</span>
                       @if (sortKey() === 'protein') {
                         <ph-icon
                           [name]="
@@ -286,7 +312,7 @@
                       class="patient-list__resizer"
                       role="separator"
                       aria-orientation="vertical"
-                      aria-label="Ajustar a largura da coluna Adequação proteica"
+                      aria-label="Ajustar a largura da coluna Meta proteica"
                       tabindex="0"
                       [class.patient-list__resizer--active]="
                         resizing() === 'protein'
@@ -313,7 +339,8 @@
                   </th>
                   <th
                     scope="col"
-                    (mouseenter)="hoverColumn.set('first')"
+                    [attr.aria-sort]="ariaSort('status')"
+                    (mouseenter)="hoverColumn.set('status')"
                     (mouseleave)="hoverColumn.set(null)"
                   >
                     <span
@@ -329,7 +356,21 @@
                       (keydown)="resizeByKey($event, 'location')"
                       (click)="$event.stopPropagation()"
                     ></span>
-                    <span class="patient-list__sr">Avaliação</span>
+                    <button
+                      type="button"
+                      class="patient-list__sort"
+                      (click)="sortBy('status')"
+                    >
+                      <span>Status</span>
+                      @if (sortKey() === 'status') {
+                        <ph-icon
+                          [name]="
+                            sortDir() === 'asc' ? 'arrow-up' : 'arrow-down'
+                          "
+                          [size]="14"
+                        />
+                      }
+                    </button>
                   </th>
                   <th scope="col" class="patient-list__sticky">
                     @if (fitState() === 'needs') {
@@ -358,18 +399,13 @@
                         <span class="patient-list__name">{{
                           patient.name
                         }}</span>
-                        @if (patient.finished) {
-                          <app-therapy-tag label="Finalizado" />
-                        }
                       </span>
                     </td>
                     <td>
                       <span class="patient-list__line"
-                        >{{ patient.age }} anos</span
+                        >{{ patient.age }} anos ·
+                        {{ birthLabel(patient.birthDate) }}</span
                       >
-                      <span class="patient-list__line">{{
-                        therapyStartLabel(patient.therapyDays)
-                      }}</span>
                     </td>
                     <td>
                       <app-therapy-tag
@@ -420,10 +456,10 @@
                       <span>{{ patient.ward }} · Leito {{ patient.bed }}</span>
                     </td>
                     <td class="patient-list__cell-first">
-                      @if (patient.firstEvaluation) {
+                      @for (tag of statusTags(patient); track tag.label) {
                         <app-therapy-tag
-                          tone="active"
-                          label="Primeira avaliação"
+                          [tone]="tag.tone"
+                          [label]="tag.label"
                         />
                       }
                     </td>
