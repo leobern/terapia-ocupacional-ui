@@ -1,16 +1,16 @@
 import { InviteLookup, InviteResult } from './hospital-invite.models';
 
 /**
- * Porta do convite direto (FT-009-1). Sem contrato de API: a implementação real substitui a
- * provisória em `app.config.ts`. Ambas as operações exigem conexão e só valem após a resposta
- * do servidor. Duplicidade, aproveitamento da solicitação pendente (FR-004/FR-006) e
- * notificação ao profissional (mecanismo da spec 003) são responsabilidade do servidor.
+ * Porta do convite direto (FT-009-1, openapi/vinculos-api.yaml). Ambas as operações exigem conexão e só
+ * valem após a resposta do servidor. Duplicidade, aproveitamento da solicitação pendente e notificação ao
+ * profissional são responsabilidade do servidor. Falhas de HTTP (401/403/404/409...) rejeitam com
+ * `HttpErrorResponse`; falha de rede rejeita sem `status`.
  */
 export abstract class HospitalInvitePort {
-  /** Busca a conta por e-mail e informa a relação dela com o hospital. Rejeita em falha de rede. */
+  /** Busca a conta por e-mail e informa a relação dela com o hospital. */
   abstract lookup(hospitalId: number, email: string): Promise<InviteLookup>;
-  /** Cria o vínculo direto como "Aprovado" (ou aprova a solicitação pendente). Rejeita em falha. */
-  abstract confirm(hospitalId: number, email: string): Promise<InviteResult>;
+  /** Cria o vínculo direto como "Aprovado" (ou aprova a solicitação pendente) para o `usuarioId` conferido. */
+  abstract confirm(hospitalId: number, usuarioId: number): Promise<InviteResult>;
 }
 
 /** O perfil atual é gestor? Provisório até existir sessão/perfil real (ADR-002). */

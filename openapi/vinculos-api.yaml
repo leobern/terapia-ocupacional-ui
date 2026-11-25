@@ -5,6 +5,7 @@ info:
   description: >
     Contratos da US-001-2-01 (Solicitar acesso a um hospital) e US-001-2-02 (listar vínculos). Hospitais são
     cadastrados pela equipe Conductia (fora do produto); o médico busca por nome.
+    US-009-1-01: convite direto do gestor (busca por e-mail e confirmação), vínculo nasce APROVADO.
     Sem justificativa na solicitação (não há campo no critério de aceite).
 servers:
   - url: /
@@ -140,6 +141,117 @@ paths:
                 $ref: "#/components/schemas/ErrorResponse"
         "409":
           description: Já existe solicitação pendente ou vínculo aprovado com o hospital (RN03)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /api/v1/hospitais/{hospitalId}/profissionais:
+    get:
+      operationId: buscarProfissionalParaConvite
+      x-implemented: true
+      summary: Busca por e-mail um profissional já cadastrado para convidá-lo ao hospital (apenas GESTOR)
+      tags: [Vínculos]
+      parameters:
+        - name: hospitalId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: email
+          in: query
+          required: true
+          schema:
+            type: string
+            format: email
+      responses:
+        "200":
+          description: Conta encontrada; devolve o perfil declarado no cadastro para conferência e a relação atual com o hospital
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProfissionalConvite"
+        "400":
+          description: E-mail ausente ou em branco
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Não autenticado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Usuário autenticado não é GESTOR
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Hospital inexistente ou profissional sem cadastro (precisa se cadastrar primeiro)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /api/v1/hospitais/{hospitalId}/convites:
+    post:
+      operationId: convidarProfissional
+      x-implemented: true
+      summary: Convida o profissional, criando o vínculo já APROVADO (apenas GESTOR)
+      description: >
+        Exige confirmação explícita do perfil declarado. Se já existir solicitação AGUARDANDO_APROVACAO do
+        mesmo profissional para o hospital, ela é aprovada (aproveitouSolicitacao=true) em vez de duplicada.
+      tags: [Vínculos]
+      parameters:
+        - name: hospitalId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ConviteRequest"
+      responses:
+        "201":
+          description: Vínculo APROVADO com origem CONVITE (ou solicitação pendente aprovada)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VinculoConvite"
+        "400":
+          description: Corpo inválido ou perfilConfirmado diferente de true
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Não autenticado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Usuário autenticado não é GESTOR
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Hospital inexistente ou profissional sem cadastro
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
+          description: Profissional já possui vínculo APROVADO com o hospital
           content:
             application/json:
               schema:
@@ -313,3 +425,55 @@ components:
         updatedAt:
           type: string
           format: date-time
+
+    ProfissionalConvite:
+      type: object
+      required: [usuarioId, nomeCompleto, email, perfilDeclarado, relacao]
+      properties:
+        usuarioId:
+          type: integer
+          format: int64
+        nomeCompleto:
+          type: string
+        email:
+          type: string
+        perfilDeclarado:
+          type: string
+          description: Perfil declarado no cadastro (spec 002)
+          enum: [ADMIN, GESTOR, TERAPEUTA, RECECIONISTA]
+        relacao:
+          type: string
+          description: Situação atual do profissional com o hospital
+          enum: [NENHUMA, PENDENTE, APROVADO]
+    ConviteRequest:
+      type: object
+      required: [usuarioId, perfilConfirmado]
+      properties:
+        usuarioId:
+          type: integer
+          format: int64
+        perfilConfirmado:
+          type: boolean
+          description: Deve ser true; registra a conferência explícita do perfil pelo gestor
+    VinculoConvite:
+      type: object
+      required: [id, usuarioId, hospitalId, status, origem, aproveitouSolicitacao]
+      properties:
+        id:
+          type: integer
+          format: int64
+        usuarioId:
+          type: integer
+          format: int64
+        hospitalId:
+          type: integer
+          format: int64
+        status:
+          $ref: "#/components/schemas/VinculoStatus"
+          description: Sempre APROVADO nesta resposta
+        origem:
+          type: string
+          enum: [SOLICITACAO, CONVITE]
+        aproveitouSolicitacao:
+          type: boolean
+          description: true quando aprovou uma solicitação pendente existente

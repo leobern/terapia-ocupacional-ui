@@ -43,13 +43,11 @@ import { ProfessionalProfileReader } from './features/home/professional-profile'
 import { UnreadNotificationsReader } from './features/home/unread-notifications-reader';
 import { HospitalLinksApiService } from './features/hospital-links/hospital-links-api.service';
 import { HospitalLinksSource } from './features/hospital-links/hospital-links-source';
+import { HospitalInviteApiService } from './features/hospital-team/hospital-invite-api.service';
 import { HospitalInvitePort, ManagerAccessReader } from './features/hospital-team/hospital-invite-port';
 import { ProfessionalAccessApiService } from './features/hospital-team/professional-access-api.service';
 import { ProfessionalAccessRevoker, ProfessionalAccessSource } from './features/hospital-team/professional-access-port';
-import {
-  ProvisionalHospitalInvite,
-  ProvisionalManagerAccess,
-} from './features/hospital-team/provisional-hospital-invite';
+import { ProvisionalManagerAccess } from './features/hospital-team/provisional-manager-access';
 import { ProvisionalProfessionalAccess } from './features/hospital-team/provisional-professional-access';
 import { AuthGateway } from './features/login/auth-gateway';
 import { HttpAuthGateway } from './features/login/http-auth-gateway';
@@ -237,9 +235,9 @@ export const appConfig: ApplicationConfig = {
     { provide: PriorStaysSource, useClass: ProvisionalPriorStaysSource },
     { provide: PriorStaysSynthesizer, useClass: ProvisionalPriorStaysSynthesizer },
     { provide: HomeNotificationsSource, useClass: HomeNotificationsApiService },
-    // Provisórios (sem backend ainda): notificações em memória e usuários de exemplo.
+    // Provisórios (sem backend ainda): mensagens de paciente nas notificações e usuários de exemplo.
     { provide: NotificationsApiService, useClass: ProvisionalNotificationsApiService },
-    { provide: HospitalInvitePort, useClass: ProvisionalHospitalInvite },
+    { provide: HospitalInvitePort, useClass: HospitalInviteApiService },
     ProvisionalProfessionalAccess,
     { provide: ProfessionalAccessSource, useExisting: ProvisionalProfessionalAccess },
     { provide: ProfessionalAccessRevoker, useClass: ProfessionalAccessApiService },

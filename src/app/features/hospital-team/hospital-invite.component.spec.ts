@@ -1,4 +1,5 @@
 import { Location } from '@angular/common';
+import { HttpErrorResponse } from '@angular/common/http';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter, Router } from '@angular/router';
 
@@ -9,32 +10,33 @@ import { HospitalInviteComponent } from './hospital-invite.component';
 import { managerOnlyGuard } from './hospital-invite.guard';
 import { InviteLookup } from './hospital-invite.models';
 import { HospitalInvitePort, ManagerAccessReader } from './hospital-invite-port';
-import { ProvisionalHospitalInvite, ProvisionalManagerAccess } from './provisional-hospital-invite';
+import { ProvisionalManagerAccess } from './provisional-manager-access';
 
 class FakePort extends HospitalInvitePort {
-  confirmed: string[] = [];
+  confirmed: number[] = [];
   failLookup = false;
   failConfirm = false;
+  failWith: unknown = new Error('falha');
   result: InviteLookup = { kind: 'not-registered' };
-  approvedRequest = false;
+  aproveitouSolicitacao = false;
 
   lookup(): Promise<InviteLookup> {
-    return this.failLookup ? Promise.reject(new Error('rede')) : Promise.resolve(this.result);
+    return this.failLookup ? Promise.reject(this.failWith) : Promise.resolve(this.result);
   }
 
-  confirm(_: number, email: string): Promise<{ approvedRequest: boolean }> {
+  confirm(_: number, usuarioId: number): Promise<{ aproveitouSolicitacao: boolean }> {
     if (this.failConfirm) {
-      return Promise.reject(new Error('falha'));
+      return Promise.reject(this.failWith);
     }
-    this.confirmed.push(email);
+    this.confirmed.push(usuarioId);
 
-    return Promise.resolve({ approvedRequest: this.approvedRequest });
+    return Promise.resolve({ aproveitouSolicitacao: this.aproveitouSolicitacao });
   }
 }
 
 const found = (relation: 'none' | 'pending' | 'approved'): InviteLookup => ({
   kind: 'found',
-  profile: { email: 'a@b.com', name: 'Ana', specialty: 'Nutricionista' },
+  profile: { email: 'a@b.com', nomeCompleto: 'Ana', perfilDeclarado: 'Terapeuta', usuarioId: 7 },
   relation,
 });
 
@@ -88,7 +90,7 @@ describe('HospitalInviteComponent', () => {
   it('mostra o perfil declarado para conferência', async () => {
     await search(found('none'));
 
-    expect(text()).toContain('Nutricionista');
+    expect(text()).toContain('Terapeuta');
     expect(text()).toContain('Confira o perfil declarado');
     expect(button('Confirmar convite')).toBeDefined();
   });
@@ -115,7 +117,7 @@ describe('HospitalInviteComponent', () => {
     button('Confirmar convite')?.click();
     await settle();
 
-    expect(port.confirmed).toEqual(['a@b.com']);
+    expect(port.confirmed).toEqual([7]);
     expect(text()).toContain('Convidar outro profissional');
     expect(text()).toContain('Convite concluído');
     expect(text()).toContain('Ana');
@@ -153,7 +155,7 @@ describe('HospitalInviteComponent', () => {
   });
 
   it('solicitação pendente é indicada e o convite a aprova', async () => {
-    port.approvedRequest = true;
+    port.aproveitouSolicitacao = true;
     await search(found('pending'));
 
     expect(text()).toContain('aguardando aprovação');
@@ -195,6 +197,47 @@ describe('HospitalInviteComponent', () => {
     expect(location.back).toHaveBeenCalledWith();
   });
 
+  const httpError = (status: number, message?: string): HttpErrorResponse =>
+    new HttpErrorResponse({ error: message === undefined ? null : { message }, status });
+
+  for (const [status, expected] of [
+    [401, 'sessão expirou'],
+    [403, 'Apenas gestores'],
+    [404, 'Hospital não encontrado'],
+    [409, 'já possui vínculo aprovado'],
+    [422, 'Dados inválidos do servidor'],
+  ] as const) {
+    it(`busca com erro ${status} mostra a mensagem do contrato`, async () => {
+      port.failLookup = true;
+      port.failWith = httpError(status, 'Dados inválidos do servidor');
+      typeEmail('a@b.com');
+      button('Buscar')?.click();
+      await settle();
+
+      expect(text()).toContain(expected);
+    });
+  }
+
+  it('confirmar com 409 mostra o aviso e mantém a conferência', async () => {
+    await search(found('none'));
+    port.failConfirm = true;
+    port.failWith = httpError(409);
+    button('Confirmar convite')?.click();
+    await settle();
+
+    expect(text()).toContain('já possui vínculo aprovado');
+  });
+
+  it('422 sem mensagem usa o texto padrão', async () => {
+    await search(found('none'));
+    port.failConfirm = true;
+    port.failWith = httpError(422);
+    button('Confirmar convite')?.click();
+    await settle();
+
+    expect(text()).toContain('Não foi possível processar o convite');
+  });
+
   it('confirm/search sem pré-condição não fazem nada', async () => {
     await internals().confirm();
 
@@ -202,19 +245,8 @@ describe('HospitalInviteComponent', () => {
   });
 });
 
-describe('ProvisionalHospitalInvite e guarda de gestor', () => {
-  const provisional = new ProvisionalHospitalInvite();
-
-  it('busca conhecida, desconhecida e confirmação com solicitação pendente', async () => {
-    expect(await provisional.lookup(1, 'nada@x.com')).toEqual({ kind: 'not-registered' });
-    const none = await provisional.lookup(1, ' Filippa@conductia.com ');
-
-    expect(none.kind === 'found' && none.relation).toBe('none');
-    expect(await provisional.confirm(1, 'filippa@conductia.com')).toEqual({ approvedRequest: false });
-    expect(await provisional.confirm(1, 'jairo@conductia.com')).toEqual({ approvedRequest: true });
-    await expectAsync(provisional.confirm(1, 'jairo@conductia.com')).toBeRejected();
-    await expectAsync(provisional.confirm(1, 'nada@x.com')).toBeRejected();
-
+describe('Guarda de gestor', () => {
+  it('acesso provisório é de gestor', () => {
     expect(new ProvisionalManagerAccess().isManager()).toBeTrue();
   });
 

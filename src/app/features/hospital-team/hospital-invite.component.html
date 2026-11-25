@@ -10,7 +10,7 @@
     <section class="invite__card" aria-label="Convite de profissional">
       @if (phase() === 'done') {
         <p class="invite__status" role="status">
-          @if (approvedRequest()) {
+          @if (aproveitouSolicitacao()) {
             Solicitação aprovada: o vínculo de {{ invitedName() }} com
             {{ hospitalName() }} está aprovado. O profissional foi notificado.
           } @else {
@@ -68,11 +68,11 @@
           } @else {
             <dl class="invite__profile" aria-label="Perfil declarado">
               <dt>Nome</dt>
-              <dd>{{ result.profile.name }}</dd>
+              <dd>{{ result.profile.nomeCompleto }}</dd>
               <dt>E-mail</dt>
               <dd>{{ result.profile.email }}</dd>
-              <dt>Perfil/especialidade declarado</dt>
-              <dd>{{ result.profile.specialty }}</dd>
+              <dt>Perfil declarado</dt>
+              <dd>{{ result.profile.perfilDeclarado }}</dd>
             </dl>
             @if (result.relation === 'approved') {
               <p class="invite__status" role="status">

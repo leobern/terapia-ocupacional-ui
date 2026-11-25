@@ -1,4 +1,5 @@
 import { Location } from '@angular/common';
+import { HttpErrorResponse } from '@angular/common/http';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 
 import { ButtonComponent } from '../../shared/components/button/button.component';
@@ -8,6 +9,29 @@ import { ConnectivityService } from '../../shared/services/connectivity.service'
 import { HospitalContextService } from '../home/hospital-context.service';
 import { InviteLookup } from './hospital-invite.models';
 import { HospitalInvitePort } from './hospital-invite-port';
+
+/** Mensagem pt-BR por status do contrato (vinculos-api.yaml: 400/401/403/404/409; 422 usa a mensagem do servidor). */
+function errorMessage(error: unknown, action: 'search' | 'confirm'): string {
+  const status = error instanceof HttpErrorResponse ? error.status : 0;
+  const server = error instanceof HttpErrorResponse ? (error.error?.message as string | undefined) : undefined;
+
+  switch (status) {
+    case 401:
+      return 'Sua sessão expirou. Entre novamente para continuar.';
+    case 403:
+      return 'Apenas gestores do hospital podem convidar profissionais.';
+    case 404:
+      return 'Hospital não encontrado. Selecione um hospital válido e tente novamente.';
+    case 409:
+      return 'Este profissional já possui vínculo aprovado com o hospital.';
+    case 422:
+      return server ?? 'Não foi possível processar o convite. Confira os dados e tente novamente.';
+    default:
+      return action === 'search'
+        ? 'Não foi possível buscar o profissional. Tente novamente.'
+        : 'Não foi possível confirmar o convite. Nenhum vínculo foi criado.';
+  }
+}
 
 type Phase = 'idle' | 'searching' | 'result' | 'confirming' | 'done';
 
@@ -28,7 +52,7 @@ export class HospitalInviteComponent {
   protected readonly lookup = signal<InviteLookup | null>(null);
   /** Mensagem de erro (rede ou servidor); `null` = sem erro. */
   protected readonly error = signal<string | null>(null);
-  protected readonly approvedRequest = signal(false);
+  protected readonly aproveitouSolicitacao = signal(false);
   protected readonly invitedName = signal('');
 
   protected readonly hospitalName = computed(() => this.context.selected()?.name ?? '');
@@ -67,8 +91,8 @@ export class HospitalInviteComponent {
     try {
       this.lookup.set(await this.port.lookup(hospital.id, this.email().trim()));
       this.phase.set('result');
-    } catch {
-      this.error.set('Não foi possível buscar o profissional. Tente novamente.');
+    } catch (error) {
+      this.error.set(errorMessage(error, 'search'));
       this.phase.set('idle');
     }
   }
@@ -83,13 +107,13 @@ export class HospitalInviteComponent {
     this.error.set(null);
     this.phase.set('confirming');
     try {
-      const outcome = await this.port.confirm(hospital.id, result.profile.email);
+      const outcome = await this.port.confirm(hospital.id, result.profile.usuarioId);
 
-      this.approvedRequest.set(outcome.approvedRequest);
-      this.invitedName.set(result.profile.name);
+      this.aproveitouSolicitacao.set(outcome.aproveitouSolicitacao);
+      this.invitedName.set(result.profile.nomeCompleto);
       this.phase.set('done');
-    } catch {
-      this.error.set('Não foi possível confirmar o convite. Nenhum vínculo foi criado.');
+    } catch (error) {
+      this.error.set(errorMessage(error, 'confirm'));
       this.phase.set('result');
     }
   }
