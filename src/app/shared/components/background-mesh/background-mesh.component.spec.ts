@@ -115,6 +115,20 @@ describe('BackgroundMeshComponent', () => {
     expect(gradient.querySelectorAll('stop')[1].getAttribute('offset')).toBe('0.2377');
   });
 
+  it('publica no html as cores do topo e da base da tela e as remove ao destruir', async () => {
+    await create();
+    fixture.componentRef.setInput('variant', 'patients');
+    fixture.detectChanges();
+    const root = document.documentElement;
+
+    expect(root.style.getPropertyValue('--page-edge-top')).toBe('var(--color-bg-gradient-patients-1)');
+    expect(root.style.getPropertyValue('--page-edge-bottom')).toBe('var(--color-bg-gradient-patients-2)');
+
+    fixture.destroy();
+
+    expect(root.style.getPropertyValue('--page-edge-top')).toBe('');
+  });
+
   it('variant=patients usa o gradiente exclusivo de Pacientes (2 paradas, mesmo vetor)', async () => {
     await create();
     fixture.componentRef.setInput('variant', 'patients');

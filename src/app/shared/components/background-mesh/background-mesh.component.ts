@@ -1,10 +1,18 @@
-import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
+import { DOCUMENT } from '@angular/common';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, input } from '@angular/core';
 
 import { ThemeService } from '../../services/theme.service';
 
 /** `blobs`: 3 círculos com blur; `gradient`: gradiente de fundo (Figma, tokens bg-gradient);
  * `patients`: gradiente exclusivo da tela de Pacientes (tokens bg-gradient-patients);
  * `notifications`: gradiente exclusivo da tela de Notificações (tokens bg-gradient-notifications). */
+/** Cor do topo e da base de cada variante: o `html` pinta esse degradê sob as barras do navegador no celular. */
+const PAGE_EDGES: Partial<Record<BackgroundMeshVariant, readonly [string, string]>> = {
+  gradient: ['--color-bg-gradient-1', '--color-bg-gradient-3'],
+  notifications: ['--color-bg-gradient-notifications-1', '--color-bg-gradient-notifications-2'],
+  patients: ['--color-bg-gradient-patients-1', '--color-bg-gradient-patients-2'],
+};
+
 export type BackgroundMeshVariant = 'blobs' | 'gradient' | 'patients' | 'notifications';
 
 /**
@@ -50,4 +58,24 @@ export class BackgroundMeshComponent {
   protected readonly patientsStop2Offset = computed(() => (this.themeService.theme() === 'dark' ? 0.514 : 0.185));
 
   protected readonly stop2Offset = computed(() => (this.themeService.theme() === 'dark' ? 0.4503 : 0.2377));
+
+  private readonly document = inject(DOCUMENT);
+
+  constructor() {
+    // O navegador do celular tinge a barra de status e a de endereço com o fundo da página (`html`), não com esta
+    // camada fixa: o `html` precisa ter as mesmas cores do topo e da base do fundo da tela (Thiago, 2026-11-25).
+    effect(onCleanup => {
+      const root = this.document.documentElement;
+      const edges = PAGE_EDGES[this.variant()];
+
+      if (edges) {
+        root.style.setProperty('--page-edge-top', `var(${edges[0]})`);
+        root.style.setProperty('--page-edge-bottom', `var(${edges[1]})`);
+      }
+      onCleanup(() => {
+        root.style.removeProperty('--page-edge-top');
+        root.style.removeProperty('--page-edge-bottom');
+      });
+    });
+  }
 }
