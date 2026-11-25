@@ -35,13 +35,14 @@ import { ClinicalAssessmentEditorComponent } from './clinical-assessment/clinica
 import { ClinicalAssessmentSource } from './clinical-assessment/clinical-assessment-source';
 import { ClinicalTilesComponent } from './clinical-assessment/clinical-tiles.component';
 import { DailyRecordSheetComponent } from './daily-record/daily-record-sheet.component';
+import { DiagnosisEditorComponent } from './diagnosis-editor/diagnosis-editor.component';
 import { PatientEvolutionsComponent } from './evolutions/patient-evolutions.component';
 import { PatientMessageSheetComponent } from './messages/patient-message-sheet.component';
 import { MoveBedAction } from './move-bed/move-bed.action';
 import { NutritionalFunctionalEditorComponent } from './nutritional-functional/nutritional-functional-editor.component';
 import { NutritionalFunctionalTilesComponent } from './nutritional-functional/nutritional-functional-tiles.component';
-import { HypothesisOrigin, PatientHubProfile } from './patient-hub.models';
-import { HypothesisSynthesizer, HypothesisWriter, PatientHubSource } from './patient-hub-source';
+import { PatientHubProfile } from './patient-hub.models';
+import { PatientHubSource } from './patient-hub-source';
 import { PlanSectionComponent } from './plan/plan-section.component';
 import { Prescription } from './prescription/prescription.models';
 import { PrescriptionReviewComponent } from './prescription/prescription-review.component';
@@ -54,7 +55,6 @@ import { PROVISIONAL_BMI, PROVISIONAL_WEIGHT } from './provisional-measures';
 type HubStatus = 'loading' | 'ready' | 'not-found' | 'error' | 'revoked';
 
 /** Etapa do preenchimento da Hipótese: colar → carregando → revisão (IA) ou falha (manual). */
-type FillPhase = 'input' | 'loading' | 'review' | 'failed';
 
 const PULL_THRESHOLD = 80;
 
@@ -64,9 +64,8 @@ export function reloadsOnVisibility(state: DocumentVisibilityState): boolean {
 }
 
 /** Modo do cartão: leitura, colar novo texto (fluxo da IA) ou edição direta. Sem hipótese, sempre "paste". */
-type CardMode = 'view' | 'paste' | 'edit' | 'empty';
+type CardMode = 'view' | 'empty';
 
-const OFFLINE_HINT = 'Conexão necessária para sintetizar ou confirmar a hipótese.';
 const DAY_MS = 86_400_000;
 
 export const DIAGNOSIS_OFFLINE_HINT = 'Sem conexão: o cálculo do diagnóstico precisa de conexão.';
@@ -143,16 +142,12 @@ export class PatientHubComponent implements OnInit {
   protected readonly profile = signal<PatientHubProfile | null>(null);
   /** Hipótese confirmada; `null` = ainda não preenchida. */
   protected readonly hypothesis = signal<string | null>(null);
-  /** Sem hipótese, o card fica no estado vazio até o usuário tocar nele (aí abre o preenchimento). */
-  protected readonly mode = computed<CardMode>(() => {
-    const editing = this.editing();
-
-    if (this.hypothesis() === null) {
-      return editing === null ? 'empty' : 'paste';
-    }
-
-    return editing ?? 'view';
-  });
+  /** Sem diagnóstico, o card fica no estado vazio; tocar nele abre o cadastro no painel lateral. */
+  protected readonly mode = computed<CardMode>(() => (this.hypothesis() === null ? 'empty' : 'view'));
+  /** O editor do Diagnóstico está aberto no painel: o card ganha destaque e o lápis vira o ✓ que salva. */
+  protected readonly diagnosisEditing = computed(
+    () => this.aiAssistant.view() === 'editor' && this.aiAssistant.activeAction()?.id === 'diagnosis',
+  );
   /** A avaliação clínica já tem dados (tipo de TN, dispositivo, peso ou algum item). */
   protected readonly clinicalFilled = signal(false);
   /** A avaliação nutricional e funcional já tem algum valor. */
@@ -178,17 +173,8 @@ export class PatientHubComponent implements OnInit {
   /** Revisão diária da prescrição (FT-004-8), aberta pela ação dos atalhos; só para o médico. */
   protected readonly prescriptionReviewOpen = signal(false);
 
-  protected readonly phase = signal<FillPhase>('input');
-  /** Texto colado do prontuário (permanece disponível se a síntese falhar). */
-  protected readonly pasted = signal('');
-  /** Texto em revisão: retorno da IA (editável) ou digitação manual. */
-  protected readonly draft = signal('');
-  /** Orientação de validação/conexão/gravação exibida ao profissional. */
-  protected readonly hint = signal<string | null>(null);
-  protected readonly saving = signal(false);
   /** Aviso do fluxo automático Avaliação → Diagnóstico (offline ou falha de leitura). */
   protected readonly diagnosisHint = signal<string | null>(null);
-  protected readonly offline = computed(() => !this.connectivity.online());
 
   protected readonly hospitalId = computed(() => this.context.selected()?.id ?? null);
   /** Tiles de "Metas nutricionais" (Figma 4608:4845), calculados da meta vigente quando há aporte calculado. */
@@ -230,7 +216,6 @@ export class PatientHubComponent implements OnInit {
 
   /** % de adequação do dia (cálculo único, FT-004-7); `null` até a primeira leitura. */
   protected readonly adequacy = signal<DailyAdequacy | null>(null);
-  private readonly editing = signal<'paste' | 'edit' | null>(null);
   private readonly screenActions = inject(ScreenActionsService);
   private readonly moveBed = inject(MoveBedAction);
   private readonly changeLocation = inject(ChangeLocationAction);
@@ -249,11 +234,7 @@ export class PatientHubComponent implements OnInit {
   private readonly nutritionalSource = inject(AssessmentSource);
   private readonly now = inject(NOW);
   private readonly unread = inject(UnreadNotificationsReader);
-  private readonly synthesizer = inject(HypothesisSynthesizer);
-  private readonly writer = inject(HypothesisWriter);
   private readonly professional = inject(ProfessionalProfileReader);
-  /** Retorno original da IA, para distinguir "confirmado sem editar" de "editado". */
-  private aiText = '';
   private readonly route = inject(ActivatedRoute);
   private readonly patientId = toSignal(this.route.paramMap.pipe(map(params => params.get('id'))), {
     initialValue: null,
@@ -392,75 +373,6 @@ export class PatientHubComponent implements OnInit {
     this.location.back();
   }
 
-  protected onPasted(event: Event): void {
-    this.pasted.set((event.target as HTMLTextAreaElement).value);
-    this.hint.set(null);
-  }
-
-  protected onDraft(event: Event): void {
-    this.draft.set((event.target as HTMLTextAreaElement).value);
-    this.hint.set(null);
-  }
-
-  /** Cenários 1, 4 e 5: envia o texto colado à IA; vazio não aciona; falha libera o preenchimento manual. */
-  protected async synthesize(): Promise<void> {
-    if (this.offline()) {
-      this.hint.set(OFFLINE_HINT);
-
-      return;
-    }
-    if (this.pasted().trim() === '') {
-      this.hint.set('Cole um texto do prontuário antes de sintetizar.');
-
-      return;
-    }
-    this.hint.set(null);
-    this.phase.set('loading');
-    try {
-      this.aiText = await this.synthesizer.synthesize(this.pasted());
-      this.draft.set(this.aiText);
-      this.phase.set('review');
-    } catch {
-      this.aiText = '';
-      this.draft.set('');
-      this.phase.set('failed');
-    }
-  }
-
-  /** Cenário 3: só a confirmação explícita grava; o texto editado (não o original da IA) vira a Hipótese. */
-  protected async confirm(): Promise<void> {
-    const id = this.patientId();
-    const text = this.draft().trim();
-
-    if (this.offline()) {
-      this.hint.set(OFFLINE_HINT);
-
-      return;
-    }
-    if (id === null || text === '') {
-      this.hint.set('Escreva a hipótese diagnóstica antes de confirmar.');
-
-      return;
-    }
-    this.saving.set(true);
-    try {
-      await this.writer.save({
-        at: this.now().toISOString(),
-        author: this.professional.read().name,
-        origin: this.originOf(text),
-        patientId: id,
-        text,
-      });
-      this.hypothesis.set(text);
-      this.resetFlow();
-      void this.refreshFlow();
-    } catch {
-      this.hint.set('Não foi possível gravar a hipótese. Tente novamente.');
-    } finally {
-      this.saving.set(false);
-    }
-  }
-
   protected openNotifications(): void {
     void this.router.navigate(['/notifications']);
   }
@@ -558,33 +470,45 @@ export class PatientHubComponent implements OnInit {
     }
   }
 
+  /** Card vazio ou lápis do Diagnóstico: abre o cadastro conversacional no painel lateral. Com ele aberto, o ✓ salva. */
+  protected editDiagnosis(): void {
+    if (this.diagnosisEditing()) {
+      this.editorController.run('save');
+
+      return;
+    }
+    const id = this.profile()?.id;
+
+    if (id === undefined) {
+      return;
+    }
+    this.aiAssistant.openAction({
+      editor: {
+        component: DiagnosisEditorComponent,
+        description:
+          'Cole ou escreva o texto do prontuário: motivo da internação, intercorrências e demais dados relevantes. ' +
+          'Depois eu posso sintetizar o diagnóstico para você.',
+        hint: 'Você também pode enviar via áudio.',
+        inputs: {
+          initialText: this.hypothesis() ?? '',
+          patientId: id,
+          responsibleName: this.responsible.name,
+          responsibleRole: this.responsible.role,
+          saved: (text: string): void => {
+            this.hypothesis.set(text);
+            void this.refreshFlow();
+          },
+        },
+        title: 'Diagnóstico',
+      },
+      id: 'diagnosis',
+      label: 'Diagnóstico',
+    });
+  }
+
   protected onDailyRecordClosed(): void {
     this.dailyRecordOpen.set(false);
     this.evolutionsVersion.update(v => v + 1);
-  }
-
-  /** Cenário 1 (US2): atualizar colando um novo trecho, mesmo fluxo do preenchimento inicial. */
-  protected startPaste(): void {
-    this.resetFlow();
-    this.editing.set('paste');
-  }
-
-  /** Cenário 2 (US2): edição direta do texto atual, sem IA; só grava em "Salvar". */
-  protected startEdit(): void {
-    this.resetFlow();
-    this.draft.set(this.hypothesis() ?? '');
-    this.editing.set('edit');
-  }
-
-  /** Fecha o fluxo de atualização mantendo a hipótese anterior intacta. */
-  protected cancel(): void {
-    this.resetFlow();
-  }
-
-  /** Descarta a revisão e volta ao texto colado (mantido). */
-  protected discard(): void {
-    this.phase.set('input');
-    this.hint.set(null);
   }
 
   private async loadUnread(): Promise<void> {
@@ -593,23 +517,6 @@ export class PatientHubComponent implements OnInit {
     } catch {
       // sem contagem: o sino aparece sem selo
     }
-  }
-
-  private resetFlow(): void {
-    this.editing.set(null);
-    this.phase.set('input');
-    this.pasted.set('');
-    this.draft.set('');
-    this.aiText = '';
-    this.hint.set(null);
-  }
-
-  private originOf(text: string): HypothesisOrigin {
-    if (this.phase() !== 'review') {
-      return 'manual';
-    }
-
-    return text === this.aiText.trim() ? 'ai' : 'ai-edited';
   }
 
   /**

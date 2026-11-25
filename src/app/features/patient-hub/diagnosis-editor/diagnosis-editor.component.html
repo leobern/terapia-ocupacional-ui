@@ -1,0 +1,31 @@
+<div class="dx">
+  <app-field-card
+    label="Texto do prontuário"
+    inputId="dx-text"
+    placeholder="Cole ou escreva o motivo da internação, intercorrências e demais dados relevantes"
+    [rows]="8"
+    [maxLength]="maxLength"
+    [value]="text()"
+    [caption]="counter()"
+    [error]="''"
+    (valueChange)="edit($event)"
+  />
+
+  <div class="dx__team" data-testid="diagnosis-team">
+    <span class="dx__label">Médico responsável</span>
+    <div class="dx__person">
+      <app-avatar size="medium" type="user" [name]="responsibleName()" />
+      <div class="dx__text">
+        <p class="dx__name">{{ responsibleName() }}</p>
+        <p class="dx__role">{{ responsibleRole() }}</p>
+      </div>
+    </div>
+  </div>
+
+  @if (busy()) {
+    <p class="dx__status" role="status">Processando…</p>
+  }
+  @if (hint(); as message) {
+    <p class="dx__status dx__status--warning" role="alert">{{ message }}</p>
+  }
+</div>

@@ -41,6 +41,13 @@
   &--error {
     border-color: tokens.c(comm-alert);
   }
+
+  // Área de texto: altura pelo número de linhas.
+  &--area {
+    align-items: stretch;
+    height: auto;
+    padding-block: tokens.$space-12;
+  }
 }
 
 .field-card__input {
@@ -53,6 +60,11 @@
   outline: 0;
 
   @include typography.body-lg;
+}
+
+.field-card__input--area {
+  resize: none;
+  font: inherit;
 }
 
 .field-card__unit {

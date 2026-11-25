@@ -52,216 +52,46 @@
               <app-section-header
                 title="Diagnóstico"
                 headingId="hypothesis-title"
-                actionLabel="Editar diagnóstico"
-                [actionIcon]="mode() === 'empty' ? null : 'pencil-simple-line'"
-                [actionDisabled]="mode() !== 'view'"
-                (actionClick)="startEdit()"
+                [actionIcon]="
+                  mode() === 'empty'
+                    ? null
+                    : diagnosisEditing()
+                      ? 'check'
+                      : 'pencil-simple-line'
+                "
+                [actionLabel]="
+                  diagnosisEditing()
+                    ? 'Salvar diagnóstico'
+                    : 'Editar diagnóstico'
+                "
+                (actionClick)="editDiagnosis()"
               />
               @if (mode() === 'empty') {
                 <app-empty-card
                   text="Toque aqui e insira o diagnóstico."
-                  (activate)="startPaste()"
+                  (activate)="editDiagnosis()"
                 />
               } @else {
                 <section
                   class="hub__hypothesis"
                   aria-labelledby="hypothesis-title"
+                  [class.hub__diag--editing]="diagnosisEditing()"
                 >
-                  @if (hypothesis(); as text) {
-                    <p class="hub__hypothesis-text">{{ text }}</p>
-                  }
-                  @if (hypothesis() !== null && mode() === 'view') {
-                    <hr class="hub__divider" />
-                    <h3 class="hub__card-title">Equipe responsável</h3>
-                    <div class="hub__team">
-                      <app-avatar
-                        size="medium"
-                        type="user"
-                        [name]="responsible.name"
-                      />
-                      <div class="hub__team-text">
-                        <p class="hub__team-name">{{ responsible.name }}</p>
-                        <p class="hub__team-role">{{ responsible.role }}</p>
-                      </div>
-                      <ph-icon name="caret-right" [size]="24" />
+                  <p class="hub__hypothesis-text">{{ hypothesis() }}</p>
+                  <hr class="hub__divider" />
+                  <h3 class="hub__card-title">Equipe responsável</h3>
+                  <div class="hub__team">
+                    <app-avatar
+                      size="medium"
+                      type="user"
+                      [name]="responsible.name"
+                    />
+                    <div class="hub__team-text">
+                      <p class="hub__team-name">{{ responsible.name }}</p>
+                      <p class="hub__team-role">{{ responsible.role }}</p>
                     </div>
-                  }
-                  @if (mode() === 'edit') {
-                    <div class="hub__empty">
-                      <label class="hub__label" for="edit-text"
-                        >Editar hipótese diagnóstica</label
-                      >
-                      <textarea
-                        id="edit-text"
-                        class="hub__textarea"
-                        rows="5"
-                        [value]="draft()"
-                        (input)="onDraft($event)"
-                      ></textarea>
-                      <div class="hub__actions">
-                        <app-button
-                          size="md"
-                          iconLeft="check"
-                          label="Salvar"
-                          [disabled]="saving() || offline()"
-                          (click)="confirm()"
-                        />
-                        <app-button
-                          size="md"
-                          kind="primary"
-                          appearance="outlined"
-                          iconLeft="sparkle"
-                          label="Recriar com IA"
-                          (click)="startPaste()"
-                        />
-                        <app-button
-                          size="md"
-                          kind="primary"
-                          appearance="outlined"
-                          label="Cancelar"
-                          (click)="cancel()"
-                        />
-                      </div>
-                      @if (offline()) {
-                        <p
-                          class="hub__status hub__status--warning"
-                          role="status"
-                        >
-                          Conexão necessária para sintetizar ou confirmar a
-                          hipótese.
-                        </p>
-                      }
-                      @if (hint(); as message) {
-                        <p
-                          class="hub__status hub__status--warning"
-                          role="alert"
-                        >
-                          {{ message }}
-                        </p>
-                      }
-                    </div>
-                  }
-                  @if (mode() === 'paste') {
-                    <div class="hub__empty">
-                      @if (
-                        phase() === 'input' ||
-                        phase() === 'loading' ||
-                        phase() === 'failed'
-                      ) {
-                        @if (hypothesis() === null) {
-                          <p class="hub__empty-text">
-                            Ainda não há hipótese diagnóstica preenchida para
-                            este paciente.
-                          </p>
-                        }
-                        <label class="hub__label" for="paste-text"
-                          >Texto do prontuário</label
-                        >
-                        <textarea
-                          id="paste-text"
-                          class="hub__textarea"
-                          rows="4"
-                          placeholder="Cole aqui o motivo de internação, intercorrências e demais dados relevantes"
-                          [value]="pasted()"
-                          [disabled]="phase() === 'loading'"
-                          (input)="onPasted($event)"
-                        ></textarea>
-                        <div class="hub__actions">
-                          <app-button
-                            size="md"
-                            iconLeft="sparkle"
-                            [label]="
-                              phase() === 'failed'
-                                ? 'Tentar sintetizar de novo'
-                                : 'Sintetizar com IA'
-                            "
-                            [disabled]="phase() === 'loading' || offline()"
-                            (click)="synthesize()"
-                          />
-                          @if (hypothesis() !== null) {
-                            <app-button
-                              size="md"
-                              kind="primary"
-                              appearance="outlined"
-                              label="Cancelar"
-                              (click)="cancel()"
-                            />
-                          }
-                        </div>
-                      }
-                      @if (phase() === 'loading') {
-                        <p class="hub__status" role="status">
-                          Sintetizando o texto com IA…
-                        </p>
-                      }
-                      @if (phase() === 'failed') {
-                        <p
-                          class="hub__status hub__status--warning"
-                          role="alert"
-                        >
-                          A síntese por IA falhou ou está indisponível. Digite a
-                          hipótese manualmente e confirme.
-                        </p>
-                      }
-                      @if (phase() === 'review' || phase() === 'failed') {
-                        @if (phase() === 'review') {
-                          <span class="hub__ai-tag">
-                            <ph-icon name="sparkle" [size]="16" />
-                            Gerado por IA
-                          </span>
-                        }
-                        <label class="hub__label" for="draft-text">
-                          {{
-                            phase() === 'review'
-                              ? 'Revise e edite antes de confirmar'
-                              : 'Hipótese diagnóstica (manual)'
-                          }}
-                        </label>
-                        <textarea
-                          id="draft-text"
-                          class="hub__textarea"
-                          rows="5"
-                          [value]="draft()"
-                          (input)="onDraft($event)"
-                        ></textarea>
-                        <div class="hub__actions">
-                          <app-button
-                            size="md"
-                            iconLeft="check"
-                            label="Confirmar hipótese"
-                            [disabled]="saving() || offline()"
-                            (click)="confirm()"
-                          />
-                          @if (phase() === 'review') {
-                            <app-button
-                              size="md"
-                              kind="primary"
-                              appearance="outlined"
-                              label="Descartar"
-                              (click)="discard()"
-                            />
-                          }
-                        </div>
-                      }
-                      @if (offline()) {
-                        <p
-                          class="hub__status hub__status--warning"
-                          role="status"
-                        >
-                          Conexão necessária para sintetizar ou confirmar a
-                          hipótese.
-                        </p>
-                      }
-                      @if (hint(); as message) {
-                        <p
-                          class="hub__status hub__status--warning"
-                          role="alert"
-                        >
-                          {{ message }}
-                        </p>
-                      }
-                    </div>
-                  }
+                    <ph-icon name="caret-right" [size]="24" />
+                  </div>
                 </section>
               }
             </div>
