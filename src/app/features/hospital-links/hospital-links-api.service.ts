@@ -82,7 +82,9 @@ export class HospitalLinksApiService extends HospitalLinksSource {
   }
 
   async request(hospitalId: number): Promise<HospitalLink> {
-    const created = await firstValueFrom(this.http.post<VinculoSolicitacao>(`${this.url}/solicitacoes`, { hospitalId }));
+    const created = await firstValueFrom(
+      this.http.post<VinculoSolicitacao>(`${this.url}/solicitacoes`, { hospitalId }),
+    );
 
     return {
       hospitalId: created.hospital.id,
