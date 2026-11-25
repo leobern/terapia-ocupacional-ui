@@ -156,7 +156,7 @@ paths:
         previousValue (bedNumber anterior; vazio se não havia), newValue (não vazio),
         changedAt (instante da confirmação, gerado no servidor) e changedBy (usuário do JWT).
         Nada disso é enviado pelo cliente nem muda a resposta. O alerta de leito ocupado
-        (US-002-2-04) está fora de escopo. Requer vínculo aprovado com o hospital do paciente.
+        (US-002-2-04) é uma consulta separada (verificarOcupacaoLeito) e não bloqueia. Requer vínculo aprovado com o hospital do paciente.
         newBedNumber ausente, nulo ou em branco: 422 field=newBedNumber, code=MSG-12.
         Internação inexistente ou de outro paciente: 404.
       parameters:
@@ -261,6 +261,60 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+        "422":
+          description: MSG-11 (paciente sem internação) ou MSG-12 (leito não identificado)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MovimentacaoLeitoErrorResponse"
+  /api/v1/pacientes/movimentacao-leito/resolver-por-nome:
+    post:
+      operationId: resolverMovimentacaoLeitoPorNome
+      x-implemented: true
+      summary: Identifica o paciente pelo nome na mensagem e associa o pedido à internação mais recente
+      description: >
+        US-002-2-02. Para quando o usuário não está no contexto de um paciente. Sem efeito
+        colateral. A extração de nome e leito da mensagem é do chatbot (fora de escopo).
+        Requer vínculo aprovado com o hospital informado; a busca é restrita aos pacientes
+        desse hospital (RN-01), comparando fullName sem diferenciar acentuação, caixa e
+        espaços repetidos (mesma regra de checkPatientDuplicate).
+        RN-02: exatamente um paciente, 200 com status=ENCONTRADO e `resolvida` igual ao
+        resultado de resolverMovimentacaoLeito (internação mais recente). Nesse caso valem
+        os mesmos erros 422 dessa operação: MSG-11 (sem internação) e MSG-12 (leito não identificado).
+        RN-03: mais de um paciente, 200 com status=MULTIPLOS e `candidatos` (id, nome, data de
+        nascimento, SAME); o chatbot pede a escolha e então chama resolverMovimentacaoLeito
+        com o id escolhido. MSG-12 não é avaliada neste caso.
+        RN-04: nenhum paciente, 404 com code=MSG-13 e message
+        "Não encontrei nenhum paciente com esse nome neste hospital."
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ResolverMovimentacaoLeitoPorNomeRequest"
+      responses:
+        "200":
+          description: Um paciente (ENCONTRADO) ou mais de um (MULTIPLOS)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MovimentacaoLeitoPorNomeResultado"
+        "400":
+          $ref: "#/components/responses/Error"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          description: Profissional sem vínculo aprovado com o hospital informado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: MSG-13 (nenhum paciente com esse nome no hospital)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MovimentacaoLeitoErrorResponse"
         "422":
           description: MSG-11 (paciente sem internação) ou MSG-12 (leito não identificado)
           content:
@@ -426,7 +480,7 @@ components:
               description: Presente apenas em MSG-12
             code:
               type: string
-              enum: [MSG-11, MSG-12]
+              enum: [MSG-11, MSG-12, MSG-13]
     OcupacaoLeito:
       type: object
       required: [newBedNumber, occupied, occupants]
@@ -449,3 +503,53 @@ components:
           format: int64
         name:
           type: string
+    ResolverMovimentacaoLeitoPorNomeRequest:
+      type: object
+      required: [hospitalId, fullName]
+      properties:
+        hospitalId:
+          type: integer
+          format: int64
+          description: Hospital ativo na sessão do usuário
+        fullName:
+          type: string
+          minLength: 1
+          maxLength: 150
+          description: Nome do paciente extraído da mensagem pelo chatbot
+        newBedNumber:
+          type: string
+          nullable: true
+          maxLength: 20
+          description: Leito extraído pelo chatbot; ausente/nulo/em branco quando não identificado (MSG-12)
+    PacienteCandidato:
+      type: object
+      required: [id, fullName, birthDate]
+      properties:
+        id:
+          type: integer
+          format: int64
+        fullName:
+          type: string
+        birthDate:
+          type: string
+          format: date
+        medicalRecordNumber:
+          type: string
+          nullable: true
+          description: SAME, quando preenchido
+    MovimentacaoLeitoPorNomeResultado:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [ENCONTRADO, MULTIPLOS]
+        resolvida:
+          description: Presente quando status=ENCONTRADO
+          allOf:
+            - $ref: "#/components/schemas/MovimentacaoLeitoResolvida"
+        candidatos:
+          type: array
+          description: Presente quando status=MULTIPLOS
+          items:
+            $ref: "#/components/schemas/PacienteCandidato"

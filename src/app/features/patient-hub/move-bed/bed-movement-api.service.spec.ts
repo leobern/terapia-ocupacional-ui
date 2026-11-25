@@ -3,7 +3,7 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { TestBed } from '@angular/core/testing';
 import { environment } from '@environments/environment';
 
-import { BedNotIdentifiedError, PatientWithoutInternacaoError } from './bed-movement.port';
+import { BedNotIdentifiedError, PatientNotFoundError, PatientWithoutInternacaoError } from './bed-movement.port';
 import { BedMovementApiService } from './bed-movement-api.service';
 
 describe('BedMovementApiService', () => {
@@ -173,5 +173,92 @@ describe('BedMovementApiService', () => {
         await expectAsync(result).toBeRejectedWith(jasmine.any(HttpErrorResponse));
       });
     }
+  });
+
+  describe('resolveByName (US-002-2-02)', () => {
+    const byName = `${environment.apiBaseUrl}/v1/pacientes/movimentacao-leito/resolver-por-nome`;
+
+    it('ENCONTRADO: sends hospital, name and bed and returns the single resolved movement', async () => {
+      const result = service.resolveByName(3, 'Beatriz Ramos Costa', ' 210 ');
+      const req = http.expectOne(byName);
+
+      expect(req.request.method).toBe('POST');
+      expect(req.request.body).toEqual({ fullName: 'Beatriz Ramos Costa', hospitalId: 3, newBedNumber: '210' });
+      req.flush({ resolvida: resolved, status: 'ENCONTRADO' });
+
+      await expectAsync(result).toBeResolvedTo({ kind: 'single', resolved });
+    });
+
+    it('omits the bed when it was not extracted', async () => {
+      const result = service.resolveByName(3, 'Beatriz');
+      const req = http.expectOne(byName);
+
+      expect(req.request.body).toEqual({ fullName: 'Beatriz', hospitalId: 3 });
+      req.flush({ resolvida: resolved, status: 'ENCONTRADO' });
+      await result;
+    });
+
+    it('MULTIPLOS: returns the candidates', async () => {
+      const candidatos = [
+        { birthDate: '1990-01-02', fullName: 'Beatriz Ramos Costa', id: 1, medicalRecordNumber: 'S1' },
+        { birthDate: '1985-05-06', fullName: 'Beatriz Ramos Costa', id: 2, medicalRecordNumber: null },
+      ];
+      const result = service.resolveByName(3, 'Beatriz Ramos Costa', '210');
+
+      http.expectOne(byName).flush({ candidatos, status: 'MULTIPLOS' });
+
+      await expectAsync(result).toBeResolvedTo({ candidates: candidatos, kind: 'multiple' });
+    });
+
+    it('MULTIPLOS without a list returns no candidates', async () => {
+      const result = service.resolveByName(3, 'Beatriz', '1');
+
+      http.expectOne(byName).flush({ status: 'MULTIPLOS' });
+
+      await expectAsync(result).toBeResolvedTo({ candidates: [], kind: 'multiple' });
+    });
+
+    it('404 MSG-13 becomes PatientNotFoundError with the server message', async () => {
+      const result = service.resolveByName(3, 'Otávio', '210');
+
+      http.expectOne(byName).flush({ code: 'MSG-13', message: 'nada' }, { status: 404, statusText: 'N' });
+
+      await expectAsync(result).toBeRejectedWith(new PatientNotFoundError('nada'));
+    });
+
+    it('404 MSG-13 without message uses an empty message', async () => {
+      const result = service.resolveByName(3, 'Otávio', '210');
+
+      http.expectOne(byName).flush({ code: 'MSG-13' }, { status: 404, statusText: 'N' });
+
+      await expectAsync(result).toBeRejectedWithError(PatientNotFoundError, '');
+    });
+
+    it('422 MSG-11 and MSG-12 become the existing domain errors', async () => {
+      const first = service.resolveByName(3, 'Beatriz', '210');
+
+      http.expectOne(byName).flush({ code: 'MSG-11', message: 'a' }, { status: 422, statusText: 'U' });
+      await expectAsync(first).toBeRejectedWith(new PatientWithoutInternacaoError('a'));
+
+      const second = service.resolveByName(3, 'Beatriz');
+
+      http
+        .expectOne(byName)
+        .flush({ code: 'MSG-12', field: 'newBedNumber', message: 'b' }, { status: 422, statusText: 'U' });
+      await expectAsync(second).toBeRejectedWith(new BedNotIdentifiedError('newBedNumber', 'b'));
+    });
+
+    it('other errors, including 404 without MSG-13, stay generic', async () => {
+      const statuses = [400, 401, 403, 404, 500];
+      const results = statuses.map(status => {
+        const result = service.resolveByName(3, 'Beatriz', '1');
+
+        http.expectOne(byName).flush(null, { status, statusText: 'E' });
+
+        return result.catch((e: unknown) => (e as HttpErrorResponse).status);
+      });
+
+      expect(await Promise.all(results)).toEqual(statuses);
+    });
   });
 });

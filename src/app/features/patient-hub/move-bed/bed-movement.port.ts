@@ -26,6 +26,28 @@ export class BedNotIdentifiedError extends Error {
   }
 }
 
+/** RN-04 (MSG-13): nenhum paciente do hospital ativo tem o nome informado (US-002-2-02). */
+export class PatientNotFoundError extends Error {
+  constructor(message = '') {
+    super(message);
+  }
+}
+
+/** Paciente listado quando o nome coincide com mais de um (RN-03): nome, data de nascimento e SAME. */
+export interface PatientCandidate {
+  readonly id: number;
+  readonly fullName: string;
+  /** `yyyy-MM-dd`. */
+  readonly birthDate: string;
+  /** SAME, quando preenchido. */
+  readonly medicalRecordNumber: string | null;
+}
+
+/** Resultado da busca por nome: um paciente já associado à internação mais recente, ou os candidatos. */
+export type ResolvedByName =
+  | { readonly kind: 'single'; readonly resolved: ResolvedBedMovement }
+  | { readonly kind: 'multiple'; readonly candidates: readonly PatientCandidate[] };
+
 /**
  * Fronteira da movimentação de leito. `resolve` associa o pedido à internação mais recente do paciente e não
  * grava nada; `confirm` aplica a mudança depois do "Sim" (US-002-2-03). Rejeita com `PatientWithoutInternacaoError` (MSG-11) ou
@@ -33,6 +55,11 @@ export class BedNotIdentifiedError extends Error {
  */
 export abstract class BedMovementPort {
   abstract resolve(pacienteId: number, newBedNumber?: string): Promise<ResolvedBedMovement>;
+  /**
+   * US-002-2-02: identifica o paciente pelo nome, só entre os do hospital informado. Além de MSG-11/MSG-12,
+   * rejeita com `PatientNotFoundError` (MSG-13).
+   */
+  abstract resolveByName(hospitalId: number, fullName: string, newBedNumber?: string): Promise<ResolvedByName>;
   /** Aplica o novo leito à internação já identificada; 422 MSG-12 rejeita com `BedNotIdentifiedError`. */
   abstract confirm(pacienteId: number, internacaoId: number, newBedNumber: string): Promise<void>;
 }

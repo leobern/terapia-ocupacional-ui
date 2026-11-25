@@ -6,8 +6,11 @@ import { firstValueFrom } from 'rxjs';
 import {
   BedMovementPort,
   BedNotIdentifiedError,
+  type PatientCandidate,
+  PatientNotFoundError,
   PatientWithoutInternacaoError,
   type ResolvedBedMovement,
+  type ResolvedByName,
 } from './bed-movement.port';
 
 /**
@@ -36,6 +39,27 @@ export class BedMovementApiService extends BedMovementPort {
     }
   }
 
+  /** `POST /v1/pacientes/movimentacao-leito/resolver-por-nome`: ENCONTRADO vira `single`, MULTIPLOS vira `multiple`. */
+  async resolveByName(hospitalId: number, fullName: string, newBedNumber?: string): Promise<ResolvedByName> {
+    const bed = newBedNumber?.trim();
+    const body = bed ? { fullName, hospitalId, newBedNumber: bed } : { fullName, hospitalId };
+
+    try {
+      const result = await firstValueFrom(
+        this.http.post<{ status: string; resolvida?: ResolvedBedMovement; candidatos?: PatientCandidate[] }>(
+          `${environment.apiBaseUrl}/v1/pacientes/movimentacao-leito/resolver-por-nome`,
+          body,
+        ),
+      );
+
+      return result.status === 'MULTIPLOS'
+        ? { candidates: result.candidatos ?? [], kind: 'multiple' }
+        : { kind: 'single', resolved: result.resolvida as ResolvedBedMovement };
+    } catch (error) {
+      throw this.translate(error);
+    }
+  }
+
   /** `POST .../internacoes/{internacaoId}/movimentacao-leito/confirmar`: só chamado após o "Sim" (RN-02). */
   async confirm(pacienteId: number, internacaoId: number, newBedNumber: string): Promise<void> {
     try {
@@ -51,6 +75,13 @@ export class BedMovementApiService extends BedMovementPort {
   }
 
   private translate(error: unknown): unknown {
+    if (error instanceof HttpErrorResponse && error.status === 404) {
+      const data = error.error as { code?: string; message?: string } | null;
+
+      if (data?.code === 'MSG-13') {
+        return new PatientNotFoundError(data.message ?? '');
+      }
+    }
     if (error instanceof HttpErrorResponse && error.status === 422) {
       const data = error.error as { field?: string; code?: string; message?: string } | null;
 
