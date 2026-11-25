@@ -1,0 +1,163 @@
+openapi: 3.0.3
+info:
+  title: Autenticação API
+  version: 1.0.0
+  description: >
+    Contrato do login com e-mail e senha (US-001-1-03) e da renovação de sessão. Login em passo único
+    (ADR-001): as credenciais válidas devolvem direto o access token e o refresh token, sem segundo fator.
+    Os endpoints são públicos (sem bearer). Mensagem de 401 genérica e idêntica para e-mail inexistente,
+    conta inativa e senha errada (não revela se o e-mail existe). Após 5 tentativas inválidas consecutivas
+    para o mesmo e-mail, cadastrado ou não, novas tentativas são bloqueadas por 5 minutos (423).
+servers:
+  - url: /
+security: []
+paths:
+  /api/v1/auth/login:
+    post:
+      operationId: loginComEmailESenha
+      x-implemented: true
+      summary: Login com e-mail e senha (passo único)
+      description: >
+        Valida e-mail e senha. Em caso de sucesso devolve o access token (JWT RS256, 1 hora) e o refresh
+        token (24 horas). O bloqueio de 5 minutos após 5 falhas é por e-mail e não traz `Retry-After`.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+      responses:
+        "200":
+          description: Autenticação bem-sucedida, tokens emitidos
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LoginResponse"
+        "400":
+          description: Dados de entrada inválidos (e-mail mal formado ou campo em branco)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Credenciais inválidas, e-mail não cadastrado ou conta inativa (mensagem genérica idêntica)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "423":
+          description: E-mail temporariamente bloqueado por excesso de tentativas (5 minutos)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/v1/auth/token/renovar:
+    post:
+      operationId: renovarToken
+      x-implemented: true
+      summary: Renova o access token com o refresh token
+      description: >
+        Usa o refresh token (válido 24 horas) para obter um novo access token sem repetir o login.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RenovarTokenRequest"
+      responses:
+        "200":
+          description: Novo access token emitido
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LoginResponse"
+        "400":
+          description: Refresh token em branco
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Refresh token inválido ou expirado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+components:
+  schemas:
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+    RenovarTokenRequest:
+      type: object
+      required: [refreshToken]
+      properties:
+        refreshToken:
+          type: string
+    LoginResponse:
+      type: object
+      required: [accessToken, refreshToken, tokenType, accessTokenExpiresIn, refreshTokenExpiresIn, usuario]
+      properties:
+        accessToken:
+          type: string
+        refreshToken:
+          type: string
+        tokenType:
+          type: string
+          example: Bearer
+        accessTokenExpiresIn:
+          type: integer
+          description: Validade do access token em segundos
+        refreshTokenExpiresIn:
+          type: integer
+          description: Validade do refresh token em segundos
+        usuario:
+          $ref: "#/components/schemas/Usuario"
+    Usuario:
+      type: object
+      required: [id, nomeCompleto, email, username, role, ativo, totpAtivo]
+      properties:
+        id:
+          type: integer
+          format: int64
+        nomeCompleto:
+          type: string
+        email:
+          type: string
+          format: email
+        username:
+          type: string
+        role:
+          type: string
+          enum: [ADMIN, GESTOR, TERAPEUTA, RECECIONISTA]
+        ativo:
+          type: boolean
+        totpAtivo:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+        ultimoLogin:
+          type: string
+          format: date-time
+          nullable: true
+    ErrorResponse:
+      type: object
+      required: [message, timestamp]
+      properties:
+        message:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+        detalhes:
+          type: array
+          nullable: true
+          items:
+            type: string
