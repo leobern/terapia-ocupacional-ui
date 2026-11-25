@@ -222,6 +222,9 @@
     "skip": "Skip",
     "title": "Register patient"
   },
+  "session": {
+    "expired": "Your session has expired. Please sign in again."
+  },
   "settings": {
     "reviewTutorial": "Review tutorial",
     "title": "Settings"

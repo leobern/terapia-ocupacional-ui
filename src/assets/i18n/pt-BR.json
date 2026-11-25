@@ -222,6 +222,9 @@
     "skip": "Pular",
     "title": "Cadastrar paciente"
   },
+  "session": {
+    "expired": "Sua sessão expirou. Faça login novamente."
+  },
   "settings": {
     "reviewTutorial": "Rever tutorial",
     "title": "Configurações"
