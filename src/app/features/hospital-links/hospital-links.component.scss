@@ -6,107 +6,110 @@
   --page-container-margin: var(--layout-page-margin, 16px);
 }
 
-.links {
+.hospital-links {
   display: flex;
   flex-direction: column;
   gap: tokens.$space-16;
-  min-height: calc(100dvh - var(--bottom-nav-bar-height));
   padding-top: tokens.$space-8;
   padding-bottom: tokens.$space-24;
 
   @include breakpoints.md {
-    max-width: 578px;
-    min-height: 100dvh;
-    padding: tokens.$space-24 tokens.$space-32 tokens.$space-32;
+    padding: tokens.$space-24 var(--layout-page-margin, 32px);
   }
 }
 
-.links__card {
+.hospital-links__state {
   display: flex;
   flex-direction: column;
+  align-items: flex-start;
   gap: tokens.$space-12;
-  padding: tokens.$space-16;
-  border-radius: tokens.$radius-md;
-  background: tokens.c(surface);
+  margin: 0;
+  color: tokens.c(content-2);
+
+  @include typography.body-md;
 }
 
-.links__label {
-  color: tokens.c(content-4);
-
-  @include typography.label-md;
-}
-
-.links__input {
-  box-sizing: border-box;
-  width: 100%;
-  min-height: 44px;
-  padding: tokens.$space-12;
-  border: 1px solid tokens.c(border);
+.hospital-links__blocked {
+  margin: 0;
+  padding: tokens.$space-12 tokens.$space-16;
   border-radius: tokens.$radius-sm;
   background: tokens.c(surface);
-  color: tokens.c(content-1);
-
-  @include typography.body-lg;
-
-  &:focus-visible {
-    outline: var(--focus-ring-width) solid tokens.c(focus-ring);
-    outline-offset: 2px;
-  }
-}
-
-.links__actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: tokens.$space-8;
-}
-
-.links__text {
-  margin: 0;
   color: tokens.c(content-1);
 
   @include typography.body-md;
 }
 
-.links__heading {
+.hospital-links__empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: tokens.$space-12;
+  padding: tokens.$space-24 tokens.$space-16;
+  border-radius: tokens.$radius-sm;
+  background: tokens.c(surface);
+  color: tokens.c(content-2);
+  text-align: center;
+}
+
+.hospital-links__empty-title {
   margin: 0;
   color: tokens.c(content-1);
 
-  @include typography.label-lg;
+  @include typography.title-lg;
 }
 
-.links__list {
-  display: flex;
-  flex-direction: column;
+.hospital-links__empty-hint {
+  margin: 0;
+
+  @include typography.body-md;
+}
+
+.hospital-links__list {
+  display: grid;
   gap: tokens.$space-8;
   margin: 0;
   padding: 0;
   list-style: none;
+
+  @include breakpoints.md {
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  }
 }
 
-.links__row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: tokens.$space-8;
-  align-items: center;
-  justify-content: space-between;
-  min-height: 44px;
-}
-
-.links__name {
-  flex: 1;
-  color: tokens.c(content-1);
-
-  @include typography.body-lg;
-}
-
-.links__status {
-  color: tokens.c(content-4);
-
-  @include typography.label-md;
-}
-
-.links__confirm {
+.hospital-links__item {
   display: flex;
   flex-direction: column;
-  gap: tokens.$space-12;
+  gap: tokens.$space-8;
+  min-height: 44px;
+  padding: tokens.$space-16;
+  border-radius: tokens.$radius-sm;
+  background: tokens.c(surface);
+}
+
+.hospital-links__name {
+  margin: 0;
+  color: tokens.c(content-1);
+
+  @include typography.title-md;
+}
+
+.hospital-links__status {
+  display: inline-flex;
+  align-items: center;
+  gap: tokens.$space-8;
+  color: tokens.c(content-2);
+
+  @include typography.label-lg;
+}
+
+.hospital-links__status--approved {
+  color: tokens.c(secondary);
+}
+
+.hospital-links__status--refused {
+  color: tokens.c(content-1);
+}
+
+.hospital-links__status--revoked {
+  color: tokens.c(content-4);
 }

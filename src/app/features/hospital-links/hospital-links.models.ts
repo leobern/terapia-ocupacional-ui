@@ -1,6 +1,33 @@
-/** Status do vínculo (openapi/vinculos-api.yaml, `VinculoStatus`). */
-export type LinkStatus = 'AGUARDANDO_APROVACAO' | 'APROVADO' | 'RECUSADO' | 'REVOGADO';
+/** RN01 — os 4 status possíveis de um vínculo com hospital. */
+export type HospitalLinkStatus = 'approved' | 'pending' | 'refused' | 'revoked';
 
+export interface HospitalLink {
+  readonly id: number;
+  readonly hospitalId: number;
+  readonly hospitalName: string;
+  readonly status: HospitalLinkStatus;
+  /** Data da última mudança de status (ISO 8601). */
+  readonly updatedAt: string;
+}
+
+export interface HospitalLinkList {
+  /** Ordenados pelo nome do hospital. */
+  readonly items: readonly HospitalLink[];
+  /** `true` se há ao menos um vínculo aprovado (RN02: decide o destino pós-login). */
+  readonly hasApprovedLink: boolean;
+}
+
+/** Texto e ícone de cada status: a cor nunca é a única forma de transmiti-lo. */
+export const HOSPITAL_LINK_STATUS_VIEW: Readonly<
+  Record<HospitalLinkStatus, { readonly label: string; readonly icon: string }>
+> = {
+  approved: { icon: 'check-circle', label: 'Aprovado' },
+  pending: { icon: 'hourglass', label: 'Aguardando aprovação' },
+  refused: { icon: 'x-circle', label: 'Recusado' },
+  revoked: { icon: 'prohibit', label: 'Revogado' },
+};
+
+/** Hospital devolvido pela busca por nome (US-001-2-01). */
 export interface HospitalOption {
   readonly id: number;
   readonly name: string;
@@ -11,22 +38,7 @@ export interface HospitalSearchPage {
   readonly nextCursor: string | null;
 }
 
-export interface HospitalLink {
-  readonly id: number;
-  readonly hospitalId: number;
-  readonly hospitalName: string;
-  readonly status: LinkStatus;
-}
-
-/** Rótulos em texto: o status nunca é transmitido só por cor. */
-export const LINK_STATUS_LABEL: Readonly<Record<LinkStatus, string>> = {
-  AGUARDANDO_APROVACAO: 'Aguardando aprovação',
-  APROVADO: 'Aprovado',
-  RECUSADO: 'Recusado',
-  REVOGADO: 'Revogado',
-};
-
 /** RN03: pendente ou aprovado bloqueia nova solicitação; recusado/revogado pode ser refeito. */
-export function blocksRequest(status: LinkStatus): boolean {
-  return status === 'AGUARDANDO_APROVACAO' || status === 'APROVADO';
+export function blocksRequest(status: HospitalLinkStatus): boolean {
+  return status === 'pending' || status === 'approved';
 }

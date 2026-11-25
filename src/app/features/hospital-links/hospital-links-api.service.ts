@@ -3,27 +3,73 @@ import { inject, Injectable } from '@angular/core';
 import { environment } from '@environments/environment';
 import { firstValueFrom } from 'rxjs';
 
-import { HospitalLink, HospitalOption, HospitalSearchPage, LinkStatus } from './hospital-links.models';
-import { HospitalLinksPort } from './hospital-links-port';
+import {
+  HospitalLink,
+  HospitalLinkList,
+  HospitalLinkStatus,
+  HospitalOption,
+  HospitalSearchPage,
+} from './hospital-links.models';
+import { HospitalLinksSource } from './hospital-links-source';
 
-interface VinculoItemDto {
+/** Status do contrato (`VinculoStatus`, openapi/vinculos-api.yaml). */
+type VinculoStatus = 'AGUARDANDO_APROVACAO' | 'APROVADO' | 'RECUSADO' | 'REVOGADO';
+
+interface VinculoItem {
   readonly id: number;
   readonly hospitalId: number;
   readonly hospitalName: string;
-  readonly status: LinkStatus;
+  readonly status: VinculoStatus;
+  readonly updatedAt: string;
 }
 
-interface VinculoSolicitacaoDto {
+interface VinculoList {
+  readonly items: readonly VinculoItem[];
+  readonly hasApprovedLink: boolean;
+}
+
+interface VinculoSolicitacao {
   readonly id: number;
   readonly hospital: HospitalOption;
-  readonly status: LinkStatus;
+  readonly status: VinculoStatus;
+  readonly createdAt: string;
 }
 
-/** Vínculos contra a API real (openapi/vinculos-api.yaml). 400/401/403/404/409 chegam como `HttpErrorResponse`. */
+const STATUS_MAP: Readonly<Record<VinculoStatus, HospitalLinkStatus>> = {
+  AGUARDANDO_APROVACAO: 'pending',
+  APROVADO: 'approved',
+  RECUSADO: 'refused',
+  REVOGADO: 'revoked',
+};
+
+function toHospitalLink(item: VinculoItem): HospitalLink {
+  return {
+    hospitalId: item.hospitalId,
+    hospitalName: item.hospitalName,
+    id: item.id,
+    status: STATUS_MAP[item.status] ?? 'pending',
+    updatedAt: item.updatedAt,
+  };
+}
+
+/**
+ * Vínculos via API real (openapi/vinculos-api.yaml): `GET /api/v1/vinculos` (`listVinculos`),
+ * `GET /api/v1/vinculos/hospitais` (`buscarHospitaisParaVinculo`) e
+ * `POST /api/v1/vinculos/solicitacoes` (`solicitarAcessoHospital`).
+ * Erros 400/401/403/404/409 e de rede chegam como `HttpErrorResponse` rejeitado e a tela mostra o aviso.
+ * Status desconhecido (contrato evoluiu) é tratado como "aguardando aprovação": nunca
+ * mostra acesso liberado por engano.
+ */
 @Injectable()
-export class HospitalLinksApiService extends HospitalLinksPort {
+export class HospitalLinksApiService extends HospitalLinksSource {
   private readonly http = inject(HttpClient);
-  private readonly base = `${environment.apiBaseUrl}/v1/vinculos`;
+  private readonly url = `${environment.apiBaseUrl}/v1/vinculos`;
+
+  async list(): Promise<HospitalLinkList> {
+    const body = await firstValueFrom(this.http.get<VinculoList>(this.url));
+
+    return { hasApprovedLink: body.hasApprovedLink, items: body.items.map(toHospitalLink) };
+  }
 
   search(name: string, cursor: string | null): Promise<HospitalSearchPage> {
     let params = new HttpParams().set('nome', name);
@@ -32,25 +78,18 @@ export class HospitalLinksApiService extends HospitalLinksPort {
       params = params.set('cursor', cursor);
     }
 
-    return firstValueFrom(this.http.get<HospitalSearchPage>(`${this.base}/hospitais`, { params }));
-  }
-
-  async list(): Promise<readonly HospitalLink[]> {
-    const body = await firstValueFrom(this.http.get<{ items: VinculoItemDto[] }>(this.base));
-
-    return body.items.map(({ id, hospitalId, hospitalName, status }) => ({ id, hospitalId, hospitalName, status }));
+    return firstValueFrom(this.http.get<HospitalSearchPage>(`${this.url}/hospitais`, { params }));
   }
 
   async request(hospitalId: number): Promise<HospitalLink> {
-    const created = await firstValueFrom(
-      this.http.post<VinculoSolicitacaoDto>(`${this.base}/solicitacoes`, { hospitalId }),
-    );
+    const created = await firstValueFrom(this.http.post<VinculoSolicitacao>(`${this.url}/solicitacoes`, { hospitalId }));
 
     return {
       hospitalId: created.hospital.id,
       hospitalName: created.hospital.name,
       id: created.id,
-      status: created.status,
+      status: STATUS_MAP[created.status] ?? 'pending',
+      updatedAt: created.createdAt,
     };
   }
 }

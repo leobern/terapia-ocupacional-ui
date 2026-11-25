@@ -1,0 +1,112 @@
+@use '../../shared/styles/breakpoints';
+@use '../../shared/styles/tokens';
+@use '../../shared/styles/typography';
+
+:host {
+  --page-container-margin: var(--layout-page-margin, 16px);
+}
+
+.links {
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$space-16;
+  min-height: calc(100dvh - var(--bottom-nav-bar-height));
+  padding-top: tokens.$space-8;
+  padding-bottom: tokens.$space-24;
+
+  @include breakpoints.md {
+    max-width: 578px;
+    min-height: 100dvh;
+    padding: tokens.$space-24 tokens.$space-32 tokens.$space-32;
+  }
+}
+
+.links__card {
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$space-12;
+  padding: tokens.$space-16;
+  border-radius: tokens.$radius-md;
+  background: tokens.c(surface);
+}
+
+.links__label {
+  color: tokens.c(content-4);
+
+  @include typography.label-md;
+}
+
+.links__input {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 44px;
+  padding: tokens.$space-12;
+  border: 1px solid tokens.c(border);
+  border-radius: tokens.$radius-sm;
+  background: tokens.c(surface);
+  color: tokens.c(content-1);
+
+  @include typography.body-lg;
+
+  &:focus-visible {
+    outline: var(--focus-ring-width) solid tokens.c(focus-ring);
+    outline-offset: 2px;
+  }
+}
+
+.links__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: tokens.$space-8;
+}
+
+.links__text {
+  margin: 0;
+  color: tokens.c(content-1);
+
+  @include typography.body-md;
+}
+
+.links__heading {
+  margin: 0;
+  color: tokens.c(content-1);
+
+  @include typography.label-lg;
+}
+
+.links__list {
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$space-8;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.links__row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: tokens.$space-8;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 44px;
+}
+
+.links__name {
+  flex: 1;
+  color: tokens.c(content-1);
+
+  @include typography.body-lg;
+}
+
+.links__status {
+  color: tokens.c(content-4);
+
+  @include typography.label-md;
+}
+
+.links__confirm {
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$space-12;
+}

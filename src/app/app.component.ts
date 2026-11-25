@@ -97,6 +97,10 @@ export class AppComponent {
       return 'pacientes';
     }
 
+    if (url.startsWith('/hospital-links')) {
+      return 'vinculos';
+    }
+
     return url.startsWith('/settings') || url.startsWith('/tutorial') ? 'tutorial' : null;
   });
 
@@ -238,6 +242,11 @@ export class AppComponent {
   protected onTutorialClick(): void {
     this.menuOpen.set(false);
     void this.router.navigate(['/settings/tutorial']);
+  }
+
+  protected onVinculosClick(): void {
+    this.menuOpen.set(false);
+    void this.router.navigate(['/hospital-links']);
   }
 
   protected onFarmaciaClick(): void {

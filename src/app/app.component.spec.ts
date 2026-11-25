@@ -166,6 +166,7 @@ describe('AppComponent', () => {
       { children: [], path: 'notifications' },
       { children: [], path: 'pharmacy' },
       { children: [], path: 'patients' },
+      { children: [], path: 'hospital-links' },
       { children: [], path: 'login' },
     ]);
     await TestBed.inject(Router).navigateByUrl('/home');
@@ -183,6 +184,10 @@ describe('AppComponent', () => {
     await TestBed.inject(Router).navigateByUrl('/patients');
 
     expect(component.activeNavItem()).toBe('pacientes');
+
+    await TestBed.inject(Router).navigateByUrl('/hospital-links');
+
+    expect(component.activeNavItem()).toBe('vinculos');
 
     await TestBed.inject(Router).navigateByUrl('/login');
 
@@ -418,7 +423,7 @@ describe('AppComponent', () => {
       fixture.nativeElement.querySelectorAll('app-nav-menu .nav-menu__links .nav-menu__link'),
     ).map(el => el.textContent.trim());
 
-    expect(labels).toEqual(['Hospitais', 'Pacientes', 'Farmácia', 'Tutorial']);
+    expect(labels).toEqual(['Hospitais', 'Pacientes', 'Farmácia', 'Vínculos', 'Tutorial']);
   });
 
   it('navigates to /settings/tutorial and closes the mobile menu when Tutorial is clicked', () => {
@@ -445,6 +450,23 @@ describe('AppComponent', () => {
     await TestBed.inject(Router).navigateByUrl('/settings');
 
     expect(component.activeNavItem()).toBe('tutorial');
+  });
+
+  it('navigates to /hospital-links and closes the mobile menu when Vínculos is clicked', () => {
+    const router = TestBed.inject(Router);
+
+    spyOn(router, 'navigate').and.resolveTo(true);
+    fixture.componentInstance.menuOpen.set(true);
+    fixture.detectChanges();
+    const item = Array.from<HTMLButtonElement>(
+      fixture.nativeElement.querySelectorAll('app-nav-menu .nav-menu__links .nav-menu__link'),
+    ).find(el => el.textContent?.includes('Vínculos'));
+
+    item?.click();
+    fixture.detectChanges();
+
+    expect(router.navigate).toHaveBeenCalledWith(['/hospital-links']);
+    expect(fixture.componentInstance.menuOpen()).toBeFalse();
   });
 
   it('navigates to /pharmacy and closes the mobile menu when Farmácia is clicked', () => {

@@ -1,6 +1,7 @@
 import { Routes } from '@angular/router';
 
 import { environment } from '../environments/environment';
+import { approvedHospitalLinkGuard } from './features/hospital-links/approved-hospital-link.guard';
 
 /**
  * Galeria de desenvolvimento — NUNCA em produção (Princípio IX).
@@ -27,6 +28,7 @@ export const routes: Routes = [
   ...devRoutes,
   {
     path: 'home',
+    canActivate: [approvedHospitalLinkGuard],
     loadChildren: () => import('./features/home/home.routes').then(m => m.HOME_ROUTES),
   },
   // Tutorial do app (US-001-3-02): primeiro acesso, sem o shell de navegação.
@@ -119,7 +121,13 @@ export const routes: Routes = [
     data: { hideShell: true },
     loadComponent: () => import('./features/auth/lock/lock-screen.component').then(m => m.LockScreenComponent),
   },
-  // Cadastro / Vínculos (US-001-2-01).
+  // Solicitar acesso a um hospital (US-001-2-01).
+  {
+    path: 'hospital-links/request',
+    loadComponent: () =>
+      import('./features/hospital-links/hospital-access-request.component').then(m => m.HospitalAccessRequestComponent),
+  },
+  // Vínculos com hospitais (US-001-2-02): destino pós-login sem hospital aprovado e acessível pelo menu.
   {
     path: 'hospital-links',
     loadChildren: () => import('./features/hospital-links/hospital-links.routes').then(m => m.HOSPITAL_LINKS_ROUTES),

@@ -42,7 +42,7 @@ import { ProfessionalProfileReader } from './features/home/professional-profile'
 import { ProvisionalDailyPatientsSource } from './features/home/provisional-daily-patients';
 import { UnreadNotificationsReader } from './features/home/unread-notifications-reader';
 import { HospitalLinksApiService } from './features/hospital-links/hospital-links-api.service';
-import { HospitalLinksPort } from './features/hospital-links/hospital-links-port';
+import { HospitalLinksSource } from './features/hospital-links/hospital-links-source';
 import { HospitalInvitePort, ManagerAccessReader } from './features/hospital-team/hospital-invite-port';
 import { ProfessionalAccessApiService } from './features/hospital-team/professional-access-api.service';
 import { ProfessionalAccessRevoker, ProfessionalAccessSource } from './features/hospital-team/professional-access-port';
@@ -181,6 +181,7 @@ export const appConfig: ApplicationConfig = {
     // Turno de trabalho e localização do hospital: provisórios (localStorage) até haver backend.
     { provide: HospitalSiteSource, useClass: ProvisionalHospitalSiteSource },
     { provide: ShiftSource, useClass: ProvisionalShiftSource },
+    { provide: HospitalLinksSource, useClass: HospitalLinksApiService },
     { provide: LinkRevocationChecker, useClass: ApiLinkRevocationChecker },
     { provide: UnreadNotificationsReader, useClass: ApiUnreadNotificationsReader },
     { provide: DailyPatientsSource, useClass: ProvisionalDailyPatientsSource },
@@ -235,7 +236,6 @@ export const appConfig: ApplicationConfig = {
     { provide: HomeNotificationsSource, useClass: HomeNotificationsApiService },
     // Provisórios (sem backend ainda): notificações em memória e usuários de exemplo.
     { provide: NotificationsApiService, useClass: ProvisionalNotificationsApiService },
-    { provide: HospitalLinksPort, useClass: HospitalLinksApiService },
     { provide: HospitalInvitePort, useClass: ProvisionalHospitalInvite },
     ProvisionalProfessionalAccess,
     { provide: ProfessionalAccessSource, useExisting: ProvisionalProfessionalAccess },
