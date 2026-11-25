@@ -1,0 +1,105 @@
+@use '../../shared/styles/breakpoints';
+@use '../../shared/styles/tokens';
+@use '../../shared/styles/typography';
+
+:host {
+  --page-container-margin: var(--layout-page-margin, 16px);
+}
+
+.hospital-links {
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$space-16;
+  padding-top: tokens.$space-8;
+  padding-bottom: tokens.$space-24;
+
+  @include breakpoints.md {
+    padding: tokens.$space-24 var(--layout-page-margin, 32px);
+  }
+}
+
+.hospital-links__state {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: tokens.$space-12;
+  margin: 0;
+  color: tokens.c(content-2);
+
+  @include typography.body-md;
+}
+
+.hospital-links__empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: tokens.$space-12;
+  padding: tokens.$space-24 tokens.$space-16;
+  border-radius: tokens.$radius-sm;
+  background: tokens.c(surface);
+  color: tokens.c(content-2);
+  text-align: center;
+}
+
+.hospital-links__empty-title {
+  margin: 0;
+  color: tokens.c(content-1);
+
+  @include typography.title-lg;
+}
+
+.hospital-links__empty-hint {
+  margin: 0;
+
+  @include typography.body-md;
+}
+
+.hospital-links__list {
+  display: grid;
+  gap: tokens.$space-8;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+
+  @include breakpoints.md {
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  }
+}
+
+.hospital-links__item {
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$space-8;
+  min-height: 44px;
+  padding: tokens.$space-16;
+  border-radius: tokens.$radius-sm;
+  background: tokens.c(surface);
+}
+
+.hospital-links__name {
+  margin: 0;
+  color: tokens.c(content-1);
+
+  @include typography.title-md;
+}
+
+.hospital-links__status {
+  display: inline-flex;
+  align-items: center;
+  gap: tokens.$space-8;
+  color: tokens.c(content-2);
+
+  @include typography.label-lg;
+}
+
+.hospital-links__status--approved {
+  color: tokens.c(secondary);
+}
+
+.hospital-links__status--refused {
+  color: tokens.c(content-1);
+}
+
+.hospital-links__status--revoked {
+  color: tokens.c(content-4);
+}

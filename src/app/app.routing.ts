@@ -113,8 +113,20 @@ export const routes: Routes = [
     path: 'patients/:id',
     loadComponent: () => import('./features/patient-hub/patient-hub.component').then(m => m.PatientHubComponent),
   },
+  // Solicitar acesso a um hospital (US-001-2-01): placeholder até a feature existir.
+  {
+    path: 'hospital-links/request',
+    data: { screen: 'request-hospital-link' },
+    loadComponent: () =>
+      import('./features/pending-screen/pending-screen.component').then(m => m.PendingScreenComponent),
+  },
+  // Vínculos com hospitais (US-001-2-02): destino pós-login sem hospital aprovado e acessível pelo menu.
+  {
+    path: 'hospital-links',
+    loadChildren: () => import('./features/hospital-links/hospital-links.routes').then(m => m.HOSPITAL_LINKS_ROUTES),
+  },
   // Placeholders das telas de outras stories (ver PendingScreenComponent).
-  ...(['login', 'lock', 'hospital-links'] as const).map(path => ({
+  ...(['login', 'lock'] as const).map(path => ({
     path,
     data: { screen: path },
     loadComponent: () =>

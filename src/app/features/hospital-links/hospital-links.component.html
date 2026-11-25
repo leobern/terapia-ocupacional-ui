@@ -1,0 +1,75 @@
+<app-page-container>
+  <div class="hospital-links">
+    <app-page-header
+      icon="hospital"
+      title="Vínculos com hospitais"
+      subtitle="Acompanhe onde seu acesso está aprovado, pendente ou foi recusado."
+    />
+
+    @switch (status()) {
+      @case ('loading') {
+        <p class="hospital-links__state" role="status">
+          Carregando seus vínculos…
+        </p>
+      }
+      @case ('error') {
+        <div class="hospital-links__state" role="alert">
+          <p>Não foi possível carregar seus vínculos.</p>
+          <app-button
+            appearance="outlined"
+            kind="secondary"
+            label="Tentar novamente"
+            (click)="load()"
+          />
+        </div>
+      }
+      @default {
+        @if (links().length === 0) {
+          <section
+            class="hospital-links__empty"
+            aria-labelledby="hospital-links-empty-title"
+          >
+            <ph-icon name="hospital" [size]="40" />
+            <h2
+              id="hospital-links-empty-title"
+              class="hospital-links__empty-title"
+            >
+              Você ainda não tem vínculos
+            </h2>
+            <p class="hospital-links__empty-hint">
+              Solicite acesso ao seu primeiro hospital para começar a usar o
+              app.
+            </p>
+            <app-button
+              iconLeft="plus"
+              label="Solicitar acesso a um hospital"
+              (click)="requestAccess()"
+            />
+          </section>
+        } @else {
+          <ul class="hospital-links__list">
+            @for (link of links(); track link.id) {
+              <li class="hospital-links__item">
+                <h2 class="hospital-links__name">{{ link.hospitalName }}</h2>
+                <span
+                  class="hospital-links__status"
+                  [class]="'hospital-links__status--' + link.status"
+                >
+                  <ph-icon [name]="statusView[link.status].icon" [size]="20" />
+                  {{ statusView[link.status].label }}
+                </span>
+              </li>
+            }
+          </ul>
+          <app-button
+            appearance="outlined"
+            kind="secondary"
+            iconLeft="plus"
+            label="Solicitar acesso a outro hospital"
+            (click)="requestAccess()"
+          />
+        }
+      }
+    }
+  </div>
+</app-page-container>

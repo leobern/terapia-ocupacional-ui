@@ -41,12 +41,13 @@ describe('NavMenuComponent', () => {
       { icon: 'hospital', label: 'Hospitais' },
       { icon: 'users-three', label: 'Pacientes' },
       { icon: 'pill', label: 'Farmácia' },
+      { icon: 'link', label: 'Vínculos' },
       { icon: 'graduation-cap', label: 'Tutorial' },
     ];
 
     const links = navLinks();
 
-    expect(links.length).toBe(4);
+    expect(links.length).toBe(5);
 
     expected.forEach(({ label, icon }) => {
       const link = linkByLabel(label);
@@ -83,6 +84,7 @@ describe('NavMenuComponent', () => {
     { label: 'Hospitais', output: 'homeClick' },
     { label: 'Farmácia', output: 'farmaciaClick' },
     { label: 'Pacientes', output: 'pacientesClick' },
+    { label: 'Vínculos', output: 'vinculosClick' },
     { label: 'Tutorial', output: 'tutorialClick' },
   ];
 

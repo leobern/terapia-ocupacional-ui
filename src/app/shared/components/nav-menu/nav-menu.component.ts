@@ -23,7 +23,7 @@ import { IconButtonComponent } from '../icon-button/icon-button.component';
 import { IconLogoButtonComponent } from '../icon-logo/icon-logo-button.component';
 
 /** Mapeia as 6 chaves fixas dos itens de navegação (spec.md § Clarifications + Home). */
-export type NavMenuItemKey = 'home' | 'farmacia' | 'pacientes' | 'tutorial';
+export type NavMenuItemKey = 'home' | 'farmacia' | 'pacientes' | 'tutorial' | 'vinculos';
 
 interface NavMenuItem {
   readonly key: NavMenuItemKey;
@@ -87,6 +87,7 @@ export class NavMenuComponent {
   readonly farmaciaClick = output();
   readonly pacientesClick = output();
   readonly tutorialClick = output();
+  readonly vinculosClick = output();
   readonly logoutClick = output();
 
   protected readonly professionalName = 'Michelle Franklin';
@@ -110,6 +111,8 @@ export class NavMenuComponent {
     { icon: 'hospital', key: 'home', label: 'Hospitais' },
     { icon: 'users-three', key: 'pacientes', label: 'Pacientes' },
     { icon: 'pill', key: 'farmacia', label: 'Farmácia' },
+    // Vínculos com hospitais (US-001-2-02, RN03): sem desenho no Figma, ainda; pendente de aprovação.
+    { icon: 'link', key: 'vinculos', label: 'Vínculos' },
     { icon: 'graduation-cap', key: 'tutorial', label: 'Tutorial' },
   ];
 
@@ -144,6 +147,9 @@ export class NavMenuComponent {
         break;
       case 'tutorial':
         this.tutorialClick.emit();
+        break;
+      case 'vinculos':
+        this.vinculosClick.emit();
         break;
     }
   }
