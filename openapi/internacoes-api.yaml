@@ -150,8 +150,13 @@ paths:
         e o usuário respondeu "Sim". Atualiza bedNumber da internação informada e devolve a
         internação atualizada. RN-03: responder "Não" cancela no cliente; nenhuma chamada é feita
         e nada é alterado. A interpretação de "sim"/"não" é do chatbot (fora de escopo).
-        O registro de histórico (US-002-2-05) e o alerta de leito ocupado (US-002-2-04) estão
-        fora de escopo. Requer vínculo aprovado com o hospital do paciente.
+        US-002-2-05 (RN-01, RN-02): na mesma transação, grava um registro de histórico
+        imutável (somente insert; sem operação de edição/remoção e sem endpoint de leitura,
+        a exibição é de outra US) com fieldChanged=LEITO (enum LEITO|UNIDADE|ALA),
+        previousValue (bedNumber anterior; vazio se não havia), newValue (não vazio),
+        changedAt (instante da confirmação, gerado no servidor) e changedBy (usuário do JWT).
+        Nada disso é enviado pelo cliente nem muda a resposta. O alerta de leito ocupado
+        (US-002-2-04) está fora de escopo. Requer vínculo aprovado com o hospital do paciente.
         newBedNumber ausente, nulo ou em branco: 422 field=newBedNumber, code=MSG-12.
         Internação inexistente ou de outro paciente: 404.
       parameters:

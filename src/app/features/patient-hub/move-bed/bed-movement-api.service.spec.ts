@@ -123,6 +123,23 @@ describe('BedMovementApiService', () => {
       await expectAsync(result).toBeResolved();
     });
 
+    it('US-002-2-05: o histórico é efeito do servidor; o cliente envia só o novo leito', async () => {
+      const result = service.confirm(5, 9, '412');
+      const req = http.expectOne(confirmUrl);
+
+      expect(Object.keys(req.request.body as object)).toEqual(['newBedNumber']);
+      req.flush({ id: 9, pacienteId: 5, bedNumber: '412', createdAt: 'x' });
+      await result;
+
+      http.verify();
+    });
+
+    it('US-002-2-05: o serviço não expõe operação de editar ou remover histórico', () => {
+      const names = Object.getOwnPropertyNames(Object.getPrototypeOf(service));
+
+      expect(names.filter(n => /histor|update|edit|delete|remove/i.test(n))).toEqual([]);
+    });
+
     it('422 MSG-12 becomes BedNotIdentifiedError', async () => {
       const result = service.confirm(5, 9, '412');
 
