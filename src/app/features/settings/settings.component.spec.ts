@@ -26,4 +26,12 @@ describe('SettingsComponent', () => {
 
     expect(navigate).toHaveBeenCalledWith('/settings/tutorial');
   });
+
+  it('opens the hospital links screen', () => {
+    const buttons = (fixture.nativeElement as HTMLElement).querySelectorAll<HTMLButtonElement>('button.settings__item');
+
+    buttons[1].click();
+
+    expect(navigate).toHaveBeenCalledWith('/hospital-links');
+  });
 });

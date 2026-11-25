@@ -119,8 +119,13 @@ export const routes: Routes = [
     data: { hideShell: true },
     loadComponent: () => import('./features/auth/lock/lock-screen.component').then(m => m.LockScreenComponent),
   },
+  // Cadastro / Vínculos (US-001-2-01).
+  {
+    path: 'hospital-links',
+    loadChildren: () => import('./features/hospital-links/hospital-links.routes').then(m => m.HOSPITAL_LINKS_ROUTES),
+  },
   // Placeholders das telas de outras stories (ver PendingScreenComponent).
-  ...(['login', 'hospital-links'] as const).map(path => ({
+  ...(['login'] as const).map(path => ({
     path,
     data: { screen: path },
     loadComponent: () =>

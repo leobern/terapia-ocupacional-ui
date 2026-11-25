@@ -41,6 +41,8 @@ import { LocalProfessionalProfileReader } from './features/home/local-profession
 import { ProfessionalProfileReader } from './features/home/professional-profile';
 import { ProvisionalDailyPatientsSource } from './features/home/provisional-daily-patients';
 import { UnreadNotificationsReader } from './features/home/unread-notifications-reader';
+import { HospitalLinksApiService } from './features/hospital-links/hospital-links-api.service';
+import { HospitalLinksPort } from './features/hospital-links/hospital-links-port';
 import { HospitalInvitePort, ManagerAccessReader } from './features/hospital-team/hospital-invite-port';
 import { ProfessionalAccessApiService } from './features/hospital-team/professional-access-api.service';
 import { ProfessionalAccessRevoker, ProfessionalAccessSource } from './features/hospital-team/professional-access-port';
@@ -233,6 +235,7 @@ export const appConfig: ApplicationConfig = {
     { provide: HomeNotificationsSource, useClass: HomeNotificationsApiService },
     // Provisórios (sem backend ainda): notificações em memória e usuários de exemplo.
     { provide: NotificationsApiService, useClass: ProvisionalNotificationsApiService },
+    { provide: HospitalLinksPort, useClass: HospitalLinksApiService },
     { provide: HospitalInvitePort, useClass: ProvisionalHospitalInvite },
     ProvisionalProfessionalAccess,
     { provide: ProfessionalAccessSource, useExisting: ProvisionalProfessionalAccess },
