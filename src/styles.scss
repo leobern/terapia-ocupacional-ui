@@ -125,7 +125,8 @@ body::before {
   content: '';
   position: fixed;
   inset: 0;
-  z-index: var(--z-index-bottom-nav, 10);
+  // Abaixo de tudo que flutua (menu, barra inferior, sheets) e acima do conteúdo que rola.
+  z-index: 1;
   pointer-events: none;
   /* stylelint-disable-next-line property-no-vendor-prefix */
   -webkit-backdrop-filter: blur(24px);
