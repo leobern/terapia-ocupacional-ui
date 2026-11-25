@@ -14,7 +14,7 @@ describe('SessionRenewalService', () => {
 
   beforeEach(() => {
     spyOnProperty(navigator, 'language', 'get').and.returnValue('pt-BR');
-    refresh = jasmine.createSpy('refresh').and.resolveTo('novo');
+    refresh = jasmine.createSpy('refresh').and.resolveTo({ accessToken: 'novo', refreshToken: 'r2' });
     navigateByUrl = jasmine.createSpy('navigateByUrl').and.resolveTo(true);
     TestBed.configureTestingModule({
       providers: [
@@ -34,6 +34,7 @@ describe('SessionRenewalService', () => {
     expect(await service.renew()).toBe('novo');
     expect(refresh).toHaveBeenCalledWith('r1');
     expect(store.accessToken()).toBe('novo');
+    expect(store.refreshToken()).toBe('r2');
     expect(store.isValid()).toBeTrue();
   });
 

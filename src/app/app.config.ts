@@ -7,13 +7,13 @@ import { provideRouterStore } from '@ngrx/router-store';
 import { provideStore } from '@ngrx/store';
 
 import { routes } from './app.routing';
+import { HttpTokenRefresher } from './features/auth/http-token-refresher';
 import { AccountPasswordVerifier } from './features/auth/lock/account-password-verifier';
 import { BiometricAuth } from './features/auth/lock/biometric-auth';
 import { InactivityLockService } from './features/auth/lock/inactivity-lock.service';
 import { ProvisionalAccountPasswordVerifier } from './features/auth/lock/provisional-account-password-verifier';
 import { ProvisionalBiometricAuth } from './features/auth/lock/provisional-biometric-auth';
 import { NoopSessionRevoker } from './features/auth/noop-session-revoker';
-import { ProvisionalTokenRefresher } from './features/auth/provisional-token-refresher';
 import { sessionAuthInterceptor } from './features/auth/session-auth.interceptor';
 import { SessionRevoker } from './features/auth/session-revoker';
 import { TokenRefresher } from './features/auth/token-refresher';
@@ -171,7 +171,7 @@ export const appConfig: ApplicationConfig = {
     { provide: BiometricAuth, useClass: ProvisionalBiometricAuth },
     { provide: AccountPasswordVerifier, useClass: ProvisionalAccountPasswordVerifier },
     // Renovação de token: provisória até haver contrato OpenAPI (recusa toda renovação).
-    { provide: TokenRefresher, useClass: ProvisionalTokenRefresher },
+    { provide: TokenRefresher, useClass: HttpTokenRefresher },
     { provide: SessionRevoker, useClass: NoopSessionRevoker },
     { provide: StartupStateReader, useClass: LocalStartupStateReader },
     { provide: WelcomeSource, useClass: WelcomeApiService },

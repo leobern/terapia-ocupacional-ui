@@ -35,11 +35,11 @@ export class SessionRenewalService {
     }
 
     try {
-      const accessToken = await this.refresher.refresh(refreshToken);
+      const tokens = await this.refresher.refresh(refreshToken);
 
-      this.store.updateAccessToken(accessToken);
+      this.store.updateTokens(tokens);
 
-      return accessToken;
+      return tokens.accessToken;
     } catch (error) {
       if (error instanceof RefreshRejectedError) {
         await this.endSession();

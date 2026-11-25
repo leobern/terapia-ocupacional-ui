@@ -29,6 +29,15 @@ describe('LocalSessionStore', () => {
     expect(TestBed.runInInjectionContext(() => new LocalSessionStore()).isValid()).toBeTrue();
   });
 
+  it('replaces both tokens on a rotating renewal', () => {
+    store.open({ accessToken: 'a1', refreshToken: 'r1' });
+    store.updateTokens({ accessToken: 'a2', refreshToken: 'r2' });
+
+    expect(store.accessToken()).toBe('a2');
+    expect(store.refreshToken()).toBe('r2');
+    expect(store.accessTokenSignal()).toBe('a2');
+  });
+
   it('replaces only the access token on renewal', () => {
     store.open({ accessToken: 'a1', refreshToken: 'r1' });
     store.updateAccessToken('a2');

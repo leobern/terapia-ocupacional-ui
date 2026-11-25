@@ -72,6 +72,12 @@ export class LocalSessionStore {
     this.valid.set(true);
   }
 
+  /** Troca os dois tokens da sessão já aberta (renovação transparente com rotação, RN-05). */
+  updateTokens(tokens: SessionTokens): void {
+    localStorage.setItem(SESSION_REFRESH_TOKEN_KEY, tokens.refreshToken);
+    this.updateAccessToken(tokens.accessToken);
+  }
+
   /** Troca só o `accessToken` (renovação transparente, RN-05). */
   updateAccessToken(accessToken: string): void {
     localStorage.setItem(SESSION_ACCESS_TOKEN_KEY, accessToken);

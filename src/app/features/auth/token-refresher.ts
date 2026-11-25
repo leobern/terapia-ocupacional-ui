@@ -6,11 +6,13 @@ export class RefreshRejectedError extends Error {
   }
 }
 
+import type { SessionTokens } from './local-session-store';
+
 /**
- * Porta da renovação do `accessToken` via `refreshToken` (RN-05). Resolve com o novo
- * `accessToken`; rejeita com `RefreshRejectedError` quando o servidor recusa o token e com
+ * Porta da renovação do `accessToken` via `refreshToken` (RN-05). Resolve com os novos tokens
+ * (o backend rotaciona o refresh token); rejeita com `RefreshRejectedError` quando o servidor recusa o token e com
  * qualquer outro erro quando é falha de rede (a sessão NÃO é encerrada, RN-06).
  */
 export abstract class TokenRefresher {
-  abstract refresh(refreshToken: string): Promise<string>;
+  abstract refresh(refreshToken: string): Promise<SessionTokens>;
 }
