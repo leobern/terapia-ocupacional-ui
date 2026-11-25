@@ -1,5 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { provideRouter, Router } from '@angular/router';
+import { ActivatedRoute, convertToParamMap, ParamMap, provideRouter, Router } from '@angular/router';
+import { BehaviorSubject } from 'rxjs';
 
 import { AiAssistantService } from '../../shared/services/ai-assistant.service';
 import { AssistantConversationService } from '../../shared/services/assistant-conversation.service';
@@ -19,6 +20,11 @@ import { BedMovementPort, BedOccupancyPort } from '../patient-hub/move-bed/bed-m
 import { BedNumberExtractor } from '../patient-hub/move-bed/bed-number-extractor';
 import { InternacaoCreationPort } from '../patient-registration/internacao-creation.port';
 import { PatientCreationPort } from '../patient-registration/patient-creation.port';
+import { HospitalSiteSource } from '../shift/hospital-site-source';
+import { ProvisionalHospitalSiteSource } from '../shift/provisional-hospital-site-source';
+import { ProvisionalShiftSource } from '../shift/provisional-shift-source';
+import { ShiftService } from '../shift/shift.service';
+import { ShiftSource } from '../shift/shift-source';
 import { PatientListComponent, refreshesOnVisibility } from './patient-list.component';
 import { CensusPatient } from './patient-list.models';
 import { PatientListAiCommandPort } from './patient-list-ai-command';
@@ -82,7 +88,12 @@ describe('PatientListComponent', () => {
     fixture.detectChanges();
   }
 
+  // Parâmetros da URL (a tela lê `?turno=1`); o `router.navigate` é espionado, então o teste os troca aqui.
+  const query$ = new BehaviorSubject<ParamMap>(convertToParamMap({}));
+
   beforeEach(async () => {
+    localStorage.clear();
+    query$.next(convertToParamMap({}));
     spyOnProperty(navigator, 'language').and.returnValue('pt-BR');
     source = new FakeSource();
     ai = new FakeAi();
@@ -102,6 +113,9 @@ describe('PatientListComponent', () => {
         { provide: LocationExtractor, useValue: { extract: (): null => null } },
         { provide: BedOccupancyPort, useValue: {} },
         provideRouter([]),
+        { provide: ActivatedRoute, useValue: { queryParamMap: query$ } },
+        { provide: HospitalSiteSource, useClass: ProvisionalHospitalSiteSource },
+        { provide: ShiftSource, useClass: ProvisionalShiftSource },
         { provide: PatientListSource, useValue: source },
         { provide: FollowUpClosureWriter, useValue: closureWriter },
         {
@@ -843,6 +857,148 @@ describe('PatientListComponent', () => {
     await fixture.whenStable();
 
     expect(loads).toHaveBeenCalledWith(jasmine.any(Number), jasmine.any(Date));
+  });
+
+  describe('escolha dos pacientes do turno (?turno=1)', () => {
+    const rows = (): HTMLElement[] => qa('.patient-list__tr');
+    const shifts = (): ShiftSource => TestBed.inject(ShiftSource);
+    const startMine = async (patientIds: string[] = []): Promise<void> => {
+      const mine = await shifts().start({
+        hospitalId: 1,
+        professionalName: 'Michelle',
+        professionalRole: 'Médico',
+        startedAt: new Date().toISOString(),
+      });
+
+      await shifts().selectPatients(mine.id, patientIds);
+    };
+    const open = async (): Promise<void> => {
+      query$.next(convertToParamMap({ turno: '1' }));
+      source.result = Promise.resolve(census(3));
+      fixture = TestBed.createComponent(PatientListComponent);
+      fixture.detectChanges();
+      await fixture.whenStable();
+      await TestBed.inject(ShiftService).refresh(1);
+      fixture.detectChanges();
+      await fixture.whenStable();
+      fixture.detectChanges();
+    };
+    const flush = async (): Promise<void> => {
+      fixture.detectChanges();
+      await new Promise<void>(resolve => setTimeout(resolve, 0));
+      fixture.detectChanges();
+    };
+
+    it('com o turno iniciado, mostra a escolha: tocar na linha marca e desmarca, sem abrir o paciente', async () => {
+      await startMine();
+      await open();
+
+      expect(text()).toContain('Turno de trabalho');
+      expect(text()).toContain('(0 escolhidos)');
+
+      rows()[0].click();
+      await flush();
+
+      expect(text()).toContain('(1 escolhido)');
+      expect(rows()[0].getAttribute('aria-selected')).toBe('true');
+      expect(router.navigate).not.toHaveBeenCalled();
+
+      rows()[0].click();
+      await flush();
+
+      expect(text()).toContain('(0 escolhidos)');
+    });
+
+    it('começa com os pacientes já gravados no turno', async () => {
+      await startMine(['p1']);
+      await open();
+
+      expect(text()).toContain('(1 escolhido)');
+      expect(rows()[1].getAttribute('aria-selected')).toBe('true');
+    });
+
+    it('confirmar grava os escolhidos no turno e volta à lista normal', async () => {
+      await startMine();
+      await open();
+      rows()[0].click();
+      rows()[2].click();
+      await flush();
+      const confirm = qa('.patient-list__turn app-button button').find(b => b.textContent.includes('Confirmar'));
+
+      confirm?.click();
+      await flush();
+      await flush();
+
+      expect((await shifts().listActive(1))[0].patientIds).toEqual(['p0', 'p2']);
+      expect(router.navigate).toHaveBeenCalledWith(['/patients'], { replaceUrl: true });
+    });
+
+    it('cancelar volta à lista normal sem gravar', async () => {
+      await startMine();
+      await open();
+      rows()[0].click();
+      qa('.patient-list__turn app-button button')
+        .find(b => b.textContent.includes('Cancelar'))
+        ?.click();
+      await flush();
+
+      expect((await shifts().listActive(1))[0].patientIds).toEqual([]);
+      expect(router.navigate).toHaveBeenCalledWith(['/patients'], { replaceUrl: true });
+    });
+
+    it('pacientes escolhidos por outro profissional aparecem com o nome dele', async () => {
+      await startMine();
+      const other = await shifts().start({
+        hospitalId: 1,
+        professionalName: 'Dr. Bruno',
+        professionalRole: 'Médico',
+        startedAt: new Date().toISOString(),
+      });
+
+      await shifts().selectPatients(other.id, ['p1']);
+      await open();
+
+      expect(rows()[1].textContent).toContain('Dr. Bruno');
+      expect(rows()[0].textContent).not.toContain('Dr. Bruno');
+    });
+
+    it('sem turno iniciado, ou em data anterior, a lista segue normal e tocar abre o paciente', async () => {
+      await open();
+
+      expect(text()).not.toContain('Turno de trabalho');
+
+      rows()[0].click();
+
+      expect(router.navigate).toHaveBeenCalledWith(['/patients', 'p0']);
+
+      await startMine();
+      await TestBed.inject(ShiftService).refresh(1);
+      fixture.componentInstance.selectDate(new Date(Date.now() - 86_400_000));
+      await flush();
+
+      expect(fixture.componentInstance.turnMode()).toBeFalse();
+    });
+
+    it('evita gravar duas vezes ao confirmar de novo enquanto grava', async () => {
+      await startMine();
+      await open();
+      const spy = spyOn(TestBed.inject(ShiftService), 'savePatients').and.callThrough();
+
+      void fixture.componentInstance.confirmTurn();
+      void fixture.componentInstance.confirmTurn();
+      await flush();
+
+      expect(spy).toHaveBeenCalledTimes(1);
+    });
+
+    it('no mobile, o card mostra se o paciente foi escolhido', async () => {
+      await startMine(['p0']);
+      await open();
+      const labels = qa('.patient-list__cluster .patient-list__first').map(e => e.textContent.trim());
+
+      expect(labels.some(l => l.includes('Escolhido para o turno'))).toBeTrue();
+      expect(labels.some(l => l.includes('Toque para escolher'))).toBeTrue();
+    });
   });
 
   it('usa singular com um paciente', async () => {

@@ -27,6 +27,39 @@
       }
     </app-page-header>
 
+    @if (turnMode()) {
+      <!-- Turno de trabalho: escolher os pacientes que o profissional vai visitar; os já escolhidos por outros aparecem identificados. -->
+      <section
+        class="patient-list__turn"
+        aria-label="Escolha dos pacientes do turno"
+      >
+        <div class="patient-list__turn-text">
+          <h2 class="patient-list__turn-title">Turno de trabalho</h2>
+          <p class="patient-list__turn-hint">
+            Toque nos pacientes que você vai visitar neste turno ({{
+              picked().size
+            }}
+            {{ picked().size === 1 ? 'escolhido' : 'escolhidos' }}).
+          </p>
+        </div>
+        <div class="patient-list__turn-actions">
+          <app-button
+            size="md"
+            iconLeft="check"
+            label="Confirmar pacientes do turno"
+            [disabled]="turnSaving()"
+            (click)="confirmTurn()"
+          />
+          <app-button
+            size="md"
+            appearance="ghost"
+            label="Cancelar"
+            (click)="leaveTurn()"
+          />
+        </div>
+      </section>
+    }
+
     <!-- Figma 4690:24100: a faixa de datas fica ACIMA da tabela (à esquerda) e, à direita, ordenação e busca. -->
     <div class="patient-list__toolbar">
       <app-date-strip
@@ -392,13 +425,39 @@
                   <tr
                     class="patient-list__tr"
                     [class.patient-list__tr--finished]="patient.finished"
+                    [class.patient-list__tr--picked]="
+                      turnMode() && picked().has(patient.id)
+                    "
+                    [attr.aria-selected]="
+                      turnMode() ? picked().has(patient.id) : null
+                    "
                     (click)="openPatient(patient.id)"
                   >
                     <td>
                       <span class="patient-list__name-cell">
+                        @if (turnMode()) {
+                          <ph-icon
+                            class="patient-list__check"
+                            [name]="
+                              picked().has(patient.id)
+                                ? 'check-circle'
+                                : 'circle'
+                            "
+                            [weight]="
+                              picked().has(patient.id) ? 'fill' : 'regular'
+                            "
+                            [size]="24"
+                          />
+                        }
                         <span class="patient-list__name">{{
                           patient.name
                         }}</span>
+                        @if (
+                          turnMode() && shift.takenBy().get(patient.id);
+                          as who
+                        ) {
+                          <app-therapy-tag tone="active" [label]="who" />
+                        }
                       </span>
                     </td>
                     <td>
@@ -517,6 +576,28 @@
                           (click)="openPatient(patient.id)"
                         >
                           <span class="patient-list__info">
+                            @if (turnMode()) {
+                              <span class="patient-list__first">
+                                <app-therapy-tag
+                                  [tone]="
+                                    picked().has(patient.id)
+                                      ? 'active'
+                                      : 'neutral'
+                                  "
+                                  [label]="
+                                    picked().has(patient.id)
+                                      ? 'Escolhido para o turno'
+                                      : 'Toque para escolher'
+                                  "
+                                />
+                                @if (shift.takenBy().get(patient.id); as who) {
+                                  <app-therapy-tag
+                                    tone="active"
+                                    [label]="who"
+                                  />
+                                }
+                              </span>
+                            }
                             @if (patient.finished) {
                               <span class="patient-list__first">
                                 <app-therapy-tag label="Finalizado" />

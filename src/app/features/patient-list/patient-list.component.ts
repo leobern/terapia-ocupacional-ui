@@ -10,7 +10,9 @@ import {
   signal,
   viewChild,
 } from '@angular/core';
-import { Router } from '@angular/router';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { ActivatedRoute, ParamMap, Router } from '@angular/router';
+import { map, of } from 'rxjs';
 
 import { ButtonComponent } from '../../shared/components/button/button.component';
 import { DateStripComponent } from '../../shared/components/date-strip/date-strip.component';
@@ -31,6 +33,7 @@ import { UnreadNotificationsReader } from '../home/unread-notifications-reader';
 import { ChangeLocationAction } from '../patient-hub/change-location/change-location.action';
 import { MoveBedAction } from '../patient-hub/move-bed/move-bed.action';
 import { PatientRegistrationAction } from '../patient-registration/patient-registration.action';
+import { ShiftService } from '../shift/shift.service';
 import {
   adequacyLabel,
   birthLabel,
@@ -187,6 +190,8 @@ export class PatientListComponent implements OnInit {
    * caminho, a confirmar no refinamento). Os swipes das US-004-1-08/09 devem consultar este sinal.
    */
   readonly readOnly = computed(() => !isSameDay(this.selectedDate(), this.today));
+  /** Escolha dos pacientes do turno: pedida pela Home e com o turno do profissional já iniciado. */
+  readonly turnMode = computed(() => this.turnRequested() && this.shift.mine() !== null && !this.readOnly());
   readonly status = signal<PatientListStatus>('loading');
   readonly patients = signal<readonly PatientCard[]>([]);
   readonly hospitalName = computed(() => this.context.selected()?.name ?? '');
@@ -294,10 +299,20 @@ export class PatientListComponent implements OnInit {
   protected readonly aiAssistant = inject(AiAssistantService);
 
   protected readonly skeletonRows = [1, 2, 3, 4, 5];
+  /** Turno de trabalho: o profissional já iniciou o turno e vai escolher os pacientes que visitará (`?turno=1`). */
+  protected readonly shift = inject(ShiftService);
+  /** Pacientes marcados na escolha do turno (começa com os já gravados no turno). */
+  protected readonly picked = signal<ReadonlySet<string>>(new Set());
+  protected readonly turnSaving = signal(false);
 
   private readonly context = inject(HospitalContextService);
   private readonly source = inject(PatientListSource);
   private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute, { optional: true });
+  private readonly turnRequested = toSignal(
+    (this.route?.queryParamMap ?? of<ParamMap | null>(null)).pipe(map((p: ParamMap | null) => p?.get('turno') === '1')),
+    { initialValue: false },
+  );
   private readonly connectivity = inject(ConnectivityService);
   private readonly tableCard = viewChild<ElementRef<HTMLElement>>('tableCard');
   private readonly unread = inject(UnreadNotificationsReader);
@@ -401,6 +416,20 @@ export class PatientListComponent implements OnInit {
       }
       update();
       onCleanup(() => observer.disconnect());
+    });
+
+    effect(() => {
+      const hospitalId = this.context.selected()?.id;
+
+      if (hospitalId !== undefined) {
+        void this.shift.refresh(hospitalId);
+      }
+    });
+    // Ao entrar na escolha do turno, parte dos pacientes já gravados no turno.
+    effect(() => {
+      if (this.turnMode()) {
+        this.picked.set(new Set(this.shift.mine()?.patientIds ?? []));
+      }
     });
 
     effect(() => {
@@ -639,6 +668,11 @@ export class PatientListComponent implements OnInit {
    * naquele dia, em somente leitura (Thiago, 2026-11-25).
    */
   openPatient(id: string): void {
+    if (this.turnMode()) {
+      this.togglePicked(id);
+
+      return;
+    }
     if (this.readOnly()) {
       const d = this.selectedDate();
       const month = String(d.getMonth() + 1).padStart(2, '0');
@@ -649,6 +683,38 @@ export class PatientListComponent implements OnInit {
       return;
     }
     void this.router.navigate(['/patients', id]);
+  }
+
+  /** Marca ou desmarca um paciente na escolha do turno. */
+  togglePicked(id: string): void {
+    this.picked.update(current => {
+      const next = new Set(current);
+
+      if (!next.delete(id)) {
+        next.add(id);
+      }
+
+      return next;
+    });
+  }
+
+  /** Grava os pacientes escolhidos no turno e volta à lista normal. */
+  async confirmTurn(): Promise<void> {
+    if (this.turnSaving()) {
+      return;
+    }
+    this.turnSaving.set(true);
+    try {
+      await this.shift.savePatients([...this.picked()]);
+      await this.leaveTurn();
+    } finally {
+      this.turnSaving.set(false);
+    }
+  }
+
+  /** Sai da escolha do turno sem gravar. */
+  async leaveTurn(): Promise<void> {
+    await this.router.navigate(['/patients'], { replaceUrl: true });
   }
 
   protected bellLabel(): string {

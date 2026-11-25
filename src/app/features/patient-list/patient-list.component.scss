@@ -646,3 +646,49 @@
   filter: grayscale(1);
   opacity: 0.75;
 }
+
+// Escolha dos pacientes do turno de trabalho.
+.patient-list__turn {
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$space-16;
+  padding: tokens.$space-16;
+  border: 1px solid tokens.c(secondary);
+  border-radius: tokens.$radius-md;
+  background: tokens.c(surface);
+
+  @include breakpoints.md {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+}
+
+.patient-list__turn-title {
+  margin: 0;
+  color: tokens.c(content-1);
+
+  @include typography.title-md;
+}
+
+.patient-list__turn-hint {
+  margin: 0;
+  color: tokens.c(content-4);
+
+  @include typography.body-md;
+}
+
+.patient-list__turn-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: tokens.$space-16;
+}
+
+.patient-list__check {
+  flex: none;
+  color: tokens.c(secondary);
+}
+
+.patient-list__tr--picked td {
+  background: tokens.c(surface-2);
+}
