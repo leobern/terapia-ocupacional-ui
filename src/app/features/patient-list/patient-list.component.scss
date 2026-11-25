@@ -124,13 +124,6 @@
   }
 }
 
-// Os atalhos ficam no cabeçalho no desktop; no mobile, ao lado da busca.
-.patient-list__apps {
-  @include breakpoints.md {
-    display: none;
-  }
-}
-
 // Mobile: o cadastro vem pelo menu de atalhos da barra inferior (como a Home).
 .patient-list__register {
   display: none;

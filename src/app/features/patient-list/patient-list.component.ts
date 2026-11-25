@@ -17,7 +17,6 @@ import { map, of } from 'rxjs';
 import { ButtonComponent } from '../../shared/components/button/button.component';
 import { DateStripComponent } from '../../shared/components/date-strip/date-strip.component';
 import { GraphMetaComponent } from '../../shared/components/graph-meta/graph-meta.component';
-import { IconButtonComponent } from '../../shared/components/icon-button/icon-button.component';
 import { PageContainerComponent } from '../../shared/components/page-container/page-container.component';
 import { PageHeaderComponent } from '../../shared/components/page-header/page-header.component';
 import { SwipeRowComponent } from '../../shared/components/swipe-row/swipe-row.component';
@@ -168,7 +167,6 @@ const PULL_THRESHOLD = 80;
     DateStripComponent,
     FollowUpClosureSheetComponent,
     GraphMetaComponent,
-    IconButtonComponent,
     PageHeaderComponent,
     PageContainerComponent,
     PhIconComponent,
