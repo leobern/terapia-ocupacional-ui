@@ -1,7 +1,6 @@
 import { Routes } from '@angular/router';
 
 import { environment } from '../environments/environment';
-import { approvedHospitalLinkGuard } from './features/hospital-links/approved-hospital-link.guard';
 
 /**
  * Galeria de desenvolvimento — NUNCA em produção (Princípio IX).
@@ -28,7 +27,6 @@ export const routes: Routes = [
   ...devRoutes,
   {
     path: 'home',
-    canActivate: [approvedHospitalLinkGuard],
     loadChildren: () => import('./features/home/home.routes').then(m => m.HOME_ROUTES),
   },
   // Tutorial do app (US-001-3-02): primeiro acesso, sem o shell de navegação.

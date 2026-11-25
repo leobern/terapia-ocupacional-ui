@@ -5,9 +5,12 @@ import { ButtonComponent } from '../../shared/components/button/button.component
 import { PageContainerComponent } from '../../shared/components/page-container/page-container.component';
 import { PageHeaderComponent } from '../../shared/components/page-header/page-header.component';
 import { PhIconComponent } from '../../shared/icons/ph-icon/ph-icon.component';
-import { ACCESS_BLOCKED_PARAM, ACCESS_BLOCKED_VALUE } from './approved-hospital-link.guard';
 import { HOSPITAL_LINK_STATUS_VIEW, HospitalLink } from './hospital-links.models';
 import { HospitalLinksSource } from './hospital-links-source';
+
+/** Query param que marca o aviso de acesso ainda não liberado (o Painel já não redireciona para cá: Thiago, 2026-11-25). */
+export const ACCESS_BLOCKED_PARAM = 'acesso';
+export const ACCESS_BLOCKED_VALUE = 'bloqueado';
 
 type LoadStatus = 'loading' | 'ready' | 'error';
 

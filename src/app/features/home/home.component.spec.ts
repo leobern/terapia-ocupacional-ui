@@ -407,6 +407,13 @@ describe('HomeComponent', () => {
       expect(navigate).toHaveBeenCalledWith(['/notifications'], { queryParams: { hospitalId: 1 } });
     });
 
+    it('sem hospital cadastrado mostra o aviso para cadastrar, no lugar do seletor', async () => {
+      await setup({ hospitals: [] });
+
+      expect(q('.home__no-hospital')?.textContent).toContain('Nenhum hospital cadastrado');
+      expect(q('.home__hospital-trigger')).toBeNull();
+    });
+
     it('passes no hospital when there is none in context', async () => {
       await setup({ hospitals: [] });
       bell().click();

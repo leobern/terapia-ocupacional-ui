@@ -95,27 +95,37 @@
           <!-- Seletor de hospital e "Iniciar turno de trabalho" (Figma Home mobile 4591:216: um sob o outro; desktop: na mesma linha, turno à direita). -->
           <div class="home__local-top">
             <div class="home__hospital-row">
-              @if (context.canSwitch() && controlsEnabled()) {
-                <button
-                  type="button"
-                  class="home__hospital-trigger"
-                  aria-haspopup="listbox"
-                  [attr.aria-expanded]="listOpen()"
-                  [attr.aria-controls]="listOpen() ? listId : null"
-                  (click)="onTrigger()"
-                >
+              @if (context.selected() === null) {
+                <p class="home__no-hospital" role="status">
+                  <ph-icon name="map-pin" [size]="20" />
+                  <span
+                    >Nenhum hospital cadastrado. Use "Cadastrar hospital" para
+                    começar.</span
+                  >
+                </p>
+              } @else {
+                @if (context.canSwitch() && controlsEnabled()) {
+                  <button
+                    type="button"
+                    class="home__hospital-trigger"
+                    aria-haspopup="listbox"
+                    [attr.aria-expanded]="listOpen()"
+                    [attr.aria-controls]="listOpen() ? listId : null"
+                    (click)="onTrigger()"
+                  >
+                    <app-tag
+                      type="default"
+                      iconLeftName="map-pin"
+                      [label]="selectedHospitalName()"
+                    />
+                  </button>
+                } @else {
                   <app-tag
                     type="default"
                     iconLeftName="map-pin"
                     [label]="selectedHospitalName()"
                   />
-                </button>
-              } @else {
-                <app-tag
-                  type="default"
-                  iconLeftName="map-pin"
-                  [label]="selectedHospitalName()"
-                />
+                }
               }
             </div>
 
