@@ -16,8 +16,14 @@ import { PhIconComponent } from '../../shared/icons/ph-icon/ph-icon.component';
 import { AiAssistantService } from '../../shared/services/ai-assistant.service';
 import { AssistantEditorController } from '../../shared/services/assistant-editor-controller.service';
 import { ConnectivityService } from '../../shared/services/connectivity.service';
-import { ScreenAction, ScreenActionsService } from '../../shared/services/screen-actions.service';
+import {
+  FormSubmitError,
+  type FormValues,
+  ScreenAction,
+  ScreenActionsService,
+} from '../../shared/services/screen-actions.service';
 import { PATIENT_HUB_CONTEXT } from '../../shared/services/screen-contexts';
+import { type DirectoryUser } from '../../shared/services/user-directory';
 import { ViewportBreakpointService } from '../../shared/services/viewport-breakpoint.service';
 import { DailyAdequacy } from '../daily-evolution/adequacy/adequacy.models';
 import { AdequacySummaryComponent } from '../daily-evolution/adequacy/adequacy-summary.component';
@@ -28,6 +34,7 @@ import { HospitalContextService } from '../home/hospital-context.service';
 import { LinkRevocationChecker } from '../home/link-revocation-checker';
 import { NOW, ProfessionalProfileReader } from '../home/professional-profile';
 import { UnreadNotificationsReader } from '../home/unread-notifications-reader';
+import { PatientThreadsComponent } from '../patient-messages/patient-messages.component';
 import { AssessmentSource } from './assessment/assessment-source';
 import { ChangeLocationAction } from './change-location/change-location.action';
 import { MeasureChartComponent } from './charts/measure-chart.component';
@@ -37,9 +44,8 @@ import { ClinicalTilesComponent } from './clinical-assessment/clinical-tiles.com
 import { DailyRecordEditorComponent } from './daily-record/daily-record-editor.component';
 import { DiagnosisEditorComponent } from './diagnosis-editor/diagnosis-editor.component';
 import { PatientEvolutionsComponent } from './evolutions/patient-evolutions.component';
-import { ObservationFollowUpComponent } from './messages/observation-follow-up.component';
-import { PatientRecord } from './messages/patient-message.models';
-import { PatientMessageSheetComponent } from './messages/patient-message-sheet.component';
+import { PatientRecordRequest, RecipientSpec } from './messages/patient-message.models';
+import { PatientMessageSource } from './messages/patient-message-source';
 import { MoveBedAction } from './move-bed/move-bed.action';
 import { NutritionalFunctionalEditorComponent } from './nutritional-functional/nutritional-functional-editor.component';
 import { NutritionalFunctionalTilesComponent } from './nutritional-functional/nutritional-functional-tiles.component';
@@ -100,14 +106,13 @@ export const DIAGNOSIS_FAILED_HINT =
     NutritionalFunctionalTilesComponent,
     DateStripComponent,
     PatientEvolutionsComponent,
+    PatientThreadsComponent,
     SectionHeaderComponent,
     PageHeaderComponent,
     MeasureChartComponent,
     ButtonComponent,
     FollowUpStatusComponent,
     PageContainerComponent,
-    ObservationFollowUpComponent,
-    PatientMessageSheetComponent,
     PhIconComponent,
     PlanSectionComponent,
     PrescriptionSummaryComponent,
@@ -188,12 +193,19 @@ export class PatientHubComponent implements OnInit {
   protected readonly showNutritional = computed(() => this.showClinical() && this.clinicalFilled());
   protected readonly showRest = computed(() => this.showNutritional() && this.nutritionalFilled());
 
-  /** Observação/mensagem (FT-005-1) aberta pela ação dos atalhos; só cria pelo assistente. */
-  protected readonly messageOpen = signal(false);
-  /** Muda a cada registro gravado, para a lista de cards recarregar. */
+  /** Muda a cada mensagem gravada, para a lista de Mensagens recarregar. */
   protected readonly messagesVersion = signal(0);
-  /** Observação recém-registrada (sem destinatário): abre as sugestões de pendência/comunicação (US-005-1-04). */
-  protected readonly followUpRecord = signal<PatientRecord | null>(null);
+  /** Quantas mensagens o paciente tem (título da seção). */
+  protected readonly messageCount = signal(0);
+  protected readonly messagesTitle = computed(() => {
+    const n = this.messageCount();
+
+    if (n === 0) {
+      return 'Mensagens';
+    }
+
+    return `${n} ${n === 1 ? 'Mensagem' : 'Mensagens'}`;
+  });
   /** Prescrição vigente exibida no Hub; `null` = sem prescrição (ou leitura falhou). */
   protected readonly prescription = signal<readonly Prescription[]>([]);
 
@@ -253,6 +265,7 @@ export class PatientHubComponent implements OnInit {
   private readonly changeLocation = inject(ChangeLocationAction);
   private readonly source = inject(PatientHubSource);
   private readonly prescriptions = inject(PrescriptionSource);
+  private readonly messages = inject(PatientMessageSource);
   private readonly adequacyService = inject(DailyAdequacyService);
   private pullFrom: number | null = null;
   private readonly context = inject(HospitalContextService);
@@ -284,11 +297,7 @@ export class PatientHubComponent implements OnInit {
         const profile = this.profile();
         const actions: ScreenAction[] = [
           { id: 'daily-record', label: 'Evoluir paciente', navigate: (): void => this.editDailyRecord() },
-          {
-            id: 'patient-message',
-            label: 'Observação ou mensagem',
-            navigate: (): void => this.messageOpen.set(true),
-          },
+          this.messageAction(),
         ];
 
         // US-002-2-01: o paciente em contexto é o da tela; o pedido vai para a internação mais recente dele.
@@ -338,9 +347,9 @@ export class PatientHubComponent implements OnInit {
     }
   }
 
-  protected onRecordSent(record: PatientRecord): void {
-    this.messagesVersion.set(this.messagesVersion() + 1);
-    this.followUpRecord.set(record.recipients.length === 0 ? record : null);
+  /** "+" das Mensagens ou ação dos atalhos: abre o cadastro conversacional da mensagem (o mesmo do comunicado). */
+  protected editMessage(): void {
+    this.aiAssistant.openAction(this.messageAction());
   }
 
   /** A prescrição ajustada virou a vigente: o Hub passa a mostrá-la sem recarregar a página. */
@@ -623,6 +632,74 @@ export class PatientHubComponent implements OnInit {
       id: 'adjust-prescription',
       label: 'Prescrição',
     });
+  }
+
+  /**
+   * Mensagem do profissional para alguém da equipe, salva no paciente (Thiago, 2026-11-25). Mesmo cadastro do comunicado
+   * de Notificações: quem recebe (`@pessoa`, `@grupo` ou `@todos`) e o texto; a trilha fica no paciente.
+   */
+  private messageAction(): ScreenAction {
+    return {
+      form: {
+        description: 'Escreva a mensagem e escolha para quem ela vai. Ela fica salva neste paciente, com as respostas.',
+        fields: [
+          {
+            id: 'recipients',
+            kind: 'mention',
+            label: 'Quem receberá a mensagem:',
+            placeholder: '@pessoa, @grupo (ex.: @medicos) ou @todos',
+            required: true,
+            requiredMessage: 'Informe ao menos um destinatário para enviar a mensagem.',
+          },
+          {
+            id: 'message',
+            kind: 'text',
+            label: 'Qual é a mensagem?',
+            placeholder: 'Escreva a mensagem',
+            required: true,
+          },
+        ],
+        messagePlaceholder: 'Fale ou escreva a mensagem',
+        submit: (values): Promise<void> => this.sendMessage(values),
+        submitLabel: 'Enviar mensagem',
+        title: 'Nova mensagem',
+      },
+      id: 'patient-message',
+      label: 'Nova mensagem',
+    };
+  }
+
+  private async sendMessage(values: FormValues): Promise<void> {
+    const patientId = this.patientId();
+
+    if (!this.connectivity.online()) {
+      throw new FormSubmitError(
+        'Sem conexão: não é possível enviar a mensagem agora. Tente de novo quando voltar a conexão.',
+      );
+    }
+    if (patientId === null) {
+      throw new FormSubmitError('Não foi possível identificar o paciente.');
+    }
+    const selected = values['recipients'] as readonly DirectoryUser[];
+    const specs = selected.map((user): RecipientSpec => {
+      if (!user.group) {
+        return { professionalId: user.id, type: 'PESSOA' };
+      }
+
+      return user.group.profile === null ? { type: 'TODOS' } : { perfil: user.group.profile, type: 'GRUPO' };
+    });
+    const request: PatientRecordRequest = {
+      at: this.now().toISOString(),
+      author: this.professional.read().name,
+      content: values['message'] as string,
+      patientId,
+      recipientSpecs: specs,
+      recipients: selected.filter(u => !u.group).map(u => ({ id: u.id, name: u.name, specialty: u.specialty })),
+      viaAudio: false,
+    };
+
+    await this.messages.send(request);
+    this.messagesVersion.update(v => v + 1);
   }
 
   private async loadUnread(): Promise<void> {

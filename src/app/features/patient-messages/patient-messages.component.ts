@@ -1,5 +1,15 @@
 import { HttpErrorResponse } from '@angular/common/http';
-import { ChangeDetectionStrategy, Component, computed, effect, inject, input, signal, untracked } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  effect,
+  inject,
+  input,
+  output,
+  signal,
+  untracked,
+} from '@angular/core';
 
 import { ButtonComponent } from '../../shared/components/button/button.component';
 import { ConfirmDialogComponent } from '../../shared/components/confirm-dialog/confirm-dialog.component';
@@ -43,6 +53,8 @@ export class PatientThreadsComponent {
   readonly patientId = input.required<string>();
   /** Muda a cada mensagem enviada pelo assistente; faz a lista recarregar. */
   readonly refreshKey = input(0);
+  /** Quantas mensagens (threads) o paciente tem; o Hub mostra no título da seção. */
+  readonly countChange = output<number>();
 
   protected readonly state = signal<LoadState>('loading');
   protected readonly threads = signal<readonly MessageThread[]>([]);
@@ -85,6 +97,7 @@ export class PatientThreadsComponent {
     }
     try {
       this.threads.set(await this.source.list(this.patientId()));
+      this.countChange.emit(this.threads().length);
       this.state.set('ready');
     } catch {
       this.state.set(this.threads().length > 0 ? 'ready' : 'error');

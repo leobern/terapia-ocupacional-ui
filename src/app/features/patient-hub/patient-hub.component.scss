@@ -32,6 +32,10 @@ $hub-three-columns: 1100px;
 }
 
 // "Evoluir Paciente": no cabeçalho quando há 2 ou 3 colunas; no mobile, botão de largura total no fim da tela.
+.hub__threads {
+  display: block;
+}
+
 .hub__evolve--header {
   display: none;
 }
@@ -111,8 +115,15 @@ $hub-three-columns: 1100px;
 
 @container hub (width >= #{$hub-three-columns}) {
   // A coluna de Evoluções rola à parte; a altura vai até o fim da janela.
+  // Evoluções e Mensagens dividem a altura útil e cada uma rola à parte (Thiago, 2026-11-25).
   .hub__col--evolutions {
-    --evo-max-height: calc(100dvh - 160px);
+    --evo-max-height: calc((100dvh - 240px) * 0.55);
+    --msg-max-height: calc((100dvh - 240px) * 0.45);
+  }
+
+  .hub__threads {
+    max-height: var(--msg-max-height, none);
+    overflow-y: auto;
   }
 
   .hub__grid {

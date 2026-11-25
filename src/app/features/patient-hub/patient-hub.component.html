@@ -328,6 +328,22 @@
                   (dayChange)="day.set($event)"
                 />
               </div>
+              <!-- Mensagens do paciente: abaixo das Evoluções, com rolagem própria; "+" abre o cadastro na sidebar conversacional. -->
+              <div class="hub__group hub__o-8">
+                <app-section-header
+                  headingId="messages-title"
+                  actionLabel="Nova mensagem"
+                  [title]="messagesTitle()"
+                  [actionIcon]="readOnly() ? null : 'plus'"
+                  (actionClick)="editMessage()"
+                />
+                <app-patient-threads
+                  class="hub__threads"
+                  [patientId]="p.id"
+                  [refreshKey]="messagesVersion()"
+                  (countChange)="messageCount.set($event)"
+                />
+              </div>
             }
           </div>
           <!-- Mobile: sem CTA na tela; "Evoluir paciente" vira a sugestão sob o botão central da barra inferior (Thiago, 2026-11-25). -->
@@ -341,19 +357,7 @@
           }
         </div>
 
-        @if (profile(); as p) {
-          <app-patient-message-sheet
-            [open]="messageOpen()"
-            [patientId]="p.id"
-            (closed)="messageOpen.set(false)"
-            (sent)="onRecordSent($event)"
-          />
-          <app-observation-follow-up
-            [record]="followUpRecord()"
-            (closed)="followUpRecord.set(null)"
-            (changed)="messagesVersion.set(messagesVersion() + 1)"
-          />
-        }
+        @if (profile(); as p) {}
       }
       @case ('not-found') {
         <p class="hub__message" role="status">Paciente não encontrado.</p>

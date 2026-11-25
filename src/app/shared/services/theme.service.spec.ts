@@ -59,4 +59,21 @@ describe('ThemeService', () => {
 
     expect(service.theme()).toBe('dark');
   });
+
+  it('a cor da barra do navegador (theme-color) acompanha o tema', () => {
+    const meta = document.createElement('meta');
+
+    meta.name = 'theme-color';
+    meta.content = '#f5f7f8';
+    document.head.appendChild(meta);
+    const service = TestBed.inject(ThemeService);
+
+    service.set('dark');
+
+    expect(meta.content).toBe('#0f171a');
+    service.set('light');
+
+    expect(meta.content).toBe('#f5f7f8');
+    meta.remove();
+  });
 });
