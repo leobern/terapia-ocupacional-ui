@@ -121,28 +121,30 @@ body::after {
 // Véus das áreas seguras do celular (Thiago, 2026-11-25): com `viewport-fit=cover` o conteúdo rola por baixo da barra de
 // status e da área do indicador. Em vez de uma faixa chapada (que aparecia como um corte entre dois fundos), o véu só
 // DESFOCA o que passa por baixo e some em degradê: o background-mesh continua visível, sem emenda. Valem 0 sem área segura.
-body::before {
-  content: '';
-  position: fixed;
-  inset: 0;
-  // Abaixo de tudo que flutua (menu, barra inferior, sheets) e acima do conteúdo que rola.
-  z-index: 1;
-  pointer-events: none;
-  /* stylelint-disable-next-line property-no-vendor-prefix */
-  -webkit-backdrop-filter: blur(16px);
-  backdrop-filter: blur(16px);
-  // O véu ocupa só a área segura (altura 0 no desktop): opaco até 55% dela e em degradê até o fim.
-  --safe-veil-top: env(safe-area-inset-top, 0);
-  --safe-veil-bottom: env(safe-area-inset-bottom, 0);
-
-  mask-image:
-    linear-gradient(to bottom, #000000 55%, transparent),
-    linear-gradient(to top, #000000 55%, transparent);
-  mask-size:
-    100% var(--safe-veil-top),
-    100% var(--safe-veil-bottom);
-  mask-position: top, bottom;
-  mask-repeat: no-repeat;
+// Só em tela de toque: no desktop o véu desfocava a página inteira (a máscara não valia sem área segura).
+@media (hover: none) and (pointer: coarse) {
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    // Abaixo de tudo que flutua (menu, barra inferior, sheets) e acima do conteúdo que rola.
+    z-index: 1;
+    pointer-events: none;
+    /* stylelint-disable-next-line property-no-vendor-prefix */
+    -webkit-backdrop-filter: blur(16px);
+    backdrop-filter: blur(16px);
+    // O véu ocupa só a área segura: opaco até 55% dela e em degradê até o fim.
+    /* stylelint-disable length-zero-no-unit -- o fallback do env() precisa da unidade */
+    mask-image:
+      linear-gradient(to bottom, #000000 55%, transparent),
+      linear-gradient(to top, #000000 55%, transparent);
+    mask-size:
+      100% env(safe-area-inset-top, 0px),
+      100% env(safe-area-inset-bottom, 0px);
+    /* stylelint-enable length-zero-no-unit */
+    mask-position: top, bottom;
+    mask-repeat: no-repeat;
+  }
 }
 
 @media print {
