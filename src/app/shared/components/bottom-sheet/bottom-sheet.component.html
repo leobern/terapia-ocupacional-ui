@@ -13,6 +13,7 @@
     [attr.aria-label]="ariaLabel()"
     [style.translate]="dragTranslate()"
     [style.margin-bottom.px]="keyboardInsetPx()"
+    [style.--bottom-sheet-keyboard-inset.px]="keyboardInsetPx()"
     [style.--bottom-sheet-scrim-opacity]="scrimOpacity()"
     (click)="onDialogClick($event)"
     (cancel)="onCancel($event)"
