@@ -61,6 +61,12 @@ export class DailyEvolutionComponent {
   readonly patientId = input.required<string>();
   /** Aberto = o Registro diário está visível; a evolução do dia é lida a cada abertura. */
   readonly open = input(false);
+  /** Dentro da sidebar de Evolução: sem campo de mensagem nem botões próprios (o rodapé do painel é quem salva). */
+  readonly embedded = input(false);
+
+  readonly canSave = computed(
+    () => this.isDoctor && !this.saving() && this.connectivity.online() && this.draft().trim() !== '',
+  );
 
   protected readonly state = signal<LoadState>('idle');
   protected readonly saved = signal<DailyEvolution | null>(null);
@@ -88,10 +94,6 @@ export class DailyEvolutionComponent {
 
     return s === null ? '' : `Registrada por ${s.author} · ${registeredAt(s.at)}`;
   });
-  protected readonly canSave = computed(
-    () => this.isDoctor && !this.saving() && this.connectivity.online() && this.draft().trim() !== '',
-  );
-
   private nextRowId = 1;
   private readonly source = inject(DailyEvolutionSource);
   private readonly structurer = inject(EvolutionAiStructurer);
@@ -114,6 +116,47 @@ export class DailyEvolutionComponent {
         untracked(() => this.token++);
       }
     });
+  }
+
+  /** Grava a evolução; devolve `true` só quando gravou. */
+  async save(): Promise<boolean> {
+    if (!this.canSave()) {
+      return false;
+    }
+    const token = this.token;
+    const at = this.now();
+    let ok = false;
+
+    this.saving.set(true);
+    this.saveFailed.set(false);
+    try {
+      const saved = await this.source.save({
+        at: at.toISOString(),
+        author: this.profile.read().name,
+        day: dayKey(at),
+        origin: this.origin(),
+        patientId: this.patientId(),
+        reevaluations: this.reevaluations(at),
+        text: this.draft().trim(),
+      });
+
+      if (token === this.token) {
+        this.saved.set(saved);
+        this.draft.set(saved.text);
+        this.suggestion.set(null);
+        this.touched.set(false);
+        this.rows.set([]);
+        ok = true;
+      }
+    } catch {
+      if (token === this.token) {
+        this.saveFailed.set(true);
+      }
+    } finally {
+      this.saving.set(false);
+    }
+
+    return ok;
   }
 
   protected addRow(): void {
@@ -196,42 +239,6 @@ export class DailyEvolutionComponent {
   protected discard(): void {
     this.suggestion.set(null);
     this.draft.set(this.previousDraft);
-  }
-
-  protected async save(): Promise<void> {
-    if (!this.canSave()) {
-      return;
-    }
-    const token = this.token;
-    const at = this.now();
-
-    this.saving.set(true);
-    this.saveFailed.set(false);
-    try {
-      const saved = await this.source.save({
-        at: at.toISOString(),
-        author: this.profile.read().name,
-        day: dayKey(at),
-        origin: this.origin(),
-        patientId: this.patientId(),
-        reevaluations: this.reevaluations(at),
-        text: this.draft().trim(),
-      });
-
-      if (token === this.token) {
-        this.saved.set(saved);
-        this.draft.set(saved.text);
-        this.suggestion.set(null);
-        this.touched.set(false);
-        this.rows.set([]);
-      }
-    } catch {
-      if (token === this.token) {
-        this.saveFailed.set(true);
-      }
-    } finally {
-      this.saving.set(false);
-    }
   }
 
   /** Só entram na evolução as linhas com nome e prazo positivo; o prazo conta a partir do registro. */

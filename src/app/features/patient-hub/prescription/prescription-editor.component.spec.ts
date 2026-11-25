@@ -262,4 +262,19 @@ describe('PrescriptionEditorComponent', () => {
 
     expect(text()).toContain('Sem meta definida');
   });
+
+  it('fórmula ou modalidade desconhecidas voltam ao estado neutro', async () => {
+    await create();
+    const editor = fixture.componentInstance as unknown as {
+      selectFormula(name: string): void;
+      setModality(label: string): void;
+    };
+
+    editor.selectFormula('Não existe');
+    editor.setModality('Não existe');
+    await settle();
+
+    expect(text()).toContain('Modalidade contínua: 24 h de administração.');
+    expect((root().querySelector('#rx-formula') as HTMLSelectElement).value).toBe('');
+  });
 });

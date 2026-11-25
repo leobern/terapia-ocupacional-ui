@@ -34,6 +34,7 @@ describe('DailyRecordEditorComponent', () => {
   let fixture: ComponentFixture<DailyRecordEditorComponent>;
   let writer: FakeWriter;
   let saved: jasmine.Spy;
+  let evolutionFails: boolean;
   const root = (): HTMLElement => fixture.nativeElement as HTMLElement;
   const text = (): string => root().textContent.replace(/\s+/gu, ' ');
   const controller = (): AssistantEditorController => TestBed.inject(AssistantEditorController);
@@ -61,6 +62,7 @@ describe('DailyRecordEditorComponent', () => {
 
   beforeEach(async () => {
     writer = new FakeWriter();
+    evolutionFails = false;
     saved = jasmine.createSpy('saved');
     TestBed.configureTestingModule({
       providers: [
@@ -75,12 +77,24 @@ describe('DailyRecordEditorComponent', () => {
         },
         {
           provide: DailyEvolutionSource,
-          useValue: { load: (): Promise<null> => Promise.resolve(null), save: (): Promise<never> => Promise.reject() },
+          useValue: {
+            load: (): Promise<null> => Promise.resolve(null),
+            save: (r: { text: string }): Promise<unknown> =>
+              evolutionFails
+                ? Promise.reject(new Error('x'))
+                : Promise.resolve({
+                    at: '2026-05-28T12:00:00Z',
+                    author: 'Michelle',
+                    origin: 'manual',
+                    reevaluations: [],
+                    text: r.text,
+                  }),
+          },
         },
         { provide: NOW, useValue: (): Date => new Date(2026, 4, 28, 12, 0) },
         {
           provide: ProfessionalProfileReader,
-          useValue: { read: (): { name: string; role: string } => ({ name: 'Michelle', role: 'nurse' }) },
+          useValue: { read: (): { name: string; role: string } => ({ name: 'Michelle', role: 'doctor' }) },
         },
       ],
     });
@@ -165,5 +179,53 @@ describe('DailyRecordEditorComponent', () => {
 
     expect(text()).toContain(DAILY_SAVE_FAILED_HINT);
     expect((root().querySelector(`#${first.id}`) as HTMLInputElement).value).toBe('10');
+  });
+
+  describe('evolução médica no mesmo painel', () => {
+    const typeEvolution = async (value: string): Promise<void> => {
+      const area = root().querySelector('#evolution-text') as HTMLTextAreaElement;
+
+      area.value = value;
+      area.dispatchEvent(new Event('input'));
+      await settle();
+    };
+
+    it('não repete o campo de mensagem nem botões próprios da evolução', () => {
+      expect(root().querySelectorAll('app-input-chat').length).toBe(0);
+      expect(
+        Array.from(root().querySelectorAll('button')).some(b => b.textContent.includes('Salvar evolução')),
+      ).toBeFalse();
+    });
+
+    it('com a evolução escrita aparece "Salvar"; salva só a evolução e fecha o painel', async () => {
+      const assistant = TestBed.inject(AiAssistantService);
+
+      spyOn(assistant, 'closePanel');
+      await typeEvolution('Paciente estável.');
+
+      expect(actionIds()).toContain('save');
+      await run('save');
+
+      expect(writer.recorded).toEqual([]);
+      expect(saved).toHaveBeenCalledWith();
+      expect(assistant.closePanel).toHaveBeenCalledWith();
+    });
+
+    it('salva parâmetros e evolução juntos; falha na evolução mantém o painel e avisa', async () => {
+      const assistant = TestBed.inject(AiAssistantService);
+
+      spyOn(assistant, 'closePanel');
+      await run('parameters');
+      const first = root().querySelector('input[id^="dre-"]') as HTMLInputElement;
+
+      await fill(first.id, '120');
+      await typeEvolution('Texto.');
+      evolutionFails = true;
+      await run('save');
+
+      expect(writer.recorded.length).toBe(1);
+      expect(assistant.closePanel).not.toHaveBeenCalled();
+      expect(text()).toContain(DAILY_SAVE_FAILED_HINT);
+    });
   });
 });

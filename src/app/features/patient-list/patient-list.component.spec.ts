@@ -58,10 +58,20 @@ class FakeAi extends PatientListAiCommandPort {
 
 class FakeSource extends PatientListSource {
   result: Promise<readonly CensusPatient[]> = Promise.resolve([]);
-  loadCensus(_?: number, __?: Date): Promise<readonly CensusPatient[]> {
-    return this.result;
+  /** Censo diferente por dia (busca em outras datas); sem isso todos os dias devolvem `result`. */
+  byDay: ((day: Date) => Promise<readonly CensusPatient[]>) | null = null;
+  loadCensus(_?: number, day?: Date): Promise<readonly CensusPatient[]> {
+    return this.byDay !== null && day !== undefined ? this.byDay(day) : this.result;
   }
 }
+
+const yesterday = (): Date => {
+  const d = new Date();
+
+  d.setDate(d.getDate() - 1);
+
+  return d;
+};
 
 describe('PatientListComponent', () => {
   let byNameCalls: unknown[][] = [];
@@ -322,10 +332,10 @@ describe('PatientListComponent', () => {
     });
 
     it('persiste ao trocar a data: o critério de ordenação não muda', async () => {
-      const yesterday = new Date(Date.now() - 86_400_000);
+      const before = new Date(Date.now() - 86_400_000);
 
       sort()?.select('priority');
-      fixture.componentInstance.selectDate(yesterday);
+      fixture.componentInstance.selectDate(before);
       fixture.detectChanges();
       await fixture.whenStable();
       fixture.detectChanges();
@@ -475,7 +485,7 @@ describe('PatientListComponent', () => {
       expect(fixture.componentInstance.widths()).toEqual({
         age: 150,
         caloric: 170,
-        status: 170,
+        status: 200,
         location: 170,
         name: 280,
         protein: 170,
@@ -489,7 +499,7 @@ describe('PatientListComponent', () => {
       expect(fixture.componentInstance.widths()).toEqual({
         age: 110,
         caloric: 130,
-        status: 170,
+        status: 200,
         location: 130,
         name: 180,
         protein: 130,
@@ -781,6 +791,82 @@ describe('PatientListComponent', () => {
       await search('');
 
       expect(names().length).toBe(3);
+    });
+
+    it('o botão "Ordenar por prioridade" fica oculto por enquanto', () => {
+      expect(q('.patient-list__sort-select')?.hasAttribute('hidden')).toBeTrue();
+    });
+
+    describe('busca em datas anteriores', () => {
+      const old = (): CensusPatient => ({ ...census(1)[0], id: 'old', name: 'Zélia Antiga', bed: '77', ward: 'Ala 9' });
+      const base = (): readonly CensusPatient[] => [census(1)[0]];
+      const labels = (): string[] => qa('.patient-list__date-label').map(l => l.textContent?.trim() ?? '');
+
+      beforeEach(() => {
+        source.byDay = (day: Date): Promise<readonly CensusPatient[]> =>
+          Promise.resolve(day.toDateString() === yesterday().toDateString() ? [...base(), old()] : base());
+      });
+
+      it('traz o paciente de outra data numa tabela própria, com o rótulo da data', async () => {
+        await search('zelia');
+        await new Promise(resolve => setTimeout(resolve));
+        fixture.detectChanges();
+
+        expect(labels()).toEqual([`Data ${yesterday().toLocaleDateString('pt-BR')}`]);
+        expect(qa('.patient-list__table').length).toBe(1);
+        expect(text()).toContain('Zélia Antiga');
+        expect(text()).not.toContain('Nenhum paciente encontrado');
+        q('.patient-list__tr')?.click();
+        const d = yesterday();
+        const month = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+
+        expect(router.navigate).toHaveBeenCalledWith(['/patients', 'old'], {
+          queryParams: { data: `${d.getFullYear()}-${month}-${day}` },
+        });
+      });
+
+      it('mantém a tabela do dia e acrescenta as outras; limpar a busca remove as extras', async () => {
+        await search('ana');
+        await new Promise(resolve => setTimeout(resolve));
+        fixture.detectChanges();
+
+        expect(labels()).toEqual([]);
+        await search('zelia');
+        await search('');
+        await new Promise(resolve => setTimeout(resolve));
+        fixture.detectChanges();
+
+        expect(labels()).toEqual([]);
+      });
+
+      it('um paciente de hoje achado em outro dia fica no rótulo "Hoje"', async () => {
+        source.byDay = (day: Date): Promise<readonly CensusPatient[]> =>
+          Promise.resolve(day.toDateString() === new Date().toDateString() ? [old()] : []);
+        const selected = fixture.componentInstance;
+
+        selected.selectDate(yesterday());
+        fixture.detectChanges();
+        await fixture.whenStable();
+        await search('zelia');
+        await new Promise(resolve => setTimeout(resolve));
+        fixture.detectChanges();
+
+        expect(labels()).toEqual(['Hoje']);
+        q('.patient-list__tr')?.click();
+
+        expect(router.navigate).toHaveBeenCalledWith(['/patients', 'old']);
+      });
+
+      it('falha ao ler outra data não derruba a busca', async () => {
+        source.byDay = (day: Date): Promise<readonly CensusPatient[]> =>
+          day.toDateString() === yesterday().toDateString() ? Promise.reject(new Error('x')) : Promise.resolve(base());
+        await search('zelia');
+        await new Promise(resolve => setTimeout(resolve));
+        fixture.detectChanges();
+
+        expect(labels()).toEqual([]);
+      });
     });
 
     it('todas as tags de status (menos a terapia) ficam na coluna Status; linha normal não tem tag', () => {
@@ -1192,13 +1278,6 @@ describe('PatientListComponent', () => {
   });
 
   describe('data retroativa (US-004-1-03)', () => {
-    const yesterday = (): Date => {
-      const d = new Date();
-
-      d.setDate(d.getDate() - 1);
-
-      return d;
-    };
     const labels = (): string[] =>
       TestBed.inject(ScreenActionsService)
         .actions()
@@ -1533,5 +1612,19 @@ describe('PatientListComponent', () => {
 
       expect(ai.sent.length).toBe(1);
     });
+  });
+
+  it('lembra a data da lista: ao voltar do detalhe, a lista reabre na última data escolhida', async () => {
+    source.result = Promise.resolve(census(2));
+    await create();
+    const d = new Date();
+
+    d.setDate(d.getDate() - 3);
+    fixture.componentInstance.selectDate(d);
+    fixture.destroy();
+    await create();
+
+    expect(fixture.componentInstance.selectedDate().toDateString()).toBe(d.toDateString());
+    expect(fixture.componentInstance.readOnly()).toBeTrue();
   });
 });

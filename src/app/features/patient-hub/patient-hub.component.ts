@@ -44,9 +44,9 @@ import { NutritionalFunctionalTilesComponent } from './nutritional-functional/nu
 import { PatientHubProfile } from './patient-hub.models';
 import { PatientHubSource } from './patient-hub-source';
 import { PlanSectionComponent } from './plan/plan-section.component';
+import { NutritionReviewEditorComponent } from './prescription/nutrition-review-editor.component';
 import { Prescription } from './prescription/prescription.models';
 import { PrescriptionEditorComponent } from './prescription/prescription-editor.component';
-import { PrescriptionReviewComponent } from './prescription/prescription-review.component';
 import { PrescriptionSource } from './prescription/prescription-source';
 import { PrescriptionSummaryComponent } from './prescription/prescription-summary.component';
 import { PriorStaysBoxComponent } from './prior-stays-box/prior-stays-box.component';
@@ -108,7 +108,6 @@ export const DIAGNOSIS_FAILED_HINT =
     PhIconComponent,
     PlanSectionComponent,
     PrescriptionSummaryComponent,
-    PrescriptionReviewComponent,
     AdequacySummaryComponent,
     PriorStaysBoxComponent,
     TherapyTagComponent,
@@ -192,8 +191,6 @@ export class PatientHubComponent implements OnInit {
   protected readonly messagesVersion = signal(0);
   /** Prescrição vigente exibida no Hub; `null` = sem prescrição (ou leitura falhou). */
   protected readonly prescription = signal<readonly Prescription[]>([]);
-  /** Revisão diária da prescrição (FT-004-8), aberta pela ação dos atalhos; só para o médico. */
-  protected readonly prescriptionReviewOpen = signal(false);
 
   /** Aviso do fluxo automático Avaliação → Diagnóstico (offline ou falha de leitura). */
   protected readonly diagnosisHint = signal<string | null>(null);
@@ -298,7 +295,7 @@ export class PatientHubComponent implements OnInit {
             {
               id: 'prescription-review',
               label: 'Revisão da prescrição',
-              navigate: (): void => this.prescriptionReviewOpen.set(true),
+              navigate: (): void => this.editNutritionReview(),
             },
           );
         }
@@ -552,6 +549,33 @@ export class PatientHubComponent implements OnInit {
       },
       id: 'daily-record',
       label: 'Evolução',
+    });
+  }
+
+  /** Metas nutricionais / revisão da prescrição: abre a Meta nutricional no painel lateral conversacional (só médico). */
+  protected editNutritionReview(): void {
+    const id = this.profile()?.id;
+
+    if (id === undefined || this.professional.read().role !== 'doctor') {
+      return;
+    }
+    this.aiAssistant.openAction({
+      editor: {
+        component: NutritionReviewEditorComponent,
+        description:
+          'Revise a meta vigente, a via de nutrição e a prescrição ativa. Ajuste o que mudou ou mantenha a prescrição.',
+        hint: 'Você também pode enviar via áudio.',
+        inputs: {
+          patientId: id,
+          routeSaved: (): void => undefined,
+          targetsSaved: (): void => {
+            void this.reloadResults();
+          },
+        },
+        title: 'Meta nutricional',
+      },
+      id: 'prescription-review',
+      label: 'Meta nutricional',
     });
   }
 

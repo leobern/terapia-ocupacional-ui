@@ -513,10 +513,9 @@ $duration-collapse: 90ms;
   padding: tokens.$space-8;
 }
 
-// O ícone de sol (tema claro) usa a cor secundária (Thiago, 2026-11-25).
-.nav-menu__theme-button[aria-label='Tema claro']:not(
-    .nav-menu__theme-button--active
-  ) {
+// O ícone de sol (tema claro) usa a cor secundária (Thiago, 2026-11-25): no tema claro com o menu fechado ele é o botão
+// ativo (sol preenchido); com o menu aberto o ativo volta ao fundo secondary e ícone escuro (regra mais específica abaixo).
+.nav-menu__theme-button[aria-label='Tema claro'] {
   color: #{tokens.c(secondary)};
 }
 

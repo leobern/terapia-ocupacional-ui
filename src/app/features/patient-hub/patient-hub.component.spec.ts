@@ -485,23 +485,22 @@ describe('PatientHubComponent', () => {
       ).toEqual(['Registro diário', 'Observação ou mensagem', 'Movimentar leito', 'Alterar unidade/ala']);
     });
 
-    it('médico abre a revisão da prescrição pelos atalhos e fecha com Esc', async () => {
+    it('médico abre a Meta nutricional no painel lateral pelos atalhos', async () => {
       const f = await setup(new FakeSource());
+      const assistant = TestBed.inject(AiAssistantService);
       const action = TestBed.inject(ScreenActionsService)
         .actions()
         .find(a => a.id === 'prescription-review');
-      const dialog = (): HTMLDialogElement =>
-        (f.nativeElement as HTMLElement).querySelector('app-prescription-review dialog') as HTMLDialogElement;
 
       action?.navigate?.();
       f.detectChanges();
-      await f.whenStable();
 
-      expect(dialog().open).toBe(true);
-      dialog().dispatchEvent(new Event('cancel', { cancelable: true }));
-      f.detectChanges();
+      expect(assistant.activeAction()?.id).toBe('prescription-review');
+      expect(assistant.activeAction()?.editor?.title).toBe('Meta nutricional');
+      const inputs = assistant.activeAction()?.editor?.inputs as { routeSaved: () => void; targetsSaved: () => void };
 
-      expect(dialog().open).toBe(false);
+      inputs.routeSaved();
+      inputs.targetsSaved();
     });
 
     it('"Ajustar a prescrição" abre a prescrição no painel lateral e só existe para o médico', async () => {
@@ -516,6 +515,25 @@ describe('PatientHubComponent', () => {
 
       expect(assistant.activeAction()?.id).toBe('adjust-prescription');
       expect(assistant.activeAction()?.editor?.title).toBe('Prescrição');
+    });
+
+    it('os cadastros do painel não abrem sem o dado de que precisam (hospital, paciente ou perfil de médico)', async () => {
+      const noHospital = await setup(new FakeSource(), 'p1', []);
+      const assistant = TestBed.inject(AiAssistantService);
+
+      (noHospital.componentInstance as unknown as { editPrescription(): void }).editPrescription();
+
+      expect(assistant.activeAction()).toBeNull();
+      noHospital.destroy();
+    });
+
+    it('a Meta nutricional é só do médico', async () => {
+      TestBed.resetTestingModule();
+      const f = await setup(new FakeSource(), 'p1', undefined, 'nurse');
+
+      (f.componentInstance as unknown as { editNutritionReview(): void }).editNutritionReview();
+
+      expect(TestBed.inject(AiAssistantService).activeAction()).toBeNull();
     });
 
     it('sem hospital com vínculo em contexto, a ação não é oferecida', async () => {
@@ -1092,13 +1110,13 @@ describe('PatientHubComponent', () => {
       f = await setup(new FakeSource());
     });
 
-    it('a faixa de datas flutua na linha do leito (3 dias) e há outra na coluna do paciente (mobile)', () => {
-      const floating = el().querySelector('.hub__bed-row app-date-strip');
-      const column = el().querySelector('.hub__group > app-date-strip');
+    it('há uma só faixa de datas, abaixo do card do paciente (Figma 4792:32862)', () => {
+      const strips = el().querySelectorAll('app-date-strip');
+      const identity = el().querySelector('.hub__identity') as HTMLElement;
 
+      expect(strips.length).toBe(1);
       expect(el().querySelector('app-page-header app-date-strip')).toBeNull();
-      expect(floating?.classList).toContain('date-strip--header');
-      expect(column?.classList).not.toContain('date-strip--header');
+      expect(identity.nextElementSibling).toBe(strips[0]);
     });
 
     it('no mobile o cabeçalho não tem o sino (só os atalhos)', async () => {

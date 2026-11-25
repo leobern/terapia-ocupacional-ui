@@ -1,3 +1,4 @@
+import { NgTemplateOutlet } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -8,6 +9,7 @@ import {
   NgZone,
   OnInit,
   signal,
+  untracked,
   viewChild,
 } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
@@ -44,6 +46,7 @@ import {
 import { PatientCard, TherapyType } from './patient-list.models';
 import { PatientListAiCommandPort } from './patient-list-ai-command';
 import { assemblePatientList } from './patient-list-assembly';
+import { PatientListDay } from './patient-list-day';
 import { PatientListSource } from './patient-list-source';
 
 export interface PatientGroup {
@@ -75,6 +78,24 @@ function isSameDay(a: Date, b: Date): boolean {
   return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
 }
 
+/** Pacientes achados pela busca numa data diferente da escolhida. */
+export interface DateHits {
+  readonly day: Date;
+  readonly label: string;
+  readonly patients: readonly PatientCard[];
+}
+
+/** Quantos dias para trás a busca procura (a partir de hoje). */
+export const SEARCH_WINDOW_DAYS = 30;
+
+function dateLabel(day: Date): string {
+  return day.toLocaleDateString('pt-BR');
+}
+
+function matchesTerm(p: PatientCard, term: string): boolean {
+  return normalize(`${p.name} ${p.ward} ${p.bed} leito ${p.ward} leito ${p.bed}`).includes(term);
+}
+
 export type ColumnKey = 'name' | 'age' | 'therapy' | 'caloric' | 'protein' | 'location' | 'status';
 
 /** Larguras padrão (px) da tabela do desktop; o usuário ajusta arrastando a divisória do cabeçalho. */
@@ -84,7 +105,7 @@ const DEFAULT_WIDTHS: Readonly<Record<ColumnKey, number>> = {
   location: 170,
   name: 280,
   protein: 170,
-  status: 170,
+  status: 200,
   therapy: 120,
 };
 const MIN_WIDTH: Readonly<Record<ColumnKey, number>> = {
@@ -93,7 +114,7 @@ const MIN_WIDTH: Readonly<Record<ColumnKey, number>> = {
   location: 130,
   name: 180,
   protein: 130,
-  status: 170,
+  status: 200,
   therapy: 130,
 };
 const COLUMN_ORDER: readonly ColumnKey[] = ['name', 'age', 'therapy', 'caloric', 'protein', 'location', 'status'];
@@ -164,6 +185,7 @@ const PULL_THRESHOLD = 80;
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     ButtonComponent,
+    NgTemplateOutlet,
     DateStripComponent,
     FollowUpClosureSheetComponent,
     GraphMetaComponent,
@@ -243,12 +265,10 @@ export class PatientListComponent implements OnInit {
   readonly filtered = computed(() => {
     const term = normalize(this.query());
 
-    return term === ''
-      ? this.patients()
-      : this.patients().filter(p =>
-          normalize(`${p.name} ${p.ward} ${p.bed} leito ${p.ward} leito ${p.bed}`).includes(term),
-        );
+    return term === '' ? this.patients() : this.patients().filter(p => matchesTerm(p, term));
   });
+  /** Resultados da busca em outras datas, agrupados por data (mais recente primeiro); vazio sem busca. */
+  readonly otherDates = signal<readonly DateHits[]>([]);
   readonly sorted = computed(() => {
     const value = SORT_VALUE[this.sortKey()];
     const sign = this.sortDir() === 'asc' ? 1 : -1;
@@ -346,10 +366,13 @@ export class PatientListComponent implements OnInit {
       }));
   });
   private generation = 0;
+  private searchGeneration = 0;
   private pullFrom: number | null = null;
   private readonly today = new Date();
+  private readonly lastDay = inject(PatientListDay);
 
   constructor() {
+    this.selectedDate.set(this.lastDay.day() ?? this.today);
     effect(onCleanup => {
       onCleanup(this.screenActions.registerContext(PATIENTS_CONTEXT));
     });
@@ -438,6 +461,22 @@ export class PatientListComponent implements OnInit {
         void this.load(hospitalId, day);
       }
     });
+
+    // A busca procura em toda a listagem: o que existir em datas anteriores aparece em tabelas por data.
+    effect(() => {
+      const term = normalize(this.query());
+      const hospitalId = this.context.selected()?.id;
+      const day = this.selectedDate();
+
+      if (term === '' || hospitalId === undefined) {
+        // Descarta também a busca em andamento: o resultado dela não pode reaparecer depois de limpar o campo.
+        this.searchGeneration++;
+        untracked(() => this.otherDates.set([]));
+
+        return;
+      }
+      untracked(() => void this.searchOtherDates(hospitalId, day, term));
+    });
   }
 
   async ngOnInit(): Promise<void> {
@@ -484,6 +523,42 @@ export class PatientListComponent implements OnInit {
       }
     } catch {
       // Mantém o último cache exibido.
+    }
+  }
+
+  /** Procura o termo nos últimos dias; um paciente aparece só na data mais recente em que foi achado. */
+  async searchOtherDates(hospitalId: number, selected: Date, term: string): Promise<void> {
+    const generation = ++this.searchGeneration;
+    const days = Array.from({ length: SEARCH_WINDOW_DAYS + 1 }, (_, i) => {
+      const d = new Date(this.today);
+
+      d.setDate(d.getDate() - i);
+
+      return d;
+    }).filter(d => !isSameDay(d, selected));
+    const seen = new Set(this.filtered().map(p => p.id));
+    const hits: DateHits[] = [];
+
+    try {
+      const lists = await Promise.all(
+        days.map(async d => assemblePatientList(await this.source.loadCensus(hospitalId, d), hospitalId, d)),
+      );
+
+      days.forEach((day, i) => {
+        const found = lists[i].filter(p => matchesTerm(p, term) && !seen.has(p.id));
+
+        for (const p of found) {
+          seen.add(p.id);
+        }
+        if (found.length > 0) {
+          hits.push({ day, label: isSameDay(day, this.today) ? 'Hoje' : `Data ${dateLabel(day)}`, patients: found });
+        }
+      });
+    } catch {
+      return;
+    }
+    if (generation === this.searchGeneration) {
+      this.otherDates.set(hits);
     }
   }
 
@@ -619,6 +694,7 @@ export class PatientListComponent implements OnInit {
    */
   selectDate(day: Date): void {
     this.selectedDate.set(day);
+    this.lastDay.day.set(day);
   }
 
   /**
@@ -665,18 +741,21 @@ export class PatientListComponent implements OnInit {
    * Abre o paciente. Numa data anterior à de hoje, leva a data filtrada junto (`?data=aaaa-mm-dd`): o paciente abre
    * naquele dia, em somente leitura (Thiago, 2026-11-25).
    */
-  openPatient(id: string): void {
+  openPatient(id: string, day: Date | null = null): void {
     if (this.turnMode()) {
       this.togglePicked(id);
 
       return;
     }
-    if (this.readOnly()) {
-      const d = this.selectedDate();
-      const month = String(d.getMonth() + 1).padStart(2, '0');
-      const day = String(d.getDate()).padStart(2, '0');
+    const target = day ?? (this.readOnly() ? this.selectedDate() : null);
 
-      void this.router.navigate(['/patients', id], { queryParams: { data: `${d.getFullYear()}-${month}-${day}` } });
+    if (target !== null && !isSameDay(target, this.today)) {
+      const month = String(target.getMonth() + 1).padStart(2, '0');
+      const dd = String(target.getDate()).padStart(2, '0');
+
+      void this.router.navigate(['/patients', id], {
+        queryParams: { data: `${target.getFullYear()}-${month}-${dd}` },
+      });
 
       return;
     }

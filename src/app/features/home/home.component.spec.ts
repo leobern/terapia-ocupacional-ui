@@ -222,13 +222,17 @@ describe('HomeComponent', () => {
 
     beforeEach(() => setup());
 
-    it('na linha do hospital: "Iniciar turno de trabalho" (outline) ao lado do seletor e "Cadastrar hospital" à direita', () => {
-      const row = q('.home__hospital-row') as HTMLElement;
-      const labels = Array.from(row.querySelectorAll('app-button')).map(b => b.textContent.trim());
+    it('"Cadastrar hospital" fica no topo, ao lado do sino; "Iniciar turno" (outline, sem ícone) à direita, acima da data', () => {
+      const actions = q('.home__header-actions') as HTMLElement;
+      const aside = q('.home__local-aside') as HTMLElement;
 
-      expect(labels).toEqual(['Iniciar turno de trabalho', 'Cadastrar hospital']);
-      expect(q('.home__shift')?.classList.toString()).toContain('home__shift');
+      expect(actions.querySelector('.home__register-hospital')?.textContent).toContain('Cadastrar hospital');
+      expect(actions.firstElementChild).toBe(actions.querySelector('.home__register-hospital'));
+      expect(q('.home__hospital-row .home__register-hospital')).toBeNull();
+      expect(aside.firstElementChild).toBe(q('.home__shift'));
+      expect(aside.lastElementChild?.classList).toContain('home__date');
       expect(q('.home__shift button')?.className).toContain('outlined');
+      expect(q('.home__shift ph-icon')).toBeNull();
     });
 
     it('sem localização cadastrada, não inicia e orienta em texto', async () => {
@@ -526,18 +530,15 @@ describe('HomeComponent', () => {
       expect(cta?.textContent).toContain('Ver detalhes');
     });
 
-    it('keeps the arrow reserved and inert: clicking it or the card changes nothing', async () => {
+    it('o card de pacientes do dia leva à listagem de pacientes', async () => {
       await setup();
-      const before = el().innerHTML;
-      const callsBefore = patients.calls.length;
+      navigate.calls.reset();
 
       (q('app-card-patients button') as HTMLButtonElement).click();
       fixture.detectChanges();
       await settle();
 
-      expect(navigate).not.toHaveBeenCalled();
-      expect(patients.calls.length).toBe(callsBefore);
-      expect(el().innerHTML).toBe(before);
+      expect(navigate).toHaveBeenCalledWith(['/patients']);
     });
 
     it('lists notifications after the count card in the grid', async () => {

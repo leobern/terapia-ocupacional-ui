@@ -85,9 +85,13 @@ describe('DrawerComponent', () => {
     expect(dialog().getAttribute('aria-label')).toBe('Assistente de IA');
   });
 
-  it('expanded: trava cabeçalho, conversa, atalhos e campo de mensagem em 640px centralizados', () => {
+  it('expanded: trava cabeçalho, atalhos e campo de mensagem em 640px centralizados; a rolagem ocupa a largura toda', () => {
     openDrawer('expanded');
-    const parts = ['.drawer__header', '.drawer__content', '.drawer__footer'].map(
+    const content = fixture.nativeElement.querySelector('.drawer__content') as HTMLElement;
+
+    expect(content.getBoundingClientRect().width).toBe(dialog().getBoundingClientRect().width);
+    expect(dialog().classList).toContain('drawer--expanded');
+    const parts = ['.drawer__header', '.drawer__footer'].map(
       selector => fixture.nativeElement.querySelector(selector) as HTMLElement,
     );
     const panelWidth = dialog().clientWidth;

@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, effect, inject, input, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, input, signal, viewChild } from '@angular/core';
 
 import { FieldCardComponent } from '../../../shared/components/field-card/field-card.component';
 import { AiAssistantService } from '../../../shared/services/ai-assistant.service';
@@ -57,7 +57,10 @@ export class DailyRecordEditorComponent {
   protected readonly hint = signal<string | null>(null);
   protected readonly busy = signal(false);
   protected readonly filled = computed(() => Object.values(this.values()).some(v => v.trim() !== ''));
+  /** Há algo a salvar: algum valor preenchido ou a evolução médica escrita. */
+  protected readonly dirty = computed(() => this.filled() || this.evolution()?.canSave() === true);
 
+  private readonly evolution = viewChild(DailyEvolutionComponent);
   private readonly writer = inject(DailyRecordWriter);
   private readonly assistant = inject(AiAssistantService);
   private readonly editor = inject(AssistantEditorController);
@@ -71,7 +74,7 @@ export class DailyRecordEditorComponent {
       const actions = computed<readonly EditorAction[]>(() => [
         ...(this.showParameters() ? [] : [{ id: 'parameters', label: 'Inserir parâmetros assistenciais' }]),
         { id: 'lab', label: 'Inserir resultados laboratoriais' },
-        ...(this.filled() ? [{ id: 'save', label: 'Salvar' }] : []),
+        ...(this.dirty() ? [{ id: 'save', label: 'Salvar' }] : []),
       ]);
 
       onCleanup(
@@ -107,27 +110,20 @@ export class DailyRecordEditorComponent {
     this.errors.update(e => ({ ...e, [id]: '' }));
   }
 
-  /** Grava só os cards preenchidos; nada é gravado se algum valor for inválido ou se nada foi preenchido. */
+  /** Grava os valores preenchidos e a evolução médica; fecha o painel só quando tudo foi gravado. */
   protected async save(): Promise<void> {
     if (this.busy()) {
       return;
     }
-    const at = this.now().toISOString();
-    const author = this.professional.read().name;
-    const errors: Record<string, string> = {};
-    const entries: NewParameterEntry[] = [];
+    const entries = this.entriesToSave();
 
-    for (const parameter of this.parameters) {
-      this.collect(parameter.id, null, errors, entries, { at, author });
-    }
-    for (const lab of this.labs()) {
-      this.collect(lab.id, lab, errors, entries, { at, author });
-    }
-    this.errors.set(errors);
-    if (Object.keys(errors).length > 0) {
+    if (entries === null) {
       return;
     }
-    if (entries.length === 0) {
+    const evolution = this.evolution();
+    const writesEvolution = evolution?.canSave() === true;
+
+    if (entries.length === 0 && !writesEvolution) {
       this.hint.set(NOTHING_TO_SAVE_HINT);
 
       return;
@@ -139,7 +135,14 @@ export class DailyRecordEditorComponent {
     }
     this.busy.set(true);
     try {
-      await this.writer.record(this.patientId(), entries);
+      if (entries.length > 0) {
+        await this.writer.record(this.patientId(), entries);
+      }
+      if (writesEvolution && !(await (evolution as DailyEvolutionComponent).save())) {
+        this.hint.set(DAILY_SAVE_FAILED_HINT);
+
+        return;
+      }
       this.saved()();
       this.assistant.closePanel();
     } catch {
@@ -147,6 +150,23 @@ export class DailyRecordEditorComponent {
     } finally {
       this.busy.set(false);
     }
+  }
+
+  /** Lançamentos dos cards preenchidos; `null` se algum valor é inválido (os erros ficam nos cards). */
+  private entriesToSave(): NewParameterEntry[] | null {
+    const meta = { at: this.now().toISOString(), author: this.professional.read().name };
+    const errors: Record<string, string> = {};
+    const entries: NewParameterEntry[] = [];
+
+    for (const parameter of this.parameters) {
+      this.collect(parameter.id, null, errors, entries, meta);
+    }
+    for (const lab of this.labs()) {
+      this.collect(lab.id, lab, errors, entries, meta);
+    }
+    this.errors.set(errors);
+
+    return Object.keys(errors).length > 0 ? null : entries;
   }
 
   private collect(

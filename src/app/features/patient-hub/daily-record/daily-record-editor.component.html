@@ -42,7 +42,11 @@
   }
 
   <app-prescription-guidance [open]="true" [patientId]="patientId()" />
-  <app-daily-evolution [open]="true" [patientId]="patientId()" />
+  <app-daily-evolution
+    [open]="true"
+    [embedded]="true"
+    [patientId]="patientId()"
+  />
 
   @if (busy()) {
     <p class="dre__status" role="status">Salvando…</p>

@@ -17,24 +17,7 @@
           <div class="hub__col">
             <!-- Figma 4766:13759: legenda Ala · Leito, cartão do paciente e faixa de datas. -->
             <div class="hub__group hub__o-1">
-              <!-- Figma 4781:31588: a faixa de datas flutua à direita da legenda Ala · Leito (linha de 40px). -->
-              <div class="hub__bed-row">
-                <p class="hub__bed">{{ header()?.bed }}</p>
-                <app-date-strip
-                  class="hub__strip hub__strip--float"
-                  variant="header"
-                  [selected]="day()"
-                  [maxDate]="today"
-                  (dateChange)="day.set($event)"
-                />
-              </div>
-              <!-- Mobile (Figma 4766:24813): a faixa de datas fica logo abaixo da legenda. -->
-              <app-date-strip
-                class="hub__strip hub__strip--column"
-                [selected]="day()"
-                [maxDate]="today"
-                (dateChange)="day.set($event)"
-              />
+              <p class="hub__bed">{{ header()?.bed }}</p>
               <section
                 class="hub__identity"
                 aria-label="Identificação do paciente"
@@ -46,6 +29,13 @@
                   <app-therapy-tag [label]="profile()?.therapy ?? ''" />
                 </div>
               </section>
+              <!-- Figma 4792:32862: a faixa de datas fica abaixo do card do paciente (sem apertar a legenda Ala · Leito). -->
+              <app-date-strip
+                class="hub__strip"
+                [selected]="day()"
+                [maxDate]="today"
+                (dateChange)="day.set($event)"
+              />
             </div>
 
             <div class="hub__group hub__o-2">
@@ -93,6 +83,15 @@
                   </div>
                 </section>
               }
+              <!-- Internações anteriores: logo abaixo do card de Diagnóstico, fechado por padrão. -->
+              @if (profile(); as p) {
+                @if (hospitalId(); as hospital) {
+                  <app-prior-stays-box
+                    [patientId]="p.id"
+                    [hospitalId]="hospital"
+                  />
+                }
+              }
             </div>
 
             @if (showRest() && profile(); as p) {
@@ -102,7 +101,7 @@
                     title="Metas nutricionais"
                     actionLabel="Editar metas nutricionais"
                     [actionIcon]="readOnly() ? null : 'pencil-simple-line'"
-                    (actionClick)="prescriptionReviewOpen.set(true)"
+                    (actionClick)="editNutritionReview()"
                   />
                   <ul class="hub__tiles">
                     @for (tile of tiles; track tile.label) {
@@ -125,7 +124,7 @@
                         : 'Toque aqui e insira as metas nutricionais.'
                     "
                     [disabled]="readOnly()"
-                    (activate)="prescriptionReviewOpen.set(true)"
+                    (activate)="editNutritionReview()"
                   />
                 </div>
               }
@@ -141,6 +140,7 @@
                   <div class="hub__rx">
                     <app-prescription-summary
                       title=""
+                      [showAuthor]="true"
                       [prescriptions]="prescription()"
                     />
                     @if (adequacy(); as a) {
@@ -296,13 +296,6 @@
                 [patientId]="p.id"
                 (targetsSaved)="reloadResults()"
               />
-              @if (hospitalId(); as hospital) {
-                <app-prior-stays-box
-                  class="hub__o-9"
-                  [patientId]="p.id"
-                  [hospitalId]="hospital"
-                />
-              }
               <app-follow-up-status
                 class="hub__o-9"
                 [patientId]="p.id"
@@ -350,13 +343,6 @@
             [patientId]="p.id"
             (closed)="messageOpen.set(false)"
             (sent)="messagesVersion.set(messagesVersion() + 1)"
-          />
-          <app-prescription-review
-            [open]="prescriptionReviewOpen()"
-            [patientId]="p.id"
-            [adequacy]="adequacy()"
-            (targetsSaved)="reloadResults()"
-            (closed)="prescriptionReviewOpen.set(false)"
           />
         }
       }

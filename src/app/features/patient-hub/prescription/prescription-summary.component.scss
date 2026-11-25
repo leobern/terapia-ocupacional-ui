@@ -19,6 +19,32 @@
   @include typography.title-md;
 }
 
+// Médico que prescreveu e quando (Figma 4784:32504).
+.rx-summary__author {
+  display: flex;
+  align-items: center;
+  gap: tokens.$space-12;
+  padding-inline: tokens.$space-8;
+}
+
+.rx-summary__author-text {
+  min-width: 0;
+}
+
+.rx-summary__author-name {
+  margin: 0;
+  color: tokens.c(content-1);
+
+  @include typography.label-lg;
+}
+
+.rx-summary__author-meta {
+  margin: 0;
+  color: tokens.c(content-4);
+
+  @include typography.caption;
+}
+
 // Figma v2/StatTile: a fórmula ocupa a linha toda; os demais dados em tiles de 2 colunas (raio 16, fundo surface-2).
 .rx-summary__list {
   display: grid;

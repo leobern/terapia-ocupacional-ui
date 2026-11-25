@@ -377,8 +377,9 @@ export class HomeComponent implements OnInit, OnDestroy {
     });
   }
 
+  /** Card de pacientes do dia: leva à listagem de pacientes. */
   onViewPatients(): void {
-    // Navega para a tela "Listagem de Pacientes" — especificação independente, fora de escopo.
+    void this.router.navigate(['/patients']);
   }
 
   formatTime(isoDate: string): string {

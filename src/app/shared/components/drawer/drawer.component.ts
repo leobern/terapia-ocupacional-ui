@@ -11,6 +11,7 @@ import {
   viewChild,
 } from '@angular/core';
 
+import { ScrollRevealDirective } from '../../directives/scroll-reveal.directive';
 import { ViewportBreakpointService } from '../../services/viewport-breakpoint.service';
 import { type ChatShortcut } from '../bottom-sheet/bottom-sheet.component';
 import { IconButtonComponent } from '../icon-button/icon-button.component';
@@ -116,7 +117,7 @@ type DialogMode = 'closed' | 'non-modal' | 'modal';
  */
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [IconButtonComponent, IconLogoComponent, TipComponent],
+  imports: [IconButtonComponent, IconLogoComponent, ScrollRevealDirective, TipComponent],
   selector: 'app-drawer',
   styleUrl: './drawer.component.scss',
   templateUrl: './drawer.component.html',

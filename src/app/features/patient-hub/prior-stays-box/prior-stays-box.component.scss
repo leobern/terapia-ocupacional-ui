@@ -6,6 +6,7 @@
   flex-direction: column;
   gap: tokens.$space-8;
   padding: tokens.$space-16;
+  border: 1px solid tokens.c(border);
   border-radius: tokens.$radius-md;
   background: tokens.c(surface-2);
 }

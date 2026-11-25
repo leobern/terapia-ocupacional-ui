@@ -57,6 +57,10 @@
 
 // Figma v2/SelectTag (tonal, 40px): o <select> nativo fica por cima, invisível, para abrir a lista de critérios.
 .patient-list__sort-select {
+  &[hidden] {
+    display: none;
+  }
+
   position: relative;
   display: inline-flex;
   flex: none;
@@ -549,7 +553,7 @@
   }
 
   .patient-list__cell-first {
-    text-align: right;
+    text-align: left;
   }
 
   .patient-list__open {
@@ -684,4 +688,12 @@
 
 .patient-list__tr--picked td {
   background: tokens.c(surface-2);
+}
+
+// Resultados da busca em outras datas: um rótulo com a data acima de cada tabela (Thiago, 2026-11-25).
+.patient-list__date-label {
+  margin: tokens.$space-16 0 tokens.$space-8 tokens.$space-16;
+  color: tokens.c(content-1);
+
+  @include typography.title-md;
 }
