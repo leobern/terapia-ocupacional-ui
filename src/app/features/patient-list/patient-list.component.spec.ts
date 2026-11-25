@@ -14,7 +14,7 @@ import { HospitalContextService } from '../home/hospital-context.service';
 import { LinkedHospitalsReader } from '../home/linked-hospitals';
 import { ProfessionalProfileReader } from '../home/professional-profile';
 import { UnreadNotificationsReader } from '../home/unread-notifications-reader';
-import { BedMovementPort } from '../patient-hub/move-bed/bed-movement.port';
+import { BedMovementPort, BedOccupancyPort } from '../patient-hub/move-bed/bed-movement.port';
 import { BedNumberExtractor } from '../patient-hub/move-bed/bed-number-extractor';
 import { InternacaoCreationPort } from '../patient-registration/internacao-creation.port';
 import { PatientCreationPort } from '../patient-registration/patient-creation.port';
@@ -97,6 +97,7 @@ describe('PatientListComponent', () => {
           },
         },
         { provide: BedNumberExtractor, useValue: {} },
+        { provide: BedOccupancyPort, useValue: {} },
         provideRouter([]),
         { provide: PatientListSource, useValue: source },
         { provide: FollowUpClosureWriter, useValue: closureWriter },

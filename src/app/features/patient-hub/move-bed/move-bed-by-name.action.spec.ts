@@ -6,6 +6,8 @@ import { ScreenActionsService } from '../../../shared/services/screen-actions.se
 import {
   BedMovementPort,
   BedNotIdentifiedError,
+  type BedOccupancy,
+  BedOccupancyPort,
   type PatientCandidate,
   PatientNotFoundError,
   PatientWithoutInternacaoError,
@@ -28,6 +30,7 @@ const candidates: PatientCandidate[] = [
 describe('MoveBedAction.buildByName (US-002-2-02)', () => {
   let resolveByName: jasmine.Spy<(h: number, n: string, b?: string) => Promise<ResolvedByName>>;
   let resolve: jasmine.Spy<(id: number, bed?: string) => Promise<ResolvedBedMovement>>;
+  let check: jasmine.Spy<(id: number, bed: string) => Promise<BedOccupancy>>;
   let flow: AssistantConversationService;
   let assistant: AiAssistantService;
   const texts = (): string[] => flow.messages().map(m => m.text);
@@ -37,8 +40,12 @@ describe('MoveBedAction.buildByName (US-002-2-02)', () => {
     spyOnProperty(navigator, 'language').and.returnValue('pt-BR');
     resolveByName = jasmine.createSpy('resolveByName').and.resolveTo({ kind: 'single', resolved: moved });
     resolve = jasmine.createSpy('resolve').and.resolveTo(moved);
+    check = jasmine
+      .createSpy('check')
+      .and.callFake((_: number, bed: string) => Promise.resolve({ newBedNumber: bed, occupants: [], occupied: false }));
     TestBed.configureTestingModule({
       providers: [
+        { provide: BedOccupancyPort, useValue: { check } },
         { provide: BedMovementPort, useValue: { confirm: jasmine.createSpy('confirm'), resolve, resolveByName } },
         { provide: BedNumberExtractor, useClass: ProvisionalBedNumberExtractor },
         { provide: PatientNameExtractor, useClass: ProvisionalPatientNameExtractor },
@@ -63,6 +70,21 @@ describe('MoveBedAction.buildByName (US-002-2-02)', () => {
     ]);
 
     expect(flow.options().map(o => o.label)).toEqual(['Sim', 'Não']);
+  });
+
+  it('US-002-2-04 with 2-02: occupied destination bed adds the alert to the by-name summary, without blocking', async () => {
+    setup();
+    check.and.resolveTo({
+      newBedNumber: '210',
+      occupants: [{ name: 'Helena Duarte Ramos', pacienteId: 7 }],
+      occupied: true,
+    });
+    assistant.ask('mover Beatriz Ramos Costa para o leito 210');
+    await settle();
+
+    expect(check).toHaveBeenCalledOnceWith(5, '210');
+    expect(texts().at(-2)).toContain('Atenção: o leito 210 já está ocupado por Helena Duarte Ramos.');
+    expect(texts().at(-1)).toBe('Confirma a movimentação do leito?');
   });
 
   it('scenario 2: lists the candidates and, after the choice, resolves by the chosen id', async () => {

@@ -3,7 +3,7 @@ import { provideRouter, Router } from '@angular/router';
 
 import { ScreenActionsService } from '../../shared/services/screen-actions.service';
 import { ManagerAccessReader } from '../hospital-team/hospital-invite-port';
-import { BedMovementPort } from '../patient-hub/move-bed/bed-movement.port';
+import { BedMovementPort, BedOccupancyPort } from '../patient-hub/move-bed/bed-movement.port';
 import { BedNumberExtractor } from '../patient-hub/move-bed/bed-number-extractor';
 import { DailyPatientsSource, DailyPatientsSummary } from './daily-patients';
 import { HomeComponent } from './home.component';
@@ -136,6 +136,7 @@ describe('HomeComponent', () => {
           },
         },
         { provide: BedNumberExtractor, useValue: {} },
+        { provide: BedOccupancyPort, useValue: {} },
         provideRouter([]),
         { provide: DailyPatientsSource, useValue: patients },
         { provide: HomeNotificationsSource, useValue: feed },
@@ -934,6 +935,7 @@ describe('HomeComponent', () => {
           provideRouter([]),
           { provide: BedMovementPort, useValue: {} },
           { provide: BedNumberExtractor, useValue: {} },
+          { provide: BedOccupancyPort, useValue: {} },
           { provide: DailyPatientsSource, useValue: new FakePatients() },
           { provide: HomeNotificationsSource, useValue: new FakeNotifications() },
           { provide: LinkRevocationChecker, useValue: { isRevoked: (): Promise<boolean> => Promise.resolve(false) } },
