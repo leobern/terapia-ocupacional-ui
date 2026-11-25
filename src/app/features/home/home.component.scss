@@ -43,10 +43,26 @@
 }
 
 .home__header-text {
-  display: flex;
-  flex: 1 0 0;
-  flex-direction: column;
-  min-width: 0;
+  // Mobile (Figma 06 · Home): só avatar, CTA e sino; o nome continua para leitores de tela, mas sem ocupar a linha.
+  position: absolute;
+  overflow: hidden;
+  width: 1px;
+  height: 1px;
+  clip-path: inset(50%);
+  white-space: nowrap;
+
+  @include breakpoints.md {
+    position: static;
+    display: flex;
+    flex: 1 0 0;
+    flex-direction: column;
+    overflow: visible;
+    width: auto;
+    height: auto;
+    min-width: 0;
+    clip-path: none;
+    white-space: normal;
+  }
 }
 
 .home__header-title {
@@ -65,6 +81,7 @@
 
 // Sino e atalhos: ghost de 40px colados, o mesmo padrão do `app-page-header` (Figma "actions").
 .home__header-actions {
+  margin-inline-start: auto;
   display: flex;
   align-items: center;
   gap: tokens.$space-8;
