@@ -458,6 +458,9 @@ describe('PatientHubComponent', () => {
 
       expect(actions.map(a => a.label)).toEqual([
         'Evoluir paciente',
+        'Registrar diagnóstico',
+        'Avaliação clínica',
+        'Avaliação nutricional e funcional',
         'Nova mensagem',
         'Movimentar leito',
         'Alterar unidade/ala',
@@ -562,7 +565,15 @@ describe('PatientHubComponent', () => {
         TestBed.inject(ScreenActionsService)
           .actions()
           .map(a => a.label),
-      ).toEqual(['Evoluir paciente', 'Nova mensagem', 'Movimentar leito', 'Alterar unidade/ala']);
+      ).toEqual([
+        'Evoluir paciente',
+        'Registrar diagnóstico',
+        'Avaliação clínica',
+        'Avaliação nutricional e funcional',
+        'Nova mensagem',
+        'Movimentar leito',
+        'Alterar unidade/ala',
+      ]);
     });
 
     it('médico abre a Meta nutricional no painel lateral pelos atalhos', async () => {
