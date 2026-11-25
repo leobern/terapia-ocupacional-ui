@@ -252,7 +252,8 @@ describe('PatientListComponent', () => {
       (fixture.nativeElement as HTMLElement).querySelectorAll('.patient-list__section-title'),
     ).map(t => t.textContent?.replace(/\s+/g, ' ').trim());
 
-    expect(titles).toEqual(['Fora da meta2', 'Dentro da meta3']);
+    // sem nenhum valor de adequação não se afirma que está na meta: grupo próprio, ao fim
+    expect(titles).toEqual(['Fora da meta2', 'Dentro da meta2', 'Sem adequação1']);
     expect(text()).toContain('2 fora da meta');
     // o mais crítico (10%) vem primeiro
     expect((q('.patient-list__cluster .patient-list__row') as HTMLElement).textContent).toContain('Crítico Um');
@@ -296,7 +297,7 @@ describe('PatientListComponent', () => {
     });
 
     it('padrão: por prioridade (Fora/Dentro da meta), como no Figma, com o chip selecionado', () => {
-      expect(titles()).toEqual(['Fora da meta1', 'Dentro da meta3']);
+      expect(titles()).toEqual(['Fora da meta1', 'Dentro da meta2', 'Sem adequação1']);
       expect(sort()?.active()).toBe('priority');
     });
 
@@ -312,7 +313,7 @@ describe('PatientListComponent', () => {
       sort()?.select('priority');
       fixture.detectChanges();
 
-      expect(titles()).toEqual(['Fora da meta1', 'Dentro da meta3']);
+      expect(titles()).toEqual(['Fora da meta1', 'Dentro da meta2', 'Sem adequação1']);
       expect(names()).toEqual(['B', 'A', 'C', 'D'].sort((x, y) => names().indexOf(x) - names().indexOf(y)));
       expect(names().length).toBe(4);
       expect(sort()?.active()).toBe('priority');

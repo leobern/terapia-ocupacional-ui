@@ -348,11 +348,14 @@ export class PatientListComponent implements OnInit {
     const out = this.filtered()
       .filter(p => isOutOfTarget(p.adequacy))
       .sort((a, b) => lowestGoal(a.adequacy) - lowestGoal(b.adequacy));
-    const within = this.filtered().filter(p => !isOutOfTarget(p.adequacy));
+    // Sem nenhum valor de adequação não se sabe se está na meta: não entra em "Dentro da meta".
+    const within = this.filtered().filter(p => hasAdequacy(p.adequacy) && !isOutOfTarget(p.adequacy));
+    const unknown = this.filtered().filter(p => !hasAdequacy(p.adequacy));
 
     return [
       { key: 'out', patients: out, title: 'Fora da meta' },
       { key: 'in', patients: within, title: 'Dentro da meta' },
+      { key: 'unknown', patients: unknown, title: 'Sem adequação' },
     ].filter(g => g.patients.length > 0);
   });
   private readonly bedGroups = computed<readonly PatientGroup[]>(() => {
