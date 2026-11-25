@@ -48,11 +48,6 @@
   }
 }
 
-// Em "hoje" a seta da direita some; o espaço fica reservado.
-.date-strip__arrow--hidden {
-  visibility: hidden;
-}
-
 // Todos os dias têm 48×60 (Label 12 / Title 20) e passam 2px da borda, como no desenho; só o selecionado tem fundo.
 .date-strip__day {
   flex-direction: column;

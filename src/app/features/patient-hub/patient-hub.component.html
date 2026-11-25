@@ -9,17 +9,7 @@
       [unreadCount]="unreadCount()"
       (backClick)="back()"
       (bellClick)="openNotifications()"
-    >
-      <!-- Desktop (Figma 4781:31588): a faixa de datas fica ao lado do título, alinhada à direita da 1ª coluna. -->
-      <app-date-strip
-        pageHeaderCenter
-        class="hub__strip hub__strip--header"
-        variant="header"
-        [selected]="day()"
-        [maxDate]="today"
-        (dateChange)="day.set($event)"
-      />
-    </app-page-header>
+    />
 
     @switch (status()) {
       @case ('ready') {
@@ -27,7 +17,17 @@
           <div class="hub__col">
             <!-- Figma 4766:13759: legenda Ala · Leito, cartão do paciente e faixa de datas. -->
             <div class="hub__group hub__o-1">
-              <p class="hub__bed">{{ header()?.bed }}</p>
+              <!-- Figma 4781:31588: a faixa de datas flutua à direita da legenda Ala · Leito (linha de 40px). -->
+              <div class="hub__bed-row">
+                <p class="hub__bed">{{ header()?.bed }}</p>
+                <app-date-strip
+                  class="hub__strip hub__strip--float"
+                  variant="header"
+                  [selected]="day()"
+                  [maxDate]="today"
+                  (dateChange)="day.set($event)"
+                />
+              </div>
               <!-- Mobile (Figma 4766:24813): a faixa de datas fica logo abaixo da legenda. -->
               <app-date-strip
                 class="hub__strip hub__strip--column"

@@ -158,7 +158,7 @@ describe('AppComponent', () => {
     expect(fixture.componentInstance.aiAssistant.isOpen()).toBe(false);
   });
 
-  it('marca Notificações como item ativo do menu em /notifications e nenhum em outras rotas', async () => {
+  it('marca o item ativo do menu pela rota e nenhum em /notifications (fora do menu)', async () => {
     const component = fixture.componentInstance as unknown as { activeNavItem(): string | null };
 
     TestBed.inject(Router).resetConfig([
@@ -174,7 +174,7 @@ describe('AppComponent', () => {
 
     await TestBed.inject(Router).navigateByUrl('/notifications');
 
-    expect(component.activeNavItem()).toBe('notificacoes');
+    expect(component.activeNavItem()).toBeNull();
 
     await TestBed.inject(Router).navigateByUrl('/pharmacy');
 
@@ -411,7 +411,17 @@ describe('AppComponent', () => {
     expect(el.querySelectorAll('app-bottom-nav-bar nav button').length).toBe(3);
   });
 
-  it('navigates to /notifications and closes the mobile menu when Notificações is clicked', () => {
+  it('o menu não tem Notificações nem Configurações', () => {
+    fixture.componentInstance.menuOpen.set(true);
+    fixture.detectChanges();
+    const labels = Array.from<HTMLElement>(
+      fixture.nativeElement.querySelectorAll('app-nav-menu .nav-menu__links .nav-menu__link'),
+    ).map(el => el.textContent.trim());
+
+    expect(labels).toEqual(['Hospitais', 'Pacientes', 'Farmácia', 'Tutorial']);
+  });
+
+  it('navigates to /settings/tutorial and closes the mobile menu when Tutorial is clicked', () => {
     const router = TestBed.inject(Router);
 
     spyOn(router, 'navigate').and.resolveTo(true);
@@ -419,39 +429,22 @@ describe('AppComponent', () => {
     fixture.detectChanges();
     const item = Array.from<HTMLButtonElement>(
       fixture.nativeElement.querySelectorAll('app-nav-menu .nav-menu__links .nav-menu__link'),
-    ).find(el => el.textContent?.includes('Notificações'));
+    ).find(el => el.textContent?.includes('Tutorial'));
 
     item?.click();
     fixture.detectChanges();
 
-    expect(router.navigate).toHaveBeenCalledWith(['/notifications']);
+    expect(router.navigate).toHaveBeenCalledWith(['/settings/tutorial']);
     expect(fixture.componentInstance.menuOpen()).toBeFalse();
   });
 
-  it('navigates to /settings and closes the mobile menu when Configurações is clicked', () => {
-    const router = TestBed.inject(Router);
-
-    spyOn(router, 'navigate').and.resolveTo(true);
-    fixture.componentInstance.menuOpen.set(true);
-    fixture.detectChanges();
-    const item = Array.from<HTMLButtonElement>(
-      fixture.nativeElement.querySelectorAll('app-nav-menu .nav-menu__links .nav-menu__link'),
-    ).find(el => el.textContent?.includes('Configurações'));
-
-    item?.click();
-    fixture.detectChanges();
-
-    expect(router.navigate).toHaveBeenCalledWith(['/settings']);
-    expect(fixture.componentInstance.menuOpen()).toBeFalse();
-  });
-
-  it('marca Configurações como item ativo do menu em /settings', async () => {
+  it('marca Tutorial como item ativo do menu em /settings', async () => {
     const component = fixture.componentInstance as unknown as { activeNavItem(): string | null };
 
     TestBed.inject(Router).resetConfig([{ children: [], path: 'settings' }]);
     await TestBed.inject(Router).navigateByUrl('/settings');
 
-    expect(component.activeNavItem()).toBe('configuracoes');
+    expect(component.activeNavItem()).toBe('tutorial');
   });
 
   it('navigates to /pharmacy and closes the mobile menu when Farmácia is clicked', () => {
@@ -471,7 +464,7 @@ describe('AppComponent', () => {
     expect(fixture.componentInstance.menuOpen()).toBeFalse();
   });
 
-  it('navigates to /home and closes the mobile menu when the Home item is clicked', () => {
+  it('navigates to /home and closes the mobile menu when the Hospitais item is clicked', () => {
     const router = TestBed.inject(Router);
 
     spyOn(router, 'navigate').and.resolveTo(true);
@@ -479,7 +472,7 @@ describe('AppComponent', () => {
     fixture.detectChanges();
     const home = Array.from<HTMLButtonElement>(
       fixture.nativeElement.querySelectorAll('app-nav-menu .nav-menu__links .nav-menu__link'),
-    ).find(el => el.textContent?.includes('Home'));
+    ).find(el => el.textContent?.includes('Hospitais'));
 
     home?.click();
     fixture.detectChanges();

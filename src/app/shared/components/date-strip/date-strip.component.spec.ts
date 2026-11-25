@@ -68,11 +68,11 @@ describe('DateStripComponent', () => {
     expect(selectedIndex()).toBe(0);
   });
 
-  it('em hoje o selecionado é azul e a seta da direita some; ao voltar o selecionado fica cinza e entra "Hoje →"', () => {
+  it('em hoje o selecionado é azul e a seta da direita fica desabilitada; ao voltar o selecionado fica cinza e entra "Hoje →"', () => {
     const [, next] = buttons('.date-strip__arrow');
 
     expect(buttons('.date-strip__day--selected')[0].classList).not.toContain('date-strip__day--past');
-    expect(next.classList).toContain('date-strip__arrow--hidden');
+    expect((next as HTMLButtonElement).disabled).toBeTrue();
     expect(buttons('.date-strip__day--today').length).toBe(0);
 
     fixture.componentRef.setInput('selected', new Date(2026, 10, 18, 15));
@@ -80,7 +80,7 @@ describe('DateStripComponent', () => {
     const tile = buttons('.date-strip__day--today')[0];
 
     expect(buttons('.date-strip__day--selected')[0].classList).toContain('date-strip__day--past');
-    expect(next.classList).not.toContain('date-strip__arrow--hidden');
+    expect((next as HTMLButtonElement).disabled).toBeFalse();
     expect(tile.textContent).toContain('Hoje');
     expect(tile.getAttribute('aria-label')).toBe('Ir para hoje');
 

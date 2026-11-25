@@ -62,20 +62,26 @@ $hub-three-columns: 1100px;
   }
 }
 
-// Faixa de datas: na coluna do paciente (mobile) ou, com 2 ou 3 colunas, no cabeçalho.
-.hub__strip--header {
+// Linha da legenda Ala · Leito (40px); no desktop a faixa de datas flutua à direita dela (Figma 4781:31588).
+.hub__bed-row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  min-height: 40px;
+}
+
+.hub__strip--float {
   display: none;
 }
 
 @container hub (width >= #{$hub-two-columns}) {
-  // A faixa de datas fica ao lado do título e termina onde termina a 1ª coluna (Figma 4781:31588): o início do
-  // cabeçalho tem a largura da coluna (hub = 100cqw, menos as laterais de 16 e os espaços de 16 entre colunas).
-  app-page-header {
-    --page-header-start: calc((100cqw - 32px - 16px) / 2);
-  }
-
-  .hub__strip--header {
+  .hub__strip--float {
+    position: absolute;
+    inset-block-start: 50%;
+    inset-inline-end: 0;
+    z-index: 1;
     display: block;
+    transform: translateY(-50%);
   }
 
   .hub__strip--column {
@@ -129,10 +135,6 @@ $hub-three-columns: 1100px;
 }
 
 @container hub (width >= #{$hub-three-columns}) {
-  app-page-header {
-    --page-header-start: calc((100cqw - 32px - 32px) / 3);
-  }
-
   // A coluna de Evoluções rola à parte; a altura vai até o fim da janela.
   .hub__col--evolutions {
     --evo-max-height: calc(100dvh - 160px);

@@ -1053,11 +1053,12 @@ describe('PatientHubComponent', () => {
       f = await setup(new FakeSource());
     });
 
-    it('tem a faixa de datas no cabeçalho (3 dias) e outra na coluna do paciente (mobile)', () => {
-      const header = el().querySelector('app-page-header app-date-strip');
-      const column = el().querySelector('.hub__group app-date-strip');
+    it('a faixa de datas flutua na linha do leito (3 dias) e há outra na coluna do paciente (mobile)', () => {
+      const floating = el().querySelector('.hub__bed-row app-date-strip');
+      const column = el().querySelector('.hub__group > app-date-strip');
 
-      expect(header?.classList).toContain('date-strip--header');
+      expect(el().querySelector('app-page-header app-date-strip')).toBeNull();
+      expect(floating?.classList).toContain('date-strip--header');
       expect(column?.classList).not.toContain('date-strip--header');
     });
 

@@ -79,7 +79,7 @@ export class AppComponent {
   /** Trava reentrância: duplo clique em Confirmar não pode chamar `logout()` duas vezes. */
   protected readonly loggingOut = signal(false);
 
-  /** Item ativo do menu (Figma v2/NavRail: Home destacada na Home, Notificações em Notificações). */
+  /** Item ativo do menu (Figma v2/NavRail: Hospitais na Home, Pacientes, Farmácia e Tutorial). */
   protected readonly activeNavItem = computed<NavMenuItemKey | null>(() => {
     const url = this.currentUrl() ?? '';
 
@@ -95,11 +95,7 @@ export class AppComponent {
       return 'pacientes';
     }
 
-    if (url.startsWith('/settings')) {
-      return 'configuracoes';
-    }
-
-    return url.startsWith('/notifications') ? 'notificacoes' : null;
+    return url.startsWith('/settings') || url.startsWith('/tutorial') ? 'tutorial' : null;
   });
 
   // Home usa o gradiente de fundo do Figma; as demais telas seguem com os círculos por enquanto.
@@ -237,14 +233,9 @@ export class AppComponent {
     void this.router.navigate(['/patients']);
   }
 
-  protected onNotificacoesClick(): void {
+  protected onTutorialClick(): void {
     this.menuOpen.set(false);
-    this.router.navigate(['/notifications']);
-  }
-
-  protected onConfiguracoesClick(): void {
-    this.menuOpen.set(false);
-    void this.router.navigate(['/settings']);
+    void this.router.navigate(['/settings/tutorial']);
   }
 
   protected onFarmaciaClick(): void {

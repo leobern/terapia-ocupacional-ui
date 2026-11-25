@@ -23,7 +23,7 @@ import { IconButtonComponent } from '../icon-button/icon-button.component';
 import { IconLogoButtonComponent } from '../icon-logo/icon-logo-button.component';
 
 /** Mapeia as 6 chaves fixas dos itens de navegação (spec.md § Clarifications + Home). */
-export type NavMenuItemKey = 'home' | 'hospitais' | 'farmacia' | 'pacientes' | 'notificacoes' | 'configuracoes';
+export type NavMenuItemKey = 'home' | 'farmacia' | 'pacientes' | 'tutorial';
 
 interface NavMenuItem {
   readonly key: NavMenuItemKey;
@@ -84,11 +84,9 @@ export class NavMenuComponent {
   /** Emitido ao clicar/ativar a logo — abre o assistente de IA (bottom-sheet/drawer, decisão do consumidor). */
   readonly logoClick = output();
   readonly homeClick = output();
-  readonly hospitaisClick = output();
   readonly farmaciaClick = output();
   readonly pacientesClick = output();
-  readonly notificacoesClick = output();
-  readonly configuracoesClick = output();
+  readonly tutorialClick = output();
   readonly logoutClick = output();
 
   protected readonly professionalName = 'Michelle Franklin';
@@ -108,12 +106,11 @@ export class NavMenuComponent {
   // Ordem e ícones do Figma 4741:11339 (v2/NavRail). Ícones em peso "regular"; o item ativo é SÓLIDO ("fill").
   // Única exceção fixa: o ícone de Sair (template) é sempre bold, aberto ou fechado (CLAUDE.md).
   protected readonly items: readonly NavMenuItem[] = [
-    { icon: 'house', key: 'home', label: 'Home' },
+    // A Home virou "Hospitais" (Thiago, 2026-11-25); Notificações saiu do menu e Configurações virou Tutorial.
+    { icon: 'hospital', key: 'home', label: 'Hospitais' },
     { icon: 'users-three', key: 'pacientes', label: 'Pacientes' },
-    { icon: 'hospital', key: 'hospitais', label: 'Hospitais' },
     { icon: 'pill', key: 'farmacia', label: 'Farmácia' },
-    { icon: 'bell', key: 'notificacoes', label: 'Notificações' },
-    { icon: 'gear', key: 'configuracoes', label: 'Configurações' },
+    { icon: 'graduation-cap', key: 'tutorial', label: 'Tutorial' },
   ];
 
   // Anel de foco sistêmico compartilhado por todos os controles clicáveis do
@@ -139,20 +136,14 @@ export class NavMenuComponent {
       case 'home':
         this.homeClick.emit();
         break;
-      case 'hospitais':
-        this.hospitaisClick.emit();
-        break;
       case 'farmacia':
         this.farmaciaClick.emit();
         break;
       case 'pacientes':
         this.pacientesClick.emit();
         break;
-      case 'notificacoes':
-        this.notificacoesClick.emit();
-        break;
-      case 'configuracoes':
-        this.configuracoesClick.emit();
+      case 'tutorial':
+        this.tutorialClick.emit();
         break;
     }
   }
