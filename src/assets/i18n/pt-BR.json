@@ -28,13 +28,21 @@
     "messages": {
       "MSG-11": "Este paciente ainda não possui internação registrada. É necessário internar o paciente antes de movimentar o leito.",
       "MSG-12": "Não consegui identificar o novo leito. Pode informar o número do leito?",
+      "applied": "Leito atualizado para {new}.",
+      "cancelled": "Movimentação cancelada. O leito permanece {current}.",
+      "confirmChoice": "Responda sim ou não.",
       "error": "Não foi possível processar a movimentação de leito. Tente novamente.",
       "noCurrentBed": "não informado",
       "occupied": "Atenção: o leito {bed} já está ocupado por {occupants}. Você pode continuar mesmo assim.",
-      "resolved": "Pedido associado à internação mais recente de {patient}. Leito atual: {current}. Novo leito: {new}. A mudança ainda não foi aplicada."
+      "summary": "Resumo da alteração: paciente {patient}; campo: leito; valor atual: {current}; valor novo: {new}."
+    },
+    "options": {
+      "no": "Não",
+      "yes": "Sim"
     },
     "prompts": {
-      "bedNumber": "Para qual leito deseja movimentar o paciente?"
+      "bedNumber": "Para qual leito deseja movimentar o paciente?",
+      "confirm": "Confirma a movimentação do leito?"
     },
     "title": "Movimentar leito"
   },

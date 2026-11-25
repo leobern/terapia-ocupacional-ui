@@ -139,6 +139,69 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/MovimentacaoLeitoErrorResponse"
+  /api/v1/pacientes/{pacienteId}/internacoes/{internacaoId}/movimentacao-leito/confirmar:
+    post:
+      operationId: confirmarMovimentacaoLeito
+      x-implemented: true
+      summary: Aplica a mudança de leito da internação após o usuário confirmar com "Sim"
+      description: >
+        US-002-2-03 (RN-02). Chamada somente depois que o chatbot exibiu o resumo da alteração
+        (paciente, campo, valor atual, valor novo; dados já devolvidos por resolverMovimentacaoLeito)
+        e o usuário respondeu "Sim". Atualiza bedNumber da internação informada e devolve a
+        internação atualizada. RN-03: responder "Não" cancela no cliente; nenhuma chamada é feita
+        e nada é alterado. A interpretação de "sim"/"não" é do chatbot (fora de escopo).
+        O registro de histórico (US-002-2-05) e o alerta de leito ocupado (US-002-2-04) estão
+        fora de escopo. Requer vínculo aprovado com o hospital do paciente.
+        newBedNumber ausente, nulo ou em branco: 422 field=newBedNumber, code=MSG-12.
+        Internação inexistente ou de outro paciente: 404.
+      parameters:
+        - name: pacienteId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: internacaoId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ConfirmarMovimentacaoLeitoRequest"
+      responses:
+        "200":
+          description: Leito atualizado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Internacao"
+        "400":
+          $ref: "#/components/responses/Error"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          description: Profissional sem vínculo aprovado com o hospital do paciente
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Paciente ou internação não encontrados
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "422":
+          description: MSG-12 (leito não identificado)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MovimentacaoLeitoErrorResponse"
   /api/v1/pacientes/{pacienteId}/internacoes/movimentacao-leito/ocupacao:
     get:
       operationId: verificarOcupacaoLeito
@@ -323,6 +386,14 @@ components:
           nullable: true
           maxLength: 20
           description: Leito extraído pelo chatbot; ausente/nulo/em branco quando não identificado (MSG-12)
+    ConfirmarMovimentacaoLeitoRequest:
+      type: object
+      required: [newBedNumber]
+      properties:
+        newBedNumber:
+          type: string
+          maxLength: 20
+          description: Leito de destino confirmado pelo usuário; não vazio (MSG-12)
     MovimentacaoLeitoResolvida:
       type: object
       required: [pacienteId, internacaoId, newBedNumber]

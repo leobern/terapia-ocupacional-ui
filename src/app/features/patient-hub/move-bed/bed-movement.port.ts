@@ -27,12 +27,14 @@ export class BedNotIdentifiedError extends Error {
 }
 
 /**
- * Fronteira que associa o pedido de mudança de leito à internação mais recente do paciente. Não grava nada
- * (confirmação e aplicação são da US-002-2-03). Rejeita com `PatientWithoutInternacaoError` (MSG-11) ou
+ * Fronteira da movimentação de leito. `resolve` associa o pedido à internação mais recente do paciente e não
+ * grava nada; `confirm` aplica a mudança depois do "Sim" (US-002-2-03). Rejeita com `PatientWithoutInternacaoError` (MSG-11) ou
  * `BedNotIdentifiedError` (MSG-12); qualquer outro erro é falha genérica.
  */
 export abstract class BedMovementPort {
   abstract resolve(pacienteId: number, newBedNumber?: string): Promise<ResolvedBedMovement>;
+  /** Aplica o novo leito à internação já identificada; 422 MSG-12 rejeita com `BedNotIdentifiedError`. */
+  abstract confirm(pacienteId: number, internacaoId: number, newBedNumber: string): Promise<void>;
 }
 
 /** Situação de ocupação do leito de destino (US-002-2-04, RN-01..RN-03). */

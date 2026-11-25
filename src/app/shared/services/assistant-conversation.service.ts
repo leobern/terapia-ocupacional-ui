@@ -148,6 +148,14 @@ export class AssistantConversationService {
       if (generation !== this.generation) {
         return;
       }
+      if (outcome?.confirmation) {
+        this.askConfirmation(
+          definition,
+          outcome as ConversationOutcome & { confirmation: NonNullable<ConversationOutcome['confirmation']> },
+        );
+
+        return;
+      }
       this.finishedSignal.set(true);
       this.push({
         role: 'assistant',
@@ -164,6 +172,24 @@ export class AssistantConversationService {
         this.submittingSignal.set(false);
       }
     }
+  }
+
+  /** Mostra o resumo e passa a aguardar a resposta da etapa de confirmação (a única que resta). */
+  private askConfirmation(
+    definition: ConversationDefinition,
+    outcome: ConversationOutcome & { confirmation: NonNullable<ConversationOutcome['confirmation']> },
+  ): void {
+    const { step, submit } = outcome.confirmation;
+
+    this.definition = {
+      ...definition,
+      steps: [step],
+      submit: (values): Promise<ConversationOutcome> => submit(values[step.id]),
+    };
+    this.values = {};
+    this.push({ role: 'assistant', text: outcome.message });
+    this.push({ role: 'assistant', text: step.prompt });
+    this.stepIndex.set(0);
   }
 
   private fail(definition: ConversationDefinition, error: unknown): void {
