@@ -54,8 +54,8 @@ export class AiAssistantService {
   /** Quantas vezes o painel foi aberto (fechado → aberto): a saudação da tela se escreve de novo a cada abertura. */
   readonly openCount: Signal<number>;
   /**
-   * O menu de atalhos está aberto (a tela de atalhos, um formulário ou o aviso de ação indisponível):
-   * os botões que o abrem ficam desabilitados e esmaecidos para mostrar isso. O chat não conta.
+   * A sidebar sistêmica de Atalhos está aberta: os botões que a abrem ficam desabilitados. O chat e os cadastros
+   * conversacionais (formulário, editor, conversa, aviso) não contam: o botão segue ativo (Thiago, 2026-11-25).
    */
   readonly shortcutsOpen: Signal<boolean>;
   readonly view: Signal<AssistantView>;
@@ -84,7 +84,7 @@ export class AiAssistantService {
   constructor() {
     this.isOpen = this.isOpenSignal.asReadonly();
     this.openCount = this.openCountSignal.asReadonly();
-    this.shortcutsOpen = computed(() => this.isOpenSignal() && this.viewSignal() !== 'chat');
+    this.shortcutsOpen = computed(() => this.isOpenSignal() && this.viewSignal() === 'shortcuts');
     this.lastQuestion = this.lastQuestionSignal.asReadonly();
     this.conversation = this.conversationSignal.asReadonly();
     this.view = this.viewSignal.asReadonly();

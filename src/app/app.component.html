@@ -86,6 +86,7 @@
         [open]="aiAssistant.isOpen()"
         [showLogo]="!showAssistantHeading()"
         [expandable]="!showAssistantHeading()"
+        [plain]="aiAssistant.view() === 'shortcuts'"
         [snap]="aiDrawerSnap()"
         [shortcuts]="shortcuts()"
         (closed)="aiAssistant.closePanel()"

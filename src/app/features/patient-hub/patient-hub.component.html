@@ -136,7 +136,7 @@
                     title="Prescrição ativa"
                     actionLabel="Ajustar a prescrição"
                     [actionIcon]="readOnly() ? null : 'pencil-simple-line'"
-                    (actionClick)="prescriptionOpen.set(true)"
+                    (actionClick)="editPrescription()"
                   />
                   <div class="hub__rx">
                     <app-prescription-summary
@@ -161,7 +161,7 @@
                         : 'Toque aqui e insira a prescrição.'
                     "
                     [disabled]="readOnly()"
-                    (activate)="prescriptionOpen.set(true)"
+                    (activate)="editPrescription()"
                   />
                 </div>
               }
@@ -320,7 +320,7 @@
                       class="hub__evolve hub__evolve--header"
                       size="md"
                       label="Evoluir Paciente"
-                      (click)="dailyRecordOpen.set(true)"
+                      (click)="editDailyRecord()"
                     />
                   }
                 </app-section-header>
@@ -339,32 +339,17 @@
               class="hub__evolve hub__evolve--bottom hub__o-10"
               label="Evoluir Paciente"
               [fullWidth]="true"
-              (click)="dailyRecordOpen.set(true)"
+              (click)="editDailyRecord()"
             />
           }
         </div>
 
         @if (profile(); as p) {
-          @if (hospitalId(); as hospital) {
-            <app-prescription-sheet
-              [open]="prescriptionOpen()"
-              [patientId]="p.id"
-              [hospitalId]="hospital"
-              [adequacy]="adequacy()"
-              (closed)="prescriptionOpen.set(false)"
-              (saved)="reloadPrescription()"
-            />
-          }
           <app-patient-message-sheet
             [open]="messageOpen()"
             [patientId]="p.id"
             (closed)="messageOpen.set(false)"
             (sent)="messagesVersion.set(messagesVersion() + 1)"
-          />
-          <app-daily-record-sheet
-            [open]="dailyRecordOpen()"
-            [patientId]="p.id"
-            (closed)="onDailyRecordClosed()"
           />
           <app-prescription-review
             [open]="prescriptionReviewOpen()"

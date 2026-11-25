@@ -1,0 +1,53 @@
+<div class="dre">
+  @if (showParameters()) {
+    @for (parameter of parameters; track parameter.id) {
+      <app-field-card
+        inputMode="decimal"
+        [label]="parameter.label"
+        [inputId]="'dre-' + parameter.id"
+        [unit]="parameter.unit"
+        [placeholder]="parameter.placeholder"
+        [caption]="parameter.help"
+        [value]="valueOf(parameter.id)"
+        [error]="errors()[parameter.id] ?? ''"
+        (valueChange)="edit(parameter.id, $event)"
+      />
+    }
+  }
+
+  @for (lab of labs(); track lab.id) {
+    <app-field-card
+      label="Resultado laboratorial"
+      placeholder="Nome do exame, ex.: Albumina"
+      [inputId]="'dre-name-' + lab.id"
+      [value]="lab.label"
+      [error]="errors()[lab.id] ?? ''"
+      (valueChange)="editLab(lab.id, 'label', $event)"
+    />
+    <app-field-card
+      label="Valor"
+      inputMode="decimal"
+      [inputId]="'dre-' + lab.id"
+      [unit]="lab.unit"
+      [value]="valueOf(lab.id)"
+      (valueChange)="edit(lab.id, $event)"
+    />
+    <app-field-card
+      label="Unidade"
+      placeholder="Ex.: g/dL"
+      [inputId]="'dre-unit-' + lab.id"
+      [value]="lab.unit"
+      (valueChange)="editLab(lab.id, 'unit', $event)"
+    />
+  }
+
+  <app-prescription-guidance [open]="true" [patientId]="patientId()" />
+  <app-daily-evolution [open]="true" [patientId]="patientId()" />
+
+  @if (busy()) {
+    <p class="dre__status" role="status">Salvando…</p>
+  }
+  @if (hint(); as message) {
+    <p class="dre__status dre__status--warning" role="alert">{{ message }}</p>
+  }
+</div>

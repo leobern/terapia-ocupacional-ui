@@ -157,17 +157,6 @@ export function parseParameterValue(text: string): number | null {
   return Number(trimmed.replace(',', '.'));
 }
 
-export function formatParameterValue(value: number): string {
-  return value.toLocaleString('pt-BR', { maximumFractionDigits: 3 });
-}
-
-/** HH:mm no fuso local. */
-export function formatEntryTime(iso: string): string {
-  const d = new Date(iso);
-
-  return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
-}
-
 /** Mesmo dia civil local. */
 export function isSameDay(iso: string, reference: Date): boolean {
   const d = new Date(iso);
@@ -203,14 +192,4 @@ function normalize(text: string): string {
 /** Id estável de um parâmetro fora do catálogo a partir do nome. */
 export function customParameterId(label: string): string {
   return `${CUSTOM_PARAMETER_PREFIX}${normalize(label).replace(/\s+/gu, '-')}`;
-}
-
-/** Procura no catálogo pelo id informado pela IA ou, na falta, pelo nome (sem acento/caixa). */
-export function findParameter(
-  catalog: readonly ParameterDefinition[],
-  suggestion: SuggestedParameter,
-): ParameterDefinition | undefined {
-  const label = normalize(suggestion.label ?? '');
-
-  return catalog.find(p => p.id === suggestion.parameterId || (label !== '' && normalize(p.label) === label));
 }

@@ -34,7 +34,7 @@ import { MeasureChartComponent } from './charts/measure-chart.component';
 import { ClinicalAssessmentEditorComponent } from './clinical-assessment/clinical-assessment-editor.component';
 import { ClinicalAssessmentSource } from './clinical-assessment/clinical-assessment-source';
 import { ClinicalTilesComponent } from './clinical-assessment/clinical-tiles.component';
-import { DailyRecordSheetComponent } from './daily-record/daily-record-sheet.component';
+import { DailyRecordEditorComponent } from './daily-record/daily-record-editor.component';
 import { DiagnosisEditorComponent } from './diagnosis-editor/diagnosis-editor.component';
 import { PatientEvolutionsComponent } from './evolutions/patient-evolutions.component';
 import { PatientMessageSheetComponent } from './messages/patient-message-sheet.component';
@@ -45,8 +45,8 @@ import { PatientHubProfile } from './patient-hub.models';
 import { PatientHubSource } from './patient-hub-source';
 import { PlanSectionComponent } from './plan/plan-section.component';
 import { Prescription } from './prescription/prescription.models';
+import { PrescriptionEditorComponent } from './prescription/prescription-editor.component';
 import { PrescriptionReviewComponent } from './prescription/prescription-review.component';
-import { PrescriptionSheetComponent } from './prescription/prescription-sheet.component';
 import { PrescriptionSource } from './prescription/prescription-source';
 import { PrescriptionSummaryComponent } from './prescription/prescription-summary.component';
 import { PriorStaysBoxComponent } from './prior-stays-box/prior-stays-box.component';
@@ -102,13 +102,11 @@ export const DIAGNOSIS_FAILED_HINT =
     PageHeaderComponent,
     MeasureChartComponent,
     ButtonComponent,
-    DailyRecordSheetComponent,
     FollowUpStatusComponent,
     PageContainerComponent,
     PatientMessageSheetComponent,
     PhIconComponent,
     PlanSectionComponent,
-    PrescriptionSheetComponent,
     PrescriptionSummaryComponent,
     PrescriptionReviewComponent,
     AdequacySummaryComponent,
@@ -188,14 +186,10 @@ export class PatientHubComponent implements OnInit {
   protected readonly showNutritional = computed(() => this.showClinical() && this.clinicalFilled());
   protected readonly showRest = computed(() => this.showNutritional() && this.nutritionalFilled());
 
-  /** Registro diário (FT-004-7) aberto pela ação "Registro diário" dos atalhos. */
-  protected readonly dailyRecordOpen = signal(false);
   /** Observação/mensagem (FT-005-1) aberta pela ação dos atalhos; só cria pelo assistente. */
   protected readonly messageOpen = signal(false);
   /** Muda a cada registro gravado, para a lista de cards recarregar. */
   protected readonly messagesVersion = signal(0);
-  /** Revisão da prescrição (FT-004-8) aberta pela ação "Ajustar a prescrição" dos atalhos (só médico). */
-  protected readonly prescriptionOpen = signal(false);
   /** Prescrição vigente exibida no Hub; `null` = sem prescrição (ou leitura falhou). */
   protected readonly prescription = signal<readonly Prescription[]>([]);
   /** Revisão diária da prescrição (FT-004-8), aberta pela ação dos atalhos; só para o médico. */
@@ -279,7 +273,7 @@ export class PatientHubComponent implements OnInit {
       if (this.status() === 'ready' && this.hospitalId() !== null && !this.readOnly()) {
         const profile = this.profile();
         const actions: ScreenAction[] = [
-          { id: 'daily-record', label: 'Registro diário', navigate: (): void => this.dailyRecordOpen.set(true) },
+          { id: 'daily-record', label: 'Registro diário', navigate: (): void => this.editDailyRecord() },
           {
             id: 'patient-message',
             label: 'Observação ou mensagem',
@@ -299,7 +293,7 @@ export class PatientHubComponent implements OnInit {
             {
               id: 'adjust-prescription',
               label: 'Ajustar a prescrição',
-              navigate: (): void => this.prescriptionOpen.set(true),
+              navigate: (): void => this.editPrescription(),
             },
             {
               id: 'prescription-review',
@@ -535,9 +529,58 @@ export class PatientHubComponent implements OnInit {
     });
   }
 
-  protected onDailyRecordClosed(): void {
-    this.dailyRecordOpen.set(false);
-    this.evolutionsVersion.update(v => v + 1);
+  /** "Evoluir Paciente": abre a evolução (parâmetros, resultados e texto) no painel lateral conversacional. */
+  protected editDailyRecord(): void {
+    const id = this.profile()?.id;
+
+    if (id === undefined) {
+      return;
+    }
+    this.aiAssistant.openAction({
+      editor: {
+        component: DailyRecordEditorComponent,
+        description:
+          'Registre a evolução do paciente: insira manualmente os parâmetros e resultados ou escreva uma mensagem com os dados.',
+        hint: 'Você também pode enviar via áudio.',
+        inputs: {
+          patientId: id,
+          saved: (): void => {
+            this.evolutionsVersion.update(v => v + 1);
+          },
+        },
+        title: 'Evolução',
+      },
+      id: 'daily-record',
+      label: 'Evolução',
+    });
+  }
+
+  /** Card da prescrição ou ação "Ajustar a prescrição": abre a prescrição no painel lateral conversacional. */
+  protected editPrescription(): void {
+    const id = this.profile()?.id;
+    const hospital = this.hospitalId();
+
+    if (id === undefined || hospital === null) {
+      return;
+    }
+    this.aiAssistant.openAction({
+      editor: {
+        component: PrescriptionEditorComponent,
+        description:
+          'Ajuste a prescrição: insira manualmente os dados ou use a última prescrição como ponto de partida.',
+        hint: 'Você também pode enviar via áudio.',
+        inputs: {
+          hospitalId: hospital,
+          patientId: id,
+          saved: (): void => {
+            void this.reloadPrescription();
+          },
+        },
+        title: 'Prescrição',
+      },
+      id: 'adjust-prescription',
+      label: 'Prescrição',
+    });
   }
 
   private async loadUnread(): Promise<void> {

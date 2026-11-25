@@ -73,6 +73,11 @@ $icon-hit-inset: ($min-touch-target - tokens.$control-height-md) * 0.5;
   &::backdrop {
     background: transparent;
   }
+
+  // Sidebar sistêmica (Atalhos): sem a borda azul.
+  &.drawer--plain {
+    border-inline-start: 0;
+  }
 }
 
 // Expandido: o chat vira uma coluna central travada em 640px (Figma 4480:7718 — cabeçalho,

@@ -143,6 +143,16 @@ describe('DrawerComponent', () => {
   // T006 — toggle de snap
   // ---------------------------------------------------------------------------
 
+  it('plain (sidebar de Atalhos) tira a borda azul; a conversacional mantém', () => {
+    openDrawer();
+
+    expect(dialog().classList.contains('drawer--plain')).toBeFalse();
+    fixture.componentRef.setInput('plain', true);
+    fixture.detectChanges();
+
+    expect(dialog().classList.contains('drawer--plain')).toBeTrue();
+  });
+
   it('expandable=false (Atalhos) esconde o botão de redimensionar; o fechar continua', () => {
     fixture.componentRef.setInput('expandable', false);
     openDrawer();

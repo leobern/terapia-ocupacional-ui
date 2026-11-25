@@ -132,6 +132,9 @@ export class DrawerComponent {
   /** Mostra o botão de expandir/redimensionar (o painel de Atalhos não tem). */
   readonly expandable = input<boolean>(true);
 
+  /** Sidebar sistêmica (Atalhos): sem a borda azul, que é só da sidebar conversacional (Thiago, 2026-11-25). */
+  readonly plain = input<boolean>(false);
+
   /** Contextuais por conversa; no máximo 3 são renderizados (FR-012). */
   readonly shortcuts = input<readonly ChatShortcut[]>([]);
 
