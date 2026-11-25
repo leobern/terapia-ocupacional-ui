@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
 
+import { demoEvolution } from '../demo-clinical-data';
 import { DailyEvolutionSource } from './daily-evolution-source';
 import { DailyEvolution, EvolutionSaveRequest } from './daily-record.models';
 
@@ -9,7 +10,7 @@ export class ProvisionalDailyEvolutionSource extends DailyEvolutionSource {
   private readonly store = new Map<string, DailyEvolution>();
 
   load(patientId: string, day: string): Promise<DailyEvolution | null> {
-    return Promise.resolve(this.store.get(`${patientId}|${day}`) ?? null);
+    return Promise.resolve(this.store.get(`${patientId}|${day}`) ?? demoEvolution(patientId, day) ?? null);
   }
 
   save(request: EvolutionSaveRequest): Promise<DailyEvolution> {

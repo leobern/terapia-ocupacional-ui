@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
 
+import { demoRoute, demoTargets, demoWeights } from '../demo-clinical-data';
 import {
   ConductFlag,
   ConductFlagRequest,
@@ -51,7 +52,7 @@ export class ProvisionalPlanSource extends PlanSource {
   ]);
 
   loadRoute(patientId: string): Promise<CurrentRoute | null> {
-    return Promise.resolve(this.store.get(patientId) ?? null);
+    return Promise.resolve(this.store.get(patientId) ?? demoRoute(patientId) ?? null);
   }
 
   saveRoute(request: RouteSaveRequest): Promise<CurrentRoute> {
@@ -123,7 +124,7 @@ export class ProvisionalPlanSource extends PlanSource {
   }
 
   loadCalculatedWeights(patientId: string): Promise<CalculatedWeights> {
-    return Promise.resolve(this.weights.get(patientId) ?? {});
+    return Promise.resolve(this.weights.get(patientId) ?? demoWeights(patientId) ?? {});
   }
 
   loadReferenceWeight(patientId: string): Promise<ReferenceWeight | null> {
@@ -137,7 +138,7 @@ export class ProvisionalPlanSource extends PlanSource {
   }
 
   loadTargets(patientId: string): Promise<NutritionTargets | null> {
-    return Promise.resolve(this.targets.get(patientId) ?? null);
+    return Promise.resolve(this.targets.get(patientId) ?? demoTargets(patientId) ?? null);
   }
 
   saveTargets(request: TargetsSaveRequest): Promise<NutritionTargets> {

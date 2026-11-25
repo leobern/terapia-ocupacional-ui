@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
 
+import { demoClinicalAssessment } from '../demo-clinical-data';
 import { ClinicalAssessment } from './clinical-assessment.models';
 import { ClinicalAssessmentSource } from './clinical-assessment-source';
 
@@ -112,7 +113,7 @@ export class ProvisionalClinicalAssessmentSource extends ClinicalAssessmentSourc
       return Promise.resolve(JSON.parse(raw) as ClinicalAssessment);
     }
 
-    return Promise.resolve(patientId === 'p1' ? SEED : EMPTY);
+    return Promise.resolve(patientId === 'p1' ? SEED : (demoClinicalAssessment(patientId, SEED) ?? EMPTY));
   }
 
   save(patientId: string, assessment: ClinicalAssessment): Promise<void> {

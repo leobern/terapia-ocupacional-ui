@@ -1,6 +1,7 @@
 import { inject, Injectable } from '@angular/core';
 
 import { ProfessionalProfileReader } from '../../home/professional-profile';
+import { demoPrescriptions } from '../demo-clinical-data';
 import {
   ActivePrescription,
   Prescription,
@@ -39,7 +40,7 @@ export class ProvisionalPrescriptionSource extends PrescriptionSource {
   ]);
 
   load(patientId: string): Promise<readonly Prescription[]> {
-    return Promise.resolve(this.store.get(patientId) ?? []);
+    return Promise.resolve(this.store.get(patientId) ?? demoPrescriptions(patientId) ?? []);
   }
 
   save(request: PrescriptionSaveRequest): Promise<readonly Prescription[]> {
@@ -49,7 +50,7 @@ export class ProvisionalPrescriptionSource extends PrescriptionSource {
   }
 
   loadActive(patientId: string): Promise<readonly ActivePrescription[]> {
-    return Promise.resolve((this.store.get(patientId) ?? []).map(toActivePrescription));
+    return Promise.resolve((this.store.get(patientId) ?? demoPrescriptions(patientId) ?? []).map(toActivePrescription));
   }
 
   loadReview(patientId: string, day: string): Promise<PrescriptionReview | null> {
