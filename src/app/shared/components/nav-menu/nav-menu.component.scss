@@ -47,6 +47,26 @@ $duration-collapse: 90ms;
   pointer-events: none;
 }
 
+// Mobile: escurece o fundo atrás do menu (10%); tocar nele fecha. Some no desktop (o menu é o trilho).
+.nav-menu__scrim {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-index-overlay);
+  background: color-mix(in srgb, #{tokens.c(content-1)} 10%, transparent);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity $duration-expand $ease-standard;
+
+  :host(.nav-menu--open) & {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  @include breakpoints.md {
+    display: none;
+  }
+}
+
 .nav-menu__panel {
   box-sizing: border-box;
   display: flex;
@@ -343,8 +363,8 @@ $duration-collapse: 90ms;
 
   // Figma v2: item ativo = fundo surface-2, ícone secondary, rótulo Label/Lg.
   &--active {
-    // O fundo do ativo é uma camada atrás do conteúdo com `multiply` (fica mais escuro que o fundo
-    // do menu, claro e escuro) sem afetar a cor do ícone e do rótulo.
+    // O fundo do ativo é uma camada atrás do conteúdo, sem `mix-blend-mode`: o `multiply` só entrava depois da animação de
+    // abertura e escurecia o item (Thiago, 2026-11-25); assim ele fica na mesma cor do início ao fim.
     background: transparent;
 
     &::before {
@@ -354,7 +374,6 @@ $duration-collapse: 90ms;
       z-index: 0;
       border-radius: inherit;
       background: var(--color-nav-active);
-      mix-blend-mode: multiply;
       pointer-events: none;
     }
 

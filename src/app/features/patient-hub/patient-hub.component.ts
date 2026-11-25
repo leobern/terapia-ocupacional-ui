@@ -283,7 +283,7 @@ export class PatientHubComponent implements OnInit {
       if (this.status() === 'ready' && this.hospitalId() !== null && !this.readOnly()) {
         const profile = this.profile();
         const actions: ScreenAction[] = [
-          { id: 'daily-record', label: 'Registro diário', navigate: (): void => this.editDailyRecord() },
+          { id: 'daily-record', label: 'Evoluir paciente', navigate: (): void => this.editDailyRecord() },
           {
             id: 'patient-message',
             label: 'Observação ou mensagem',

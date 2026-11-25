@@ -26,6 +26,7 @@ import { PhIconComponent } from '../../shared/icons/ph-icon/ph-icon.component';
 import { AiAssistantService } from '../../shared/services/ai-assistant.service';
 import { ScreenActionsService } from '../../shared/services/screen-actions.service';
 import { HOME_CONTEXT } from '../../shared/services/screen-contexts';
+import { ViewportBreakpointService } from '../../shared/services/viewport-breakpoint.service';
 import { formatRelativeTime } from '../../shared/utils/relative-time';
 import { ManagerAccessReader } from '../hospital-team/hospital-invite-port';
 import { ChangeLocationAction } from '../patient-hub/change-location/change-location.action';
@@ -127,6 +128,7 @@ export class HomeComponent implements OnInit, OnDestroy {
   readonly isFeedEmpty = computed(() => this.feedLoaded() && this.notifications().length === 0);
 
   protected readonly context = inject(HospitalContextService);
+  protected readonly viewport = inject(ViewportBreakpointService);
   protected readonly unreadCount = signal(0);
   protected readonly summary = signal<DailyPatientsSummary | null>(null);
   protected readonly listOpen = signal(false);
@@ -160,6 +162,23 @@ export class HomeComponent implements OnInit, OnDestroy {
   constructor() {
     effect(onCleanup => {
       onCleanup(this.screenActions.registerContext(HOME_CONTEXT));
+    });
+
+    // Legenda do botão central da barra inferior (mobile): a IA sugere ações da tela (Thiago, 2026-11-25).
+    effect(onCleanup => {
+      onCleanup(
+        this.screenActions.registerSuggestions([
+          { label: 'Cadastrar hospital', run: (): void => this.onRegisterHospital() },
+          { label: 'Iniciar turno de trabalho', run: (): void => void this.onShiftClick() },
+          {
+            label: 'Ver minhas pendências',
+            run: (): void => {
+              this.aiAssistant.openPanel();
+              this.aiAssistant.ask('Quais são minhas pendências de hoje?');
+            },
+          },
+        ]),
+      );
     });
 
     const profile = inject(ProfessionalProfileReader).read();

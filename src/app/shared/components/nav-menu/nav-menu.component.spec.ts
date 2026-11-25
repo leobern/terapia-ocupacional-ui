@@ -267,6 +267,59 @@ describe('NavMenuComponent', () => {
       expect(navLinks()[0].textContent).toContain('Hospitais');
     });
 
+    it('tocar no fundo escurecido fecha o menu', () => {
+      let closed = 0;
+
+      fixture.componentInstance.closed.subscribe(() => closed++);
+      fixture.nativeElement.querySelector('.nav-menu__scrim').click();
+
+      expect(closed).toBe(1);
+    });
+
+    describe('arrastar o menu para a esquerda (mobile)', () => {
+      const touch = (x: number, y: number): Touch =>
+        new Touch({ clientX: x, clientY: y, identifier: 1, target: fixture.nativeElement as HTMLElement });
+      const swipe = (from: [number, number], to: [number, number]): void => {
+        const panel = fixture.nativeElement.querySelector('.nav-menu__panel') as HTMLElement;
+
+        panel.dispatchEvent(new TouchEvent('touchstart', { touches: [touch(...from)] }));
+        panel.dispatchEvent(new TouchEvent('touchend', { changedTouches: [touch(...to)] }));
+      };
+      let closed: number;
+
+      beforeEach(() => {
+        closed = 0;
+        fixture.componentRef.setInput('open', true);
+        fixture.detectChanges();
+        fixture.componentInstance.closed.subscribe(() => closed++);
+      });
+
+      it('um arrasto longo e horizontal fecha', () => {
+        swipe([200, 300], [100, 310]);
+
+        expect(closed).toBe(1);
+      });
+
+      it('arrasto curto, vertical ou para a direita não fecha', () => {
+        swipe([200, 300], [170, 300]);
+        swipe([200, 300], [120, 500]);
+        swipe([100, 300], [260, 300]);
+
+        expect(closed).toBe(0);
+      });
+
+      it('com o menu fechado ou sem começo de toque não fecha', () => {
+        const panel = fixture.nativeElement.querySelector('.nav-menu__panel') as HTMLElement;
+
+        panel.dispatchEvent(new TouchEvent('touchend', { changedTouches: [touch(0, 0)] }));
+        fixture.componentRef.setInput('open', false);
+        fixture.detectChanges();
+        swipe([200, 300], [100, 300]);
+
+        expect(closed).toBe(0);
+      });
+    });
+
     it('applies the nav-menu--open host class when open is true', () => {
       fixture.componentRef.setInput('open', true);
       fixture.detectChanges();

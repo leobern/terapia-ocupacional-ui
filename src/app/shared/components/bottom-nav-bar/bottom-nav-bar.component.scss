@@ -21,39 +21,18 @@ $ai-symbol-size: tokens.$control-height-lg;
 // Figma. Sem ela, o cluster ficaria ~42px mais alto e o símbolo subiria demais.
 $ai-symbol-bleed: calc($ai-symbol-size * -0.375); // (1 - 1.75) / 2
 
-// Espaço a preservar de cada lado do cluster central: o recuo lateral da barra
-// + a largura do icon-button (glifo + padding nos dois lados) + uma folga de
-// respiro. Existe porque o convite sob o símbolo é dinâmico — sem este teto, um
-// texto longo cresceria por cima dos botões de menu e de ações.
-// 3 × space-8 = dois respiros do icon-button (um por lado) + a folga extra.
-$ai-gap: tokens.$space-8 * 3;
-$ai-clearance: calc(
-  #{tokens.$space-24} + #{tokens.$control-height-lg} + #{$ai-gap}
-);
-
 :host {
-  bottom: 0;
-  display: block;
+  // Barra FLUTUANTE e redonda (Figma v2/BottomNav, Thiago 2026-11-25): pílula de 320px centralizada, a 8px do rodapé.
+  // Fixa na viewport: quem rola conteúdo reserva `--bottom-nav-bar-height` (feito pelo `page-container`).
+  bottom: calc(#{tokens.$space-8} + env(safe-area-inset-bottom, 0px));
+  display: flex;
+  justify-content: center;
   inset-inline: 0;
-
-  // Fixa na viewport (requisito explícito do usuário: "sempre fica fixo no
-  // bottom da tela") — não vem do Figma, que desenha a barra como rodapé de um
-  // frame. Consequência: quem rola conteúdo reserva `--bottom-nav-bar-height`;
-  // no produto isso é feito pelo `page-container`.
+  pointer-events: none;
   position: fixed;
 
-  // Sempre ABAIXO de overlays: um botão clicável sobre um diálogo modal quebra o
-  // focus trap (spec.md § Clarifications).
+  // Sempre ABAIXO de overlays: um botão clicável sobre um diálogo modal quebra o focus trap (spec.md § Clarifications).
   z-index: tokens.$z-index-bottom-nav;
-}
-
-@include breakpoints.sm {
-  :host {
-    // Mesmo `max-width` que o `page-container` aplica neste breakpoint — a barra
-    // acompanha a coluna de conteúdo em vez de esticar pela tela toda.
-    margin-inline: auto;
-    max-width: tokens.$content-max-width;
-  }
 }
 
 @include breakpoints.md {
@@ -62,32 +41,15 @@ $ai-clearance: calc(
   }
 }
 
-// Depois das media queries de propósito: esconder por teclado virtual vence
-// qualquer breakpoint (spec.md FR-015).
+// Depois das media queries de propósito: esconder por teclado virtual vence qualquer breakpoint (spec.md FR-015).
 :host(.bottom-nav-bar--hidden) {
   display: none;
 }
 
 .bottom-nav-bar {
-  align-items: flex-start;
-  min-height: calc(
-    #{tokens.$bottom-nav-bar-height} + env(safe-area-inset-bottom, 0px)
-  );
-
-  // O prefixo é FUNCIONALMENTE necessário: Safari/iOS só aplica o desfoque de
-  // fundo com `-webkit-backdrop-filter`, e um aparelho iOS é justamente o alvo
-  // principal de uma barra inferior. `stylelint --fix` removeu este prefixo uma
-  // vez (virou duplicata de `backdrop-filter`) — daí o disable explícito.
-  /* stylelint-disable-next-line property-no-vendor-prefix */
-  -webkit-backdrop-filter: blur(24px);
-  backdrop-filter: blur(24px);
-
-  // Aproximação CSS do `Effect(type: GLASS, radius: 24)` do Figma — o material de
-  // vidro de lá combina desfoque com refração e realce de borda, sem equivalente
-  // único em CSS (research.md §2, Desvio 2 da spec). O raio de 24px é a única
-  // medida literal permitida neste arquivo (spec.md FR-012).
-  background: color-mix(in srgb, #{tokens.c(surface-glass-1)} 92%, transparent);
-  border-radius: tokens.$radius-lg tokens.$radius-lg 0 0;
+  align-items: center;
+  background: tokens.c(surface-glass-1);
+  border-radius: tokens.$radius-pill;
   box-shadow: var(
     --shadow-elevation-bottomsheet,
     #{tokens.$shadow-elevation-bottomsheet}
@@ -95,38 +57,19 @@ $ai-clearance: calc(
   box-sizing: border-box;
   display: flex;
   justify-content: space-between;
-
-  // A altura de 104px NASCE daqui (16 + 48 do icon-button + 40), em vez de ser
-  // declarada — o token `$bottom-nav-bar-height` é a conferência, não a fonte.
-  padding: tokens.$space-12 tokens.$space-24
-    calc(28px + env(safe-area-inset-bottom, 0px));
-
-  // Containing block do cluster de IA. Sem `overflow: hidden` em lugar nenhum da
-  // cadeia: o símbolo TRANSBORDA 8px acima da barra (spec.md FR-011).
-  position: relative;
+  max-width: 320px;
+  padding: tokens.$space-16 tokens.$space-24;
+  pointer-events: auto;
+  width: min(320px, calc(100% - #{tokens.$space-32}));
 }
 
 .bottom-nav-bar__ai {
   align-items: center;
-
-  // Centralizado por `margin-inline: auto` entre `left/right: 0`, e NÃO por
-  // `transform: translateX(-50%)`: um transform criaria stacking context e
-  // isolaria os `mix-blend-mode` do símbolo (mesma decisão tomada dentro do
-  // próprio `icon-logo-button`).
-  bottom: calc(28px + env(safe-area-inset-bottom, 0px));
   display: flex;
   flex-direction: column;
+  flex: 0 1 auto;
   gap: tokens.$space-4;
-  inset-inline: 0;
-  margin-inline: auto;
-
-  // O convite é DINÂMICO (muda por tela, horário, ação ou gatilho da IA), então
-  // o cluster não pode crescer livremente: `$ai-clearance` reserva de cada lado
-  // o recuo da barra + o icon-button + uma folga, para que nenhum texto invada
-  // ou cubra os botões laterais. O que passar disso é truncado no label.
-  max-width: calc(100% - #{$ai-clearance} * 2);
-  position: absolute;
-  width: max-content;
+  min-width: 0;
 }
 
 .bottom-nav-bar__ai app-icon-logo-button {
@@ -135,23 +78,17 @@ $ai-clearance: calc(
   margin: $ai-symbol-bleed;
 }
 
+// Legenda do botão central: centralizada, para a digitação e o apagar convergirem para o meio.
 .bottom-nav-bar__ai-label {
   color: tokens.c(content-2);
   font-family: tokens.$font-family-interactive;
   font-size: tokens.$font-size-label;
   font-weight: tokens.$font-weight-medium;
-
-  // O Figma especifica 100%/normal, não um valor numérico — mesma nota já
-  // registrada em `_tokens.scss`.
-  line-height: normal;
+  line-height: 16px;
   max-width: 100%;
-
-  // Rede de segurança para o convite dinâmico: uma linha só, truncada com
-  // reticências se passar do espaço livre entre os botões. Quebrar em duas
-  // linhas empurraria o símbolo para cima (o cluster é ancorado pela base) e
-  // desfaria o transbordo de 8px do Figma — por isso trunca em vez de quebrar.
-  // O texto deve ser curto por escrita, não por corte: ver § Diretrizes de Uso.
+  min-height: 16px;
   overflow: hidden;
+  text-align: center;
   text-overflow: ellipsis;
   white-space: nowrap;
 }

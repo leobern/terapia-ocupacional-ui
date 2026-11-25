@@ -375,7 +375,7 @@ $z-index-overlay: 100;
 // (research.md §4). A alternativa (medir com ResizeObserver e escrever no :root)
 // acoplaria layout a JS e criaria salto no primeiro frame.
 // -----------------------------------------------------------------------------
-$bottom-nav-bar-height: 108px; // Figma v2/BottomNav: 12 + 68 (logo 48 + rótulo) + 28
+$bottom-nav-bar-height: 124px; // Figma Home mobile: pílula de 100 (16 + 68 + 16) + 8 do rodapé + 16 de respiro
 
 // Largura máxima da coluna de conteúdo no breakpoint-sm (tablet). Nasceu literal
 // no `page-container`; virou token quando a `bottom-nav-bar` passou a ter que

@@ -222,17 +222,34 @@ describe('HomeComponent', () => {
 
     beforeEach(() => setup());
 
-    it('"Cadastrar hospital" fica no topo, ao lado do sino; "Iniciar turno" (outline, sem ícone) à direita, acima da data', () => {
+    it('"Cadastrar hospital" fica no topo (desktop); o turno vem logo abaixo do seletor e a frase e a data no bloco de texto', () => {
       const actions = q('.home__header-actions') as HTMLElement;
-      const aside = q('.home__local-aside') as HTMLElement;
+      const top = q('.home__local-top') as HTMLElement;
+      const text = q('.home__local-text') as HTMLElement;
 
-      expect(actions.querySelector('.home__register-hospital')?.textContent).toContain('Cadastrar hospital');
-      expect(actions.firstElementChild).toBe(actions.querySelector('.home__register-hospital'));
-      expect(q('.home__hospital-row .home__register-hospital')).toBeNull();
-      expect(aside.firstElementChild).toBe(q('.home__shift'));
-      expect(aside.lastElementChild?.classList).toContain('home__date');
-      expect(q('.home__shift button')?.className).toContain('outlined');
+      expect(actions.firstElementChild).toBe(q('.home__cta'));
+      expect(q('.home__cta .home__register-hospital')?.textContent).toContain('Cadastrar hospital');
+      expect(top.firstElementChild).toBe(q('.home__hospital-row'));
+      expect(top.lastElementChild).toBe(q('.home__shift'));
+      expect(text.lastElementChild?.classList).toContain('home__date');
+      // Fora do desktop o turno é o botão cheio (Figma Home mobile); no desktop é o contorno.
+      expect(q('.home__shift button')?.className).toContain('solid');
       expect(q('.home__shift ph-icon')).toBeNull();
+    });
+
+    it('registra as sugestões da barra inferior: cadastrar hospital, iniciar turno e pendências', () => {
+      const suggestions = TestBed.inject(ScreenActionsService).suggestions();
+
+      expect(suggestions.map(s => s.label)).toEqual([
+        'Cadastrar hospital',
+        'Iniciar turno de trabalho',
+        'Ver minhas pendências',
+      ]);
+      suggestions[1].run?.();
+      suggestions[2].run?.();
+      suggestions[0].run?.();
+
+      expect(TestBed.inject(AiAssistantService).isOpen()).toBeTrue();
     });
 
     it('sem localização cadastrada, não inicia e orienta em texto', async () => {

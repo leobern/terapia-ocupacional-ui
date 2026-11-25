@@ -25,7 +25,7 @@ import { InputChatComponent, type InputChatMode } from './shared/components/inpu
 import { NavMenuComponent, type NavMenuItemKey } from './shared/components/nav-menu/nav-menu.component';
 import { PrivacyOverlayComponent } from './shared/components/privacy-overlay/privacy-overlay.component';
 import { AiAssistantService } from './shared/services/ai-assistant.service';
-import { ScreenActionsService } from './shared/services/screen-actions.service';
+import { ScreenActionsService, type ScreenSuggestion } from './shared/services/screen-actions.service';
 import { ViewportBreakpointService } from './shared/services/viewport-breakpoint.service';
 
 /**
@@ -42,6 +42,8 @@ import { ViewportBreakpointService } from './shared/services/viewport-breakpoint
  */
 /** Prefixo do id dos chips que são ações da tela (os outros são perguntas rápidas). */
 const ACTION_SHORTCUT_PREFIX = 'action:';
+/** Quantas ações da tela entram como sugestão sob o botão central da barra inferior. */
+const MAX_NAV_SUGGESTIONS = 3;
 
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -71,6 +73,22 @@ export class AppComponent {
   readonly menuOpen = signal(false);
 
   /** Itens do menu sem acesso para o perfil atual (Farmácia é exclusiva do gestor). */
+  /**
+   * Sugestões do botão central: as que a tela registrou (ex.: a Home) ou, sem elas, as ações principais da tela (as
+   * mesmas dos Atalhos). Assim toda tela herda o padrão: o CTA principal vira frase na legenda (Thiago, 2026-11-25).
+   */
+  protected readonly navSuggestions = computed<readonly ScreenSuggestion[]>(() => {
+    const explicit = this.screenActions.suggestions();
+
+    return explicit.length > 0
+      ? explicit
+      : this.screenActions
+          .actions()
+          .slice(0, MAX_NAV_SUGGESTIONS)
+          .map(action => ({ label: action.label, run: (): void => this.aiAssistant.openAction(action) }));
+  });
+  protected readonly suggestionLabels = computed(() => this.navSuggestions().map(s => s.label));
+
   protected readonly disabledNavItems = computed<readonly NavMenuItemKey[]>(() =>
     this.roleReader.read() === Role.GESTOR ? [] : ['farmacia'],
   );
@@ -172,9 +190,11 @@ export class AppComponent {
     // Esc, arrastar) chega em `isOpen() === false`; a visão/ação já são zeradas pelo
     // serviço, aqui zera o que vive no shell: encaixe e campo de mensagem.
     // Cadastro (formulário) abre o bottom sheet no máximo (100%); a tela inicial do assistente e os atalhos abrem na metade.
+    // No mobile, tudo que abre pelo botão central ocupa a altura máxima; só o painel de Atalhos abre na altura de hoje
+    // (Thiago, 2026-11-25).
     effect(() => {
-      if (this.aiAssistant.view() === 'form') {
-        this.aiSheetSnap.set('full');
+      if (this.aiAssistant.isOpen()) {
+        this.aiSheetSnap.set(this.aiAssistant.view() === 'shortcuts' ? 'default' : 'full');
       }
     });
 
@@ -202,6 +222,18 @@ export class AppComponent {
       ),
       { initialValue: !this.router.url.startsWith('/splash') && this.router.url !== '/' },
     );
+  }
+
+  /** Toque no botão central: executa a sugestão que estava visível (se tiver ação) ou só abre o assistente. */
+  onNavAiClick(index: number): void {
+    const suggestion = index >= 0 ? this.navSuggestions()[index] : undefined;
+
+    if (suggestion?.run) {
+      suggestion.run();
+
+      return;
+    }
+    this.aiAssistant.openPanel();
   }
 
   // public: exercitados diretamente pelo spec (ver `menuOpen`/`aiAssistant` acima).

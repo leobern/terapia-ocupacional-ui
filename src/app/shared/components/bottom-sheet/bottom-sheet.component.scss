@@ -62,8 +62,16 @@ $ease-sheet: cubic-bezier(0.32, 0.72, 0, 1);
 
 .bottom-sheet {
   background: var(--color-surface);
+  // Figma v2/AssistantPanel bottom-sheet (4588:394, Thiago 2026-11-25): borda azul de 4px só no topo, raio 32.
   border: 0;
-  border-radius: tokens.$radius-lg tokens.$radius-lg 0 0; // Figma v2 (bottom-sheet): 32px
+  border-top: 4px solid var(--color-secondary);
+  border-radius: tokens.$radius-lg tokens.$radius-lg 0 0;
+  // Distância do topo (dentro da borda) até o cabeçalho: 12 de padding + alça de 4 + 24 de gap, menos os 15px de brilho
+  // da caixa do logo (o círculo de 40px começa 36px abaixo do topo).
+  --bottom-sheet-header-top: calc(
+    var(--space-12) + 4px + var(--space-24) - 15px
+  );
+
   box-shadow: var(--shadow-elevation-bottomsheet);
   color: var(--color-content-1);
   // FECHADO = `display: none`. Antes ficava `flex` (só empurrado 100% para baixo pelo
@@ -189,6 +197,7 @@ $ease-sheet: cubic-bezier(0.32, 0.72, 0, 1);
   display: flex;
   flex-shrink: 0;
   justify-content: space-between;
+  margin-top: var(--bottom-sheet-header-top);
   // Figma v2/AssistantPanel: logo de 40px a 16px da borda (a caixa do logo já traz o brilho: 15px de folga + 1px).
   padding: 0 var(--space-16) 0 1px;
   touch-action: none;
@@ -217,18 +226,17 @@ $ease-sheet: cubic-bezier(0.32, 0.72, 0, 1);
 }
 
 .bottom-sheet__handle {
-  background: var(--color-state-disabled);
-  border-radius: var(--radius-pill);
+  // Alça de 40x4 em border-2, a 12px do topo (Figma 4588:394).
+  background: var(--color-border-2);
+  border-radius: 2px;
   flex-shrink: 0;
-  height: var(--space-8);
+  height: 4px;
   left: 50%;
-  margin: var(--space-8) 0;
+  margin: 0;
   position: absolute;
-  // Colada no topo do cabeçalho: com os itens centralizados na vertical, sem `top` ela acompanharia
-  // o centro da linha e ficaria por cima do título.
-  top: 0;
+  top: calc(var(--space-12) - var(--bottom-sheet-header-top));
   transform: translateX(-50%);
-  width: var(--space-80);
+  width: var(--space-40);
 }
 
 // Alvo de toque de 44x44 sem mexer na caixa visual de 32x32 (FR-017).
@@ -269,7 +277,7 @@ $ease-sheet: cubic-bezier(0.32, 0.72, 0, 1);
   // Figma v2/AssistantPanel: 16px de cada lado; só o TEXTO da saudação ganha +16px (32px da borda). O conteúdo
   // do assistente lê estas duas variáveis (no drawer elas não existem e valem os padrões dele).
   --assistant-content-inset: 0;
-  --assistant-text-inset: var(--space-16);
+  --assistant-text-inset: var(--space-12);
 
   flex: 1 0 0;
   min-height: 0;
@@ -278,16 +286,19 @@ $ease-sheet: cubic-bezier(0.32, 0.72, 0, 1);
   // Impede o scroll chaining: rolar a conversa até o fim não pode continuar
   // rolando a página por baixo.
   overscroll-behavior: contain;
-  padding: 0 var(--space-16);
+  // 24px entre o círculo do logo e o texto (o brilho da caixa do logo já ocupa 15px).
+  padding: calc(var(--space-24) - 15px) var(--space-16) 0;
 }
 
 // Faixa de atalhos: some inteira (padding incluído) quando não há atalhos —
 // o `@if` do template cobre este bloco (FR-009/SC-007).
 .bottom-sheet__actions {
+  // Figma 4588:394: chips em coluna, 8px entre eles, alinhados à esquerda.
+  align-items: flex-start;
   display: flex;
+  flex-direction: column;
   flex-shrink: 0;
-  flex-wrap: wrap;
-  gap: var(--space-16);
+  gap: var(--space-8);
   padding: var(--space-24) var(--space-16) 0;
 }
 
@@ -320,6 +331,11 @@ $ease-sheet: cubic-bezier(0.32, 0.72, 0, 1);
 // Telas internas (cadastro manual: voltar + título, sem a logo): header e conteúdo respeitam o
 // padding de 16px do bottom sheet. Só o header com a logo usa o ajuste sem padding à esquerda.
 .bottom-sheet--form {
+  // Sheet sistêmico (Atalhos): sem a borda azul da conversacional (Thiago, 2026-11-25) e sem o deslocamento do logo.
+  --bottom-sheet-header-top: 0;
+
+  border-top: 0;
+
   .bottom-sheet__header {
     padding: var(--space-24) var(--space-16) var(--space-16);
   }

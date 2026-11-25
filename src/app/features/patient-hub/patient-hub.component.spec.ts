@@ -436,13 +436,13 @@ describe('PatientHubComponent', () => {
   });
 
   describe('Registro diário', () => {
-    it('registra a ação "Registro diário" nos atalhos e abre a evolução no painel lateral', async () => {
+    it('registra a ação "Evoluir paciente" nos atalhos e abre a evolução no painel lateral', async () => {
       const f = await setup(new FakeSource());
       const actions = TestBed.inject(ScreenActionsService).actions();
       const assistant = TestBed.inject(AiAssistantService);
 
       expect(actions.map(a => a.label)).toEqual([
-        'Registro diário',
+        'Evoluir paciente',
         'Observação ou mensagem',
         'Movimentar leito',
         'Alterar unidade/ala',
@@ -502,7 +502,7 @@ describe('PatientHubComponent', () => {
         TestBed.inject(ScreenActionsService)
           .actions()
           .map(a => a.label),
-      ).toEqual(['Registro diário', 'Observação ou mensagem', 'Movimentar leito', 'Alterar unidade/ala']);
+      ).toEqual(['Evoluir paciente', 'Observação ou mensagem', 'Movimentar leito', 'Alterar unidade/ala']);
     });
 
     it('médico abre a Meta nutricional no painel lateral pelos atalhos', async () => {

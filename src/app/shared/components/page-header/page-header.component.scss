@@ -133,5 +133,10 @@
 }
 
 .page-header__shortcuts {
-  display: inline-flex;
+  // Mobile: o botão de ações já fica na barra inferior (Thiago, 2026-11-25); no cabeçalho só o sino.
+  display: none;
+
+  @include breakpoints.md {
+    display: inline-flex;
+  }
 }

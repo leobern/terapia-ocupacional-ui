@@ -71,4 +71,19 @@ describe('ScreenActionsService', () => {
 
     expect(registry.commandHandler()).toBe(b);
   });
+
+  it('registerSuggestions expõe as sugestões da tela e o cleanup só remove se ainda forem as atuais', () => {
+    const first = [{ label: 'Cadastrar' }];
+    const second = [{ label: 'Outra' }];
+    const cleanupFirst = service.registerSuggestions(first);
+
+    expect(service.suggestions()).toBe(first);
+    service.registerSuggestions(second);
+    cleanupFirst();
+
+    expect(service.suggestions()).toBe(second);
+    service.registerSuggestions(first)();
+
+    expect(service.suggestions()).toEqual([]);
+  });
 });

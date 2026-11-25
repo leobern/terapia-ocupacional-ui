@@ -330,8 +330,8 @@
               </div>
             }
           </div>
-          <!-- Mobile (Figma 4608:4375): a ação primária fica no fim da tela, em largura total. -->
-          @if (!readOnly()) {
+          <!-- Mobile: sem CTA na tela; "Evoluir paciente" vira a sugestão sob o botão central da barra inferior (Thiago, 2026-11-25). -->
+          @if (!readOnly() && viewport.isDesktop()) {
             <app-button
               class="hub__evolve hub__evolve--bottom hub__o-10"
               label="Evoluir Paciente"
