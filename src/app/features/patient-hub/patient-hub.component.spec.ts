@@ -38,6 +38,7 @@ import { FormulasApi } from '../pharmacy/formulas-api';
 import { AssessmentAiStructurer } from './assessment/assessment-ai-structurer';
 import { AssessmentSource } from './assessment/assessment-source';
 import { AssessmentWriter } from './assessment/assessment-writer';
+import { LocationChangePort, LocationExtractor } from './change-location/location-change.port';
 import { DailyEvolutionSource } from './daily-record/daily-evolution-source';
 import { DailyRecordSource } from './daily-record/daily-record-source';
 import { DailyRecordWriter } from './daily-record/daily-record-writer';
@@ -249,6 +250,8 @@ async function setup(
       { provide: BedMovementPort, useValue: { resolve: (): Promise<never> => Promise.reject(new Error('x')) } },
       { provide: BedOccupancyPort, useValue: { check: (): Promise<never> => Promise.reject(new Error('x')) } },
       { provide: BedNumberExtractor, useValue: { extract: (): null => null } },
+      { provide: LocationChangePort, useValue: {} },
+      { provide: LocationExtractor, useValue: { extract: (): null => null } },
       { provide: LinkRevocationChecker, useValue: revocation },
       { provide: NutritionResultsSource, useValue: results },
       { provide: DailyAdequacyService, useValue: adequacy },
@@ -460,6 +463,7 @@ describe('PatientHubComponent', () => {
         'Registro diário',
         'Observação ou mensagem',
         'Movimentar leito',
+        'Alterar unidade/ala',
         'Ajustar a prescrição',
         'Revisão da prescrição',
       ]);
@@ -503,7 +507,7 @@ describe('PatientHubComponent', () => {
         TestBed.inject(ScreenActionsService)
           .actions()
           .map(a => a.label),
-      ).toEqual(['Registro diário', 'Observação ou mensagem', 'Movimentar leito']);
+      ).toEqual(['Registro diário', 'Observação ou mensagem', 'Movimentar leito', 'Alterar unidade/ala']);
     });
 
     it('médico abre a revisão da prescrição pelos atalhos e fecha com Esc', async () => {

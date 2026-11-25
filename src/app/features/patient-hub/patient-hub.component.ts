@@ -48,6 +48,7 @@ import {
 } from '../patients/nutrition-panel/nutrition-panel.models';
 import { NutritionResultsSource } from '../patients/nutrition-panel/nutrition-results-source';
 import { AssessmentSectionComponent } from './assessment/assessment-section.component';
+import { ChangeLocationAction } from './change-location/change-location.action';
 import { MeasureChartComponent } from './charts/measure-chart.component';
 import { DailyRecordSheetComponent } from './daily-record/daily-record-sheet.component';
 import { PatientMessageSheetComponent } from './messages/patient-message-sheet.component';
@@ -251,6 +252,7 @@ export class PatientHubComponent implements OnInit {
   private readonly editing = signal<'paste' | 'edit' | null>(null);
   private readonly screenActions = inject(ScreenActionsService);
   private readonly moveBed = inject(MoveBedAction);
+  private readonly changeLocation = inject(ChangeLocationAction);
   private readonly source = inject(PatientHubSource);
   private readonly prescriptions = inject(PrescriptionSource);
   private readonly results = inject(NutritionResultsSource);
@@ -291,7 +293,10 @@ export class PatientHubComponent implements OnInit {
 
         // US-002-2-01: o paciente em contexto é o da tela; o pedido vai para a internação mais recente dele.
         if (profile) {
-          actions.push(this.moveBed.build({ id: profile.id, name: profile.name }));
+          actions.push(
+            this.moveBed.build({ id: profile.id, name: profile.name }),
+            this.changeLocation.build({ id: profile.id, name: profile.name }),
+          );
         }
         if (this.professional.read().role === 'doctor') {
           actions.push(

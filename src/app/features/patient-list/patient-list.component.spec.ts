@@ -14,6 +14,7 @@ import { HospitalContextService } from '../home/hospital-context.service';
 import { LinkedHospitalsReader } from '../home/linked-hospitals';
 import { ProfessionalProfileReader } from '../home/professional-profile';
 import { UnreadNotificationsReader } from '../home/unread-notifications-reader';
+import { LocationChangePort, LocationExtractor } from '../patient-hub/change-location/location-change.port';
 import { BedMovementPort, BedOccupancyPort } from '../patient-hub/move-bed/bed-movement.port';
 import { BedNumberExtractor } from '../patient-hub/move-bed/bed-number-extractor';
 import { InternacaoCreationPort } from '../patient-registration/internacao-creation.port';
@@ -97,6 +98,8 @@ describe('PatientListComponent', () => {
           },
         },
         { provide: BedNumberExtractor, useValue: {} },
+        { provide: LocationChangePort, useValue: {} },
+        { provide: LocationExtractor, useValue: { extract: (): null => null } },
         { provide: BedOccupancyPort, useValue: {} },
         provideRouter([]),
         { provide: PatientListSource, useValue: source },
@@ -683,7 +686,13 @@ describe('PatientListComponent', () => {
       TestBed.inject(ScreenActionsService)
         .actions()
         .map(a => a.label),
-    ).toEqual(['Cadastrar paciente', 'Movimentar leito', 'Alterar dados de paciente', 'Encerrar acompanhamento']);
+    ).toEqual([
+      'Cadastrar paciente',
+      'Movimentar leito',
+      'Alterar unidade/ala',
+      'Alterar dados de paciente',
+      'Encerrar acompanhamento',
+    ]);
   });
 
   it('tabela desktop: colunas sem data de nascimento, metas com texto e clique na linha abre o Hub', async () => {
@@ -985,7 +994,7 @@ describe('PatientListComponent', () => {
 
       expect(dialog()).toBeNull();
       expect(fixture.componentInstance.readOnly()).toBeFalse();
-      expect(labels().length).toBe(4);
+      expect(labels().length).toBe(5);
 
       fixture.componentInstance.selectDate(yesterday());
       await settle();
@@ -1008,7 +1017,7 @@ describe('PatientListComponent', () => {
       expect(dialog()).toBeNull();
       expect(fixture.componentInstance.readOnly()).toBeFalse();
       expect(q('.patient-list--read-only')).toBeNull();
-      expect(labels().length).toBe(4);
+      expect(labels().length).toBe(5);
       expect(q('.patient-list__register')).not.toBeNull();
     });
 

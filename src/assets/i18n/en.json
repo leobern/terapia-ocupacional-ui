@@ -7,6 +7,42 @@
       "retry": "Try again"
     }
   },
+  "changeLocation": {
+    "messages": {
+      "MSG-09": "I couldn't tell whether it is a unit or a ward. Could you say, for example, \"unit ICU\" or \"ward South\"?",
+      "MSG-10": "I couldn't identify the value. Could you give the unit or ward name?",
+      "MSG-11": "This patient has no admission recorded yet. The patient must be admitted before changing the location.",
+      "MSG-13": "I found no patient with that name in this hospital.",
+      "birth": "birth",
+      "cancelled": "Change cancelled. Nothing was modified in {type}.",
+      "chooseInvalid": "Choose one of the listed patients by its number.",
+      "confirmChoice": "Answer yes or no.",
+      "created": "Line created: {type}: {new}.",
+      "error": "Could not process the location change. Try again.",
+      "multiple": "I found more than one patient with that name:",
+      "nameMissing": "I couldn't identify the patient's name. Could you give it?",
+      "noSame": "not provided",
+      "same": "SAME",
+      "summaryCreate": "Change summary: patient {patient}; create the line \"{type}: {new}\" in the admission.",
+      "summaryUpdate": "Change summary: patient {patient}; update the {type} line from \"{current}\" to \"{new}\".",
+      "updated": "Line updated: {type}: {new}."
+    },
+    "options": {
+      "no": "No",
+      "yes": "Yes"
+    },
+    "prompts": {
+      "chooseOne": "Which of these patients?",
+      "confirm": "Confirm the location change?",
+      "patientName": "Which patient is this for? Give the name.",
+      "request": "What do you want to change? For example, \"unit ICU\" or \"ward South\"."
+    },
+    "title": "Change unit/ward",
+    "types": {
+      "ALA": "Ward",
+      "UNIDADE": "Unit"
+    }
+  },
   "home": {
     "error": {
       "description": "Check your internet connection and try again in a few moments.",

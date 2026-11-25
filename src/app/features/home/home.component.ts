@@ -27,6 +27,7 @@ import { ScreenActionsService } from '../../shared/services/screen-actions.servi
 import { HOME_CONTEXT } from '../../shared/services/screen-contexts';
 import { formatRelativeTime } from '../../shared/utils/relative-time';
 import { ManagerAccessReader } from '../hospital-team/hospital-invite-port';
+import { ChangeLocationAction } from '../patient-hub/change-location/change-location.action';
 import { MoveBedAction } from '../patient-hub/move-bed/move-bed.action';
 import { HomeErrorComponent } from './components/home-error/home-error.component';
 import { HomeSkeletonComponent } from './components/home-skeleton/home-skeleton.component';
@@ -139,6 +140,7 @@ export class HomeComponent implements OnInit, OnDestroy {
   private readonly injector = inject(Injector);
   private readonly screenActions = inject(ScreenActionsService);
   private readonly moveBed = inject(MoveBedAction);
+  private readonly changeLocation = inject(ChangeLocationAction);
   private readonly managerAccess = inject(ManagerAccessReader, { optional: true });
   private readonly revocation = inject(LinkRevocationChecker);
   private readonly scrollSentinel = viewChild<ElementRef<HTMLElement>>('scrollSentinel');
@@ -159,7 +161,14 @@ export class HomeComponent implements OnInit, OnDestroy {
 
     // US-002-2-02: pedido de mudança de leito citando o paciente pelo nome (hospital ativo).
     effect(onCleanup => {
-      onCleanup(this.screenActions.register([this.moveBed.buildByName(() => this.context.selected()?.id)]));
+      const hospitalId = (): number | undefined => this.context.selected()?.id;
+
+      onCleanup(
+        this.screenActions.register([
+          this.moveBed.buildByName(hospitalId),
+          this.changeLocation.buildByName(hospitalId),
+        ]),
+      );
     });
 
     // Atalho do gestor (FT-009-1): convidar diretamente um profissional já cadastrado.
