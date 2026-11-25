@@ -1,0 +1,23 @@
+@use '../../styles/tokens';
+@use '../../styles/typography';
+
+:host {
+  display: block;
+}
+
+// Figma v2/SectionHeader: gap 8, padding lateral 8, altura 40 (botão de edição de 40px, icon-button `small`).
+.section-header {
+  display: flex;
+  align-items: center;
+  gap: tokens.$space-8;
+  min-height: 40px;
+  padding-inline: tokens.$space-8;
+}
+
+.section-header__title {
+  flex: 1 0 0;
+  margin: 0;
+  color: tokens.c(content-1);
+
+  @include typography.title-lg;
+}

@@ -4,7 +4,9 @@
     aria-label="Prescrição vigente"
     data-testid="rx-summary"
   >
-    <h3 class="rx-summary__title">{{ title() }}</h3>
+    @if (title()) {
+      <h3 class="rx-summary__title">{{ title() }}</h3>
+    }
     @if (l.routeTitle; as via) {
       <p class="rx-summary__route" data-testid="rx-summary-route">{{ via }}</p>
     }

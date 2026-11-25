@@ -82,6 +82,11 @@
 }
 
 // --- cor por kind -------------------------------------------------------------
+// Azul de interação (default/secondary): ex.: o ícone de redimensionar da sidebar (Figma).
+.icon-button--accent {
+  --icon-button-color: #{tokens.c(secondary)};
+}
+
 .icon-button--secondary {
   --icon-button-color: #{tokens.c(content-2)};
 }

@@ -1,0 +1,77 @@
+@use '../../styles/tokens';
+@use '../../styles/typography';
+
+:host {
+  display: block;
+}
+
+.field-card {
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$space-8;
+  padding: tokens.$space-16;
+  border: 1px solid tokens.c(border);
+  border-radius: tokens.$radius-md;
+  background: tokens.c(surface);
+}
+
+.field-card__title {
+  color: tokens.c(content-1);
+
+  @include typography.title-md;
+}
+
+// Campo de 48px (raio 16, borda) com a unidade à direita, dentro dele.
+.field-card__field {
+  display: flex;
+  align-items: center;
+  gap: tokens.$space-8;
+  box-sizing: border-box;
+  height: 48px;
+  padding: 0 tokens.$space-16;
+  border: 1px solid tokens.c(border-2);
+  border-radius: tokens.$radius-sm;
+  background: tokens.c(surface);
+
+  &:focus-within {
+    outline: var(--focus-ring-width) solid tokens.c(focus-ring);
+    outline-offset: var(--focus-ring-offset);
+  }
+
+  &--error {
+    border-color: tokens.c(comm-alert);
+  }
+}
+
+.field-card__input {
+  flex: 1 0 0;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: tokens.c(content-1);
+  outline: 0;
+
+  @include typography.body-lg;
+}
+
+.field-card__unit {
+  flex: none;
+  color: tokens.c(content-4);
+
+  @include typography.caption;
+}
+
+.field-card__caption {
+  margin: 0;
+  color: tokens.c(content-4);
+
+  @include typography.caption;
+}
+
+.field-card__error {
+  margin: 0;
+  color: tokens.c(comm-alert);
+
+  @include typography.caption;
+}

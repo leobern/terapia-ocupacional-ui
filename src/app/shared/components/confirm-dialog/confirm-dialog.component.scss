@@ -10,8 +10,20 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  box-sizing: border-box;
+  width: 100%;
+  max-width: none;
+  height: 100%;
+  max-height: none;
+  margin: 0;
   padding: tokens.$space-24;
+  border: 0;
+  overflow: visible;
   background: var(--color-scrim, rgb(0 34 51 / 50%));
+
+  &:not(:popover-open) {
+    display: none;
+  }
 }
 
 .confirm-dialog__panel {

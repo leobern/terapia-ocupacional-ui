@@ -17,6 +17,7 @@ export class ProvisionalDailyEvolutionSource extends DailyEvolutionSource {
       author: request.author,
       at: request.at,
       origin: request.origin,
+      reevaluations: request.reevaluations ?? [],
       text: request.text,
     };
 

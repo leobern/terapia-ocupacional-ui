@@ -1,7 +1,7 @@
 @switch (assistant.view()) {
   @case ('shortcuts') {
     <div class="assistant-content">
-      <h2 class="assistant-content__title">Atalhos</h2>
+      <!-- O título "Atalhos" fica no cabeçalho do painel, no lugar do logo (a IA não conversa aqui). -->
       <p class="assistant-content__body">
         Qual ação você deseja executar nessa tela:
       </p>
@@ -45,61 +45,91 @@
     </div>
   }
   @case ('form') {
-    <!-- O título e a seta de voltar ficam no cabeçalho do painel (app-assistant-heading). -->
-    @if (assistant.activeAction()?.form; as form) {
-      <app-assistant-form [definition]="form" (submitted)="onSubmitted()" />
-    }
-  }
-  @case ('conversation') {
-    <!-- Cadastro por conversa: uma pergunta por vez; as respostas entram pelo campo de mensagem do rodapé. -->
-    <div class="assistant-content" aria-live="polite">
-      @for (message of flow.messages(); track $index) {
-        @if (message.role === 'user') {
-          <p class="assistant-content__question">{{ message.text }}</p>
-        } @else if (message.tone === 'error') {
-          <div class="assistant-content__error" role="alert">
-            <ph-icon name="warning-diamond" [size]="20" />
-            <p>{{ message.text }}</p>
-          </div>
-        } @else {
-          <p class="assistant-content__body">{{ message.text }}</p>
-        }
-      }
-      @if (flow.options().length || flow.canSkip()) {
-        <div class="assistant-content__actions">
-          @for (option of flow.options(); track option.value) {
-            <app-button
-              kind="primary"
-              appearance="outlined"
-              [fullWidth]="true"
-              [label]="option.label"
-              (click)="flow.choose(option)"
-            />
-          }
-          @if (flow.canSkip()) {
-            <app-button
-              kind="secondary"
-              appearance="outlined"
-              [fullWidth]="true"
-              [label]="flow.skipLabel()"
-              (click)="flow.skip()"
+    <!-- Cadastro conversacional: título e descrição são digitados; os campos surgem depois, como parte da digitação. -->
+    <div class="assistant-content">
+      <ng-container [ngTemplateOutlet]="actionIntroTpl" />
+      @if (actionIntroDone()) {
+        <div class="assistant-content__reveal">
+          @if (assistant.activeAction()?.form; as form) {
+            <app-assistant-form
+              [definition]="form"
+              (submitted)="onSubmitted()"
             />
           }
         </div>
       }
-      @if (flow.canRetry()) {
-        <app-button
-          kind="primary"
-          appearance="outlined"
-          [fullWidth]="true"
-          [label]="t('assistant.conversation.retry')"
-          (click)="flow.retry()"
-        />
+    </div>
+  }
+  @case ('editor') {
+    <!-- Editor próprio (ex.: Avaliação clínica): título e descrição digitados e, depois, o componente com os campos. -->
+    <div class="assistant-content">
+      <ng-container [ngTemplateOutlet]="actionIntroTpl" />
+      @if (actionIntroDone()) {
+        <div class="assistant-content__reveal">
+          @if (assistant.activeAction()?.editor; as editor) {
+            <ng-container
+              *ngComponentOutlet="editor.component; inputs: editor.inputs"
+            />
+          }
+        </div>
+      }
+    </div>
+  }
+  @case ('conversation') {
+    <!-- Cadastro por conversa: uma pergunta por vez; as respostas entram pelo campo de mensagem do rodapé. -->
+    <div class="assistant-content" aria-live="polite">
+      <ng-container [ngTemplateOutlet]="actionIntroTpl" />
+      @if (actionIntroDone()) {
+        @for (message of flow.messages(); track $index) {
+          @if (message.role === 'user') {
+            <p class="assistant-content__question">{{ message.text }}</p>
+          } @else if (message.tone === 'error') {
+            <div class="assistant-content__error" role="alert">
+              <ph-icon name="warning-diamond" [size]="20" />
+              <p>{{ message.text }}</p>
+            </div>
+          } @else {
+            <p class="assistant-content__body">{{ message.text }}</p>
+          }
+        }
+        @if (flow.options().length || flow.canSkip()) {
+          <div class="assistant-content__actions">
+            @for (option of flow.options(); track option.value) {
+              <app-button
+                kind="primary"
+                appearance="outlined"
+                [fullWidth]="true"
+                [label]="option.label"
+                (click)="flow.choose(option)"
+              />
+            }
+            @if (flow.canSkip()) {
+              <app-button
+                kind="secondary"
+                appearance="outlined"
+                [fullWidth]="true"
+                [label]="flow.skipLabel()"
+                (click)="flow.skip()"
+              />
+            }
+          </div>
+        }
+        @if (flow.canRetry()) {
+          <app-button
+            kind="primary"
+            appearance="outlined"
+            [fullWidth]="true"
+            [label]="t('assistant.conversation.retry')"
+            (click)="flow.retry()"
+          />
+        }
       }
     </div>
   }
   @case ('unavailable') {
-    <p class="assistant-content__body">Esta ação ainda não está disponível.</p>
+    <div class="assistant-content">
+      <ng-container [ngTemplateOutlet]="actionIntroTpl" />
+    </div>
   }
   @default {
     <div class="assistant-content assistant-content--intro">
@@ -133,6 +163,31 @@
     </div>
   }
 }
+
+<!-- Título e descrição do cadastro, digitados um depois do outro (como a saudação da IA). -->
+<ng-template #actionIntroTpl>
+  <h2 class="assistant-content__title">
+    <app-typewriter
+      [text]="actionIntro().title"
+      [restartKey]="actionKey()"
+      [enabled]="actionTyping()"
+      (finished)="onActionTitleFinished()"
+    />
+  </h2>
+  <p class="assistant-content__body">
+    <app-typewriter
+      [text]="actionIntro().description"
+      [restartKey]="actionKey()"
+      [enabled]="actionTyping() && actionTitleDone()"
+      (finished)="onActionDescriptionFinished()"
+    />
+  </p>
+  @if (actionIntroDone() && actionIntro().hint) {
+    <p class="assistant-content__hint assistant-content__fade">
+      {{ actionIntro().hint }}
+    </p>
+  }
+</ng-template>
 
 <ng-template #conversationTpl>
   @if (assistant.conversation(); as conversation) {

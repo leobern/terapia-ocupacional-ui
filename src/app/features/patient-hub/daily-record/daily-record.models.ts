@@ -2,12 +2,24 @@
 export type EvolutionOrigin = 'ai' | 'ai-edited' | 'manual';
 
 /** Evolução médica vigente do dia (FT-004-7, US-004-7-04): texto, autor e data/hora do registro. */
+/**
+ * Item a reavaliar, anotado na evolução ("avaliei diarreia; reavaliar em 48 h"). O prazo vira o selo "Prazo dd/mm"
+ * ou "Vencida" no card da evolução e, no backend, a notificação do profissional que assumir o turno no dia.
+ */
+export interface Reevaluation {
+  readonly id: string;
+  readonly name: string;
+  /** ISO 8601: quando a reavaliação deve acontecer. */
+  readonly dueAt: string;
+}
+
 export interface DailyEvolution {
   readonly author: string;
   /** ISO 8601 */
   readonly at: string;
   readonly origin: EvolutionOrigin;
   readonly text: string;
+  readonly reevaluations?: readonly Reevaluation[];
 }
 
 export interface EvolutionSaveRequest {
@@ -18,6 +30,33 @@ export interface EvolutionSaveRequest {
   /** AAAA-MM-DD: dia a que a evolução pertence. */
   readonly day: string;
   readonly text: string;
+  readonly reevaluations?: readonly Reevaluation[];
+}
+
+export type ReevaluationUnit = 'hours' | 'days';
+
+/** Prazo de reavaliação a partir do momento da evolução: "48 horas" ou "3 dias". */
+export function reevaluationDueAt(from: Date, amount: number, unit: ReevaluationUnit): string {
+  const hours = unit === 'hours' ? amount : amount * 24;
+
+  return new Date(from.getTime() + hours * 3_600_000).toISOString();
+}
+
+/** "dd/mm" a partir de um ISO, no fuso local. */
+export function shortDate(iso: string): string {
+  const d = new Date(iso);
+  const pad = (n: number): string => String(n).padStart(2, '0');
+
+  return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}`;
+}
+
+export type ReevaluationStatus = 'overdue' | 'upcoming';
+
+/** Vencida quando o prazo já passou; senão, "Prazo dd/mm". O texto sempre acompanha a cor. */
+export function reevaluationStatus(dueAt: string, now: Date): { kind: ReevaluationStatus; label: string } {
+  return new Date(dueAt).getTime() < now.getTime()
+    ? { kind: 'overdue', label: 'Vencida' }
+    : { kind: 'upcoming', label: `Prazo ${shortDate(dueAt)}` };
 }
 
 /** AAAA-MM-DD no fuso local. */

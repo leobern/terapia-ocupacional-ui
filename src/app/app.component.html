@@ -56,7 +56,20 @@
           @case ('form') {
             <app-assistant-form-footer bottomSheetFooter />
           }
+          @case ('editor') {
+            <app-assistant-editor-footer bottomSheetFooter />
+          }
           @case ('chat') {
+            <app-input-chat
+              bottomSheetFooter
+              placeholder="Escreva a sua mensagem"
+              [(value)]="aiChatValue"
+              [(mode)]="aiChatMode"
+              (send)="onAiSend($event)"
+              (audioSend)="onAiAudio($event)"
+            />
+          }
+          @case ('conversation') {
             <app-input-chat
               bottomSheetFooter
               placeholder="Escreva a sua mensagem"
@@ -73,6 +86,7 @@
         ariaLabel="Assistente de IA"
         [open]="aiAssistant.isOpen()"
         [showLogo]="!showAssistantHeading()"
+        [expandable]="!showAssistantHeading()"
         [snap]="aiDrawerSnap()"
         [shortcuts]="shortcuts()"
         (closed)="aiAssistant.closePanel()"
@@ -86,7 +100,20 @@
           @case ('form') {
             <app-assistant-form-footer drawerFooter />
           }
+          @case ('editor') {
+            <app-assistant-editor-footer drawerFooter />
+          }
           @case ('chat') {
+            <app-input-chat
+              drawerFooter
+              placeholder="Escreva a sua mensagem"
+              [(value)]="aiChatValue"
+              [(mode)]="aiChatMode"
+              (send)="onAiSend($event)"
+              (audioSend)="onAiAudio($event)"
+            />
+          }
+          @case ('conversation') {
             <app-input-chat
               drawerFooter
               placeholder="Escreva a sua mensagem"

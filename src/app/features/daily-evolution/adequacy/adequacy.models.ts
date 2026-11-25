@@ -53,16 +53,3 @@ export function computeAdequacy(
     targets,
   };
 }
-
-/** Valores do Painel Nutricional derivados do resultado; indisponível = ausente ("Sem dados"). */
-export function adequacyPanelValues(adequacy: DailyAdequacy | null): {
-  readonly 'calorie-adequacy'?: string;
-  readonly 'protein-adequacy'?: string;
-} {
-  return adequacy?.status === 'available'
-    ? {
-        'calorie-adequacy': `${adequacy.calories.percent}%`,
-        'protein-adequacy': `${adequacy.protein.percent}%`,
-      }
-    : {};
-}

@@ -1,0 +1,36 @@
+@use 'tokens';
+
+// Cores dos pontos de status da avaliação clínica: cores de comunicação e primária, secundária e terciária.
+@mixin dot-tones {
+  &[data-tone='alert'] {
+    background: tokens.c(comm-alert);
+  }
+
+  &[data-tone='warning'] {
+    background: tokens.c(comm-warning-strong);
+  }
+
+  &[data-tone='success'] {
+    background: tokens.c(comm-success);
+  }
+
+  &[data-tone='info'] {
+    background: tokens.c(comm-info);
+  }
+
+  &[data-tone='focus'] {
+    background: tokens.c(comm-focus);
+  }
+
+  &[data-tone='primary'] {
+    background: tokens.c(primary);
+  }
+
+  &[data-tone='secondary'] {
+    background: tokens.c(secondary);
+  }
+
+  &[data-tone='tertiary'] {
+    background: tokens.c(tertiary);
+  }
+}

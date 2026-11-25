@@ -1,0 +1,363 @@
+@switch (state()) {
+  @case ('loading') {
+    <p class="clin__status" role="status">Carregando a avaliação clínica…</p>
+  }
+  @case ('error') {
+    <p class="clin__status clin__status--warning" role="alert">
+      {{ loadFailedHint }}
+    </p>
+  }
+  @default {
+    <div class="clin">
+      <div class="clin__grid">
+        <!-- Obrigatórios: cadastrados com o paciente, não se excluem. -->
+        <div class="clin__card">
+          <label class="clin__title" for="clin-tn">Tipo de TN</label>
+          <div
+            class="clin__field"
+            [class.clin__field--error]="submitted() && errors().tnType"
+          >
+            <input
+              id="clin-tn"
+              class="clin__input"
+              type="text"
+              autocomplete="off"
+              placeholder="Ex.: NE"
+              [value]="tnType()"
+              (input)="tnType.set(text($event))"
+            />
+            <span class="clin__unit">{{ tnHint() }}</span>
+          </div>
+          @if (submitted() && errors().tnType; as message) {
+            <p class="clin__error" role="alert">{{ message }}</p>
+          } @else {
+            <p class="clin__caption">Via de terapia nutricional do paciente.</p>
+          }
+        </div>
+
+        <div class="clin__card">
+          <label class="clin__title" for="clin-device">Dispositivo</label>
+          <div
+            class="clin__field"
+            [class.clin__field--error]="submitted() && errors().device"
+          >
+            <input
+              id="clin-device"
+              class="clin__input"
+              type="text"
+              autocomplete="off"
+              placeholder="Ex.: SNE"
+              [value]="device()"
+              (input)="device.set(text($event))"
+            />
+            <span class="clin__unit">{{ deviceHint() }}</span>
+          </div>
+          @if (submitted() && errors().device; as message) {
+            <p class="clin__error" role="alert">{{ message }}</p>
+          } @else {
+            <p class="clin__caption">Dispositivo de acesso em uso.</p>
+          }
+        </div>
+
+        <div class="clin__card">
+          <label class="clin__title" for="clin-weight">Peso</label>
+          <div
+            class="clin__field"
+            [class.clin__field--error]="submitted() && errors().weightKg"
+          >
+            <input
+              id="clin-weight"
+              class="clin__input"
+              type="text"
+              inputmode="decimal"
+              autocomplete="off"
+              placeholder="Ex.: 51,0"
+              [value]="weight()"
+              (input)="weight.set(text($event))"
+            />
+            <span class="clin__unit">kg</span>
+          </div>
+          @if (submitted() && errors().weightKg; as message) {
+            <p class="clin__error" role="alert">{{ message }}</p>
+          } @else if (previousWeight(); as previous) {
+            <p class="clin__caption">
+              Anterior: {{ previous.kg }} kg em {{ previous.at }}.
+            </p>
+          } @else {
+            <p class="clin__caption">Peso atual do paciente.</p>
+          }
+        </div>
+
+        <div class="clin__card">
+          <label class="clin__title" for="clin-height">Altura</label>
+          <div
+            class="clin__field"
+            [class.clin__field--error]="submitted() && errors().heightCm"
+          >
+            <input
+              id="clin-height"
+              class="clin__input"
+              type="text"
+              inputmode="decimal"
+              autocomplete="off"
+              placeholder="Ex.: 163"
+              [value]="height()"
+              (input)="height.set(text($event))"
+            />
+            <span class="clin__unit">cm</span>
+          </div>
+          @if (submitted() && errors().heightCm; as message) {
+            <p class="clin__error" role="alert">{{ message }}</p>
+          } @else {
+            <p class="clin__caption">
+              Usada no cálculo do IMC{{ bmi() ? ': ' + bmi() + ' kg/m²' : '' }}.
+            </p>
+          }
+        </div>
+
+        <!-- Protocolos fixos e itens livres. -->
+        @for (item of items(); track item.id) {
+          @if (item.editing) {
+            <div
+              class="clin__card clin__card--new"
+              data-testid="clinical-item"
+              data-editing="true"
+            >
+              <input
+                class="clin__input clin__input--title"
+                type="text"
+                autocomplete="off"
+                placeholder="Título"
+                aria-label="Título do item"
+                [value]="item.title"
+                (input)="setItem(item.id, { title: text($event) })"
+              />
+              <div class="clin__field">
+                <input
+                  class="clin__input"
+                  type="text"
+                  autocomplete="off"
+                  placeholder="Valor"
+                  [attr.aria-label]="'Valor de ' + (item.title || 'item')"
+                  [value]="item.value"
+                  (input)="setItem(item.id, { value: text($event) })"
+                />
+                <input
+                  class="clin__input clin__input--unit"
+                  type="text"
+                  autocomplete="off"
+                  placeholder="Unidade"
+                  aria-label="Unidade"
+                  [value]="item.unit"
+                  (input)="setItem(item.id, { unit: text($event) })"
+                />
+              </div>
+              <span class="clin__caption">Faixas de status (opcional)</span>
+              @for (range of item.ranges; track range.id) {
+                <div class="clin__range" data-testid="clinical-range">
+                  <div class="clin__tone">
+                    <button
+                      type="button"
+                      class="clin__dot clin__dot--button"
+                      aria-label="Escolher a cor do status"
+                      [attr.data-tone]="range.tone"
+                      [attr.aria-expanded]="colorOpen()?.rangeId === range.id"
+                      (click)="toggleColor(item.id, range.id, $event)"
+                    ></button>
+                    <span class="clin__caption">{{
+                      toneName(range.tone)
+                    }}</span>
+                  </div>
+                  @if (colorOpen()?.rangeId === range.id) {
+                    <!-- Fundo do sistema todo (10%) e, por cima, só as tags de cor flutuando com sombra. -->
+                    <div
+                      #scrim
+                      class="clin__scrim"
+                      popover="manual"
+                      role="presentation"
+                      (click)="closeColor()"
+                    >
+                      <div
+                        class="clin__palette"
+                        role="listbox"
+                        aria-label="Cores"
+                        [style.left.px]="palettePosition().left"
+                        [style.top.px]="palettePosition().top"
+                      >
+                        @for (
+                          tone of otherTones(item.id, range.id);
+                          track tone.value
+                        ) {
+                          <button
+                            type="button"
+                            role="option"
+                            class="clin__swatch"
+                            data-testid="clinical-tone"
+                            aria-selected="false"
+                            (click)="
+                              pickTone(item.id, range.id, tone.value);
+                              $event.stopPropagation()
+                            "
+                          >
+                            <span
+                              class="clin__dot"
+                              [attr.data-tone]="tone.value"
+                            ></span>
+                            {{ tone.label }}
+                          </button>
+                        }
+                      </div>
+                    </div>
+                  }
+                  <div class="clin__range-row">
+                    <input
+                      class="clin__input clin__input--small clin__input--grow"
+                      type="text"
+                      placeholder="Status"
+                      aria-label="Nome do status"
+                      [value]="range.label"
+                      (input)="
+                        setRange(item.id, range.id, { label: text($event) })
+                      "
+                    />
+                    <input
+                      class="clin__input clin__input--small"
+                      type="text"
+                      inputmode="decimal"
+                      placeholder="De"
+                      aria-label="Valor inicial da faixa"
+                      [value]="range.from"
+                      (input)="
+                        setRange(item.id, range.id, { from: text($event) })
+                      "
+                    />
+                    <input
+                      class="clin__input clin__input--small"
+                      type="text"
+                      inputmode="decimal"
+                      placeholder="Até"
+                      aria-label="Valor final da faixa"
+                      [value]="range.to"
+                      (input)="
+                        setRange(item.id, range.id, { to: text($event) })
+                      "
+                    />
+                    <app-icon-button
+                      kind="tertiary"
+                      appearance="icon"
+                      size="small"
+                      icon="trash"
+                      ariaLabel="Remover faixa"
+                      (click)="removeRange(item.id, range.id)"
+                    />
+                  </div>
+                </div>
+              }
+              @if (itemError(item); as message) {
+                <p class="clin__error" role="alert">{{ message }}</p>
+              }
+              <div class="clin__actions">
+                <button
+                  type="button"
+                  class="clin__link"
+                  (click)="addRange(item.id)"
+                >
+                  + Adicionar faixa
+                </button>
+                <app-icon-button
+                  kind="secondary"
+                  appearance="tonal"
+                  icon="x"
+                  ariaLabel="Cancelar o item"
+                  (click)="askCancel(item)"
+                />
+                <app-icon-button
+                  kind="secondary"
+                  appearance="tonal"
+                  icon="check"
+                  ariaLabel="Confirmar o item"
+                  (click)="commitItem(item)"
+                />
+              </div>
+            </div>
+          } @else {
+            <div class="clin__card" data-testid="clinical-item">
+              <div class="clin__head">
+                <span class="clin__title">{{ item.title }}</span>
+                @if (!item.fixed) {
+                  <app-icon-button
+                    kind="tertiary"
+                    appearance="icon"
+                    size="small"
+                    icon="trash"
+                    [ariaLabel]="'Excluir ' + item.title"
+                    (click)="askRemove(item)"
+                  />
+                }
+              </div>
+              <div class="clin__field">
+                <input
+                  class="clin__input"
+                  type="text"
+                  autocomplete="off"
+                  [attr.aria-label]="'Valor de ' + item.title"
+                  [value]="item.value"
+                  (input)="setItem(item.id, { value: text($event) })"
+                />
+                <span class="clin__unit">{{ item.unit }}</span>
+              </div>
+              @if (status(item); as s) {
+                <p class="clin__status-line">
+                  <span class="clin__dot" [attr.data-tone]="s.tone"></span
+                  >{{ s.label }}
+                </p>
+              }
+            </div>
+          }
+        }
+      </div>
+      @if (suggestions().length > 0) {
+        <div class="clin__suggest">
+          <span class="clin__caption">Sugestões para adicionar</span>
+          <div class="clin__chips">
+            @for (template of suggestions(); track template.title) {
+              <button
+                type="button"
+                class="clin__chip"
+                data-testid="clinical-suggestion"
+                (click)="addFromTemplate(template)"
+              >
+                {{ template.title }}
+              </button>
+            }
+          </div>
+        </div>
+      }
+      @if (saveFailed()) {
+        <p class="clin__status clin__status--warning" role="alert">
+          {{ saveFailedHint }}
+        </p>
+      }
+    </div>
+  }
+}
+
+<app-confirm-dialog
+  message="O item que você começou a preencher será descartado."
+  confirmLabel="Sim"
+  cancelLabel="Não"
+  title="Remover este item?"
+  [open]="cancelTarget() !== null"
+  (confirmed)="confirmCancel()"
+  (cancelled)="keepEditing()"
+/>
+
+<app-confirm-dialog
+  message="O item deixa de aparecer na avaliação clínica deste paciente."
+  confirmLabel="Sim"
+  cancelLabel="Não"
+  [open]="removeTarget() !== null"
+  [title]="removeTitle()"
+  (confirmed)="confirmRemove()"
+  (cancelled)="cancelRemove()"
+/>

@@ -1,0 +1,29 @@
+@use '../../styles/tokens';
+@use '../../styles/typography';
+
+:host {
+  display: block;
+}
+
+.empty-card {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: tokens.$space-8;
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 96px;
+  padding: tokens.$space-16;
+  border: 1px dashed tokens.c(border-2);
+  border-radius: tokens.$radius-md;
+  background: tokens.c(surface);
+  color: tokens.c(secondary);
+  cursor: pointer;
+  text-align: center;
+
+  @include typography.label-lg;
+}
+
+.empty-card__text {
+  color: tokens.c(content-3);
+}

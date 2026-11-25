@@ -8,7 +8,7 @@ import { KeyboardFocusService } from '../../services/keyboard-focus.service';
  * convenção de nomenclatura do `ButtonComponent` (evita colisão com o atributo HTML
  * nativo `type` do elemento `<button>`).
  */
-export type IconButtonKind = 'primary' | 'secondary' | 'tertiary' | 'success';
+export type IconButtonKind = 'accent' | 'primary' | 'secondary' | 'success' | 'tertiary';
 
 /**
  * Mapeia a propriedade Figma `variant`. Tem uma variante a mais que `ButtonAppearance`
@@ -57,7 +57,7 @@ export class IconButtonComponent {
    */
   readonly ariaExpanded = input<boolean | null>(null);
 
-  /** Ícone sempre sólido (`fill`): cabeçalhos de tela (sino e atalhos) — Figma v2/PageHeader. */
+  /** Ícone sólido (`fill`). Os cabeçalhos de tela (sino e atalhos) voltaram a ser outline (Thiago, 2026-11-24). */
   readonly solid = input<boolean>(false);
 
   // Ativo/aberto/`solid` = sólido (Figma); desabilitado = bold; o resto é regular.

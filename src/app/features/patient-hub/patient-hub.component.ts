@@ -4,15 +4,22 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
 import { map } from 'rxjs';
 
+import { AvatarComponent } from '../../shared/components/avatar/avatar.component';
 import { ButtonComponent } from '../../shared/components/button/button.component';
+import { DateStripComponent } from '../../shared/components/date-strip/date-strip.component';
+import { EmptyCardComponent } from '../../shared/components/empty-card/empty-card.component';
 import { PageContainerComponent } from '../../shared/components/page-container/page-container.component';
 import { PageHeaderComponent } from '../../shared/components/page-header/page-header.component';
+import { SectionHeaderComponent } from '../../shared/components/section-header/section-header.component';
 import { TherapyTagComponent } from '../../shared/components/therapy-tag/therapy-tag.component';
 import { PhIconComponent } from '../../shared/icons/ph-icon/ph-icon.component';
+import { AiAssistantService } from '../../shared/services/ai-assistant.service';
+import { AssistantEditorController } from '../../shared/services/assistant-editor-controller.service';
 import { ConnectivityService } from '../../shared/services/connectivity.service';
 import { ScreenAction, ScreenActionsService } from '../../shared/services/screen-actions.service';
 import { PATIENT_HUB_CONTEXT } from '../../shared/services/screen-contexts';
-import { adequacyPanelValues, DailyAdequacy } from '../daily-evolution/adequacy/adequacy.models';
+import { ViewportBreakpointService } from '../../shared/services/viewport-breakpoint.service';
+import { DailyAdequacy } from '../daily-evolution/adequacy/adequacy.models';
 import { AdequacySummaryComponent } from '../daily-evolution/adequacy/adequacy-summary.component';
 import { DailyAdequacyService } from '../daily-evolution/adequacy/daily-adequacy.service';
 import { DiagnosisSource } from '../diagnosis/diagnosis-source';
@@ -20,40 +27,19 @@ import { FollowUpStatusComponent } from '../follow-up-closure/follow-up-status.c
 import { HospitalContextService } from '../home/hospital-context.service';
 import { LinkRevocationChecker } from '../home/link-revocation-checker';
 import { NOW, ProfessionalProfileReader } from '../home/professional-profile';
-import { PatientThreadsComponent } from '../patient-messages/patient-messages.component';
-import {
-  ADD_FAILED_HINT,
-  NutritionAddCardSheetComponent,
-} from '../patients/nutrition-panel/nutrition-add-card-sheet.component';
-import { NutritionCardModalComponent } from '../patients/nutrition-panel/nutrition-card-modal.component';
-import {
-  NutritionAddedCards,
-  NutritionHiddenCards,
-  NutritionHistorySource,
-  NutritionValueWriter,
-} from '../patients/nutrition-panel/nutrition-card-ports';
-import {
-  NutritionHiddenCardsSheetComponent,
-  SHOW_FAILED_HINT,
-} from '../patients/nutrition-panel/nutrition-hidden-cards-sheet.component';
-import { NutritionPanelComponent } from '../patients/nutrition-panel/nutrition-panel.component';
-import {
-  CatalogNutritionIndicatorId,
-  FIXED_NUTRITION_INDICATORS,
-  NUTRITION_CARD_CATALOG,
-  NutritionCurrent,
-  NutritionIndicatorId,
-  NutritionManualValues,
-  NutritionValues,
-} from '../patients/nutrition-panel/nutrition-panel.models';
-import { NutritionResultsSource } from '../patients/nutrition-panel/nutrition-results-source';
-import { AssessmentSectionComponent } from './assessment/assessment-section.component';
+import { UnreadNotificationsReader } from '../home/unread-notifications-reader';
+import { AssessmentSource } from './assessment/assessment-source';
 import { ChangeLocationAction } from './change-location/change-location.action';
 import { MeasureChartComponent } from './charts/measure-chart.component';
+import { ClinicalAssessmentEditorComponent } from './clinical-assessment/clinical-assessment-editor.component';
+import { ClinicalAssessmentSource } from './clinical-assessment/clinical-assessment-source';
+import { ClinicalTilesComponent } from './clinical-assessment/clinical-tiles.component';
 import { DailyRecordSheetComponent } from './daily-record/daily-record-sheet.component';
+import { PatientEvolutionsComponent } from './evolutions/patient-evolutions.component';
 import { PatientMessageSheetComponent } from './messages/patient-message-sheet.component';
-import { PatientMessagesComponent } from './messages/patient-messages.component';
 import { MoveBedAction } from './move-bed/move-bed.action';
+import { NutritionalFunctionalEditorComponent } from './nutritional-functional/nutritional-functional-editor.component';
+import { NutritionalFunctionalTilesComponent } from './nutritional-functional/nutritional-functional-tiles.component';
 import { HypothesisOrigin, PatientHubProfile } from './patient-hub.models';
 import { HypothesisSynthesizer, HypothesisWriter, PatientHubSource } from './patient-hub-source';
 import { PlanSectionComponent } from './plan/plan-section.component';
@@ -78,7 +64,7 @@ export function reloadsOnVisibility(state: DocumentVisibilityState): boolean {
 }
 
 /** Modo do cartão: leitura, colar novo texto (fluxo da IA) ou edição direta. Sem hipótese, sempre "paste". */
-type CardMode = 'view' | 'paste' | 'edit';
+type CardMode = 'view' | 'paste' | 'edit' | 'empty';
 
 const OFFLINE_HINT = 'Conexão necessária para sintetizar ou confirmar a hipótese.';
 const DAY_MS = 86_400_000;
@@ -91,20 +77,20 @@ export const DIAGNOSIS_FAILED_HINT =
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
+    AvatarComponent,
+    ClinicalTilesComponent,
+    EmptyCardComponent,
+    NutritionalFunctionalTilesComponent,
+    DateStripComponent,
+    PatientEvolutionsComponent,
+    SectionHeaderComponent,
     PageHeaderComponent,
-    AssessmentSectionComponent,
     MeasureChartComponent,
     ButtonComponent,
     DailyRecordSheetComponent,
     FollowUpStatusComponent,
-    PatientThreadsComponent,
-    NutritionAddCardSheetComponent,
-    NutritionCardModalComponent,
-    NutritionHiddenCardsSheetComponent,
-    NutritionPanelComponent,
     PageContainerComponent,
     PatientMessageSheetComponent,
-    PatientMessagesComponent,
     PhIconComponent,
     PlanSectionComponent,
     PrescriptionSheetComponent,
@@ -126,49 +112,58 @@ export const DIAGNOSIS_FAILED_HINT =
 })
 export class PatientHubComponent implements OnInit {
   protected readonly connectivity = inject(ConnectivityService);
+  /** O sino do cabeçalho só aparece no desktop (Figma 4608:4378: o mobile tem só os atalhos). */
+  protected readonly viewport = inject(ViewportBreakpointService);
+
+  /** Equipe responsável (provisório: sai do cadastro da equipe quando houver a fonte real). */
+  protected readonly responsible = { name: 'Dr. Wanderson Romualdo', role: 'Médico assistente' };
+  /** Dia escolhido na faixa de datas (hoje por padrão); as Evoluções mostram o registro desse dia. */
+  /** "Hoje" (relógio injetável): é o último dia da faixa e o dia aberto por padrão. */
+  protected readonly today = inject(NOW)();
+  protected readonly day = signal(this.today);
+  /** Muda quando o Registro diário fecha: a evolução do dia é lida de novo. */
+  protected readonly evolutionsVersion = signal(0);
+  /** Muda quando o editor da Avaliação clínica salva: os cards são lidos de novo. */
+  protected readonly clinicalVersion = signal(0);
+  /** O editor da Avaliação clínica está aberto no painel: o card ganha destaque e o lápis vira o ✓ que salva. */
+  protected readonly clinicalEditing = computed(
+    () => this.aiAssistant.view() === 'editor' && this.aiAssistant.activeAction()?.id === 'clinical-assessment',
+  );
+  /** Muda quando o editor da Avaliação nutricional e funcional salva: os cards são lidos de novo. */
+  protected readonly nutritionalVersion = signal(0);
+  /** O editor da Avaliação nutricional e funcional está aberto no painel (mesmo padrão da Avaliação clínica). */
+  protected readonly nutritionalEditing = computed(
+    () => this.aiAssistant.view() === 'editor' && this.aiAssistant.activeAction()?.id === 'nutritional-functional',
+  );
+  /** Notificações não lidas, no sino do cabeçalho. */
+  protected readonly unreadCount = signal(0);
 
   protected readonly status = signal<HubStatus>('loading');
   protected readonly revokedName = signal('');
   protected readonly profile = signal<PatientHubProfile | null>(null);
   /** Hipótese confirmada; `null` = ainda não preenchida. */
   protected readonly hypothesis = signal<string | null>(null);
-  /** Resultados de outras features exibidos no Painel Nutricional; indicador ausente = "Sem dados". */
-  protected readonly values = computed<NutritionValues>(() => {
-    const merged: NutritionValues = { ...this.resultValues() };
+  /** Sem hipótese, o card fica no estado vazio até o usuário tocar nele (aí abre o preenchimento). */
+  protected readonly mode = computed<CardMode>(() => {
+    const editing = this.editing();
 
-    for (const { id } of [...FIXED_NUTRITION_INDICATORS, ...NUTRITION_CARD_CATALOG]) {
-      const manual = this.manual()[id];
-
-      if (manual) {
-        merged[id] = manual.value;
-      }
+    if (this.hypothesis() === null) {
+      return editing === null ? 'empty' : 'paste';
     }
 
-    return merged;
+    return editing ?? 'view';
   });
-  /** Card aberto no modal de histórico/edição; `null` = fechado. */
-  /** Cards adicionados pelo "+" (tipos do catálogo), na ordem de adição. */
-  protected readonly addedCards = signal<readonly CatalogNutritionIndicatorId[]>([]);
-  /** Cards ocultos da grid (US6): o dado segue existindo e sendo atualizado por baixo. */
-  protected readonly hiddenCards = signal<readonly NutritionIndicatorId[]>([]);
-  protected readonly addSheetOpen = signal(false);
-  protected readonly hiddenSheetOpen = signal(false);
-  protected readonly showError = signal<string | null>(null);
-  protected readonly addError = signal<string | null>(null);
-  protected readonly openCard = signal<NutritionIndicatorId | null>(null);
-  protected readonly openCardCurrent = computed<NutritionCurrent | null>(() => {
-    const id = this.openCard();
-
-    if (id === null) {
-      return null;
-    }
-
-    return this.manual()[id] ?? this.fromResult(id);
-  });
-
-  protected readonly mode = computed<CardMode>(() =>
-    this.hypothesis() === null ? 'paste' : (this.editing() ?? 'view'),
-  );
+  /** A avaliação clínica já tem dados (tipo de TN, dispositivo, peso ou algum item). */
+  protected readonly clinicalFilled = signal(false);
+  /** A avaliação nutricional e funcional já tem algum valor. */
+  protected readonly nutritionalFilled = signal(false);
+  /**
+   * A tela se monta na ordem do fluxo (Thiago, 2026-11-25): Diagnóstico → Avaliação clínica → Avaliação nutricional e
+   * funcional → Metas, Prescrição e Evoluções. Cada etapa só aparece quando a anterior tem dados.
+   */
+  protected readonly showClinical = computed(() => this.hypothesis() !== null);
+  protected readonly showNutritional = computed(() => this.showClinical() && this.clinicalFilled());
+  protected readonly showRest = computed(() => this.showNutritional() && this.nutritionalFilled());
 
   /** Registro diário (FT-004-7) aberto pela ação "Registro diário" dos atalhos. */
   protected readonly dailyRecordOpen = signal(false);
@@ -215,11 +210,6 @@ export class PatientHubComponent implements OnInit {
   protected readonly weightSeries = PROVISIONAL_WEIGHT;
   protected readonly bmiSeries = PROVISIONAL_BMI;
   protected readonly hospitalName = computed(() => this.context.selected()?.name ?? '');
-  protected readonly todayLabel = computed(() => {
-    const label = this.now().toLocaleDateString('pt-BR', { day: 'numeric', month: 'long', weekday: 'long' });
-
-    return label.charAt(0).toUpperCase() + label.slice(1);
-  });
   /** Textos do cabeçalho; `null` enquanto o perfil não carregou. */
   protected readonly header = computed(() => {
     const p = this.profile();
@@ -238,38 +228,34 @@ export class PatientHubComponent implements OnInit {
     };
   });
 
-  protected readonly patientIdValue = computed(() => this.patientId());
   /** % de adequação do dia (cálculo único, FT-004-7); `null` até a primeira leitura. */
   protected readonly adequacy = signal<DailyAdequacy | null>(null);
-  private readonly resultValues = signal<NutritionValues>({});
-  /** Valores informados manualmente; prevalecem sobre o resultado de outra feature até um novo resultado. */
-  private readonly manual = signal<NutritionManualValues>({});
-  private resultsLoaded = false;
-  private readonly cardStore = inject(NutritionHistorySource);
-  private readonly addedStore = inject(NutritionAddedCards);
-  private readonly hiddenStore = inject(NutritionHiddenCards);
-  private readonly cardWriter = inject(NutritionValueWriter);
   private readonly editing = signal<'paste' | 'edit' | null>(null);
   private readonly screenActions = inject(ScreenActionsService);
   private readonly moveBed = inject(MoveBedAction);
   private readonly changeLocation = inject(ChangeLocationAction);
   private readonly source = inject(PatientHubSource);
   private readonly prescriptions = inject(PrescriptionSource);
-  private readonly results = inject(NutritionResultsSource);
   private readonly adequacyService = inject(DailyAdequacyService);
   private pullFrom: number | null = null;
   private readonly context = inject(HospitalContextService);
   private readonly revocation = inject(LinkRevocationChecker);
   private readonly location = inject(Location);
   private readonly router = inject(Router);
+  private readonly aiAssistant = inject(AiAssistantService);
+  private readonly editorController = inject(AssistantEditorController);
   private readonly diagnosisSource = inject(DiagnosisSource);
+  private readonly clinicalSource = inject(ClinicalAssessmentSource);
+  private readonly nutritionalSource = inject(AssessmentSource);
   private readonly now = inject(NOW);
+  private readonly unread = inject(UnreadNotificationsReader);
   private readonly synthesizer = inject(HypothesisSynthesizer);
   private readonly writer = inject(HypothesisWriter);
   private readonly professional = inject(ProfessionalProfileReader);
   /** Retorno original da IA, para distinguir "confirmado sem editar" de "editado". */
   private aiText = '';
-  private readonly patientId = toSignal(inject(ActivatedRoute).paramMap.pipe(map(params => params.get('id'))), {
+  private readonly route = inject(ActivatedRoute);
+  private readonly patientId = toSignal(this.route.paramMap.pipe(map(params => params.get('id'))), {
     initialValue: null,
   });
 
@@ -318,12 +304,13 @@ export class PatientHubComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    void this.loadUnread();
     void this.load();
     void this.reloadPrescription();
     void this.reloadResults();
   }
 
-  /** Recarrega os resultados do painel; se falhar (ou offline), mantém os valores já exibidos. */
+  /** Recarrega o aporte do dia; se falhar (ou offline), mantém o que já está na tela. */
   async reloadResults(): Promise<void> {
     const id = this.patientId();
 
@@ -331,18 +318,9 @@ export class PatientHubComponent implements OnInit {
       return;
     }
     try {
-      const [fromResults, adequacy] = await Promise.all([this.results.load(id), this.adequacyService.calculate(id)]);
-      const loaded = { ...fromResults, ...adequacyPanelValues(adequacy) };
-
-      this.manual.set(await this.cardStore.loadManual(id));
-      this.addedCards.set(await this.addedStore.loadAdded(id));
-      this.hiddenCards.set(await this.hiddenStore.loadHidden(id));
-      await this.supersedeManual(id, loaded);
-      this.resultValues.set(loaded);
-      this.adequacy.set(adequacy);
-      this.resultsLoaded = true;
+      this.adequacy.set(await this.adequacyService.calculate(id));
     } catch {
-      // mantém os valores atuais
+      // mantém o valor atual
     }
   }
 
@@ -358,79 +336,6 @@ export class PatientHubComponent implements OnInit {
     } catch {
       // mantém a prescrição já exibida
     }
-  }
-
-  protected openAddSheet(): void {
-    this.addError.set(null);
-    this.addSheetOpen.set(true);
-  }
-
-  protected closeAddSheet(): void {
-    this.addSheetOpen.set(false);
-  }
-
-  /** US5: grava a adição; só mostra o card se a gravação der certo (offline ou erro não adiciona). */
-  protected async addCard(type: CatalogNutritionIndicatorId): Promise<void> {
-    const id = this.patientId();
-
-    if (id === null || !this.connectivity.online() || this.addedCards().includes(type)) {
-      return;
-    }
-    this.addError.set(null);
-    try {
-      await this.addedStore.add(id, type);
-      this.addedCards.update(list => (list.includes(type) ? list : [...list, type]));
-      this.addSheetOpen.set(false);
-    } catch {
-      this.addError.set(ADD_FAILED_HINT);
-    }
-  }
-
-  protected openHiddenSheet(): void {
-    this.showError.set(null);
-    this.hiddenSheetOpen.set(true);
-  }
-
-  protected closeHiddenSheet(): void {
-    this.hiddenSheetOpen.set(false);
-  }
-
-  /** US6/FR-021: reexibe o card (só visibilidade; valor e histórico já estavam preservados). */
-  protected async showCard(id: NutritionIndicatorId): Promise<void> {
-    const patient = this.patientId();
-
-    if (patient === null || !this.connectivity.online()) {
-      return;
-    }
-    this.showError.set(null);
-    try {
-      await this.hiddenStore.setHidden(patient, id, false);
-      this.hiddenCards.update(list => list.filter(i => i !== id));
-      if (this.hiddenCards().length === 0) {
-        this.hiddenSheetOpen.set(false);
-      }
-    } catch {
-      this.showError.set(SHOW_FAILED_HINT);
-    }
-  }
-
-  protected openCardModal(id: NutritionIndicatorId): void {
-    this.openCard.set(id);
-  }
-
-  protected closeCardModal(): void {
-    this.openCard.set(null);
-  }
-
-  /** US6: o modal já gravou a ocultação; o card sai da grid e o modal fecha. */
-  protected onCardHidden(id: NutritionIndicatorId): void {
-    this.hiddenCards.update(list => (list.includes(id) ? list : [...list, id]));
-    this.openCard.set(null);
-  }
-
-  protected onCardSaved(event: { current: NutritionCurrent; indicator: NutritionIndicatorId }): void {
-    this.manual.update(m => ({ ...m, [event.indicator]: event.current }));
-    this.openCard.set(null);
   }
 
   protected onVisibility(): void {
@@ -548,11 +453,114 @@ export class PatientHubComponent implements OnInit {
       });
       this.hypothesis.set(text);
       this.resetFlow();
+      void this.refreshFlow();
     } catch {
       this.hint.set('Não foi possível gravar a hipótese. Tente novamente.');
     } finally {
       this.saving.set(false);
     }
+  }
+
+  protected openNotifications(): void {
+    void this.router.navigate(['/notifications']);
+  }
+
+  /** Lápis da Avaliação clínica: abre o editor no painel lateral (Figma 4775:26535). Com o editor aberto, é o ✓: salva. */
+  protected editClinicalAssessment(): void {
+    if (this.clinicalEditing()) {
+      this.editorController.run('save');
+
+      return;
+    }
+    const id = this.profile()?.id;
+
+    if (id === undefined) {
+      return;
+    }
+    this.aiAssistant.openAction({
+      editor: {
+        component: ClinicalAssessmentEditorComponent,
+        description:
+          'Insira manualmente os dados ou escreva uma mensagem com os dados que gostaria de alterar ou inserir.',
+        hint: 'Você também pode enviar via áudio.',
+        inputs: {
+          patientId: id,
+          saved: (): void => {
+            this.clinicalVersion.update(v => v + 1);
+            void this.refreshFlow();
+          },
+        },
+        title: 'Avaliação clínica',
+      },
+      id: 'clinical-assessment',
+      label: 'Avaliação clínica',
+    });
+  }
+
+  /** Lápis da Avaliação nutricional e funcional: abre o editor no painel; com ele aberto, é o ✓ que salva. */
+  protected editNutritionalFunctional(): void {
+    if (this.nutritionalEditing()) {
+      this.editorController.run('save');
+
+      return;
+    }
+    const id = this.profile()?.id;
+
+    if (id === undefined) {
+      return;
+    }
+    this.aiAssistant.openAction({
+      editor: {
+        component: NutritionalFunctionalEditorComponent,
+        description:
+          'Insira manualmente os dados ou escreva uma mensagem com os dados que gostaria de alterar ou inserir.',
+        hint: 'Você também pode enviar via áudio.',
+        inputs: {
+          patientId: id,
+          saved: (): void => {
+            this.nutritionalVersion.update(v => v + 1);
+            void this.refreshFlow();
+            void this.onAssessmentConcluded();
+          },
+        },
+        title: 'Avaliação nutricional e funcional',
+      },
+      id: 'nutritional-functional',
+      label: 'Avaliação nutricional e funcional',
+    });
+  }
+
+  /** Lê de novo se as avaliações já têm dados: decide quais cards aparecem. Falha mantém o que já está. */
+  protected async refreshFlow(): Promise<void> {
+    const id = this.patientId();
+
+    if (id === null) {
+      return;
+    }
+    try {
+      const clinical = await this.clinicalSource.load(id);
+
+      this.clinicalFilled.set(
+        clinical.tnType !== '' ||
+          clinical.device !== '' ||
+          clinical.weightKg !== null ||
+          clinical.items.some(i => i.value !== ''),
+      );
+    } catch {
+      // mantém
+    }
+    try {
+      const latest = await this.nutritionalSource.loadLatest(id);
+
+      this.nutritionalFilled.set(Object.values(latest?.values ?? {}).some(v => v.trim() !== ''));
+    } catch {
+      // mantém
+    }
+  }
+
+  protected onDailyRecordClosed(): void {
+    this.dailyRecordOpen.set(false);
+    this.evolutionsVersion.update(v => v + 1);
   }
 
   /** Cenário 1 (US2): atualizar colando um novo trecho, mesmo fluxo do preenchimento inicial. */
@@ -579,6 +587,14 @@ export class PatientHubComponent implements OnInit {
     this.hint.set(null);
   }
 
+  private async loadUnread(): Promise<void> {
+    try {
+      this.unreadCount.set(await this.unread.countUnread());
+    } catch {
+      // sem contagem: o sino aparece sem selo
+    }
+  }
+
   private resetFlow(): void {
     this.editing.set(null);
     this.phase.set('input');
@@ -596,37 +612,16 @@ export class PatientHubComponent implements OnInit {
     return text === this.aiText.trim() ? 'ai' : 'ai-edited';
   }
 
-  /** Resultado novo de outra feature substitui o valor manual; o manual substituído vai ao histórico (US2). */
-  private async supersedeManual(patientId: string, loaded: NutritionValues): Promise<void> {
-    const previous = this.resultValues();
-    const pending: Promise<void>[] = [];
-
-    for (const { id } of FIXED_NUTRITION_INDICATORS) {
-      const manual = this.manual()[id];
-      const value = loaded[id]?.trim();
-
-      if (this.resultsLoaded && manual && value && value !== previous[id]?.trim()) {
-        pending.push(
-          this.cardWriter.save({
-            at: this.now().toISOString(),
-            author: 'Sistema',
-            indicator: id,
-            newOrigin: 'result',
-            patientId,
-            previous: manual,
-            value,
-          }),
-        );
-        this.manual.update(m => ({ ...m, [id]: { at: null, origin: 'result', value } }));
-      }
+  /**
+   * Chegou do cadastro do paciente (`?avaliar=1`): o médico faz a avaliação clínica agora. Abre o editor uma vez e tira o
+   * parâmetro da URL (voltar ou recarregar não reabre).
+   */
+  private openAssessmentAfterRegistration(): void {
+    if (this.route.snapshot?.queryParamMap?.get('avaliar') == null || this.profile() === null) {
+      return;
     }
-    await Promise.all(pending);
-  }
-
-  private fromResult(id: NutritionIndicatorId): NutritionCurrent | null {
-    const value = this.resultValues()[id]?.trim();
-
-    return value ? { at: null, origin: 'result', value } : null;
+    this.editClinicalAssessment();
+    void this.router.navigate([], { queryParams: { avaliar: null }, queryParamsHandling: 'merge', replaceUrl: true });
   }
 
   private async load(): Promise<void> {
@@ -642,7 +637,9 @@ export class PatientHubComponent implements OnInit {
 
       this.profile.set(profile);
       this.hypothesis.set(hypothesis);
+      await this.refreshFlow();
       this.status.set(profile === null ? 'not-found' : 'ready');
+      this.openAssessmentAfterRegistration();
     } catch (failure) {
       const hospital = this.context.selected();
 

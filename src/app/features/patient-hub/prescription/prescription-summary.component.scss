@@ -19,31 +19,42 @@
   @include typography.title-md;
 }
 
+// Figma v2/StatTile: a fórmula ocupa a linha toda; os demais dados em tiles de 2 colunas (raio 16, fundo surface-2).
 .rx-summary__list {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: tokens.$space-8;
   margin: 0;
-  padding: tokens.$space-16;
-  border-radius: tokens.$radius-sm;
-  background: tokens.c(surface-2);
 }
 
 .rx-summary__item {
   display: flex;
   flex-direction: column;
-  gap: tokens.$space-4;
+  gap: 2px;
+  min-width: 0;
+  padding: tokens.$space-12;
+  border-radius: tokens.$radius-sm;
+  background: tokens.c(surface-2);
+
+  &:first-child,
+  &:last-child:nth-child(odd) {
+    grid-column: 1 / -1;
+  }
+
+  &:first-child dd {
+    @include typography.headline;
+  }
 
   dt {
     color: tokens.c(content-4);
 
-    @include typography.label-md;
+    @include typography.label-sm;
   }
 
   dd {
     margin: 0;
     color: tokens.c(content-1);
 
-    @include typography.body-lg;
+    @include typography.title-md;
   }
 }

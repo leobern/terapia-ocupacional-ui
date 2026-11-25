@@ -18,9 +18,10 @@ import { type ScreenAction, ScreenActionsService, type ScreenCommand } from './s
  * - `shortcuts`: "Atalhos" — as ações da tela atual (botão de ações da tela);
  * - `conversation`: cadastro conduzido por conversa, um dado por vez (ex.: paciente);
  * - `form`: formulário em cards de uma ação de cadastro (padrão de cadastro);
+ * - `editor`: editor com componente próprio (ex.: Avaliação clínica);
  * - `unavailable`: ação listada que ainda não existe.
  */
-export type AssistantView = 'chat' | 'shortcuts' | 'form' | 'conversation' | 'unavailable';
+export type AssistantView = 'chat' | 'shortcuts' | 'form' | 'editor' | 'conversation' | 'unavailable';
 
 /** Pergunta do profissional e o andamento da resposta (sem histórico entre aberturas do painel). */
 export interface AssistantConversation {
@@ -177,6 +178,11 @@ export class AiAssistantService {
     if (action.conversation) {
       this.flow.start(action.conversation);
       this.show('conversation', action);
+
+      return;
+    }
+    if (action.editor) {
+      this.show('editor', action);
 
       return;
     }

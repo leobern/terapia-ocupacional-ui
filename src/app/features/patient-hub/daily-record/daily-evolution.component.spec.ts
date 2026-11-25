@@ -38,7 +38,13 @@ class FakeSource extends DailyEvolutionSource {
       return Promise.reject(new Error('x'));
     }
     this.saves.push(request);
-    this.current = { author: request.author, at: request.at, origin: request.origin, text: request.text };
+    this.current = {
+      author: request.author,
+      at: request.at,
+      origin: request.origin,
+      reevaluations: request.reevaluations,
+      text: request.text,
+    };
 
     return Promise.resolve(this.current);
   }
@@ -124,6 +130,68 @@ describe('DailyEvolutionComponent', () => {
       await setup('doctor');
     });
 
+    describe('avaliar de novo', () => {
+      const rowsEls = (): HTMLElement[] =>
+        Array.from(el().querySelectorAll<HTMLElement>('[data-testid="reevaluation-row"]'));
+      const fill = async (row: HTMLElement, name: string, amount: string, unit: string): Promise<void> => {
+        const nameInput = row.querySelector('input[type="text"]') as HTMLInputElement;
+        const amountInput = row.querySelector('input[type="number"]') as HTMLInputElement;
+        const unitSelect = row.querySelector('select') as HTMLSelectElement;
+
+        nameInput.value = name;
+        nameInput.dispatchEvent(new Event('input'));
+        amountInput.value = amount;
+        amountInput.dispatchEvent(new Event('input'));
+        unitSelect.value = unit;
+        unitSelect.dispatchEvent(new Event('change'));
+        await settle();
+      };
+
+      it('anota o que reavaliar e daqui a quanto tempo; o prazo conta a partir do registro', async () => {
+        await openIt();
+        await type('Paciente com diarreia.');
+        buttonByLabel('Adicionar avaliação')?.click();
+        await settle();
+        buttonByLabel('Adicionar avaliação')?.click();
+        await settle();
+        const [first, second] = rowsEls();
+
+        await fill(first, 'Diarreia', '48', 'hours');
+        await fill(second, 'Erosão da mucosa nasolabial', '3', 'days');
+        await save();
+
+        expect(source.saves[0].reevaluations).toEqual([
+          { dueAt: new Date(2026, 10, 22, 15, 30).toISOString(), id: 'r1', name: 'Diarreia' },
+          { dueAt: new Date(2026, 10, 23, 15, 30).toISOString(), id: 'r2', name: 'Erosão da mucosa nasolabial' },
+        ]);
+
+        expect(rowsEls().length).toBe(0);
+      });
+
+      it('linha sem nome ou com prazo zero não entra; remover tira a linha', async () => {
+        await openIt();
+        await type('Evolução.');
+        buttonByLabel('Adicionar avaliação')?.click();
+        await settle();
+        buttonByLabel('Adicionar avaliação')?.click();
+        await settle();
+        buttonByLabel('Adicionar avaliação')?.click();
+        await settle();
+        const [vazia, zerada, remover] = rowsEls();
+
+        await fill(vazia, '  ', '48', 'hours');
+        await fill(zerada, 'Glicemia', '0', 'hours');
+        await fill(remover, 'Some', '1', 'days');
+        (remover.querySelector('button') as HTMLButtonElement).click();
+        await settle();
+
+        expect(rowsEls().length).toBe(2);
+        await save();
+
+        expect(source.saves[0].reevaluations).toEqual([]);
+      });
+    });
+
     it('digita e salva: vira a evolução do dia, com autor e data/hora', async () => {
       await openIt();
       await type('  Paciente estável.  ');
@@ -136,6 +204,7 @@ describe('DailyEvolutionComponent', () => {
           day: '2026-11-20',
           origin: 'manual',
           patientId: 'p9',
+          reevaluations: [],
           text: 'Paciente estável.',
         },
       ]);

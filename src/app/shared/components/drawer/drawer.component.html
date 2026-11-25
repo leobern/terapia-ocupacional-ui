@@ -12,15 +12,10 @@
     (keydown)="onKeydown($event)"
   >
     <div class="drawer__header">
-      <!-- Cabeçalho padrão (Figma 4722:10998): logo + título + fechar. No cadastro o logo fica compacto e o
-           título da ação vem ao lado. -->
-      <app-icon-logo
-        class="drawer__logo"
-        state="default"
-        sparkle="solid"
-        [class.drawer__logo--compact]="!showLogo()"
-      />
-      @if (!showLogo()) {
+      <!-- Cabeçalho: logo da IA (conversa e cadastros) ou, nos Atalhos, o título no lugar do logo. -->
+      @if (showLogo()) {
+        <app-icon-logo class="drawer__logo" state="default" sparkle="none" />
+      } @else {
         <ng-content select="[drawerHeaderStart]" />
       }
 
@@ -32,21 +27,23 @@
           padding que leva o alvo de toque a 44x44 (FR-015) — mesmo padrão do
           `bottom-sheet`.
         -->
-        <span class="drawer__expand">
-          <app-icon-button
-            kind="secondary"
-            appearance="icon"
-            size="small"
-            [icon]="expandIcon()"
-            [ariaLabel]="expandLabel()"
-            (click)="onToggleExpand()"
-          />
-        </span>
+        @if (expandable()) {
+          <span class="drawer__expand">
+            <app-icon-button
+              kind="accent"
+              appearance="icon"
+              size="small"
+              [icon]="expandIcon()"
+              [ariaLabel]="expandLabel()"
+              (click)="onToggleExpand()"
+            />
+          </span>
+        }
 
         @if (dismissible()) {
           <span class="drawer__close">
             <app-icon-button
-              kind="secondary"
+              kind="primary"
               appearance="icon"
               size="small"
               icon="x"

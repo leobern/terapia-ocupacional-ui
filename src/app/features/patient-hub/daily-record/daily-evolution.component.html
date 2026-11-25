@@ -34,6 +34,62 @@
           (input)="onDraft($event)"
         ></textarea>
         <p id="evolution-help" class="evolution__help">{{ help }}</p>
+        <!-- Avaliações: o que reavaliar e quando. Vira o selo "Prazo"/"Vencida" no card da evolução. -->
+        <div class="evolution__reevaluations" data-testid="reevaluations">
+          <span class="evolution__label">Avaliar de novo</span>
+          <p class="evolution__help">
+            Ex.: diarreia em 48 horas; erosão da mucosa em 3 dias. O prazo vira
+            um aviso para quem assumir o turno.
+          </p>
+          @for (row of rows(); track row.id) {
+            <div class="evolution__reeval-row" data-testid="reevaluation-row">
+              <input
+                class="evolution__input"
+                type="text"
+                aria-label="O que avaliar"
+                placeholder="O que avaliar"
+                [value]="row.name"
+                (input)="onRowName(row.id, $event)"
+              />
+              <input
+                class="evolution__input evolution__input--amount"
+                type="number"
+                min="1"
+                aria-label="Daqui a quanto tempo"
+                [value]="row.amount"
+                (input)="onRowAmount(row.id, $event)"
+              />
+              <select
+                class="evolution__input evolution__input--unit"
+                aria-label="Unidade de tempo"
+                [value]="row.unit"
+                (change)="onRowUnit(row.id, $event)"
+              >
+                <option value="hours" [selected]="row.unit === 'hours'">
+                  horas
+                </option>
+                <option value="days" [selected]="row.unit === 'days'">
+                  dias
+                </option>
+              </select>
+              <app-icon-button
+                kind="primary"
+                appearance="icon"
+                icon="x"
+                ariaLabel="Remover avaliação"
+                (click)="removeRow(row.id)"
+              />
+            </div>
+          }
+          <app-button
+            kind="primary"
+            appearance="outlined"
+            iconLeft="plus"
+            size="md"
+            label="Adicionar avaliação"
+            (click)="addRow()"
+          />
+        </div>
       } @else {
         <span class="evolution__label">Evolução do dia</span>
         @if (saved(); as s) {

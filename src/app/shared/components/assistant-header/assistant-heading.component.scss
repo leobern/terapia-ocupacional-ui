@@ -2,7 +2,10 @@
 
 :host {
   display: block;
+  flex: 1 0 0;
   min-width: 0;
+  // Alinha com o texto do conteúdo (mesmo recuo).
+  padding-inline-start: var(--assistant-content-inset, 16px);
 }
 
 .assistant-heading__title {

@@ -143,6 +143,25 @@ describe('DrawerComponent', () => {
   // T006 — toggle de snap
   // ---------------------------------------------------------------------------
 
+  it('expandable=false (Atalhos) esconde o botão de redimensionar; o fechar continua', () => {
+    fixture.componentRef.setInput('expandable', false);
+    openDrawer();
+
+    expect(fixture.nativeElement.querySelector('.drawer__expand')).toBeNull();
+    expect(fixture.nativeElement.querySelector('.drawer__close')).not.toBeNull();
+  });
+
+  it('showLogo=false tira o logo e mostra o título projetado no lugar dele', () => {
+    openDrawer();
+
+    expect(fixture.nativeElement.querySelector('.drawer__logo')).not.toBeNull();
+
+    fixture.componentRef.setInput('showLogo', false);
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('.drawer__logo')).toBeNull();
+  });
+
   it('alterna snap ao clicar no botão de expandir e emite (snapChange) uma vez', () => {
     const snapChange = jasmine.createSpy('snapChange');
 

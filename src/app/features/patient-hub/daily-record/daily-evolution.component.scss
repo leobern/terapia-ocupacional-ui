@@ -105,3 +105,48 @@
 
   @include typography.label-sm;
 }
+
+// Avaliar de novo: linhas "o quê" + "daqui a quanto tempo" + remover.
+.evolution__reevaluations {
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$space-8;
+  padding-top: tokens.$space-8;
+  border-top: 1px solid tokens.c(border);
+}
+
+.evolution__reeval-row {
+  display: flex;
+  align-items: center;
+  gap: tokens.$space-8;
+}
+
+.evolution__input {
+  box-sizing: border-box;
+  min-width: 0;
+  height: 44px;
+  padding-inline: tokens.$space-12;
+  border: 1px solid tokens.c(border);
+  border-radius: tokens.$radius-sm;
+  background: tokens.c(surface);
+  color: tokens.c(content-1);
+
+  @include typography.body-md;
+
+  &:focus-visible {
+    outline: var(--focus-ring-width) solid tokens.c(focus-ring);
+    outline-offset: var(--focus-ring-offset);
+  }
+
+  &:first-child {
+    flex: 1 0 0;
+  }
+
+  &--amount {
+    flex: 0 0 72px;
+  }
+
+  &--unit {
+    flex: 0 0 88px;
+  }
+}

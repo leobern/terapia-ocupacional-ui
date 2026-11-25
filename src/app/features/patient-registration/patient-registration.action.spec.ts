@@ -1,4 +1,5 @@
 import { TestBed } from '@angular/core/testing';
+import { Router } from '@angular/router';
 
 import { AiAssistantService } from '../../shared/services/ai-assistant.service';
 import { AssistantConversationService } from '../../shared/services/assistant-conversation.service';
@@ -10,6 +11,7 @@ import { PatientRegistrationAction } from './patient-registration.action';
 
 describe('PatientRegistrationAction (US-002-1-02)', () => {
   let create: jasmine.Spy<(request: CreatePatientRequest) => Promise<unknown>>;
+  let navigate: jasmine.Spy;
   let flow: AssistantConversationService;
   let assistant: AiAssistantService;
   const texts = (): string[] => flow.messages().map(m => m.text);
@@ -19,10 +21,12 @@ describe('PatientRegistrationAction (US-002-1-02)', () => {
     hospitals: readonly { id: number; name: string }[] = [{ id: 7, name: 'Hospital A' }],
   ): Promise<void> {
     spyOnProperty(navigator, 'language').and.returnValue('pt-BR');
-    create = jasmine.createSpy('create').and.resolveTo({});
+    navigate = jasmine.createSpy('navigate').and.resolveTo(true);
+    create = jasmine.createSpy('create').and.resolveTo({ id: 42 });
     TestBed.configureTestingModule({
       providers: [
         { provide: PatientCreationPort, useValue: { create } },
+        { provide: Router, useValue: { navigate } },
         { provide: InternacaoCreationPort, useValue: { create: (): Promise<unknown> => Promise.resolve({}) } },
         { provide: LinkedHospitalsReader, useValue: { read: (): Promise<unknown> => Promise.resolve(hospitals) } },
       ],
@@ -38,6 +42,18 @@ describe('PatientRegistrationAction (US-002-1-02)', () => {
 
     expect(assistant.view()).toBe('conversation');
     expect(texts()).toEqual(['Me fale o nome completo do paciente']);
+  });
+
+  it('ao cadastrar o paciente, leva à tela dele para o médico fazer a avaliação clínica', async () => {
+    await setup();
+    assistant.ask('Carlos Eduardo Matos');
+    assistant.ask('15/09/1975');
+    flow.choose(flow.options()[0]);
+    flow.skip();
+    assistant.ask('não');
+    await settle();
+
+    expect(navigate).toHaveBeenCalledWith(['/patients', 42], { queryParams: { avaliar: '1' } });
   });
 
   it('scenario 1: collects name, birth date and sex and creates the patient (MSG-04)', async () => {
@@ -153,10 +169,11 @@ describe('PatientRegistrationAction admit question (US-002-1-05)', () => {
 
   async function toAdmitQuestion(): Promise<void> {
     spyOnProperty(navigator, 'language').and.returnValue('pt-BR');
-    create = jasmine.createSpy('create').and.resolveTo({});
+    create = jasmine.createSpy('create').and.resolveTo({ id: 42 });
     TestBed.configureTestingModule({
       providers: [
         { provide: PatientCreationPort, useValue: { create } },
+        { provide: Router, useValue: { navigate: (): Promise<boolean> => Promise.resolve(true) } },
         { provide: InternacaoCreationPort, useValue: { create: (): Promise<unknown> => Promise.resolve({}) } },
         {
           provide: LinkedHospitalsReader,
@@ -234,6 +251,7 @@ describe('PatientRegistrationAction server errors', () => {
     TestBed.configureTestingModule({
       providers: [
         { provide: PatientCreationPort, useValue: { create } },
+        { provide: Router, useValue: { navigate: (): Promise<boolean> => Promise.resolve(true) } },
         { provide: InternacaoCreationPort, useValue: { create: (): Promise<unknown> => Promise.resolve({}) } },
         {
           provide: LinkedHospitalsReader,
@@ -258,7 +276,7 @@ describe('PatientRegistrationAction server errors', () => {
 
     expect(flow.currentStep()?.id).toBe('birthDate');
     expect(flow.messages().at(-2)?.text).toBe('Data inválida (servidor)');
-    create.and.resolveTo({});
+    create.and.resolveTo({ id: 42 });
     assistant.ask('02/02/2000');
     await settle();
 
@@ -290,7 +308,7 @@ describe('PatientRegistrationAction server errors', () => {
     await fill(new Error('network'));
 
     expect(flow.canRetry()).toBeTrue();
-    create.and.resolveTo({});
+    create.and.resolveTo({ id: 42 });
     flow.retry();
     await settle();
 
@@ -315,6 +333,7 @@ describe('PatientRegistrationAction admission data (US-002-1-06)', () => {
     TestBed.configureTestingModule({
       providers: [
         { provide: PatientCreationPort, useValue: { create } },
+        { provide: Router, useValue: { navigate: (): Promise<boolean> => Promise.resolve(true) } },
         { provide: InternacaoCreationPort, useValue: { create: createInternacao } },
         {
           provide: LinkedHospitalsReader,
@@ -510,6 +529,7 @@ describe('PatientRegistrationAction locations (US-002-1-07)', () => {
     TestBed.configureTestingModule({
       providers: [
         { provide: PatientCreationPort, useValue: { create: (): Promise<unknown> => Promise.resolve({ id: 42 }) } },
+        { provide: Router, useValue: { navigate: (): Promise<boolean> => Promise.resolve(true) } },
         { provide: InternacaoCreationPort, useValue: { create: createInternacao } },
         {
           provide: LinkedHospitalsReader,

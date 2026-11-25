@@ -1,5 +1,7 @@
 <section class="adequacy" aria-label="Adequação calórica e proteica do dia">
-  <h3 class="adequacy__title">Aporte do dia</h3>
+  @if (showTitle()) {
+    <h3 class="adequacy__title">Aporte do dia</h3>
+  }
   @if (hint(); as message) {
     <p class="adequacy__hint" role="status" data-testid="adequacy-unavailable">
       {{ message }}

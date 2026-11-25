@@ -1,5 +1,14 @@
-import { NgTemplateOutlet } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } from '@angular/core';
+import { NgComponentOutlet, NgTemplateOutlet } from '@angular/common';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  effect,
+  inject,
+  linkedSignal,
+  signal,
+  untracked,
+} from '@angular/core';
 import { Router } from '@angular/router';
 
 import { PhIconComponent } from '../../icons/ph-icon/ph-icon.component';
@@ -14,6 +23,22 @@ import { IconButtonComponent } from '../icon-button/icon-button.component';
 import { IconLogoComponent } from '../icon-logo/icon-logo.component';
 import { TipComponent } from '../tip/tip.component';
 import { TypewriterComponent } from '../typewriter/typewriter.component';
+
+/** Descrição digitada abaixo do título de um cadastro quando a ação não traz a sua. */
+const ACTION_DESCRIPTIONS = {
+  conversation: 'Vou perguntar um dado por vez. Responda pelo campo de mensagem.',
+  editor: 'Insira manualmente os dados ou escreva uma mensagem com o que gostaria de alterar ou inserir.',
+  form: 'Preencha os campos abaixo ou escreva uma mensagem com os dados.',
+  unavailable: 'Esta ação ainda não está disponível nesta versão.',
+} as const;
+
+/** Linha pequena abaixo da descrição (como "Você também pode enviar via áudio." do Figma). */
+const ACTION_HINTS = {
+  conversation: 'Você também pode responder via áudio.',
+  editor: 'Você também pode enviar via áudio.',
+  form: 'Você também pode enviar via áudio.',
+  unavailable: '',
+} as const;
 
 /** Saudação quando a tela não registrou um texto próprio (`ScreenActionsService.registerContext`). */
 const DEFAULT_INTRO: ScreenContext = {
@@ -38,6 +63,7 @@ export const HINT_DELAY_MS = 2000;
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     AssistantFormComponent,
+    NgComponentOutlet,
     NgTemplateOutlet,
     ButtonComponent,
     IconButtonComponent,
@@ -54,14 +80,18 @@ export class AssistantContentComponent {
   protected readonly assistant = inject(AiAssistantService);
   protected readonly screenActions = inject(ScreenActionsService);
 
-  /** Título e descrição da tela atual (ou a saudação genérica). */
-  protected readonly intro = computed(() => this.screenActions.context() ?? DEFAULT_INTRO);
+  /**
+   * Título e descrição da tela em que o painel foi ABERTO (ou a saudação genérica). Trocar de tela com o painel aberto
+   * não muda o texto nem reinicia a digitação (Thiago, 2026-11-24): só uma nova abertura lê a tela de novo.
+   */
+  protected readonly intro = linkedSignal<number, ScreenContext>({
+    source: () => this.assistant.openCount(),
+    computation: () => untracked(() => this.screenActions.context() ?? DEFAULT_INTRO),
+  });
   /** Só escreve com o painel aberto na visão de conversa. */
   protected readonly typing = computed(() => this.assistant.isOpen() && this.assistant.view() === 'chat');
-  /** Muda a cada abertura (ou troca de tela): reinicia a digitação. */
-  protected readonly typingKey = computed(() =>
-    this.typing() ? { opening: this.assistant.openCount(), intro: this.intro() } : null,
-  );
+  /** Muda a cada abertura: reinicia a digitação. Trocar de tela com o painel aberto NÃO reinicia. */
+  protected readonly typingKey = computed(() => (this.typing() ? { opening: this.assistant.openCount() } : null));
   protected readonly titleDone = computed(
     () => this.titleDoneKey() !== null && this.titleDoneKey() === this.typingKey(),
   );
@@ -71,11 +101,42 @@ export class AssistantContentComponent {
   protected readonly hintVisible = computed(() => this.hintKey() !== null && this.hintKey() === this.typingKey());
   protected readonly flow = inject(AssistantConversationService);
 
+  /** Cadastro (formulário, conversa ou aviso): título e descrição digitados, e só depois surgem os componentes. */
+  protected readonly actionIntro = computed(() => {
+    const action = this.assistant.activeAction();
+    const view = this.assistant.view();
+    const kind = view === 'conversation' || view === 'unavailable' || view === 'editor' ? view : 'form';
+
+    return {
+      description:
+        action?.editor?.description ??
+        action?.form?.description ??
+        action?.conversation?.description ??
+        ACTION_DESCRIPTIONS[kind],
+      hint: action?.editor?.hint ?? ACTION_HINTS[kind],
+      title: action?.editor?.title ?? action?.form?.title ?? action?.conversation?.title ?? action?.label ?? '',
+    };
+  });
+  protected readonly actionTyping = computed(
+    () => this.assistant.isOpen() && ['form', 'editor', 'conversation', 'unavailable'].includes(this.assistant.view()),
+  );
+  protected readonly actionKey = computed(() =>
+    this.actionTyping() ? { action: this.assistant.activeAction(), opening: this.assistant.openCount() } : null,
+  );
+  protected readonly actionTitleDone = computed(
+    () => this.actionTitleDoneKey() !== null && this.actionTitleDoneKey() === this.actionKey(),
+  );
+  protected readonly actionIntroDone = computed(
+    () => this.actionDescDoneKey() !== null && this.actionDescDoneKey() === this.actionKey(),
+  );
+
   private readonly i18n = inject(I18nService);
   private readonly router = inject(Router);
   private readonly titleDoneKey = signal<object | null>(null);
   private readonly descriptionDoneKey = signal<object | null>(null);
   private readonly hintKey = signal<object | null>(null);
+  private readonly actionTitleDoneKey = signal<object | null>(null);
+  private readonly actionDescDoneKey = signal<object | null>(null);
 
   constructor() {
     // O aviso de texto/áudio aparece com fade, um tempinho depois do último caractere.
@@ -93,6 +154,14 @@ export class AssistantContentComponent {
 
   protected onTitleFinished(): void {
     this.titleDoneKey.set(this.typingKey());
+  }
+
+  protected onActionTitleFinished(): void {
+    this.actionTitleDoneKey.set(this.actionKey());
+  }
+
+  protected onActionDescriptionFinished(): void {
+    this.actionDescDoneKey.set(this.actionKey());
   }
 
   protected onDescriptionFinished(): void {

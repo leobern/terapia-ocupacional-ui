@@ -1,0 +1,44 @@
+<div class="field-card">
+  <label class="field-card__title" [for]="inputId()">{{ label() }}</label>
+  <div
+    class="field-card__field"
+    [class.field-card__field--error]="error() !== ''"
+  >
+    @if (options(); as list) {
+      <select
+        class="field-card__input"
+        [id]="inputId()"
+        (change)="valueChange.emit(read($event))"
+      >
+        <option value="" [selected]="value() === ''">
+          {{ placeholder() }}
+        </option>
+        @for (option of list; track option) {
+          <option [value]="option" [selected]="value() === option">
+            {{ option }}
+          </option>
+        }
+      </select>
+    } @else {
+      <input
+        class="field-card__input"
+        type="text"
+        autocomplete="off"
+        [id]="inputId()"
+        [attr.inputmode]="inputMode()"
+        [placeholder]="placeholder()"
+        [value]="value()"
+        (input)="valueChange.emit(read($event))"
+      />
+      @if (unit() !== '') {
+        <span class="field-card__unit">{{ unit() }}</span>
+      }
+    }
+  </div>
+  <ng-content />
+  @if (error() !== '') {
+    <p class="field-card__error" role="alert">{{ error() }}</p>
+  } @else if (caption() !== '') {
+    <p class="field-card__caption">{{ caption() }}</p>
+  }
+</div>

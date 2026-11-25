@@ -1,0 +1,66 @@
+@use '../../../shared/styles/tokens';
+@use '../../../shared/styles/tones';
+@use '../../../shared/styles/typography';
+
+:host {
+  display: block;
+}
+
+// v2/StatTile: raio 16, padding 12, gap 2, fundo surface-2. Os cards se ajustam sozinhos (flex): crescem e diminuem em
+// cada linha conforme a largura e a quantidade de itens (Thiago, 2026-11-24).
+.tiles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: tokens.$space-8;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.tiles__tile {
+  display: flex;
+  flex: 1 1 96px;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  padding: tokens.$space-12;
+  border-radius: tokens.$radius-sm;
+  background: tokens.c(surface-2);
+}
+
+.tiles__label {
+  color: tokens.c(content-4);
+
+  @include typography.label-sm;
+}
+
+.tiles__value {
+  color: tokens.c(content-1);
+
+  @include typography.title-md;
+
+  small {
+    color: tokens.c(content-4);
+
+    @include typography.caption;
+  }
+}
+
+.tiles__status {
+  display: flex;
+  align-items: center;
+  gap: tokens.$space-4;
+  color: tokens.c(content-1);
+
+  @include typography.label-sm;
+}
+
+.tiles__dot {
+  flex: none;
+  width: 8px;
+  height: 8px;
+  border-radius: tokens.$radius-pill;
+  background: tokens.c(secondary);
+
+  @include tones.dot-tones;
+}

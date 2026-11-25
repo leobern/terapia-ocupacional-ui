@@ -129,6 +129,8 @@ export class DrawerComponent {
   readonly snap = input<DrawerSnap>('default');
 
   readonly showLogo = input<boolean>(true);
+  /** Mostra o botão de expandir/redimensionar (o painel de Atalhos não tem). */
+  readonly expandable = input<boolean>(true);
 
   /** Contextuais por conversa; no máximo 3 são renderizados (FR-012). */
   readonly shortcuts = input<readonly ChatShortcut[]>([]);
@@ -156,7 +158,8 @@ export class DrawerComponent {
 
   protected readonly ariaModalAttr = computed<'true' | null>(() => (this.isModal() ? 'true' : null));
 
-  protected readonly expandIcon = computed(() => (this.isModal() ? 'arrows-in' : 'arrows-out'));
+  // Figma (2026-11-24): o ícone de redimensionar é o de sidebar, nos dois estados.
+  protected readonly expandIcon = computed(() => 'sidebar-simple');
 
   protected readonly expandLabel = computed(() => (this.isModal() ? 'Recolher' : 'Expandir'));
 

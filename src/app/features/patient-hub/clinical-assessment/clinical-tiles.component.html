@@ -1,0 +1,18 @@
+@if (tiles().length > 0) {
+  <ul class="tiles" aria-label="Itens da avaliação clínica">
+    @for (tile of tiles(); track tile.id) {
+      <li class="tiles__tile" data-testid="clinical-tile">
+        <span class="tiles__label">{{ tile.label }}</span>
+        <span class="tiles__value"
+          >{{ tile.value }} <small>{{ tile.unit }}</small></span
+        >
+        @if (tile.status; as status) {
+          <span class="tiles__status">
+            <span class="tiles__dot" [attr.data-tone]="status.tone"></span
+            >{{ status.label }}
+          </span>
+        }
+      </li>
+    }
+  </ul>
+}

@@ -56,6 +56,10 @@ import { ProvisionalAssessmentSource } from './features/patient-hub/assessment/p
 import { LocationChangePort, LocationExtractor } from './features/patient-hub/change-location/location-change.port';
 import { LocationChangeApiService } from './features/patient-hub/change-location/location-change-api.service';
 import { ProvisionalLocationExtractor } from './features/patient-hub/change-location/provisional-location-extractor';
+import { ClinicalAssessmentSource } from './features/patient-hub/clinical-assessment/clinical-assessment-source';
+import { ClinicalItemHistorySource } from './features/patient-hub/clinical-assessment/clinical-item-history-source';
+import { ProvisionalClinicalAssessmentSource } from './features/patient-hub/clinical-assessment/provisional-clinical-assessment-source';
+import { ProvisionalClinicalItemHistorySource } from './features/patient-hub/clinical-assessment/provisional-clinical-item-history-source';
 import { DailyEvolutionSource } from './features/patient-hub/daily-record/daily-evolution-source';
 import { DailyRecordSource } from './features/patient-hub/daily-record/daily-record-source';
 import { DailyRecordWriter } from './features/patient-hub/daily-record/daily-record-writer';
@@ -125,15 +129,6 @@ import { PacientesApiService } from './features/patient-registration/pacientes-a
 import { PatientCreationPort } from './features/patient-registration/patient-creation.port';
 import { PatientDuplicateApiService } from './features/patient-registration/patient-duplicate-api.service';
 import { PatientDuplicateSource } from './features/patient-registration/patient-duplicate-source';
-import {
-  NutritionAddedCards,
-  NutritionHiddenCards,
-  NutritionHistorySource,
-  NutritionValueWriter,
-} from './features/patients/nutrition-panel/nutrition-card-ports';
-import { NutritionResultsSource } from './features/patients/nutrition-panel/nutrition-results-source';
-import { ProvisionalNutritionCardStore } from './features/patients/nutrition-panel/provisional-nutrition-card-store';
-import { ProvisionalNutritionResultsSource } from './features/patients/nutrition-panel/provisional-nutrition-results';
 import { FormulasApi } from './features/pharmacy/formulas-api';
 import { ProvisionalFormulasApi } from './features/pharmacy/provisional-formulas-api';
 import { LocalStartupStateReader } from './features/splash/local-startup-state-reader';
@@ -188,6 +183,8 @@ export const appConfig: ApplicationConfig = {
     { provide: HypothesisWriter, useClass: ProvisionalHypothesisWriter },
     ProvisionalAssessmentSource,
     { provide: AssessmentAiStructurer, useClass: ProvisionalAssessmentAiStructurer },
+    { provide: ClinicalAssessmentSource, useClass: ProvisionalClinicalAssessmentSource },
+    { provide: ClinicalItemHistorySource, useClass: ProvisionalClinicalItemHistorySource },
     { provide: AssessmentSource, useExisting: ProvisionalAssessmentSource },
     { provide: AssessmentWriter, useExisting: ProvisionalAssessmentSource },
     ProvisionalDailyRecordSource,
@@ -212,12 +209,6 @@ export const appConfig: ApplicationConfig = {
     { provide: FormAssistant, useClass: ProvisionalFormAssistant },
     { provide: PriorStaysSource, useClass: ProvisionalPriorStaysSource },
     { provide: PriorStaysSynthesizer, useClass: ProvisionalPriorStaysSynthesizer },
-    { provide: NutritionResultsSource, useClass: ProvisionalNutritionResultsSource },
-    ProvisionalNutritionCardStore,
-    { provide: NutritionHistorySource, useExisting: ProvisionalNutritionCardStore },
-    { provide: NutritionValueWriter, useExisting: ProvisionalNutritionCardStore },
-    { provide: NutritionAddedCards, useExisting: ProvisionalNutritionCardStore },
-    { provide: NutritionHiddenCards, useExisting: ProvisionalNutritionCardStore },
     { provide: HomeNotificationsSource, useClass: HomeNotificationsApiService },
     // Provisórios (sem backend ainda): notificações em memória e usuários de exemplo.
     { provide: NotificationsApiService, useClass: ProvisionalNotificationsApiService },

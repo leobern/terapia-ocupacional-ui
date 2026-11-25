@@ -1,15 +1,32 @@
 import { ChangeDetectionStrategy, Component, computed, effect, inject, input, signal, untracked } from '@angular/core';
 
 import { ButtonComponent } from '../../../shared/components/button/button.component';
+import { IconButtonComponent } from '../../../shared/components/icon-button/icon-button.component';
 import { InputChatAudioError, InputChatComponent } from '../../../shared/components/input-chat/input-chat.component';
 import { PhIconComponent } from '../../../shared/icons/ph-icon/ph-icon.component';
 import { ConnectivityService } from '../../../shared/services/connectivity.service';
 import { NOW, ProfessionalProfileReader } from '../../home/professional-profile';
 import { DailyEvolutionSource } from './daily-evolution-source';
-import { DailyEvolution, dayKey, EvolutionOrigin, registeredAt } from './daily-record.models';
+import {
+  DailyEvolution,
+  dayKey,
+  EvolutionOrigin,
+  Reevaluation,
+  reevaluationDueAt,
+  ReevaluationUnit,
+  registeredAt,
+} from './daily-record.models';
 import { EvolutionAiStructurer } from './evolution-ai-structurer';
 
 type LoadState = 'idle' | 'loading' | 'ready' | 'error';
+
+/** Linha do formulário "Reavaliar": o que reavaliar e daqui a quanto tempo. */
+export interface ReevaluationRow {
+  readonly id: number;
+  readonly name: string;
+  readonly amount: number;
+  readonly unit: ReevaluationUnit;
+}
 
 export const EVOLUTION_LOAD_FAILED_HINT = 'Não foi possível carregar a evolução do dia. Tente novamente em instantes.';
 export const EVOLUTION_SAVE_FAILED_HINT = 'Não foi possível salvar a evolução. O texto foi mantido; tente novamente.';
@@ -35,7 +52,7 @@ export const EVOLUTION_HELP = 'Só médico registra. Texto da IA vem marcado e s
  */
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ButtonComponent, InputChatComponent, PhIconComponent],
+  imports: [ButtonComponent, IconButtonComponent, InputChatComponent, PhIconComponent],
   selector: 'app-daily-evolution',
   styleUrl: './daily-evolution.component.scss',
   templateUrl: './daily-evolution.component.html',
@@ -57,6 +74,8 @@ export class DailyEvolutionComponent {
   protected readonly aiProcessingHint = EVOLUTION_AI_PROCESSING_HINT;
   protected readonly aiReviewNote = EVOLUTION_AI_REVIEW_NOTE;
   protected readonly saveFailed = signal(false);
+  /** Itens a reavaliar anotados nesta evolução (ex.: diarreia em 48 h, erosão da mucosa em 3 dias). */
+  protected readonly rows = signal<readonly ReevaluationRow[]>([]);
   protected readonly connectivity = inject(ConnectivityService);
   protected readonly isDoctor = inject(ProfessionalProfileReader).read().role === 'doctor';
   protected readonly loadFailedHint = EVOLUTION_LOAD_FAILED_HINT;
@@ -73,6 +92,7 @@ export class DailyEvolutionComponent {
     () => this.isDoctor && !this.saving() && this.connectivity.online() && this.draft().trim() !== '',
   );
 
+  private nextRowId = 1;
   private readonly source = inject(DailyEvolutionSource);
   private readonly structurer = inject(EvolutionAiStructurer);
   /** Texto que estava no campo antes da sugestão, restaurado ao descartar. */
@@ -94,6 +114,31 @@ export class DailyEvolutionComponent {
         untracked(() => this.token++);
       }
     });
+  }
+
+  protected addRow(): void {
+    this.rows.update(rows => [...rows, { amount: 48, id: this.nextRowId++, name: '', unit: 'hours' }]);
+  }
+
+  protected removeRow(id: number): void {
+    this.rows.update(rows => rows.filter(r => r.id !== id));
+  }
+
+  protected updateRow(id: number, change: Partial<Omit<ReevaluationRow, 'id'>>): void {
+    this.touched.set(true);
+    this.rows.update(rows => rows.map(r => (r.id === id ? { ...r, ...change } : r)));
+  }
+
+  protected onRowName(id: number, event: Event): void {
+    this.updateRow(id, { name: (event.target as HTMLInputElement).value });
+  }
+
+  protected onRowAmount(id: number, event: Event): void {
+    this.updateRow(id, { amount: Number((event.target as HTMLInputElement).value) });
+  }
+
+  protected onRowUnit(id: number, event: Event): void {
+    this.updateRow(id, { unit: (event.target as HTMLSelectElement).value as ReevaluationUnit });
   }
 
   protected onDraft(event: Event): void {
@@ -169,6 +214,7 @@ export class DailyEvolutionComponent {
         day: dayKey(at),
         origin: this.origin(),
         patientId: this.patientId(),
+        reevaluations: this.reevaluations(at),
         text: this.draft().trim(),
       });
 
@@ -177,6 +223,7 @@ export class DailyEvolutionComponent {
         this.draft.set(saved.text);
         this.suggestion.set(null);
         this.touched.set(false);
+        this.rows.set([]);
       }
     } catch {
       if (token === this.token) {
@@ -185,6 +232,13 @@ export class DailyEvolutionComponent {
     } finally {
       this.saving.set(false);
     }
+  }
+
+  /** Só entram na evolução as linhas com nome e prazo positivo; o prazo conta a partir do registro. */
+  private reevaluations(at: Date): readonly Reevaluation[] {
+    return this.rows()
+      .filter(r => r.name.trim() !== '' && r.amount > 0)
+      .map(r => ({ dueAt: reevaluationDueAt(at, r.amount, r.unit), id: `r${r.id}`, name: r.name.trim() }));
   }
 
   private origin(): EvolutionOrigin {
@@ -203,6 +257,7 @@ export class DailyEvolutionComponent {
     this.state.set('loading');
     this.saved.set(null);
     this.draft.set('');
+    this.rows.set([]);
     this.touched.set(false);
     this.saveFailed.set(false);
     this.suggestion.set(null);

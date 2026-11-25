@@ -2,8 +2,15 @@
 @use '../../shared/styles/tokens';
 @use '../../shared/styles/typography';
 
+// Largura do Hub (não da janela) a partir da qual há 2 e 3 colunas.
+$hub-two-columns: 700px;
+$hub-three-columns: 1100px;
+
 // Figma "Conductia - V1", seção 08 (Paciente): mobile 402 (4608:4375) e desktop 1920 (4608:4845).
 :host {
+  display: block;
+  container: hub / inline-size;
+
   --page-container-margin: var(--layout-page-margin, 16px);
 }
 
@@ -16,43 +23,136 @@
   padding-bottom: tokens.$space-24;
 
   @include breakpoints.md {
+    gap: tokens.$space-24;
     min-height: 100dvh;
-    padding: tokens.$space-24 tokens.$space-32 tokens.$space-32;
+    // Laterais de 16px = o espaço entre os cards (Thiago, 2026-11-24): a distância do menu ao card é a mesma
+    // que a de um card ao outro.
+    padding: tokens.$space-24 tokens.$space-16 tokens.$space-48;
   }
 }
 
-// Figma 4608:4845: 3 colunas no desktop (paciente | diagnóstico | metas e prescrição); no mobile, 1 coluna (4608:4375).
+// "Evoluir Paciente": no cabeçalho quando há 2 ou 3 colunas; no mobile, botão de largura total no fim da tela.
+.hub__evolve--header {
+  display: none;
+}
+
+.hub__evolve--bottom {
+  display: block;
+}
+
+// Grade responsiva pela largura do próprio Hub (Thiago, 2026-11-24): com a sidebar de atalhos fechada são 3 colunas
+// (Figma 4608:4845); com ela aberta, 2 colunas, e "Metas nutricionais" e "Prescrição ativa" descem para baixo da
+// "Avaliação clínica". No mobile (4608:4375), 1 coluna na ordem do Figma.
 .hub__grid {
   display: flex;
   flex-direction: column;
   gap: tokens.$space-16;
-
-  @include breakpoints.md {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    align-items: start;
-    gap: tokens.$space-32;
-  }
 }
 
+// 1 coluna: as colunas somem e cada seção entra na ordem do Figma.
 .hub__col {
-  display: flex;
-  flex-direction: column;
-  gap: tokens.$space-16;
-  min-width: 0;
-
-  // Mobile: uma coluna só, na ordem do Figma 4608:4375 (paciente, hipótese, diagnóstico, avaliação, metas, prescrição, evoluções).
-  @media (width < 1200px) {
-    display: contents;
-  }
+  display: contents;
 }
 
-@media (width < 1200px) {
-  @for $n from 1 through 9 {
+@container hub (width < #{$hub-two-columns}) {
+  @for $n from 1 through 10 {
     .hub__o-#{$n} {
       order: $n;
     }
   }
+}
+
+// Faixa de datas: na coluna do paciente (mobile) ou, com 2 ou 3 colunas, no cabeçalho.
+.hub__strip--header {
+  display: none;
+}
+
+@container hub (width >= #{$hub-two-columns}) {
+  // A faixa de datas fica ao lado do título e termina onde termina a 1ª coluna (Figma 4781:31588): o início do
+  // cabeçalho tem a largura da coluna (hub = 100cqw, menos as laterais de 16 e os espaços de 16 entre colunas).
+  app-page-header {
+    --page-header-start: calc((100cqw - 32px - 16px) / 2);
+  }
+
+  .hub__strip--header {
+    display: block;
+  }
+
+  .hub__strip--column {
+    display: none;
+  }
+
+  .hub__bed {
+    min-height: 40px;
+  }
+
+  .hub__grid {
+    display: grid;
+    /* stylelint-disable declaration-block-no-redundant-longhand-properties -- a forma curta é inválida no Chrome com repeat() */
+    grid-template-areas:
+      'first second'
+      'first third';
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-rows: auto 1fr;
+    /* stylelint-enable declaration-block-no-redundant-longhand-properties */
+    gap: tokens.$space-16;
+    align-items: stretch;
+  }
+
+  .hub__col {
+    display: flex;
+    flex-direction: column;
+    gap: tokens.$space-16;
+    min-width: 0;
+
+    &:nth-child(1) {
+      grid-area: first;
+      position: relative;
+    }
+
+    &:nth-child(2) {
+      grid-area: second;
+    }
+
+    &:nth-child(3) {
+      grid-area: third;
+    }
+  }
+
+  .hub__evolve--header {
+    display: inline-flex;
+  }
+
+  .hub__evolve--bottom {
+    display: none;
+  }
+}
+
+@container hub (width >= #{$hub-three-columns}) {
+  app-page-header {
+    --page-header-start: calc((100cqw - 32px - 32px) / 3);
+  }
+
+  // A coluna de Evoluções rola à parte; a altura vai até o fim da janela.
+  .hub__col--evolutions {
+    --evo-max-height: calc(100dvh - 160px);
+  }
+
+  .hub__grid {
+    /* stylelint-disable declaration-block-no-redundant-longhand-properties */
+    grid-template-areas: 'first second third';
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-rows: auto;
+    /* stylelint-enable declaration-block-no-redundant-longhand-properties */
+  }
+}
+
+// Seção = título (v2/SectionHeader) + cards, a 8px (padrão de cluster).
+.hub__group {
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$space-8;
+  min-width: 0;
 }
 
 // Figma 4608:4994: card branco (raio 24, padding 16, gap 12) com os gráficos e as avaliações.
@@ -63,6 +163,13 @@
   padding: tokens.$space-16;
   border-radius: tokens.$radius-md;
   background: tokens.c(surface);
+}
+
+// Card em edição (editor aberto no painel): destaque com outline de 4px, sem borda (Thiago, 2026-11-24).
+.hub__diag--editing {
+  border: 0;
+  outline: 4px solid tokens.c(secondary);
+  outline-offset: 0;
 }
 
 // Metas nutricionais (Figma 4608:5057): card branco com 4 tiles (surface-2, raio 16, padding 12).
@@ -121,6 +228,19 @@
   @include typography.title-md;
 }
 
+// Legenda "Ala · Leito" fora do cartão: 24px no mobile (Figma 4766:12653) e 40px no desktop (4766:13760, igual ao
+// título de seção), recuo 16.
+.hub__bed {
+  display: flex;
+  align-items: center;
+  min-height: 24px;
+  margin: 0;
+  padding-inline: tokens.$space-16;
+  color: tokens.c(content-3);
+
+  @include typography.label-md;
+}
+
 .hub__identity {
   display: flex;
   flex-direction: column;
@@ -128,13 +248,6 @@
   padding: tokens.$space-16;
   border-radius: tokens.$radius-md;
   background: tokens.c(surface);
-}
-
-.hub__bed {
-  margin: 0;
-  color: tokens.c(secondary);
-
-  @include typography.label-md;
 }
 
 .hub__name {
@@ -174,8 +287,53 @@
   flex-direction: column;
   gap: tokens.$space-12;
   padding: tokens.$space-16;
+  border: 1px solid tokens.c(border);
   border-radius: tokens.$radius-md;
   background: tokens.c(surface-2);
+}
+
+.hub__divider {
+  inline-size: 100%;
+  margin: 0;
+  border: 0;
+  border-block-start: 1px solid tokens.c(border);
+}
+
+// Equipe responsável (Figma 4766:13776): avatar 40, nome e função, seta à direita.
+.hub__team {
+  display: flex;
+  align-items: center;
+  gap: tokens.$space-12;
+  color: tokens.c(content-1);
+}
+
+.hub__team-text {
+  flex: 1 0 0;
+  min-width: 0;
+}
+
+.hub__team-name {
+  margin: 0;
+  color: tokens.c(content-1);
+
+  @include typography.label-lg;
+}
+
+.hub__team-role {
+  margin: 0;
+  color: tokens.c(content-4);
+
+  @include typography.caption;
+}
+
+// Prescrição ativa (Figma 4608:5096): card surface com a prescrição e o aporte do dia (tiles surface-2).
+.hub__rx {
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$space-12;
+  padding: tokens.$space-16;
+  border-radius: tokens.$radius-md;
+  background: tokens.c(surface);
 }
 
 .hub__card-title {

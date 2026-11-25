@@ -105,21 +105,4 @@
       >
     }
   </div>
-
-  <div class="trend__periods" role="group" aria-label="Período">
-    @for (item of periods; track item.key) {
-      <button
-        type="button"
-        class="trend__chip"
-        [class.trend__chip--active]="period() === item.key"
-        [attr.aria-pressed]="period() === item.key"
-        (click)="select(item.key)"
-      >
-        @if (period() === item.key) {
-          <ph-icon name="check" weight="bold" [size]="16" />
-        }
-        {{ item.label }}
-      </button>
-    }
-  </div>
 </section>
