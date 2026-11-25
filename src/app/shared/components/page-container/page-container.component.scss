@@ -30,6 +30,9 @@
   // `env(safe-area-inset-bottom)`.
   padding-bottom: var(--bottom-nav-bar-height);
 
+  // Com `viewport-fit=cover` o conteúdo começa sob a barra de status do celular: reserva a área segura do topo.
+  padding-top: env(safe-area-inset-top, 0);
+
   @include breakpoints.sm {
     // breakpoint-sm (>=672px): largura de conteúdo travada, centralizada.
     width: 100%;
@@ -46,5 +49,6 @@
     margin-inline: 0;
     // Sem barra inferior no desktop (o `nav-menu` assume) — nada a reservar.
     padding-bottom: 0;
+    padding-top: 0;
   }
 }

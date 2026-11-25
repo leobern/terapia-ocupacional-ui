@@ -34,6 +34,16 @@ body {
   padding: 0;
 }
 
+// O `html` pinta a mesma cor do `body`: com `viewport-fit=cover` o fundo passa por baixo das barras do celular e nenhuma
+// faixa de outra cor pode aparecer em cima ou embaixo (Thiago, 2026-11-25).
+html {
+  background: tokens.c(surface-2);
+
+  &[data-theme='dark'] {
+    background: tokens.c(surface);
+  }
+}
+
 body {
   // Cor de base de toda tela — o background-mesh (z-index 0, ver seu SCSS)
   // desenha por cima disso; sem essa cor aqui o mesh some atrás do canvas

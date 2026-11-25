@@ -12,12 +12,16 @@ function readStoredTheme(): Theme {
   }
 }
 
+/** Cor da barra do navegador no celular: a mesma do fundo (`surface-2` no claro, `surface` no escuro). */
+const THEME_COLOR: Readonly<Record<Theme, string>> = { dark: '#0f171a', light: '#f5f7f8' };
+
 function applyTheme(theme: Theme): void {
   if (theme === 'dark') {
     document.documentElement.setAttribute('data-theme', 'dark');
   } else {
     document.documentElement.removeAttribute('data-theme');
   }
+  document.querySelector('meta[name="theme-color"]')?.setAttribute('content', THEME_COLOR[theme]);
 }
 
 /**

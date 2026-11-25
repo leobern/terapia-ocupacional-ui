@@ -9,7 +9,7 @@ import { DateStripComponent } from '../../shared/components/date-strip/date-stri
 import { AiAssistantService } from '../../shared/services/ai-assistant.service';
 import { AssistantEditorController } from '../../shared/services/assistant-editor-controller.service';
 import { ConnectivityService } from '../../shared/services/connectivity.service';
-import { ScreenActionsService } from '../../shared/services/screen-actions.service';
+import { ScreenAction, ScreenActionsService } from '../../shared/services/screen-actions.service';
 import { ViewportBreakpointService } from '../../shared/services/viewport-breakpoint.service';
 import { DailyAdequacy } from '../daily-evolution/adequacy/adequacy.models';
 import { DailyAdequacyService } from '../daily-evolution/adequacy/daily-adequacy.service';
@@ -44,6 +44,7 @@ import { DailyRecordWriter } from './daily-record/daily-record-writer';
 import { EvolutionAiStructurer } from './daily-record/evolution-ai-structurer';
 import { ParameterAiStructurer } from './daily-record/parameter-ai-structurer';
 import { ObservationFollowUpPort } from './messages/observation-follow-up.port';
+import { PatientRecordRequest } from './messages/patient-message.models';
 import { MessageAiAssistant, PatientMessageSource, PatientTeamSource } from './messages/patient-message-source';
 import { BedMovementPort, BedOccupancyPort } from './move-bed/bed-movement.port';
 import { BedNumberExtractor } from './move-bed/bed-number-extractor';
@@ -220,6 +221,8 @@ const AVAILABLE: DailyAdequacy = {
 const desktop = signal(true);
 const unread = { countUnread: (): Promise<number> => Promise.resolve(3) };
 
+const sentMessages: PatientRecordRequest[] = [];
+
 async function setup(
   source: FakeSource,
   id: string | null = 'p1',
@@ -227,6 +230,7 @@ async function setup(
   role = 'doctor',
   query: Record<string, string> = {},
 ): Promise<ComponentFixture<PatientHubComponent>> {
+  sentMessages.length = 0;
   if (!jasmine.isSpy(Object.getOwnPropertyDescriptor(navigator, 'language')?.get as () => string)) {
     spyOnProperty(navigator, 'language').and.returnValue('pt-BR');
   }
@@ -264,7 +268,18 @@ async function setup(
       },
       { provide: DailyEvolutionSource, useValue: { load: (): Promise<null> => Promise.resolve(null) } },
       { provide: EvolutionAiStructurer, useValue: { suggest: (): Promise<string> => Promise.resolve('') } },
-      { provide: PatientMessageSource, useValue: { list: (): Promise<readonly never[]> => Promise.resolve([]) } },
+      {
+        provide: PatientMessageSource,
+        useValue: {
+          list: (): Promise<readonly never[]> => Promise.resolve([]),
+          send: (request: PatientRecordRequest): Promise<never> => {
+            sentMessages.push(request);
+
+            return Promise.resolve({} as never);
+          },
+          sent: sentMessages,
+        },
+      },
       { provide: PatientTeamSource, useValue: { listLinked: (): Promise<readonly never[]> => Promise.resolve([]) } },
       { provide: MessageAiAssistant, useValue: {} },
       {
@@ -443,7 +458,7 @@ describe('PatientHubComponent', () => {
 
       expect(actions.map(a => a.label)).toEqual([
         'Evoluir paciente',
-        'Observação ou mensagem',
+        'Nova mensagem',
         'Movimentar leito',
         'Alterar unidade/ala',
         'Ajustar a prescrição',
@@ -458,41 +473,86 @@ describe('PatientHubComponent', () => {
       (assistant.activeAction()?.editor?.inputs as { saved: () => void }).saved();
     });
 
-    it('a ação "Observação ou mensagem" abre o registro do assistente e o fecha com Esc', async () => {
+    it('a ação "Nova mensagem" abre o cadastro conversacional (destinatário e texto), como o comunicado', async () => {
       const f = await setup(new FakeSource());
+      const assistant = TestBed.inject(AiAssistantService);
       const action = TestBed.inject(ScreenActionsService)
         .actions()
         .find(a => a.id === 'patient-message');
-      const dialog = (): HTMLDialogElement =>
-        (f.nativeElement as HTMLElement).querySelector('app-patient-message-sheet dialog') as HTMLDialogElement;
 
-      expect(dialog().open).toBe(false);
-      action?.navigate?.();
+      assistant.openAction(action as ScreenAction);
       f.detectChanges();
-      await f.whenStable();
+      const form = assistant.activeAction()?.form;
 
-      expect(dialog().open).toBe(true);
-      dialog().dispatchEvent(new Event('cancel', { cancelable: true }));
-      f.detectChanges();
-
-      expect(dialog().open).toBe(false);
+      expect(assistant.activeAction()?.id).toBe('patient-message');
+      expect(form?.title).toBe('Nova mensagem');
+      expect(form?.fields.map(field => [field.id, field.kind, field.required])).toEqual([
+        ['recipients', 'mention', true],
+        ['message', 'text', true],
+      ]);
     });
 
-    it('observação registrada abre as sugestões; mensagem direcionada não', async () => {
-      const f = await setup(new FakeSource());
-      const hub = f.componentInstance as unknown as {
-        followUpRecord: () => unknown;
-        onRecordSent: (r: object) => void;
+    describe('Mensagens do paciente', () => {
+      interface Hub {
+        messageCount: { set(n: number): void };
+        editMessage(): void;
+        messagesTitle(): string;
+      }
+      const open = async (): Promise<{ hub: Hub; submit: (values: object) => Promise<void> }> => {
+        const f = await setup(new FakeSource());
+        const hub = f.componentInstance as unknown as Hub;
+
+        hub.editMessage();
+        const form = TestBed.inject(AiAssistantService).activeAction()?.form;
+
+        return { hub, submit: (values): Promise<void> => Promise.resolve(form?.submit(values as never)) };
       };
-      const record = { at: '', author: 'A', content: 'x', id: '9', patientId: 'p1', recipients: [], viaAudio: false };
 
-      hub.onRecordSent(record);
+      it('o "+" da seção abre o mesmo cadastro; o título mostra a contagem', async () => {
+        const { hub } = await open();
 
-      expect(hub.followUpRecord()).toBe(record);
+        expect(TestBed.inject(AiAssistantService).activeAction()?.id).toBe('patient-message');
+        expect(hub.messagesTitle()).toBe('Mensagens');
+        hub.messageCount.set(1);
 
-      hub.onRecordSent({ ...record, recipients: [{ id: 1, name: 'B', specialty: 'S' }] });
+        expect(hub.messagesTitle()).toBe('1 Mensagem');
+        hub.messageCount.set(3);
 
-      expect(hub.followUpRecord()).toBeNull();
+        expect(hub.messagesTitle()).toBe('3 Mensagens');
+      });
+
+      it('enviar grava no paciente com o autor, a data e os destinatários (pessoa, grupo e todos)', async () => {
+        const { submit } = await open();
+        const sent = TestBed.inject(PatientMessageSource) as unknown as { sent: PatientRecordRequest[] };
+
+        await submit({
+          message: 'Reposicionar a SNE',
+          recipients: [
+            { id: 7, name: 'Ana', photoUrl: null, specialty: 'Enfermeira' },
+            { group: { memberCount: 3, profile: 'MEDICO' }, id: 0, name: '@medicos', photoUrl: null, specialty: '' },
+            { group: { memberCount: 9, profile: null }, id: 0, name: '@todos', photoUrl: null, specialty: '' },
+          ],
+        });
+
+        expect(sent.sent.length).toBe(1);
+        expect(sent.sent[0].patientId).toBe('p1');
+        expect(sent.sent[0].content).toBe('Reposicionar a SNE');
+        expect(sent.sent[0].author).toBe('Michelle');
+        expect(sent.sent[0].recipients).toEqual([{ id: 7, name: 'Ana', specialty: 'Enfermeira' }]);
+        expect(sent.sent[0].recipientSpecs).toEqual([
+          { professionalId: 7, type: 'PESSOA' },
+          { perfil: 'MEDICO', type: 'GRUPO' },
+          { type: 'TODOS' },
+        ]);
+      });
+
+      it('sem conexão não envia e avisa', async () => {
+        const { submit } = await open();
+
+        TestBed.inject(ConnectivityService).online.set(false);
+
+        await expectAsync(submit({ message: 'x', recipients: [] })).toBeRejected();
+      });
     });
 
     it('perfil não médico não recebe a ação "Revisão da prescrição"', async () => {
@@ -502,7 +562,7 @@ describe('PatientHubComponent', () => {
         TestBed.inject(ScreenActionsService)
           .actions()
           .map(a => a.label),
-      ).toEqual(['Evoluir paciente', 'Observação ou mensagem', 'Movimentar leito', 'Alterar unidade/ala']);
+      ).toEqual(['Evoluir paciente', 'Nova mensagem', 'Movimentar leito', 'Alterar unidade/ala']);
     });
 
     it('médico abre a Meta nutricional no painel lateral pelos atalhos', async () => {
@@ -980,7 +1040,7 @@ describe('PatientHubComponent', () => {
       f = await setup(new FakeSource());
     });
 
-    it('mostra as seções na ordem do Figma: Diagnóstico, Prescrição, Avaliação clínica, nutricional e funcional e Evoluções', () => {
+    it('mostra as seções na ordem do Figma: Diagnóstico, Prescrição, Avaliação clínica, nutricional e funcional, Evoluções e Mensagens', () => {
       const titles = Array.from(el().querySelectorAll('app-section-header h2')).map(h => h.textContent.trim());
 
       // "Metas nutricionais" só aparece quando há aporte calculado (sem meta, não há o que mostrar).
@@ -991,6 +1051,7 @@ describe('PatientHubComponent', () => {
         'Avaliação clínica',
         'Avaliação nutricional e funcional',
         'Evoluções',
+        'Mensagens',
       ]);
 
       expect(el().querySelector('.hub__bed')?.textContent).toContain('Ala 2 · Leito 35');
