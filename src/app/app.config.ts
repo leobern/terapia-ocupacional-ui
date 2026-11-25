@@ -33,8 +33,8 @@ import { LocalProfessionalProfileReader } from './features/home/local-profession
 import { ProfessionalProfileReader } from './features/home/professional-profile';
 import { ProvisionalDailyPatientsSource } from './features/home/provisional-daily-patients';
 import { UnreadNotificationsReader } from './features/home/unread-notifications-reader';
+import { HospitalLinksApiService } from './features/hospital-links/hospital-links-api.service';
 import { HospitalLinksSource } from './features/hospital-links/hospital-links-source';
-import { ProvisionalHospitalLinksSource } from './features/hospital-links/provisional-hospital-links-source';
 import { HospitalInvitePort, ManagerAccessReader } from './features/hospital-team/hospital-invite-port';
 import { ProfessionalAccessApiService } from './features/hospital-team/professional-access-api.service';
 import { ProfessionalAccessRevoker, ProfessionalAccessSource } from './features/hospital-team/professional-access-port';
@@ -167,8 +167,7 @@ export const appConfig: ApplicationConfig = {
     // Turno de trabalho e localização do hospital: provisórios (localStorage) até haver backend.
     { provide: HospitalSiteSource, useClass: ProvisionalHospitalSiteSource },
     { provide: ShiftSource, useClass: ProvisionalShiftSource },
-    // Vínculos com hospitais: provisório até a tela usar a API (openapi/vinculos-api.yaml).
-    { provide: HospitalLinksSource, useClass: ProvisionalHospitalLinksSource },
+    { provide: HospitalLinksSource, useClass: HospitalLinksApiService },
     { provide: LinkRevocationChecker, useClass: ApiLinkRevocationChecker },
     { provide: UnreadNotificationsReader, useClass: ApiUnreadNotificationsReader },
     { provide: DailyPatientsSource, useClass: ProvisionalDailyPatientsSource },
