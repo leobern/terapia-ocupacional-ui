@@ -23,4 +23,8 @@ export class SettingsComponent {
   protected reviewTutorial(): void {
     void this.router.navigateByUrl('/settings/tutorial');
   }
+
+  protected openHospitalLinks(): void {
+    void this.router.navigateByUrl('/hospital-links');
+  }
 }

@@ -1,0 +1,140 @@
+<app-page-container>
+  <div class="links">
+    <app-page-header
+      title="Vínculos com hospitais"
+      subtitle="Solicite acesso aos hospitais onde você atua"
+      [back]="true"
+      (backClick)="back()"
+    />
+
+    <section class="links__card" aria-label="Solicitar acesso">
+      <label class="links__label" for="links-query">Nome do hospital</label>
+      <input
+        id="links-query"
+        class="links__input"
+        type="search"
+        autocomplete="off"
+        placeholder="Digite ao menos 2 letras"
+        [value]="query()"
+        (input)="onQuery($event)"
+        (keydown.enter)="search()"
+      />
+      <div class="links__actions">
+        <app-button
+          size="md"
+          iconLeft="magnifying-glass"
+          [label]="searching() ? 'Buscando…' : 'Buscar'"
+          [disabled]="!canSearch()"
+          (click)="search()"
+        />
+      </div>
+
+      @if (offline()) {
+        <p class="links__text" role="status">
+          Sem conexão. Conecte-se para solicitar acesso.
+        </p>
+      }
+      @if (message(); as text) {
+        <p class="links__text" role="alert">{{ text }}</p>
+      }
+      @if (success(); as text) {
+        <p class="links__text" role="status">{{ text }}</p>
+      }
+
+      @if (notFound()) {
+        <p class="links__text" role="status">
+          Hospital não encontrado. Verifique o nome digitado ou entre em contato
+          com o suporte.
+        </p>
+      }
+
+      @if (results().length > 0) {
+        <ul class="links__list" aria-label="Resultados da busca">
+          @for (hospital of results(); track hospital.id) {
+            <li class="links__row">
+              <span class="links__name">{{ hospital.name }}</span>
+              @if (blockingLink(hospital.id); as link) {
+                <span class="links__status">{{
+                  statusLabel(link.status)
+                }}</span>
+              } @else {
+                <app-button
+                  size="md"
+                  kind="primary"
+                  appearance="outlined"
+                  label="Selecionar"
+                  (click)="select(hospital)"
+                />
+              }
+            </li>
+          }
+        </ul>
+        @if (nextCursor() !== null) {
+          <div class="links__actions">
+            <app-button
+              size="md"
+              kind="primary"
+              appearance="outlined"
+              label="Carregar mais"
+              [disabled]="searching() || offline()"
+              (click)="loadMore()"
+            />
+          </div>
+        }
+      }
+
+      @if (selected(); as hospital) {
+        <div
+          class="links__confirm"
+          role="group"
+          aria-label="Confirmar solicitação"
+        >
+          <p class="links__text">
+            Enviar solicitação de acesso a <strong>{{ hospital.name }}</strong
+            >? O gestor do hospital vai analisar o pedido.
+          </p>
+          <div class="links__actions">
+            <app-button
+              size="md"
+              iconLeft="check"
+              [label]="requesting() ? 'Enviando…' : 'Confirmar solicitação'"
+              [disabled]="requesting() || offline()"
+              (click)="confirm()"
+            />
+            <app-button
+              size="md"
+              kind="primary"
+              appearance="outlined"
+              label="Cancelar"
+              [disabled]="requesting()"
+              (click)="cancel()"
+            />
+          </div>
+        </div>
+      }
+    </section>
+
+    <section class="links__card" aria-label="Meus vínculos">
+      <h2 class="links__heading">Meus vínculos</h2>
+      @if (loadingLinks()) {
+        <p class="links__text" role="status">Carregando vínculos…</p>
+      } @else if (linksError(); as text) {
+        <p class="links__text" role="alert">{{ text }}</p>
+      } @else if (links().length === 0) {
+        <p class="links__text">
+          Você ainda não tem vínculos. Busque um hospital acima para solicitar
+          acesso.
+        </p>
+      } @else {
+        <ul class="links__list">
+          @for (link of links(); track link.id) {
+            <li class="links__row">
+              <span class="links__name">{{ link.hospitalName }}</span>
+              <span class="links__status">{{ statusLabel(link.status) }}</span>
+            </li>
+          }
+        </ul>
+      }
+    </section>
+  </div>
+</app-page-container>
