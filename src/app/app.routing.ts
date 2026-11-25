@@ -138,11 +138,14 @@ export const routes: Routes = [
     data: { hideShell: true },
     loadChildren: () => import('./features/login/login.routes').then(m => m.LOGIN_ROUTES),
   },
+  // A raiz vem ANTES da rota vazia de recuperação de senha: sem isso `/` casava com ela e ficava em branco.
+  // TEMPORÁRIO (Thiago, 2026-11-25): enquanto o login real não está ligado, a raiz leva direto a Hospitais (`/home`).
+  // Quando o login entrar, volta a ser `redirectTo: 'splash'` (a splash decide entre login, bloqueio, vínculos e Hospitais).
+  { path: '', pathMatch: 'full', redirectTo: 'home' },
   {
     path: '',
     data: { hideShell: true },
     loadChildren: () =>
       import('./features/password-recovery/password-recovery.routes').then(m => m.PASSWORD_RECOVERY_ROUTES),
   },
-  { path: '', pathMatch: 'full', redirectTo: 'splash' },
 ];
