@@ -1,0 +1,146 @@
+openapi: 3.0.3
+info:
+  title: Avaliação Nutricional e Funcional API
+  version: 1.0.0
+  description: >
+    Avaliação nutricional e funcional do paciente (RN-009, FT-004-4) no Hub do paciente. Cada gravação é uma
+    versão nova e imutável (trilha de auditoria, com autor do token e data/hora do servidor); a leitura devolve
+    a mais recente. O contrato espelha AssessmentSource e AssessmentWriter da UI.
+servers:
+  - url: /
+security:
+  - bearerAuth: []
+paths:
+  /api/v1/pacientes/{pacienteId}/avaliacao-nutricional:
+    get:
+      operationId: getAvaliacaoNutricional
+      x-implemented: true
+      summary: Avaliação nutricional e funcional mais recente do paciente
+      description: >
+        Devolve a última avaliação gravada. 204 quando o paciente ainda não tem avaliação (estado vazio, não um
+        erro). previous traz, para cada item presente, o valor mais recente entre as gravações anteriores que
+        difere do atual, com a data em que foi gravado (ajuda "Anterior"). Mesma regra de acesso de getPaciente
+        (vínculo APROVADO com o hospital do paciente; inexistente e de outro hospital respondem ambos 404).
+      parameters:
+        - $ref: "#/components/parameters/PacienteId"
+      responses:
+        "200":
+          description: Avaliação vigente
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AvaliacaoNutricional"
+        "204":
+          description: Paciente sem avaliação
+        "401":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/PacienteNaoEncontrado"
+    put:
+      operationId: saveAvaliacaoNutricional
+      x-implemented: true
+      summary: Grava uma nova versão da avaliação nutricional e funcional
+      description: >
+        Cria uma nova versão imutável com os valores informados (só campos preenchidos; item vazio é omitido,
+        e item omitido na nova versão fica sem valor). Valores são textos exatamente como digitados, no máximo 50
+        caracteres. Chaves aceitas são weight, height, calfCircumference, calfSide, armCircumference, armSide,
+        handgrip, dysphagia, indirectCalorimetry, energyExpenditure e energySource. Os campos calfSide e armSide
+        aceitam apenas Direito ou Esquerdo. Mesma regra de acesso de getPaciente.
+      parameters:
+        - $ref: "#/components/parameters/PacienteId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SalvarAvaliacaoNutricionalRequest"
+      responses:
+        "200":
+          description: Versão gravada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AvaliacaoNutricional"
+        "400":
+          description: Chave desconhecida, valor vazio ou longo demais, ou membro inválido
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/PacienteNaoEncontrado"
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  parameters:
+    PacienteId:
+      name: pacienteId
+      in: path
+      required: true
+      schema:
+        type: integer
+        format: int64
+  responses:
+    Error:
+      description: Erro
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    PacienteNaoEncontrado:
+      description: Paciente inexistente ou de hospital sem vínculo aprovado do profissional
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+  schemas:
+    ErrorResponse:
+      type: object
+      required: [message, timestamp]
+      properties:
+        message:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+    SalvarAvaliacaoNutricionalRequest:
+      type: object
+      required: [values]
+      properties:
+        values:
+          type: object
+          description: Valor digitado por chave de item (só campos preenchidos).
+          additionalProperties:
+            type: string
+            minLength: 1
+            maxLength: 50
+    AvaliacaoNutricional:
+      type: object
+      required: [values, previous, author, at]
+      properties:
+        values:
+          type: object
+          additionalProperties:
+            type: string
+        previous:
+          type: object
+          description: Valor anterior de cada item alterado, com a data em que foi gravado.
+          additionalProperties:
+            type: object
+            required: [value, at]
+            properties:
+              value:
+                type: string
+              at:
+                type: string
+                format: date-time
+        author:
+          type: string
+        at:
+          type: string
+          format: date-time

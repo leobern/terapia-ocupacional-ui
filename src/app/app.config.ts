@@ -58,6 +58,7 @@ import { HttpPasswordResetGateway } from './features/password-recovery/http-pass
 import { PasswordResetGateway } from './features/password-recovery/password-reset-gateway';
 import { ApiHypothesisWriter } from './features/patient-hub/api-hypothesis-writer';
 import { ApiPatientHubSource } from './features/patient-hub/api-patient-hub-source';
+import { ApiAssessmentSource } from './features/patient-hub/assessment/api-assessment-source';
 import { AssessmentAiStructurer } from './features/patient-hub/assessment/assessment-ai-structurer';
 import { AssessmentSource } from './features/patient-hub/assessment/assessment-source';
 import { AssessmentWriter } from './features/patient-hub/assessment/assessment-writer';
@@ -215,8 +216,9 @@ export const appConfig: ApplicationConfig = {
     ProvisionalClinicalAssessmentSource,
     { provide: ClinicalAssessmentSource, useClass: ApiClinicalAssessmentSource },
     { provide: ClinicalItemHistorySource, useClass: ProvisionalClinicalItemHistorySource },
-    { provide: AssessmentSource, useExisting: ProvisionalAssessmentSource },
-    { provide: AssessmentWriter, useExisting: ProvisionalAssessmentSource },
+    ApiAssessmentSource,
+    { provide: AssessmentSource, useExisting: ApiAssessmentSource },
+    { provide: AssessmentWriter, useExisting: ApiAssessmentSource },
     ProvisionalDailyRecordSource,
     { provide: DailyRecordSource, useExisting: ProvisionalDailyRecordSource },
     { provide: DailyRecordWriter, useExisting: ProvisionalDailyRecordSource },
