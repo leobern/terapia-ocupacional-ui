@@ -1,0 +1,131 @@
+openapi: 3.0.3
+info:
+  title: Medidas API
+  version: 1.0.0
+  description: >
+    Série de medidas do paciente para os gráficos de Peso e IMC do Hub. Somente leitura, derivada das versões
+    imutáveis da avaliação clínica: cada gravação com peso é uma medição. O IMC é calculado no servidor como
+    peso / altura em metros ao quadrado, com a altura da mesma versão, e é omitido (null) quando faltar peso
+    ou altura. Nenhuma altura é inventada ou herdada de outra versão. O filtro de período (Internação, 30 dias,
+    7 dias) é da UI, que recebe a internação inteira.
+servers:
+  - url: /
+security:
+  - bearerAuth: []
+paths:
+  /api/v1/pacientes/{pacienteId}/medidas:
+    get:
+      operationId: getMedidasPaciente
+      x-implemented: true
+      summary: Série de peso e IMC do paciente na internação atual
+      description: >
+        Devolve sempre 200, inclusive sem medições (points vazio), porque a resposta também carrega a faixa
+        ideal do IMC e os dados da internação. Os pontos vêm em ordem cronológica crescente (mais antigo
+        primeiro) e cobrem desde o dia da admissão da internação mais recente do paciente; sem internação
+        cadastrada, devolve todas as medições. Acesso exige vínculo APROVADO com o hospital do paciente;
+        inexistente e de outro hospital respondem ambos 404.
+      parameters:
+        - $ref: "#/components/parameters/PacienteId"
+      responses:
+        "200":
+          description: Série de medidas
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Medidas"
+        "401":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/PacienteNaoEncontrado"
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  parameters:
+    PacienteId:
+      name: pacienteId
+      in: path
+      required: true
+      schema:
+        type: integer
+        format: int64
+  responses:
+    Error:
+      description: Erro
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    PacienteNaoEncontrado:
+      description: Paciente inexistente ou de hospital sem vínculo aprovado do profissional
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+  schemas:
+    ErrorResponse:
+      type: object
+      required: [message, timestamp]
+      properties:
+        message:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+    Medidas:
+      type: object
+      required: [admissionDate, admissionWeightKg, bmiIdealRange, points]
+      properties:
+        admissionDate:
+          type: string
+          format: date
+          nullable: true
+          description: Data de admissão hospitalar da internação mais recente; null sem internação
+        admissionWeightKg:
+          type: number
+          nullable: true
+          description: Peso na internação (primeira medição da série); null quando não há medição
+        bmiIdealRange:
+          $ref: "#/components/schemas/FaixaIdeal"
+        points:
+          type: array
+          description: Medições em ordem cronológica crescente
+          items:
+            $ref: "#/components/schemas/PontoMedida"
+    FaixaIdeal:
+      type: object
+      required: [min, max]
+      properties:
+        min:
+          type: number
+          description: Início da faixa ideal do IMC em kg/m2 (18,5)
+        max:
+          type: number
+          description: Fim da faixa ideal do IMC em kg/m2 (24,9)
+    PontoMedida:
+      type: object
+      required: [at, weightKg, heightCm, bmi, source]
+      properties:
+        at:
+          type: string
+          format: date-time
+          description: Data e hora da gravação, do servidor
+        weightKg:
+          type: number
+          description: Peso em kg
+        heightCm:
+          type: number
+          nullable: true
+          description: Altura em cm da mesma versão; null quando não informada
+        bmi:
+          type: number
+          nullable: true
+          description: IMC em kg/m2 com uma casa decimal; null sem altura
+        source:
+          $ref: "#/components/schemas/OrigemMedida"
+    OrigemMedida:
+      type: string
+      description: Origem da medição. Hoje só a avaliação clínica grava peso.
+      enum: [AVALIACAO_CLINICA]
