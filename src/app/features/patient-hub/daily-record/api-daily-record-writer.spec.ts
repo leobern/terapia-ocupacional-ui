@@ -75,6 +75,7 @@ describe('ApiDailyRecordWriter', () => {
       text: '',
     });
     put.flush(dto({ origin: 'MANUAL', parameters: [{ parameterId: 'glycemia', value: 130 }], text: '' }));
+
     expect((await result).length).toBe(1);
   });
 

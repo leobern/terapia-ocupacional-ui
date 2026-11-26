@@ -44,6 +44,8 @@ import { ClinicalTilesComponent } from './clinical-assessment/clinical-tiles.com
 import { DailyRecordEditorComponent } from './daily-record/daily-record-editor.component';
 import { DiagnosisEditorComponent } from './diagnosis-editor/diagnosis-editor.component';
 import { PatientEvolutionsComponent } from './evolutions/patient-evolutions.component';
+import { MeasuresSource } from './measures-source';
+import { buildMeasuresView, type MeasuresView } from './measures-view';
 import { PatientRecordRequest, RecipientSpec } from './messages/patient-message.models';
 import { PatientMessageSource } from './messages/patient-message-source';
 import { MoveBedAction } from './move-bed/move-bed.action';
@@ -58,7 +60,6 @@ import { PrescriptionEditorComponent } from './prescription/prescription-editor.
 import { PrescriptionSource } from './prescription/prescription-source';
 import { PrescriptionSummaryComponent } from './prescription/prescription-summary.component';
 import { PriorStaysBoxComponent } from './prior-stays-box/prior-stays-box.component';
-import { PROVISIONAL_BMI, PROVISIONAL_WEIGHT } from './provisional-measures';
 
 type HubStatus = 'loading' | 'ready' | 'not-found' | 'error' | 'revoked';
 
@@ -229,8 +230,8 @@ export class PatientHubComponent implements OnInit {
       { label: 'Meta proteica', unit: 'g/dia', value: n(a.targets.proteinPerDay) },
     ];
   });
-  protected readonly weightSeries = PROVISIONAL_WEIGHT;
-  protected readonly bmiSeries = PROVISIONAL_BMI;
+  /** Gráficos de Peso e IMC do backend; `null` até a primeira leitura (sem medições, os gráficos não aparecem). */
+  protected readonly measures = signal<MeasuresView | null>(null);
   protected readonly hospitalName = computed(() => this.context.selected()?.name ?? '');
   /** Textos do cabeçalho; `null` enquanto o perfil não carregou. */
   protected readonly header = computed(() => {
@@ -264,6 +265,7 @@ export class PatientHubComponent implements OnInit {
   private readonly moveBed = inject(MoveBedAction);
   private readonly changeLocation = inject(ChangeLocationAction);
   private readonly source = inject(PatientHubSource);
+  private readonly measuresSource = inject(MeasuresSource);
   private readonly prescriptions = inject(PrescriptionSource);
   private readonly messages = inject(PatientMessageSource);
   private readonly adequacyService = inject(DailyAdequacyService);
@@ -342,6 +344,21 @@ export class PatientHubComponent implements OnInit {
     void this.load();
     void this.reloadPrescription();
     void this.reloadResults();
+    void this.reloadMeasures();
+  }
+
+  /** Recarrega as medidas dos gráficos; se falhar, mantém o que já está na tela. */
+  async reloadMeasures(): Promise<void> {
+    const id = this.patientId();
+
+    if (id === null) {
+      return;
+    }
+    try {
+      this.measures.set(buildMeasuresView(await this.measuresSource.load(id), this.now()));
+    } catch {
+      // mantém os gráficos já exibidos
+    }
   }
 
   /** Recarrega o aporte do dia; se falhar (ou offline), mantém o que já está na tela. */
@@ -457,6 +474,7 @@ export class PatientHubComponent implements OnInit {
           patientId: id,
           saved: (): void => {
             this.clinicalVersion.update(v => v + 1);
+            void this.reloadMeasures();
             void this.refreshFlow();
           },
         },

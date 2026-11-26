@@ -43,6 +43,7 @@ import { DailyRecordSource } from './daily-record/daily-record-source';
 import { DailyRecordWriter } from './daily-record/daily-record-writer';
 import { EvolutionAiStructurer } from './daily-record/evolution-ai-structurer';
 import { ParameterAiStructurer } from './daily-record/parameter-ai-structurer';
+import { MeasuresSource } from './measures-source';
 import { ObservationFollowUpPort } from './messages/observation-follow-up.port';
 import { PatientRecordRequest } from './messages/patient-message.models';
 import { MessageAiAssistant, PatientMessageSource, PatientTeamSource } from './messages/patient-message-source';
@@ -67,6 +68,7 @@ import { PlanSource } from './plan/plan-source';
 import { RefeedingRiskSource } from './plan/refeeding-risk-source';
 import { Prescription } from './prescription/prescription.models';
 import { PrescriptionSource } from './prescription/prescription-source';
+import { ProvisionalMeasuresSource } from './provisional-measures-source';
 
 const PROFILE: PatientHubProfile = {
   bed: '35',
@@ -315,6 +317,7 @@ async function setup(
       { provide: FollowUpClosureSource, useExisting: ProvisionalFollowUpClosureSource },
       { provide: FollowUpClosureWriter, useExisting: ProvisionalFollowUpClosureSource },
       { provide: PriorStaysSource, useValue: priorStays },
+      { provide: MeasuresSource, useClass: ProvisionalMeasuresSource },
       { provide: PriorStaysSynthesizer, useValue: priorSynth },
       {
         provide: ProfessionalProfileReader,
@@ -1148,6 +1151,31 @@ describe('PatientHubComponent', () => {
       inputs.saved();
 
       expect(hub.clinicalVersion()).toBe(before + 1);
+    });
+
+    const openClinical = async (): Promise<unknown> => {
+      await clickLabel(f, 'Editar avaliação clínica');
+
+      return TestBed.inject(AiAssistantService).activeAction()?.editor?.inputs;
+    };
+
+    it('os gráficos de Peso e IMC vêm da fonte de medidas; salvar a avaliação clínica lê de novo e erro mantém os gráficos', async () => {
+      const hub = f.componentInstance as unknown as {
+        measures(): { weight: { caption: string } | null } | null;
+      };
+      const load = spyOn(TestBed.inject(MeasuresSource), 'load').and.callThrough();
+      const inputs = (await openClinical()) as { saved: () => void };
+
+      expect(hub.measures()?.weight?.caption).toContain('6 medições');
+      expect(el().querySelectorAll('app-measure-chart').length).toBe(2);
+      inputs.saved();
+      expect(load).toHaveBeenCalledTimes(1);
+
+      load.and.rejectWith(new Error('x'));
+      inputs.saved();
+      await f.whenStable();
+
+      expect(hub.measures()?.weight?.caption).toContain('6 medições');
     });
 
     it('abrindo com ?data= de um dia anterior, o paciente fica em somente leitura: com os dados e sem botões de editar', async () => {

@@ -55,11 +55,13 @@ describe('ApiDailyEvolutionSource', () => {
     const ok = source.load('42', '2026-11-25');
 
     http.expectOne(dayUrl('2026-11-25')).flush(dto('2026-11-25'));
+
     expect((await ok)?.author).toBe('Dra. Ana');
 
     const empty = source.load('42', '2026-11-24');
 
     http.expectOne(dayUrl('2026-11-24')).flush(null, noContent);
+
     expect(await empty).toBeNull();
 
     const failed = source.load('42', '2026-11-23');
@@ -72,6 +74,7 @@ describe('ApiDailyEvolutionSource', () => {
     const result = source.load('42', '2026-11-25');
 
     http.expectOne(dayUrl('2026-11-25')).flush(dto('2026-11-25', { text: '' }));
+
     expect(await result).toBeNull();
   });
 
@@ -160,6 +163,7 @@ describe('ApiDailyEvolutionSource', () => {
   it('ids de exemplo ficam no provisório, sem HTTP', async () => {
     expect(await source.load('p1', '2026-11-25')).toBeNull();
     await source.save({ ...base, patientId: 'p1' });
+
     expect((await source.load('p1', '2026-11-25'))?.text).toBe('Novo texto');
     expect((await source.list('p1', ['2026-11-25'])).length).toBe(1);
   });

@@ -31,6 +31,7 @@ describe('ProvisionalDailyEvolutionSource', () => {
       '2026-11-20',
       '2026-11-18',
     ]);
+
     expect(await source.list('p1', [])).toEqual([]);
 
     const original = source.load.bind(source);
@@ -38,6 +39,7 @@ describe('ProvisionalDailyEvolutionSource', () => {
     spyOn(source, 'load').and.callFake((id, day) =>
       day === '2026-11-19' ? Promise.reject(new Error('x')) : original(id, day),
     );
+
     expect((await source.list('p1', ['2026-11-20', '2026-11-19'])).length).toBe(1);
   });
 

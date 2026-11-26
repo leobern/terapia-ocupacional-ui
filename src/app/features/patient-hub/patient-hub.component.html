@@ -190,35 +190,29 @@
                     class="hub__diag"
                     [class.hub__diag--editing]="clinicalEditing()"
                   >
-                    <app-measure-chart
-                      title="Peso"
-                      unit="kg"
-                      caption="Medido hoje, 28/05 · 6 medições"
-                      [series]="weightSeries"
-                      [badge]="{
-                        icon: 'arrow-up',
-                        text: '+2,5 kg desde 01/05',
-                      }"
-                      [reference]="{
-                        label: 'Internação · 48,5 kg',
-                        value: 48.5,
-                      }"
-                    />
-                    <app-measure-chart
-                      title="IMC"
-                      unit="kg/m²"
-                      caption="Altura 1,63 m · faixa ideal 18,5–24,9"
-                      [series]="bmiSeries"
-                      [badge]="{
-                        icon: 'check',
-                        text: 'Na faixa ideal desde 10/05',
-                      }"
-                      [idealRange]="[18.5, 24.9]"
-                      [reference]="{
-                        label: '18,5 · início da faixa ideal',
-                        value: 18.5,
-                      }"
-                    />
+                    @if (measures(); as m) {
+                      @if (m.weight; as chart) {
+                        <app-measure-chart
+                          title="Peso"
+                          unit="kg"
+                          [caption]="chart.caption"
+                          [series]="chart.series"
+                          [badge]="chart.badge"
+                          [reference]="chart.reference"
+                        />
+                      }
+                      @if (m.bmi; as chart) {
+                        <app-measure-chart
+                          title="IMC"
+                          unit="kg/m²"
+                          [caption]="chart.caption"
+                          [series]="chart.series"
+                          [badge]="chart.badge"
+                          [idealRange]="chart.idealRange"
+                          [reference]="chart.reference"
+                        />
+                      }
+                    }
                     <app-clinical-tiles
                       [patientId]="p.id"
                       [refreshKey]="clinicalVersion()"

@@ -53,6 +53,7 @@ describe('ApiDailyRecordSource', () => {
 
     http.expectOne(listUrl).flush({ message: 'x' }, { status: 404, statusText: 'x' });
     await expectAsync(failed).toBeRejected();
+
     expect(await source.loadEntries('p1')).toEqual([]);
   });
 });

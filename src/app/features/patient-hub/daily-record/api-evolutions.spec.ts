@@ -32,6 +32,7 @@ describe('mapeamentos de evoluções', () => {
       reevaluations,
       text: 'Estável.',
     });
+
     expect(toDailyEvolution(dto({ text: '  ' }))).toBeNull();
     expect(toDailyEvolution(dto({ reevaluations, text: '' }))?.text).toBe('');
   });
@@ -88,11 +89,13 @@ describe('EvolutionsApi', () => {
     const ok = api.getDay('7', '2026-11-25');
 
     http.expectOne('/api/v1/pacientes/7/evolucoes/2026-11-25').flush(dto());
+
     expect((await ok)?.text).toBe('Estável.');
 
     const empty = api.getDay('7', '2026-11-24');
 
     http.expectOne('/api/v1/pacientes/7/evolucoes/2026-11-24').flush(null, noContent);
+
     expect(await empty).toBeNull();
   });
 
@@ -104,6 +107,7 @@ describe('EvolutionsApi', () => {
     expect(req.request.method).toBe('PUT');
     expect(req.request.body).toEqual(body);
     req.flush(dto());
+
     expect((await result).author).toBe('Dra. Ana');
   });
 
@@ -114,6 +118,7 @@ describe('EvolutionsApi', () => {
     expect(req.request.params.get('limit')).toBe('30');
     expect(req.request.params.has('before')).toBe(false);
     req.flush({ items: [], nextBefore: null });
+
     expect((await first).items).toEqual([]);
 
     const second = api.listPage('7', 5, '2026-11-01');

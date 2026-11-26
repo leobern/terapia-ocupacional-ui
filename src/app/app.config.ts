@@ -57,6 +57,7 @@ import { ProvisionalAnnouncementAssistant } from './features/notifications/assis
 import { HttpPasswordResetGateway } from './features/password-recovery/http-password-reset-gateway';
 import { PasswordResetGateway } from './features/password-recovery/password-reset-gateway';
 import { ApiHypothesisWriter } from './features/patient-hub/api-hypothesis-writer';
+import { ApiMeasuresSource } from './features/patient-hub/api-measures-source';
 import { ApiPatientHubSource } from './features/patient-hub/api-patient-hub-source';
 import { ApiAssessmentSource } from './features/patient-hub/assessment/api-assessment-source';
 import { AssessmentAiStructurer } from './features/patient-hub/assessment/assessment-ai-structurer';
@@ -84,6 +85,7 @@ import { ProvisionalDailyEvolutionSource } from './features/patient-hub/daily-re
 import { ProvisionalDailyRecordSource } from './features/patient-hub/daily-record/provisional-daily-record-source';
 import { ProvisionalEvolutionAiStructurer } from './features/patient-hub/daily-record/provisional-evolution-ai-structurer';
 import { ProvisionalParameterAiStructurer } from './features/patient-hub/daily-record/provisional-parameter-ai-structurer';
+import { MeasuresSource } from './features/patient-hub/measures-source';
 import { ObservationFollowUpPort } from './features/patient-hub/messages/observation-follow-up.port';
 import { ObservationFollowUpApiService } from './features/patient-hub/messages/observation-follow-up-api.service';
 import {
@@ -122,6 +124,7 @@ import { RefeedingRiskSource } from './features/patient-hub/plan/refeeding-risk-
 import { ApiPrescriptionSource } from './features/patient-hub/prescription/api-prescription-source';
 import { PrescriptionSource } from './features/patient-hub/prescription/prescription-source';
 import { ProvisionalPrescriptionSource } from './features/patient-hub/prescription/provisional-prescription-source';
+import { ProvisionalMeasuresSource } from './features/patient-hub/provisional-measures-source';
 import {
   ProvisionalHypothesisSynthesizer,
   ProvisionalHypothesisWriter,
@@ -238,6 +241,8 @@ export const appConfig: ApplicationConfig = {
     { provide: PatientTeamSource, useClass: PatientTeamApiService },
     { provide: ObservationFollowUpPort, useClass: ObservationFollowUpApiService },
     { provide: MessageAiAssistant, useClass: ProvisionalMessageAiAssistant },
+    ProvisionalMeasuresSource,
+    { provide: MeasuresSource, useClass: ApiMeasuresSource },
     ProvisionalPlanSource,
     { provide: PlanSource, useClass: ApiPlanSource },
     { provide: PrescriptionSource, useClass: ApiPrescriptionSource },
