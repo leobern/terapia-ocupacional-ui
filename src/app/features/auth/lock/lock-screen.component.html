@@ -32,13 +32,13 @@
         type="password"
         name="password"
         autocomplete="current-password"
-        [attr.aria-invalid]="passwordError() ? 'true' : null"
-        [attr.aria-describedby]="passwordError() ? 'lock-password-error' : null"
+        [attr.aria-invalid]="passwordIssue() === 'invalid' ? 'true' : null"
+        [attr.aria-describedby]="passwordIssue() ? 'lock-password-error' : null"
         (input)="onPasswordInput($event)"
       />
-      @if (passwordError()) {
+      @if (passwordIssue(); as issue) {
         <p id="lock-password-error" class="lock__error" role="alert">
-          {{ i18n.t('lock.passwordError') }}
+          {{ i18n.t(passwordMessageKey[issue]) }}
         </p>
       }
       <app-button

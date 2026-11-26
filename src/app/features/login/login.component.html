@@ -1,43 +1,60 @@
 <main class="login">
+  <div class="login__logo" aria-hidden="true">
+    <app-icon-logo state="default" />
+  </div>
   <h1 class="login__title">{{ i18n.t('login.title') }}</h1>
+  @if (notice(); as message) {
+    <p class="login__notice" role="status">{{ message }}</p>
+  }
   <form
     class="login__form"
     novalidate
     (submit)="$event.preventDefault(); submit()"
   >
-    <label class="login__label">
-      {{ i18n.t('login.email') }}
+    <div class="login__group">
+      <label class="login__label" for="login-email">{{
+        i18n.t('login.email')
+      }}</label>
       <input
+        id="login-email"
         class="login__field"
         type="email"
         name="email"
         autocomplete="username"
+        inputmode="email"
+        autocapitalize="none"
+        spellcheck="false"
         [value]="email()"
         [attr.aria-invalid]="error() === 'validation' ? 'true' : null"
+        [attr.aria-describedby]="error() ? 'login-error' : null"
         (input)="onInput('email', $event)"
-        (keydown.enter)="submit()"
       />
-    </label>
-    <label class="login__label">
-      {{ i18n.t('login.password') }}
+    </div>
+    <div class="login__group">
+      <label class="login__label" for="login-password">{{
+        i18n.t('login.password')
+      }}</label>
       <input
+        id="login-password"
         class="login__field"
         type="password"
         name="password"
         autocomplete="current-password"
         [value]="password()"
         [attr.aria-invalid]="error() === 'validation' ? 'true' : null"
+        [attr.aria-describedby]="error() ? 'login-error' : null"
         (input)="onInput('password', $event)"
-        (keydown.enter)="submit()"
       />
-    </label>
-    <p class="login__error" role="alert">{{ errorMessage() }}</p>
+    </div>
+    <p id="login-error" class="login__error" role="alert">
+      {{ errorMessage() }}
+    </p>
     <app-button
+      htmlType="submit"
       [fullWidth]="true"
       [disabled]="loading() || locked()"
       [label]="loading() ? i18n.t('login.submitting') : i18n.t('login.submit')"
       [attr.aria-busy]="loading()"
-      (click)="submit()"
     />
     <a class="login__link" routerLink="/forgot-password">{{
       i18n.t('login.forgotPassword')

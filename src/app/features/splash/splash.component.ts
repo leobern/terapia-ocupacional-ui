@@ -1,9 +1,10 @@
 import { ChangeDetectionStrategy, Component, DestroyRef, inject, OnInit, signal } from '@angular/core';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 
 import { ButtonComponent } from '../../shared/components/button/button.component';
 import { IconLogoComponent } from '../../shared/components/icon-logo/icon-logo.component';
 import { I18nService } from '../../shared/services/i18n.service';
+import { safeReturnUrl } from '../auth/return-url';
 import { TutorialStateStore } from '../tutorial/tutorial-state';
 import { WelcomeSource } from '../welcome/welcome-source';
 import { decideDestination } from './splash-destination';
@@ -35,6 +36,7 @@ export class SplashComponent implements OnInit {
   private readonly tutorial = inject(TutorialStateStore);
   private readonly router = inject(Router);
   private readonly welcome = inject(WelcomeSource);
+  private readonly route = inject(ActivatedRoute);
   private attempt = 0;
   private timers: ReturnType<typeof setTimeout>[] = [];
 
@@ -103,7 +105,8 @@ export class SplashComponent implements OnInit {
   /**
    * Resolve o destino. Com destino `/home`, as boas-vindas ainda não vistas (US-001-3-01) têm
    * prioridade; depois, o tutorial pendente (US-001-3-02). Falha em qualquer leitura nunca
-   * bloqueia o médico: segue ao Painel.
+   * bloqueia o médico: segue ao Painel. Se o login veio de uma rota pedida (`returnUrl`), ela substitui o
+   * Painel quando nada mais (boas-vindas, tutorial, vínculos, bloqueio) tem prioridade.
    */
   private async navigate(attempt: number): Promise<void> {
     const state = this.reader.readLocal();
@@ -114,6 +117,8 @@ export class SplashComponent implements OnInit {
         destination = '/welcome';
       } else if (await this.tutorialPending()) {
         destination = decideDestination(state, true);
+      } else {
+        destination = safeReturnUrl(this.route.snapshot.queryParamMap.get('returnUrl')) ?? destination;
       }
     }
     if (attempt === this.attempt) {

@@ -121,4 +121,24 @@ describe('sessionAuthInterceptor', () => {
     expect(failed.calls.mostRecent().args[0].status).toBe(500);
     expect(renew).not.toHaveBeenCalled();
   });
+
+  it('com só o refresh token renova antes de enviar', async () => {
+    localStorage.setItem('session.refreshToken', 'r1');
+    http.get(url).subscribe();
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(renew).toHaveBeenCalledWith();
+    expect(ctrl.expectOne(url).request.headers.get('Authorization')).toBe('Bearer novo');
+  });
+
+  it('se a renovação falha, a chamada segue sem token', async () => {
+    localStorage.setItem('session.refreshToken', 'r1');
+    renew.and.rejectWith(new Error('x'));
+    http.get(url).subscribe({ error: () => undefined });
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(ctrl.expectOne(url).request.headers.has('Authorization')).toBeFalse();
+  });
 });

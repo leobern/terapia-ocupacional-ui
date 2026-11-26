@@ -4,9 +4,16 @@ import { Router } from '@angular/router';
 import { ButtonComponent } from '../../../shared/components/button/button.component';
 import { IconLogoComponent } from '../../../shared/components/icon-logo/icon-logo.component';
 import { I18nService } from '../../../shared/services/i18n.service';
-import { AccountPasswordVerifier } from './account-password-verifier';
+import { AccountPasswordVerifier, PasswordCheck } from './account-password-verifier';
 import { BiometricAuth } from './biometric-auth';
 import { InactivityLockService } from './inactivity-lock.service';
+
+/** Chave de texto de cada motivo de recusa da senha. */
+const PASSWORD_MESSAGE_KEYS = {
+  invalid: 'lock.passwordError',
+  locked: 'lock.passwordLocked',
+  unavailable: 'lock.passwordUnavailable',
+} as const;
 
 /** RN-04: falhas consecutivas de biometria antes de pedir a senha. */
 export const MAX_BIOMETRIC_FAILURES = 3;
@@ -27,9 +34,11 @@ export class LockScreenComponent implements OnInit {
   protected readonly i18n = inject(I18nService);
   /** `checking` enquanto se descobre se há biometria; depois `biometric` ou `password`. */
   protected readonly mode = signal<'checking' | 'biometric' | 'password'>('checking');
-  protected readonly passwordError = signal(false);
+  /** Motivo da recusa da senha (`invalid`, `locked` ou `unavailable`); `null` sem erro. */
+  protected readonly passwordIssue = signal<Exclude<PasswordCheck, 'ok'> | null>(null);
   protected readonly biometricFailed = signal(false);
   protected readonly busy = signal(false);
+  protected readonly passwordMessageKey = PASSWORD_MESSAGE_KEYS;
 
   private readonly biometric = inject(BiometricAuth);
   private readonly verifier = inject(AccountPasswordVerifier);
@@ -73,7 +82,7 @@ export class LockScreenComponent implements OnInit {
 
   protected onPasswordInput(event: Event): void {
     this.password = (event.target as HTMLInputElement).value;
-    this.passwordError.set(false);
+    this.passwordIssue.set(null);
   }
 
   protected async submitPassword(event?: Event): Promise<void> {
@@ -84,14 +93,14 @@ export class LockScreenComponent implements OnInit {
     }
 
     this.busy.set(true);
-    const ok = await this.verifier.verify(this.password).catch(() => false);
+    const check = await this.verifier.verify(this.password).catch((): PasswordCheck => 'unavailable');
 
     this.busy.set(false);
 
-    if (ok) {
+    if (check === 'ok') {
       await this.unlock();
     } else {
-      this.passwordError.set(true);
+      this.passwordIssue.set(check);
     }
   }
 

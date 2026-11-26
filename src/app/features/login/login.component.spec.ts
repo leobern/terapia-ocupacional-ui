@@ -1,5 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { provideRouter, Router } from '@angular/router';
+import { ActivatedRoute, convertToParamMap, provideRouter, Router } from '@angular/router';
 
 import { LocalSessionStore } from '../auth/local-session-store';
 import { AuthGateway, LoginResult } from './auth-gateway';
@@ -109,7 +109,7 @@ describe('LoginComponent', () => {
     expect(button().disabled).toBeTrue();
     expect(button().textContent).toContain('Entrando');
 
-    input('password').dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
+    el.querySelector('form')?.dispatchEvent(new Event('submit'));
     (fixture.componentInstance as unknown as { submit(): void }).submit();
 
     expect(gateway.login).toHaveBeenCalledTimes(1);
@@ -125,7 +125,8 @@ describe('LoginComponent', () => {
     fill('a@b.com', 'wrong');
     await submit();
     fill('a@b.com', 'again');
-    input('password').dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
+    // Enter num campo envia o formulário pelo botão submit (envio nativo).
+    el.querySelector('form')?.dispatchEvent(new Event('submit'));
     fixture.detectChanges();
 
     expect(gateway.login).toHaveBeenCalledTimes(2);
@@ -137,7 +138,7 @@ describe('LoginComponent', () => {
 
     beforeEach(() => {
       localStorage.clear();
-      navigate = spyOn(TestBed.inject(Router), 'navigateByUrl').and.resolveTo(true);
+      navigate = spyOn(TestBed.inject(Router), 'navigate').and.resolveTo(true);
       gateway.login.and.resolveTo({
         kind: 'success',
         tokens: { accessToken: 'acc', refreshToken: 'ref' },
@@ -161,7 +162,7 @@ describe('LoginComponent', () => {
       fill('a@b.com', 'secret');
       await submit();
 
-      expect(navigate).toHaveBeenCalledWith('/splash', { replaceUrl: true });
+      expect(navigate).toHaveBeenCalledWith(['/splash'], { queryParams: { returnUrl: null }, replaceUrl: true });
     });
 
     it('does not open a session on failed login', async () => {
@@ -171,6 +172,52 @@ describe('LoginComponent', () => {
 
       expect(TestBed.inject(LocalSessionStore).isValid()).toBeFalse();
       expect(navigate).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('rota pedida e aviso', () => {
+    it('leva a rota pedida à splash', async () => {
+      localStorage.clear();
+      TestBed.resetTestingModule();
+      TestBed.configureTestingModule({
+        imports: [LoginComponent],
+        providers: [
+          provideRouter([]),
+          { provide: AuthGateway, useValue: gateway },
+          {
+            provide: ActivatedRoute,
+            useValue: { snapshot: { queryParamMap: convertToParamMap({ returnUrl: '/patients/3' }) } },
+          },
+        ],
+      });
+      const navigate = spyOn(TestBed.inject(Router), 'navigate').and.resolveTo(true);
+
+      gateway.login.and.resolveTo({ kind: 'success', tokens: { accessToken: 'a', refreshToken: 'r' } });
+      fixture = TestBed.createComponent(LoginComponent);
+      el = fixture.nativeElement as HTMLElement;
+      fixture.detectChanges();
+      fill('a@b.com', 'secret');
+      await submit();
+
+      expect(navigate).toHaveBeenCalledWith(['/splash'], {
+        queryParams: { returnUrl: '/patients/3' },
+        replaceUrl: true,
+      });
+      localStorage.clear();
+    });
+
+    it('mostra o aviso de sessão expirada vindo da navegação', () => {
+      history.replaceState({ notice: 'Sua sessão expirou. Faça login novamente.' }, '');
+      const again = TestBed.createComponent(LoginComponent);
+
+      again.detectChanges();
+      history.replaceState(null, '');
+
+      expect((again.nativeElement as HTMLElement).querySelector('[role="status"]')?.textContent).toContain('expirou');
+    });
+
+    it('sem aviso não renderiza o parágrafo de status', () => {
+      expect(el.querySelector('[role="status"]')).toBeNull();
     });
   });
 

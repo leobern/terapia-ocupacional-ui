@@ -56,6 +56,8 @@
     "message": "Por segurança, o app foi bloqueado após 30 minutos sem uso.",
     "passwordError": "Senha incorreta. Tente novamente.",
     "passwordLabel": "Senha da conta",
+    "passwordLocked": "Muitas tentativas. Tente novamente mais tarde.",
+    "passwordUnavailable": "Sem conexão. Conecte-se para desbloquear com a senha da conta.",
     "title": "App bloqueado",
     "unlock": "Desbloquear",
     "useBiometric": "Usar biometria"

@@ -48,7 +48,9 @@ describe('LockScreenComponent', () => {
     available = true;
     navigateByUrl = jasmine.createSpy('navigateByUrl').and.resolveTo(true);
     unlock = jasmine.createSpy('unlock');
-    verify = jasmine.createSpy('verify').and.callFake((p: string) => Promise.resolve(p === 'correta'));
+    verify = jasmine
+      .createSpy('verify')
+      .and.callFake((p: string) => Promise.resolve(p === 'correta' ? 'ok' : 'invalid'));
     authenticate = jasmine.createSpy('authenticate').and.resolveTo(false);
     TestBed.configureTestingModule({
       providers: [
@@ -160,6 +162,26 @@ describe('LockScreenComponent', () => {
     expect(el.querySelector('[role="alert"]')).not.toBeNull();
   });
 
+  it('tells a locked account apart from a wrong password', async () => {
+    available = false;
+    verify.and.resolveTo('locked');
+    await create();
+    await submit('x');
+
+    expect(el.querySelector('[role="alert"]')?.textContent).toContain('Muitas tentativas');
+    expect(el.querySelector('input')?.getAttribute('aria-invalid')).toBeNull();
+  });
+
+  it('tells that there is no connection to check the password', async () => {
+    available = false;
+    verify.and.resolveTo('unavailable');
+    await create();
+    await submit('x');
+
+    expect(el.querySelector('[role="alert"]')?.textContent).toContain('Sem conexão');
+    expect(unlock).not.toHaveBeenCalled();
+  });
+
   it('falls back to the password when the availability check fails', async () => {
     const biometric = TestBed.inject(BiometricAuth);
 
@@ -171,16 +193,16 @@ describe('LockScreenComponent', () => {
 
   it('ignores a second attempt while one is running', async () => {
     available = false;
-    const release = { resolve: (_: boolean): void => undefined };
+    const release = { resolve: (_: string): void => undefined };
 
-    verify.and.returnValue(new Promise<boolean>(r => (release.resolve = r)));
+    verify.and.returnValue(new Promise<string>(r => (release.resolve = r)));
     await create();
     typePassword('x');
     const form = el.querySelector('form') as HTMLFormElement;
 
     form.dispatchEvent(new Event('submit'));
     form.dispatchEvent(new Event('submit'));
-    release.resolve(false);
+    release.resolve('invalid');
     await flush();
 
     expect(verify).toHaveBeenCalledTimes(1);

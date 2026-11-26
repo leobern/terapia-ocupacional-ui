@@ -1,5 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { provideRouter, Router } from '@angular/router';
+import { ActivatedRoute, convertToParamMap, provideRouter, Router } from '@angular/router';
 
 import { TutorialStateStore, TutorialStatus } from '../tutorial/tutorial-state';
 import { WelcomeSource, WelcomeStatus } from '../welcome/welcome-source';
@@ -149,6 +149,38 @@ describe('SplashComponent', () => {
     await tick(SPLASH_MIN_DISPLAY_MS);
 
     expect(navigate).toHaveBeenCalledWith('/home', { replaceUrl: true });
+  });
+
+  describe('returnUrl (rota pedida antes do login)', () => {
+    function openWith(returnUrl: string): void {
+      (TestBed.inject(ActivatedRoute) as { snapshot: unknown }).snapshot = {
+        queryParamMap: convertToParamMap({ returnUrl }),
+      };
+      reader.state = { hasApprovedHospitalLink: true, isLocked: false, isSessionValid: true };
+      open();
+    }
+
+    it('vai à rota pedida quando o destino seria o Painel', async () => {
+      openWith('/patients/7');
+      await tick(SPLASH_MIN_DISPLAY_MS);
+
+      expect(navigate).toHaveBeenCalledWith('/patients/7', { replaceUrl: true });
+    });
+
+    it('ignora destino externo', async () => {
+      openWith('//evil.example');
+      await tick(SPLASH_MIN_DISPLAY_MS);
+
+      expect(navigate).toHaveBeenCalledWith('/home', { replaceUrl: true });
+    });
+
+    it('não passa na frente do tutorial pendente', async () => {
+      tutorial.status = Promise.resolve('PENDENTE');
+      openWith('/patients/7');
+      await tick(SPLASH_MIN_DISPLAY_MS);
+
+      expect(navigate).toHaveBeenCalledWith('/tutorial', { replaceUrl: true });
+    });
   });
 
   it('welcome: does not consult the welcome state without a session', async () => {

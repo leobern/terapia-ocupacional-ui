@@ -1,7 +1,10 @@
+/** Resultado da conferência da senha da conta no desbloqueio. */
+export type PasswordCheck = 'ok' | 'invalid' | 'locked' | 'unavailable';
+
 /**
- * Porta de validação da senha da conta (mecanismo de autenticação da US-001-1-03).
- * Funciona sem rede quando a implementação valida localmente (RN-06).
+ * Porta de validação da senha da conta (reautenticação no desbloqueio). `invalid` = senha errada;
+ * `locked` = conta temporariamente bloqueada por tentativas; `unavailable` = sem rede ou sem como validar.
  */
 export abstract class AccountPasswordVerifier {
-  abstract verify(password: string): Promise<boolean>;
+  abstract verify(password: string): Promise<PasswordCheck>;
 }

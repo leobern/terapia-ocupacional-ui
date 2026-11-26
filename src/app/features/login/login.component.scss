@@ -1,36 +1,59 @@
 @use '../../shared/styles/tokens';
 @use '../../shared/styles/input-shell';
+@use '../../shared/styles/typography';
 
 .login {
   display: flex;
   flex-direction: column;
-  gap: tokens.$space-24;
-  margin: 0 auto;
-  max-width: 480px;
-  min-height: 100vh;
+  align-items: center;
+  justify-content: center;
+  gap: tokens.$space-16;
   box-sizing: border-box;
-  padding: tokens.$space-24 tokens.$space-16;
-  color: tokens.$color-content-1;
-  font-family: tokens.$font-family-base;
+  min-height: 100vh;
+  padding: tokens.$space-16;
+  color: tokens.c(content-1);
+}
+
+.login__logo {
+  --icon-logo-size: 96px;
+
+  display: flex;
 }
 
 .login__title {
   margin: 0;
-  font-size: tokens.$font-size-title;
+  text-align: center;
+
+  @include typography.title-lg;
+}
+
+.login__notice {
+  margin: 0;
+  max-width: 400px;
+  color: tokens.c(content-4);
+  text-align: center;
+
+  @include typography.body-lg;
 }
 
 .login__form {
   display: flex;
   flex-direction: column;
   gap: tokens.$space-16;
+  width: 100%;
+  max-width: 400px;
+}
+
+.login__group {
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$space-8;
 }
 
 .login__label {
-  display: flex;
-  flex-direction: column;
-  gap: tokens.$space-4;
-  font-size: tokens.$font-size-subsection;
-  font-weight: tokens.$font-weight-medium;
+  color: tokens.c(content-1);
+
+  @include typography.label-lg;
 }
 
 .login__field {
@@ -38,22 +61,33 @@
   @include input-shell.field-typography;
 
   align-items: center;
+  min-height: 48px;
   padding: tokens.$space-8 tokens.$space-16;
 
   &[aria-invalid='true'] {
-    border-color: tokens.$color-comm-alert;
+    border-color: tokens.c(comm-alert);
+  }
+
+  &:focus-visible {
+    outline: tokens.$focus-ring-width solid tokens.c(focus-ring);
+    outline-offset: tokens.$focus-ring-offset;
   }
 }
 
 .login__error {
   margin: 0;
   min-height: 1lh;
-  font-size: tokens.$font-size-subsection;
-  font-weight: tokens.$font-weight-medium;
+  color: tokens.c(comm-alert);
+
+  @include typography.caption;
 }
 
 .login__link {
   align-self: center;
-  color: tokens.$color-content-2;
-  font-size: tokens.$font-size-interactive;
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  color: tokens.c(content-2);
+
+  @include typography.label-lg;
 }

@@ -10,6 +10,8 @@ import {
   signal,
 } from '@angular/core';
 
+import { ProfessionalProfileReader } from '../../../features/home/professional-profile';
+import { Role, SessionRoleReader } from '../../auth/session-role';
 import { PhIconComponent } from '../../icons/ph-icon/ph-icon.component';
 import { KeyboardFocusService } from '../../services/keyboard-focus.service';
 import { type Theme, ThemeService } from '../../services/theme.service';
@@ -64,6 +66,14 @@ interface NavMenuItem {
 /** Distância mínima do arrasto para a esquerda que fecha o menu no mobile. */
 const SWIPE_CLOSE_PX = 56;
 
+/** Rótulo do perfil de acesso do backend exibido sob o nome no menu. */
+const ROLE_LABELS: Readonly<Record<string, string>> = {
+  [Role.ADMIN]: 'Administração',
+  [Role.GESTOR]: 'Gestão',
+  [Role.RECECIONISTA]: 'Recepção',
+  [Role.TERAPEUTA]: 'Terapeuta',
+};
+
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
@@ -93,8 +103,14 @@ export class NavMenuComponent {
   readonly vinculosClick = output();
   readonly logoutClick = output();
 
-  protected readonly professionalName = 'Michelle Franklin';
-  protected readonly professionalRole = 'Nutróloga';
+  /**
+   * Nome e perfil do profissional autenticado (claims do token); sem sessão (modo dev) ou sem os leitores
+   * (galeria e testes do componente) mantém o perfil fixo.
+   */
+  protected readonly professionalName =
+    inject(ProfessionalProfileReader, { optional: true })?.read().name ?? 'Michelle Franklin';
+  protected readonly professionalRole =
+    ROLE_LABELS[inject(SessionRoleReader, { optional: true })?.read() ?? ''] ?? 'Nutróloga';
 
   protected readonly viewportBreakpoint = inject(ViewportBreakpointService);
   protected readonly themeService = inject(ThemeService);

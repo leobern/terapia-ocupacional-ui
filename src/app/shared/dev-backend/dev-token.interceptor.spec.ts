@@ -40,4 +40,12 @@ describe('devTokenInterceptor + DevTokenService', () => {
     expect(request.request.headers.has('Authorization')).toBeFalse();
     request.flush({});
   });
+
+  it('não sobrescreve um Authorization já definido (sessão real)', () => {
+    http.get('/api/v1/c', { headers: { Authorization: 'Bearer real' } }).subscribe();
+    const request = controller.expectOne('/api/v1/c');
+
+    expect(request.request.headers.get('Authorization')).toBe('Bearer real');
+    request.flush({});
+  });
 });

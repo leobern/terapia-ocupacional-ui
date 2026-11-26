@@ -6,6 +6,7 @@ import { SessionRevoker } from './session-revoker';
 
 class FakeRevoker extends SessionRevoker {
   revokeCurrentDevice!: jasmine.Spy<() => Promise<void>>;
+  revokeToken = (): Promise<void> => Promise.resolve();
 }
 
 const SENSITIVE_KEYS = ['jwt', 'auth_token', 'clinical.notes', 'hospital', 'user', 'token', 'session.x', 'cache.y'];

@@ -7,13 +7,13 @@ import { provideRouterStore } from '@ngrx/router-store';
 import { provideStore } from '@ngrx/store';
 
 import { routes } from './app.routing';
+import { HttpSessionRevoker } from './features/auth/http-session-revoker';
 import { HttpTokenRefresher } from './features/auth/http-token-refresher';
 import { AccountPasswordVerifier } from './features/auth/lock/account-password-verifier';
+import { ApiAccountPasswordVerifier } from './features/auth/lock/api-account-password-verifier';
 import { BiometricAuth } from './features/auth/lock/biometric-auth';
 import { InactivityLockService } from './features/auth/lock/inactivity-lock.service';
-import { ProvisionalAccountPasswordVerifier } from './features/auth/lock/provisional-account-password-verifier';
 import { ProvisionalBiometricAuth } from './features/auth/lock/provisional-biometric-auth';
-import { NoopSessionRevoker } from './features/auth/noop-session-revoker';
 import { sessionAuthInterceptor } from './features/auth/session-auth.interceptor';
 import { SessionRevoker } from './features/auth/session-revoker';
 import { TokenRefresher } from './features/auth/token-refresher';
@@ -178,12 +178,12 @@ export const appConfig: ApplicationConfig = {
     { provide: ProfessionalProfileReader, useClass: LocalProfessionalProfileReader },
     { provide: AuthGateway, useClass: HttpAuthGateway },
     { provide: PasswordResetGateway, useClass: HttpPasswordResetGateway },
-    // Biometria e senha da conta do desbloqueio: provisórios até haver shell nativo e API de login.
+    // Biometria: provisória até haver shell nativo. Senha do desbloqueio: reautentica pelo login real.
     { provide: BiometricAuth, useClass: ProvisionalBiometricAuth },
-    { provide: AccountPasswordVerifier, useClass: ProvisionalAccountPasswordVerifier },
-    // Renovação de token: provisória até haver contrato OpenAPI (recusa toda renovação).
+    { provide: AccountPasswordVerifier, useClass: ApiAccountPasswordVerifier },
+    // Renovação de token e logout (revoga o refresh) pela API de autenticação.
     { provide: TokenRefresher, useClass: HttpTokenRefresher },
-    { provide: SessionRevoker, useClass: NoopSessionRevoker },
+    { provide: SessionRevoker, useClass: HttpSessionRevoker },
     { provide: StartupStateReader, useClass: LocalStartupStateReader },
     { provide: WelcomeSource, useClass: WelcomeApiService },
     { provide: TutorialStateStore, useClass: TutorialApiService },

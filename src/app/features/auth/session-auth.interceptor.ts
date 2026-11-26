@@ -13,15 +13,25 @@ function withToken(request: HttpRequest<unknown>, token: string): HttpRequest<un
 /**
  * Envia o `accessToken` da sessão local nas chamadas à API e, ao receber 401 (token
  * expirado), renova e repete a chamada uma vez, sem interrupção visível (C5, RN-05).
- * Sem sessão local ou com `Authorization` já definido, a chamada passa direto.
+ * Sem sessão local ou com `Authorization` já definido, a chamada passa direto. Com refresh token mas sem
+ * access token, renova antes de enviar.
  */
 export const sessionAuthInterceptor: HttpInterceptorFn = (request, next) => {
   const store = inject(LocalSessionStore);
   const renewal = inject(SessionRenewalService);
   const sent = store.accessToken();
 
-  if (!request.url.startsWith(`${environment.apiBaseUrl}/`) || request.headers.has('Authorization') || !sent) {
+  if (!request.url.startsWith(`${environment.apiBaseUrl}/`) || request.headers.has('Authorization')) {
     return next(request);
+  }
+  if (!sent) {
+    // Só o refresh token sobrou (access apagado ou corrompido): renova antes de enviar; sem refresh, passa direto.
+    return store.refreshToken() === null
+      ? next(request)
+      : from(renewal.renew()).pipe(
+          switchMap(token => next(withToken(request, token))),
+          catchError(() => next(request)),
+        );
   }
 
   return next(withToken(request, sent)).pipe(

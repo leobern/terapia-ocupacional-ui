@@ -1,6 +1,8 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 
+import { ProfessionalProfileReader } from '../../../features/home/professional-profile';
+import { Role, SessionRoleReader } from '../../auth/session-role';
 import { PhIconComponent } from '../../icons/ph-icon/ph-icon.component';
 import { ViewportBreakpointService } from '../../services/viewport-breakpoint.service';
 import { IconButtonComponent } from '../icon-button/icon-button.component';
@@ -348,5 +350,34 @@ describe('NavMenuComponent', () => {
     (fixture.nativeElement.querySelector('.nav-menu__logo-badge button') as HTMLButtonElement).click();
 
     expect(logoClick).toHaveBeenCalledWith(undefined);
+  });
+
+  describe('profissional autenticado', () => {
+    const textOf = (selector: string): string =>
+      (fixture.nativeElement as HTMLElement).querySelector(selector)?.textContent?.trim() ?? '';
+
+    it('sem leitores mantém o perfil fixo', () => {
+      expect(textOf('.nav-menu__profile-name')).toBe('Michelle Franklin');
+      expect(textOf('.nav-menu__profile-role')).toBe('Nutróloga');
+    });
+
+    it('mostra o nome e o perfil vindos da sessão', () => {
+      TestBed.resetTestingModule();
+      TestBed.configureTestingModule({
+        imports: [NavMenuComponent],
+        providers: [
+          {
+            provide: ProfessionalProfileReader,
+            useValue: { read: (): object => ({ name: 'Almira Exemplo', role: 'doctor' }) },
+          },
+          { provide: SessionRoleReader, useValue: { read: (): Role => Role.TERAPEUTA } },
+        ],
+      });
+      fixture = TestBed.createComponent(NavMenuComponent);
+      fixture.detectChanges();
+
+      expect(textOf('.nav-menu__profile-name')).toBe('Almira Exemplo');
+      expect(textOf('.nav-menu__profile-role')).toBe('Terapeuta');
+    });
   });
 });
