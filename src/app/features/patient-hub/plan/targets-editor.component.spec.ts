@@ -200,7 +200,7 @@ describe('TargetsEditorComponent', () => {
     weightsFail = true;
     const h = await setup();
 
-    expect(html(h)).toContain('Não foi possível ler os pesos');
+    expect(html(h)).toContain('Não foi possível ler o peso do paciente');
   });
 
   it('falha ao ler a calorimetria: avisa e segue pela fórmula simplificada', async () => {
@@ -243,6 +243,6 @@ describe('TargetsEditorComponent', () => {
     weights = {};
     const h = await setup();
 
-    expect(html(h)).toContain('preencha a Avaliação');
+    expect(html(h)).toContain('registre o peso do paciente');
   });
 });

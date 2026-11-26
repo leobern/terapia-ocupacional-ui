@@ -271,8 +271,33 @@ describe('ApiPlanSource', () => {
     await expectAsync(flag).toBeRejected();
   });
 
-  it('pesos calculados e médicos seguem no provisório', async () => {
-    expect(await source.loadCalculatedWeights('42')).toEqual({});
+  it('peso atual vem da avaliação clínica; ideal, ajustado e seco não existem', async () => {
+    const assessment = '/api/v1/pacientes/42/avaliacao-clinica';
+    const withWeight = source.loadCalculatedWeights('42');
+
+    http.expectOne(assessment).flush({ heightCm: 170, weightKg: 71.5 });
+
+    expect(await withWeight).toEqual({ current: 71.5 });
+
+    const withoutWeight = source.loadCalculatedWeights('42');
+
+    http.expectOne(assessment).flush({ heightCm: null, weightKg: null });
+
+    expect(await withoutWeight).toEqual({});
+
+    const zero = source.loadCalculatedWeights('42');
+
+    http.expectOne(assessment).flush({ heightCm: 170, weightKg: 0 });
+
+    expect(await zero).toEqual({});
+
+    const failed = source.loadCalculatedWeights('42');
+
+    http.expectOne(assessment).flush({}, { status: 404, statusText: 'Not Found' });
+    await expectAsync(failed).toBeRejected();
+  });
+
+  it('médicos seguem no provisório', async () => {
     expect((await source.loadResponsibleOptions()).length).toBeGreaterThan(0);
     http.expectNone(plan);
   });

@@ -32,9 +32,9 @@ import {
   TargetFormula,
 } from './plan-targets';
 
-export const WEIGHTS_FAILED_HINT = 'Não foi possível ler os pesos calculados na Avaliação agora.';
+export const WEIGHTS_FAILED_HINT = 'Não foi possível ler o peso do paciente na Avaliação clínica agora.';
 export const WEIGHTS_MISSING_HINT =
-  'Sem peso calculado na Avaliação nutricional: preencha a Avaliação para escolher o peso de referência.';
+  'Sem peso na Avaliação clínica: registre o peso do paciente para escolher o peso de referência.';
 export const CALORIMETRY_FAILED_HINT = 'Não foi possível ler a calorimetria indireta; metas pela fórmula simplificada.';
 export const NO_REFERENCE_HINT = 'Selecione o peso de referência para calcular as metas.';
 export const INVALID_FACTOR_HINT = 'Informe fatores kcal/kg e g/kg numéricos maiores que zero.';

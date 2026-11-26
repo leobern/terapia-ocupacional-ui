@@ -150,7 +150,7 @@ function toSwallowing(value: SwallowingDto | null | undefined): SwallowingDecisi
  * `addSinalizacaoConduta`). Cada gravação manda só o campo alterado; a resposta é o plano completo, de onde sai o
  * valor devolvido. Autor e data/hora são do servidor (`at`/`author` do pedido são ignorados). `204` = paciente sem
  * plano (tudo vazio). Erros sobem (400/404/rede). Fora do contrato e mantidos no provisório: pesos calculados
- * (vêm da Avaliação) e a lista de médicos responsáveis. Ids de exemplo seguem inteiros no provisório.
+ * (só o atual, da Avaliação clínica) e a lista de médicos responsáveis. Ids de exemplo seguem inteiros no provisório.
  */
 @Injectable()
 export class ApiPlanSource extends PlanSource {
@@ -220,9 +220,20 @@ export class ApiPlanSource extends PlanSource {
     );
   }
 
-  /** Fora do contrato: os pesos calculados vêm da Avaliação nutricional; seguem no provisório. */
-  loadCalculatedWeights(patientId: string): Promise<CalculatedWeights> {
-    return this.provisional.loadCalculatedWeights(patientId);
+  /**
+   * Fora do contrato do plano. Paciente real: só o peso atual existe, vindo da Avaliação clínica (`weightKg`). Ideal,
+   * ajustado e seco ficam de fora até o Thiago/nutrição definirem as fórmulas (ver
+   * docs/regras-de-negocio/pesos-de-referencia-pendencias.md); não se inventa fórmula clínica. Sem peso = `{}`.
+   */
+  async loadCalculatedWeights(patientId: string): Promise<CalculatedWeights> {
+    if (!isApiPatientId(patientId)) {
+      return this.provisional.loadCalculatedWeights(patientId);
+    }
+    const assessment = await firstValueFrom(
+      this.http.get<{ readonly weightKg: number | null }>(`${this.url}/${patientId}/avaliacao-clinica`),
+    );
+
+    return assessment.weightKg !== null && assessment.weightKg > 0 ? { current: assessment.weightKg } : {};
   }
 
   async loadReferenceWeight(patientId: string): Promise<ReferenceWeight | null> {
