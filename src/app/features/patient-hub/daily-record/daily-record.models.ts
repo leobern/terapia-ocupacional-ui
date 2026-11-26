@@ -20,6 +20,10 @@ export interface DailyEvolution {
   readonly origin: EvolutionOrigin;
   readonly text: string;
   readonly reevaluations?: readonly Reevaluation[];
+  /** `version` do texto vigente no servidor; é a `baseVersion` da próxima gravação (ADR-003). */
+  readonly version?: number;
+  /** A leitura inclui gravação ainda pendente de sincronização (mostra o selo no card). */
+  readonly pending?: boolean;
 }
 
 export interface EvolutionSaveRequest {
@@ -31,6 +35,10 @@ export interface EvolutionSaveRequest {
   readonly day: string;
   readonly text: string;
   readonly reevaluations?: readonly Reevaluation[];
+  /** `version` do dia que a tela viu ao abrir (base da gravação offline, ADR-003). */
+  readonly baseVersion?: number;
+  /** O texto é o mesmo já gravado (só itens a reavaliar mudaram): a gravação offline não cria versão de texto nova. */
+  readonly textUnchanged?: boolean;
 }
 
 export type ReevaluationUnit = 'hours' | 'days';

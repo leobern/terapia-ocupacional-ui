@@ -1,0 +1,152 @@
+<ng-template #body>
+  <div class="sync-panel" data-testid="sync-panel">
+    <h2 class="sync-panel__title">Sincronização</h2>
+    @if (networkText() !== '') {
+      <p class="sync-panel__note" role="status">{{ networkText() }}</p>
+    }
+    @if (outbox.operations().length === 0) {
+      <p class="sync-panel__note">
+        Tudo o que você registrou já está no servidor.
+      </p>
+    }
+    <ul class="sync-panel__list">
+      @for (operation of outbox.operations(); track operation.opId) {
+        <li
+          class="sync-item"
+          data-testid="sync-item"
+          [attr.data-status]="operation.status"
+        >
+          <div class="sync-item__head">
+            <span class="sync-item__title"
+              >{{ typeLabel[operation.type] }} · Paciente
+              {{ operation.patientId }}</span
+            >
+            <span class="sync-item__state">{{
+              statusLabel[operation.status]
+            }}</span>
+          </div>
+          <span class="sync-item__meta"
+            >Registrado em {{ format(operation.occurredAt) }}</span
+          >
+          @if (preview(operation); as content) {
+            <p class="sync-item__preview" data-testid="sync-preview">
+              {{ content }}
+            </p>
+          }
+          @if (operation.reason) {
+            <span class="sync-item__reason">{{ operation.reason }}</span>
+          }
+          @if (operation.status === 'conflict' && operation.conflict; as c) {
+            <div class="sync-versions" data-testid="sync-versions">
+              <p class="sync-item__meta">
+                Outra pessoa também registrou neste dia. Escolha o texto que
+                fica; nada é apagado (as duas versões continuam no histórico).
+              </p>
+              <div class="sync-version">
+                <span class="sync-version__label">Sua versão</span>
+                <p class="sync-version__text">{{ c.mine }}</p>
+                <app-button
+                  kind="primary"
+                  size="sm"
+                  label="Manter a minha"
+                  (click)="keep(operation, c.mine)"
+                />
+              </div>
+              @for (other of c.others; track other.at) {
+                <div class="sync-version">
+                  <span class="sync-version__label"
+                    >Versão de {{ other.author }} · {{ format(other.at) }}</span
+                  >
+                  <p class="sync-version__text">{{ other.text }}</p>
+                  <app-button
+                    kind="primary"
+                    appearance="outlined"
+                    size="sm"
+                    label="Usar esta"
+                    (click)="keep(operation, other.text)"
+                  />
+                </div>
+              }
+            </div>
+          }
+          @if (operation.status === 'failed') {
+            <div class="sync-item__actions">
+              <app-button
+                kind="primary"
+                size="sm"
+                label="Tentar de novo"
+                (click)="retry(operation)"
+              />
+              <app-button
+                kind="primary"
+                appearance="outlined"
+                size="sm"
+                label="Descartar"
+                (click)="askDiscard(operation)"
+              />
+            </div>
+          }
+        </li>
+      }
+    </ul>
+    <app-button
+      kind="primary"
+      label="Enviar agora"
+      [fullWidth]="true"
+      [disabled]="busy() || outbox.pendingCount() === 0"
+      (click)="syncNow()"
+    />
+  </div>
+</ng-template>
+
+@if (visible()) {
+  <button
+    type="button"
+    class="sync-chip"
+    aria-haspopup="dialog"
+    data-testid="sync-chip"
+    [class.sync-chip--attention]="hasAttention()"
+    [attr.aria-expanded]="open()"
+    (click)="toggle()"
+  >
+    <ph-icon
+      [name]="network.reachable() ? 'cloud-arrow-up' : 'cloud-slash'"
+      [size]="20"
+    />
+    <span class="sync-chip__text">{{ chipText() }}</span>
+  </button>
+}
+
+@if (!viewport.isDesktop()) {
+  <app-bottom-sheet
+    ariaLabel="Sincronização das gravações"
+    [open]="open()"
+    [showLogo]="false"
+    (closed)="close()"
+  >
+    <div bottomSheetContent>
+      <ng-container [ngTemplateOutlet]="body" />
+    </div>
+  </app-bottom-sheet>
+} @else {
+  <app-drawer
+    ariaLabel="Sincronização das gravações"
+    [open]="open()"
+    [showLogo]="false"
+    (closed)="close()"
+  >
+    <div drawerContent>
+      <ng-container [ngTemplateOutlet]="body" />
+    </div>
+  </app-drawer>
+}
+
+<app-confirm-dialog
+  title="Descartar esta gravação?"
+  message="O que você escreveu ainda não foi enviado e será perdido: não há como recuperar."
+  confirmLabel="Descartar"
+  cancelLabel="Continuar guardando"
+  [open]="discarding() !== null"
+  (confirmed)="confirmDiscard()"
+  (cancelled)="cancelDiscard()"
+/>

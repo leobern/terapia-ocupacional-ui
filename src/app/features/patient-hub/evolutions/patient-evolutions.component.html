@@ -28,6 +28,12 @@
             <div class="evo__who">
               <p class="evo__author">{{ entry.evolution.author }}</p>
               <p class="evo__meta">{{ entry.registered }}</p>
+              @if (syncOf(entry.key); as sync) {
+                <p class="evo__sync" role="status" data-testid="evolution-sync">
+                  <ph-icon name="cloud-arrow-up" [size]="16" />
+                  {{ sync }}
+                </p>
+              }
             </div>
           </header>
           <p class="evo__text">{{ entry.evolution.text }}</p>

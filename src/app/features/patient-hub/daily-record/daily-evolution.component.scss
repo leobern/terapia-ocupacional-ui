@@ -150,3 +150,13 @@
     flex: 0 0 88px;
   }
 }
+
+.evolution__sync {
+  display: inline-flex;
+  align-items: center;
+  gap: tokens.$space-4;
+  margin: 0;
+  color: tokens.c(content-3);
+
+  @include typography.caption;
+}

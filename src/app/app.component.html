@@ -128,7 +128,9 @@
         }
       </app-drawer>
     }
+    <app-sync-status />
     <app-logout-confirm
+      [pending]="pendingWrites()"
       [open]="confirmOpen()"
       [busy]="loggingOut()"
       (cancelled)="cancelLogout()"

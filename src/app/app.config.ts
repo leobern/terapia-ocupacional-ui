@@ -73,13 +73,16 @@ import { ClinicalAssessmentSource } from './features/patient-hub/clinical-assess
 import { ClinicalItemHistorySource } from './features/patient-hub/clinical-assessment/clinical-item-history-source';
 import { ProvisionalClinicalAssessmentSource } from './features/patient-hub/clinical-assessment/provisional-clinical-assessment-source';
 import { ProvisionalClinicalItemHistorySource } from './features/patient-hub/clinical-assessment/provisional-clinical-item-history-source';
-import { ApiDailyEvolutionSource } from './features/patient-hub/daily-record/api-daily-evolution-source';
-import { ApiDailyRecordSource } from './features/patient-hub/daily-record/api-daily-record-source';
-import { ApiDailyRecordWriter } from './features/patient-hub/daily-record/api-daily-record-writer';
 import { DailyEvolutionSource } from './features/patient-hub/daily-record/daily-evolution-source';
 import { DailyRecordSource } from './features/patient-hub/daily-record/daily-record-source';
 import { DailyRecordWriter } from './features/patient-hub/daily-record/daily-record-writer';
 import { EvolutionAiStructurer } from './features/patient-hub/daily-record/evolution-ai-structurer';
+import { EvolutionOutboxTransport } from './features/patient-hub/daily-record/evolution-outbox-transport';
+import { OfflineDailyEvolutionSource } from './features/patient-hub/daily-record/offline-daily-evolution-source';
+import {
+  OfflineDailyRecordSource,
+  OfflineDailyRecordWriter,
+} from './features/patient-hub/daily-record/offline-daily-record';
 import { ParameterAiStructurer } from './features/patient-hub/daily-record/parameter-ai-structurer';
 import { ProvisionalDailyEvolutionSource } from './features/patient-hub/daily-record/provisional-daily-evolution-source';
 import { ProvisionalDailyRecordSource } from './features/patient-hub/daily-record/provisional-daily-record-source';
@@ -164,6 +167,9 @@ import { WelcomeSource } from './features/welcome/welcome-source';
 import { JwtSessionRoleReader } from './shared/auth/jwt-session-role-reader';
 import { SessionRoleReader } from './shared/auth/session-role';
 import { devTokenInterceptor } from './shared/dev-backend/dev-token.interceptor';
+import { offlineCacheInterceptor } from './shared/offline/offline-cache.interceptor';
+import { OutboxSyncService } from './shared/offline/outbox-sync.service';
+import { OutboxTransport } from './shared/offline/outbox-transport';
 import { ASSISTANT_QUERY_RESOLVERS } from './shared/services/assistant-query-resolver';
 import { AudioTranscriber } from './shared/services/audio-transcriber';
 import { FormAssistant } from './shared/services/form-assistant';
@@ -226,14 +232,14 @@ export const appConfig: ApplicationConfig = {
     { provide: AssessmentSource, useExisting: ApiAssessmentSource },
     { provide: AssessmentWriter, useExisting: ApiAssessmentSource },
     ProvisionalDailyRecordSource,
-    ApiDailyRecordSource,
-    { provide: DailyRecordSource, useExisting: ApiDailyRecordSource },
-    ApiDailyRecordWriter,
-    { provide: DailyRecordWriter, useExisting: ApiDailyRecordWriter },
+    OfflineDailyRecordSource,
+    { provide: DailyRecordSource, useExisting: OfflineDailyRecordSource },
+    OfflineDailyRecordWriter,
+    { provide: DailyRecordWriter, useExisting: OfflineDailyRecordWriter },
     { provide: DiagnosisSource, useClass: ProvisionalDiagnosisSource },
     { provide: DiagnosisDecisionSource, useClass: ProvisionalDiagnosisDecisionSource },
     ProvisionalDailyEvolutionSource,
-    { provide: DailyEvolutionSource, useClass: ApiDailyEvolutionSource },
+    { provide: DailyEvolutionSource, useClass: OfflineDailyEvolutionSource },
     { provide: EvolutionAiStructurer, useClass: ProvisionalEvolutionAiStructurer },
     ProvisionalPrescriptionSource,
     { provide: ParameterAiStructurer, useClass: ProvisionalParameterAiStructurer },
@@ -272,10 +278,17 @@ export const appConfig: ApplicationConfig = {
     provideAppInitializer(() => inject(InactivityLockService).start()),
     // Tela de privacidade: cobre o conteúdo quando o app vai para segundo plano (RN-03).
     provideAppInitializer(() => inject(PrivacyOverlayService).start()),
+    // Modo offline (ADR-003): armazenamento local, envio da fila de escrita e sincronização automática.
+    { provide: OutboxTransport, useExisting: EvolutionOutboxTransport },
+    provideAppInitializer(() => void inject(OutboxSyncService).start()),
     provideZoneChangeDetection({ eventCoalescing: true }),
     provideRouter(routes),
     provideHttpClient(
-      withInterceptors([sessionAuthInterceptor, ...(environment.devBackend ? [devTokenInterceptor] : [])]),
+      withInterceptors([
+        offlineCacheInterceptor,
+        sessionAuthInterceptor,
+        ...(environment.devBackend ? [devTokenInterceptor] : []),
+      ]),
     ),
     provideStore(),
     provideEffects(),

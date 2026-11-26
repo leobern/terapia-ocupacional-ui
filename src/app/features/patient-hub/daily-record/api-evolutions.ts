@@ -22,6 +22,27 @@ export interface EvolucaoDiariaDto {
   readonly reevaluations: readonly Reevaluation[];
   readonly author: string;
   readonly at: string;
+  /** Id da versão de texto vigente (0 = dia só com entradas): base da próxima gravação de texto (ADR-003). */
+  readonly version?: number;
+  /** `true` quando a versão vigente foi gravada sobre uma base defasada. */
+  readonly conflict?: boolean;
+  readonly conflictingVersions?: readonly VersaoTextoDto[];
+}
+
+/** `VersaoTextoEvolucao`: versão de texto que a gravação defasada não tinha visto. */
+export interface VersaoTextoDto {
+  readonly version: number;
+  readonly text: string;
+  readonly author: string;
+  readonly at: string;
+}
+
+/** `SalvarTextoEvolucaoRequest`. */
+export interface SalvarTextoDto {
+  readonly text: string;
+  readonly origin: EvolucaoDiariaDto['origin'];
+  readonly baseVersion?: number;
+  readonly occurredAt?: string;
 }
 
 /** `EvolucaoDiariaPage`: `nextBefore` nulo na última página. */
@@ -50,6 +71,10 @@ const ORIGIN_FROM_API: Readonly<Record<EvolucaoDiariaDto['origin'], EvolutionOri
   MANUAL: 'manual',
 };
 
+export function originFromApi(origin: EvolucaoDiariaDto['origin']): EvolutionOrigin {
+  return ORIGIN_FROM_API[origin];
+}
+
 export function originToApi(origin: EvolutionOrigin): EvolucaoDiariaDto['origin'] {
   return ORIGIN_TO_API[origin];
 }
@@ -69,6 +94,7 @@ export function toDailyEvolution(dto: EvolucaoDiariaDto): DailyEvolution | null 
     origin: ORIGIN_FROM_API[dto.origin],
     reevaluations: dto.reevaluations,
     text: dto.text,
+    ...(dto.version === undefined ? {} : { version: dto.version }),
   };
 }
 
@@ -124,6 +150,43 @@ export class EvolutionsApi {
   /** Grava uma versão nova do dia (retrato completo) e devolve o que o servidor guardou. */
   saveDay(patientId: string, day: string, body: SalvarEvolucaoDiariaDto): Promise<EvolucaoDiariaDto> {
     return firstValueFrom(this.http.put<EvolucaoDiariaDto>(`${this.url}/${patientId}/evolucoes/${day}`, body));
+  }
+
+  /** `POST .../texto` (aditivo, reenviável): nova versão só do texto, com `baseVersion` e a chave de idempotência. */
+  addText(patientId: string, day: string, body: SalvarTextoDto, idempotencyKey: string): Promise<EvolucaoDiariaDto> {
+    return firstValueFrom(
+      this.http.post<EvolucaoDiariaDto>(`${this.url}/${patientId}/evolucoes/${day}/texto`, body, {
+        headers: { 'Idempotency-Key': idempotencyKey },
+      }),
+    );
+  }
+
+  /** `POST .../parametros` (aditivo, reenviável). */
+  addParameters(
+    patientId: string,
+    day: string,
+    body: { readonly parameters: readonly ParametroDiarioDto[]; readonly occurredAt?: string },
+    idempotencyKey: string,
+  ): Promise<unknown> {
+    return firstValueFrom(
+      this.http.post(`${this.url}/${patientId}/evolucoes/${day}/parametros`, body, {
+        headers: { 'Idempotency-Key': idempotencyKey },
+      }),
+    );
+  }
+
+  /** `POST .../reavaliacoes` (aditivo, reenviável). */
+  addReevaluations(
+    patientId: string,
+    day: string,
+    body: { readonly reevaluations: readonly Reevaluation[]; readonly occurredAt?: string },
+    idempotencyKey: string,
+  ): Promise<unknown> {
+    return firstValueFrom(
+      this.http.post(`${this.url}/${patientId}/evolucoes/${day}/reavaliacoes`, body, {
+        headers: { 'Idempotency-Key': idempotencyKey },
+      }),
+    );
   }
 
   /** Uma página, do dia mais recente ao mais antigo; `before` pede só dias estritamente anteriores. */

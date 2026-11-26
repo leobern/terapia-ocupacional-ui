@@ -9,7 +9,6 @@ import { DailyEvolutionSource } from './daily-evolution-source';
 import { INVALID_VALUE_HINT, NewParameterEntry, NOTHING_TO_SAVE_HINT, ParameterEntry } from './daily-record.models';
 import {
   DAILY_NAME_REQUIRED_HINT,
-  DAILY_OFFLINE_HINT,
   DAILY_SAVE_FAILED_HINT,
   DailyRecordEditorComponent,
 } from './daily-record-editor.component';
@@ -160,7 +159,20 @@ describe('DailyRecordEditorComponent', () => {
     );
   });
 
-  it('salvar sem nada preenchido avisa; offline e falha mantêm os valores', async () => {
+  it('sem o retorno "salvo" informado, salvar grava e fecha sem quebrar', async () => {
+    fixture = TestBed.createComponent(DailyRecordEditorComponent);
+    fixture.componentRef.setInput('patientId', 'p1');
+    await settle();
+    await run('parameters');
+    const first = root().querySelector('input[id^="dre-"]') as HTMLInputElement;
+
+    await fill(first.id, '10');
+    await run('save');
+
+    expect(writer.recorded.length).toBe(1);
+  });
+
+  it('salvar sem nada preenchido avisa; offline também grava (na fila); falha mantém os valores', async () => {
     (fixture.componentInstance as unknown as { save(): Promise<void> }).save();
     await settle();
 
@@ -172,7 +184,8 @@ describe('DailyRecordEditorComponent', () => {
     TestBed.inject(ConnectivityService).online.set(false);
     await run('save');
 
-    expect(text()).toContain(DAILY_OFFLINE_HINT);
+    // Sem conexão a gravação não é bloqueada: o escritor (fila offline) guarda e o painel fecha.
+    expect(writer.recorded.length).toBe(1);
     TestBed.inject(ConnectivityService).online.set(true);
     writer.fail = true;
     await run('save');

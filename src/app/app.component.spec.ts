@@ -6,6 +6,7 @@ import { AppComponent } from './app.component';
 import { LogoutService } from './features/auth/logout.service';
 import { SessionRevoker } from './features/auth/session-revoker';
 import { Role, SessionRoleReader } from './shared/auth/session-role';
+import { OutboxTransport } from './shared/offline/outbox-transport';
 import { type ScreenAction, ScreenActionsService } from './shared/services/screen-actions.service';
 import { UserDirectory } from './shared/services/user-directory';
 
@@ -25,6 +26,7 @@ const ROUTES: Routes = [
 
 const TEST_PROVIDERS = [
   { provide: SessionRoleReader, useValue: { read: (): Role => Role.GESTOR } },
+  { provide: OutboxTransport, useValue: { send: (): Promise<object> => Promise.resolve({}) } },
   { provide: SessionRevoker, useValue: { revokeCurrentDevice: (): Promise<void> => Promise.resolve() } },
   { provide: UserDirectory, useValue: { search: (): Promise<[]> => Promise.resolve([]) } },
 ];

@@ -4,6 +4,9 @@ import { ButtonComponent } from '../../../shared/components/button/button.compon
 import { IconButtonComponent } from '../../../shared/components/icon-button/icon-button.component';
 import { InputChatAudioError, InputChatComponent } from '../../../shared/components/input-chat/input-chat.component';
 import { PhIconComponent } from '../../../shared/icons/ph-icon/ph-icon.component';
+import { NetworkStateService } from '../../../shared/offline/network-state.service';
+import { OutboxService } from '../../../shared/offline/outbox.service';
+import { syncLabel } from '../../../shared/offline/sync-labels';
 import { ConnectivityService } from '../../../shared/services/connectivity.service';
 import { NOW, ProfessionalProfileReader } from '../../home/professional-profile';
 import { DailyEvolutionSource } from './daily-evolution-source';
@@ -64,8 +67,10 @@ export class DailyEvolutionComponent {
   /** Dentro da sidebar de Evolução: sem campo de mensagem nem botões próprios (o rodapé do painel é quem salva). */
   readonly embedded = input(false);
 
+  /** Só grava o que mudou: texto diferente do vigente ou itens a reavaliar. Texto igual não vira versão nova (nem falso conflito). */
   readonly canSave = computed(
-    () => this.isDoctor && !this.saving() && this.connectivity.online() && this.draft().trim() !== '',
+    () =>
+      this.isDoctor && !this.saving() && this.draft().trim() !== '' && (this.textChanged() || this.hasReevaluations()),
   );
 
   protected readonly state = signal<LoadState>('idle');
@@ -89,11 +94,17 @@ export class DailyEvolutionComponent {
   protected readonly offlineHint = EVOLUTION_OFFLINE_HINT;
   protected readonly emptyText = EVOLUTION_EMPTY_TEXT;
   protected readonly help = EVOLUTION_HELP;
+  protected readonly network = inject(NetworkStateService);
+  /** Estado de sincronização das gravações de hoje deste paciente (vazio quando está tudo no servidor). */
+  protected readonly syncText = computed(() => syncLabel(this.outbox.forPatient(this.patientId(), dayKey(this.now()))));
   protected readonly registeredText = computed(() => {
     const s = this.saved();
 
     return s === null ? '' : `Registrada por ${s.author} · ${registeredAt(s.at)}`;
   });
+  private readonly outbox = inject(OutboxService);
+  private readonly textChanged = computed(() => this.draft().trim() !== (this.saved()?.text ?? '').trim());
+  private readonly hasReevaluations = computed(() => this.rows().some(r => r.name.trim() !== '' && r.amount > 0));
   private nextRowId = 1;
   private readonly source = inject(DailyEvolutionSource);
   private readonly structurer = inject(EvolutionAiStructurer);
@@ -133,6 +144,8 @@ export class DailyEvolutionComponent {
       const saved = await this.source.save({
         at: at.toISOString(),
         author: this.profile.read().name,
+        ...this.baseVersion(),
+        ...(this.textChanged() ? {} : { textUnchanged: true }),
         day: dayKey(at),
         origin: this.origin(),
         patientId: this.patientId(),
@@ -241,11 +254,27 @@ export class DailyEvolutionComponent {
     this.draft.set(this.previousDraft);
   }
 
+  /** `baseVersion` da gravação offline: a versão do dia que a tela viu (nada quando a leitura não terminou). */
+  private baseVersion(): { baseVersion?: number } {
+    const saved = this.saved();
+
+    // Dia lido e sem texto ainda: a base é a versão 0 (qualquer texto de outra pessoa já seria conflito).
+    if (saved === null) {
+      return this.state() === 'ready' ? { baseVersion: 0 } : {};
+    }
+
+    return saved.version === undefined ? {} : { baseVersion: saved.version };
+  }
+
   /** Só entram na evolução as linhas com nome e prazo positivo; o prazo conta a partir do registro. */
   private reevaluations(at: Date): readonly Reevaluation[] {
     return this.rows()
       .filter(r => r.name.trim() !== '' && r.amount > 0)
-      .map(r => ({ dueAt: reevaluationDueAt(at, r.amount, r.unit), id: `r${r.id}`, name: r.name.trim() }));
+      .map(r => ({
+        dueAt: reevaluationDueAt(at, r.amount, r.unit),
+        id: `r${at.getTime()}-${r.id}`,
+        name: r.name.trim(),
+      }));
   }
 
   private origin(): EvolutionOrigin {

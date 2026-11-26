@@ -1,5 +1,8 @@
 import { TestBed } from '@angular/core/testing';
 
+import { OfflineStore } from '../../shared/offline/offline-store';
+import { InMemoryOfflineStore, tokenFor } from '../../shared/offline/offline-testing.spec';
+import { OutboxService } from '../../shared/offline/outbox.service';
 import { LocalSessionStore } from './local-session-store';
 import { LogoutService } from './logout.service';
 import { SessionRevoker } from './session-revoker';
@@ -25,7 +28,12 @@ describe('LogoutService', () => {
   beforeEach(() => {
     revoker = new FakeRevoker();
     revoker.revokeCurrentDevice = jasmine.createSpy('revokeCurrentDevice').and.resolveTo();
-    TestBed.configureTestingModule({ providers: [{ provide: SessionRevoker, useValue: revoker }] });
+    TestBed.configureTestingModule({
+      providers: [
+        { provide: SessionRevoker, useValue: revoker },
+        { provide: OfflineStore, useFactory: (): InMemoryOfflineStore => new InMemoryOfflineStore() },
+      ],
+    });
     service = TestBed.inject(LogoutService);
     SENSITIVE_KEYS.forEach(key => {
       localStorage.setItem(key, 'x');
@@ -71,5 +79,56 @@ describe('LogoutService', () => {
     expect(localStorage.getItem('lang')).toBe('pt-BR');
     expect(sessionStorage.getItem('ui.sidebar')).toBe('open');
     expect(TestBed.inject(LocalSessionStore).isValid()).toBeFalse();
+  });
+
+  describe('modo offline (ADR-003)', () => {
+    let offline: InMemoryOfflineStore;
+
+    beforeEach(async () => {
+      offline = TestBed.inject(OfflineStore) as InMemoryOfflineStore;
+      TestBed.inject(LocalSessionStore).open({ accessToken: tokenFor({ upn: 'ana@x.com' }), refreshToken: 'r' });
+      await offline.putCache('ana@x.com', 'k', 1, 'x');
+      await offline.putCache('outra@x.com', 'k', 2, 'x');
+      await offline.putOutbox({
+        attempted: false,
+        attempts: 0,
+        day: '2026-11-26',
+        nextAttemptAt: 'x',
+        occurredAt: 'x',
+        opId: 'o1',
+        patientId: '42',
+        payload: {},
+        seq: 1,
+        status: 'pending',
+        type: 'evolution-text',
+        userId: 'ana@x.com',
+      });
+    });
+
+    it('apaga o cache de leitura do usuário, mas NÃO descarta a fila de escrita pendente', async () => {
+      await service.logout();
+
+      expect(await offline.getCache('ana@x.com', 'k')).toBeNull();
+      expect((await offline.getCache('outra@x.com', 'k'))?.value).toBe(2);
+      expect((await offline.listOutbox('ana@x.com')).length).toBe(1);
+    });
+
+    it('a fila some da tela de quem entrar depois (mas continua no aparelho)', async () => {
+      const outbox = TestBed.inject(OutboxService);
+
+      await outbox.reload();
+      expect(outbox.operations().length).toBe(1);
+      await service.logout();
+
+      expect(outbox.operations()).toEqual([]);
+      expect((await offline.listOutbox('ana@x.com')).length).toBe(1);
+    });
+
+    it('um armazenamento local com defeito não impede o logout', async () => {
+      spyOn(offline, 'clearCache').and.callFake(() => Promise.reject(new Error('IDB')));
+
+      await expectAsync(service.logout()).toBeResolved();
+      expect(TestBed.inject(LocalSessionStore).isValid()).toBeFalse();
+    });
   });
 });

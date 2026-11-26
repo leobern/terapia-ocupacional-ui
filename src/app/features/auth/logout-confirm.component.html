@@ -2,6 +2,15 @@
   <div class="logout-confirm">
     <h2 class="logout-confirm__title">{{ i18n.t('logout.title') }}</h2>
     <p class="logout-confirm__message">{{ i18n.t('logout.message') }}</p>
+    @if (pending() > 0) {
+      <p
+        class="logout-confirm__pending"
+        role="alert"
+        data-testid="logout-pending"
+      >
+        {{ pendingText() }}
+      </p>
+    }
     <div class="logout-confirm__actions">
       <app-button
         kind="secondary"
@@ -14,7 +23,7 @@
         kind="primary"
         [fullWidth]="true"
         [disabled]="busy()"
-        [label]="i18n.t('logout.confirm')"
+        [label]="pending() > 0 ? 'Sair mesmo assim' : i18n.t('logout.confirm')"
         (click)="!busy() && confirmed.emit()"
       />
     </div>

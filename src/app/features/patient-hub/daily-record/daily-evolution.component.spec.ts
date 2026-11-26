@@ -177,6 +177,27 @@ describe('DailyEvolutionComponent', () => {
         await settle();
       };
 
+      it('texto igual ao já gravado não é gravado de novo; com item a reavaliar grava só as reavaliações', async () => {
+        source.current = {
+          author: 'Dr. Beto',
+          at: new Date(2026, 10, 20, 8, 0).toISOString(),
+          origin: 'manual',
+          text: 'antes',
+        };
+        await openIt();
+
+        expect(saveButton()?.disabled).toBe(true);
+        buttonByLabel('Adicionar avaliação')?.click();
+        await settle();
+        const [row] = rowsEls();
+
+        await fill(row, 'Diarreia', '48', 'hours');
+        expect(saveButton()?.disabled).toBe(false);
+        await save();
+
+        expect(source.saves[0]).toEqual(jasmine.objectContaining({ text: 'antes', textUnchanged: true }));
+      });
+
       it('anota o que reavaliar e daqui a quanto tempo; o prazo conta a partir do registro', async () => {
         await openIt();
         await type('Paciente com diarreia.');
@@ -191,8 +212,16 @@ describe('DailyEvolutionComponent', () => {
         await save();
 
         expect(source.saves[0].reevaluations).toEqual([
-          { dueAt: new Date(2026, 10, 22, 15, 30).toISOString(), id: 'r1', name: 'Diarreia' },
-          { dueAt: new Date(2026, 10, 23, 15, 30).toISOString(), id: 'r2', name: 'Erosão da mucosa nasolabial' },
+          {
+            dueAt: new Date(2026, 10, 22, 15, 30).toISOString(),
+            id: `r${new Date(2026, 10, 20, 15, 30).getTime()}-1`,
+            name: 'Diarreia',
+          },
+          {
+            dueAt: new Date(2026, 10, 23, 15, 30).toISOString(),
+            id: `r${new Date(2026, 10, 20, 15, 30).getTime()}-2`,
+            name: 'Erosão da mucosa nasolabial',
+          },
         ]);
 
         expect(rowsEls().length).toBe(0);
@@ -231,6 +260,7 @@ describe('DailyEvolutionComponent', () => {
         {
           at: new Date(2026, 10, 20, 15, 30).toISOString(),
           author: 'Dra. Ana',
+          baseVersion: 0,
           day: '2026-11-20',
           origin: 'manual',
           patientId: 'p9',
@@ -253,6 +283,44 @@ describe('DailyEvolutionComponent', () => {
       await type('ok');
 
       expect(saveButton()?.disabled).toBe(false);
+    });
+
+    it('a gravação leva como base a versão do dia que a tela viu (0 para dia sem texto)', async () => {
+      source.current = {
+        author: 'Dr. Beto',
+        at: new Date(2026, 10, 20, 8, 0).toISOString(),
+        origin: 'manual',
+        text: 'antes',
+        version: 7,
+      };
+      await openIt();
+      await type('depois');
+      await save();
+
+      expect(source.saves[0].baseVersion).toBe(7);
+    });
+
+    it('sem versão conhecida (leitura sem versão) a gravação não manda base', async () => {
+      source.current = {
+        author: 'Dr. Beto',
+        at: new Date(2026, 10, 20, 8, 0).toISOString(),
+        origin: 'manual',
+        text: 'antes',
+      };
+      await openIt();
+      await type('depois');
+      await save();
+
+      expect('baseVersion' in source.saves[0]).toBeFalse();
+    });
+
+    it('falha ao ler o dia: sem base conhecida, a gravação não manda baseVersion', async () => {
+      source.loadFails = true;
+      await openIt();
+      await type('manual');
+      await save();
+
+      expect('baseVersion' in source.saves[0]).toBeFalse();
     });
 
     it('edita a evolução já registrada; o novo salvamento carrega autor e data/hora', async () => {
@@ -294,7 +362,7 @@ describe('DailyEvolutionComponent', () => {
       expect(saveButton()?.disabled).toBe(false);
     });
 
-    it('offline: digita, vê a pendência em texto e não salva até haver conexão', async () => {
+    it('offline: digita, vê o aviso em texto e grava mesmo assim (a fila envia quando houver conexão)', async () => {
       const connectivity = TestBed.inject(ConnectivityService);
 
       connectivity.online.set(false);
@@ -302,12 +370,8 @@ describe('DailyEvolutionComponent', () => {
       await type('sem rede');
 
       expect(text()).toContain(EVOLUTION_OFFLINE_HINT);
-      expect(saveButton()?.disabled).toBe(true);
-      expect(source.saves).toEqual([]);
-      connectivity.online.set(true);
-      await settle();
-
       expect(saveButton()?.disabled).toBe(false);
+      expect(source.saves).toEqual([]);
       await save();
 
       expect(source.saves).toHaveSize(1);

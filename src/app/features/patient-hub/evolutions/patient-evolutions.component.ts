@@ -14,6 +14,8 @@ import {
 import { AvatarComponent } from '../../../shared/components/avatar/avatar.component';
 import { ScrollRevealDirective } from '../../../shared/directives/scroll-reveal.directive';
 import { PhIconComponent } from '../../../shared/icons/ph-icon/ph-icon.component';
+import { OutboxService } from '../../../shared/offline/outbox.service';
+import { syncLabel } from '../../../shared/offline/sync-labels';
 import { NOW } from '../../home/professional-profile';
 import { DailyEvolutionDay, DailyEvolutionSource } from '../daily-record/daily-evolution-source';
 import {
@@ -74,6 +76,7 @@ export class PatientEvolutionsComponent {
   private readonly scroller = viewChild<ElementRef<HTMLElement>>('scroller');
   private readonly source = inject(DailyEvolutionSource);
   private readonly clock = inject(NOW);
+  private readonly outbox = inject(OutboxService);
   private token = 0;
   /** Último dia que a própria rolagem escolheu: não rola de volta quando a tela o devolve como `day`. */
   private fromScroll: string | null = null;
@@ -83,6 +86,8 @@ export class PatientEvolutionsComponent {
       const id = this.patientId();
 
       this.refreshKey();
+      // Gravação offline concluída no servidor: a lista é lida de novo.
+      this.outbox.syncedTick();
       untracked(() => void this.load(id));
     });
     // Escolher um dia na faixa: rola até a evolução dele (ou a mais próxima, anterior).
@@ -92,6 +97,11 @@ export class PatientEvolutionsComponent {
       this.entries();
       untracked(() => this.scrollTo(key));
     });
+  }
+
+  /** Situação de sincronização das gravações do dia deste paciente (vazio = já no servidor). */
+  protected syncOf(day: string): string {
+    return syncLabel(this.outbox.forPatient(this.patientId(), day));
   }
 
   /** Rolagem do usuário: a primeira evolução visível no topo vira o dia escolhido. */

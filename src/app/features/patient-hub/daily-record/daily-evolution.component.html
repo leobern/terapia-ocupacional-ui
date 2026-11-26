@@ -109,6 +109,12 @@
           {{ registeredText() }}
         </p>
       }
+      @if (syncText(); as sync) {
+        <p class="evolution__sync" role="status" data-testid="evolution-sync">
+          <ph-icon name="cloud-arrow-up" [size]="16" />
+          {{ sync }}
+        </p>
+      }
     </div>
 
     @if (isDoctor) {
@@ -141,7 +147,7 @@
             [disabled]="true"
           />
         }
-        @if (!connectivity.online()) {
+        @if (!connectivity.online() || !network.reachable()) {
           <p class="evolution__status evolution__status--warning" role="status">
             {{ offlineHint }}
           </p>

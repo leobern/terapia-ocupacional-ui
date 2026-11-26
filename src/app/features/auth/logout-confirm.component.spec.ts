@@ -60,4 +60,31 @@ describe('LogoutConfirmComponent', () => {
 
     expect(cancelled).toHaveBeenCalledTimes(1);
   });
+
+  it('sem gravações pendentes não mostra o aviso', () => {
+    expect(el.querySelector('[data-testid="logout-pending"]')).toBeNull();
+    expect(button('Sair')).toBeDefined();
+  });
+
+  it('com gravações pendentes avisa quantas ficam neste aparelho e troca o rótulo do botão', () => {
+    fixture.componentRef.setInput('pending', 1);
+    fixture.detectChanges();
+
+    expect(el.querySelector('[data-testid="logout-pending"]')?.textContent).toContain(
+      'Há 1 gravação ainda não enviada',
+    );
+    expect(el.querySelector('[data-testid="logout-pending"]')?.textContent).toContain(
+      'ela fica guardada aqui e só será enviada',
+    );
+    fixture.componentRef.setInput('pending', 3);
+    fixture.detectChanges();
+
+    expect(el.querySelector('[data-testid="logout-pending"]')?.textContent).toContain(
+      'Há 3 gravações ainda não enviadas',
+    );
+    expect(button('Sair mesmo assim')).toBeDefined();
+    button('Sair mesmo assim')?.click();
+
+    expect(confirmed).toHaveBeenCalledTimes(1);
+  });
 });

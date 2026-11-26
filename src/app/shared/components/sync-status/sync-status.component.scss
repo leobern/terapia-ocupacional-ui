@@ -1,0 +1,147 @@
+@use '../../styles/tokens';
+@use '../../styles/typography';
+
+:host {
+  display: contents;
+}
+
+// Selo fixo no topo, centralizado: não depende do cabeçalho de cada tela.
+.sync-chip {
+  position: fixed;
+  inset-block-start: tokens.$space-8;
+  inset-inline-start: 50%;
+  z-index: 40;
+  display: inline-flex;
+  align-items: center;
+  gap: tokens.$space-8;
+  max-inline-size: calc(100% - #{tokens.$space-32});
+  min-block-size: 40px;
+  padding: tokens.$space-8 tokens.$space-16;
+  border: 1px solid tokens.c(border);
+  border-radius: tokens.$radius-pill;
+  background: tokens.c(surface);
+  color: tokens.c(content-1);
+  cursor: pointer;
+  transform: translateX(-50%);
+
+  @include typography.label-md;
+
+  &--attention {
+    border-color: tokens.c(comm-alert);
+  }
+}
+
+.sync-chip__text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sync-panel {
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$space-16;
+  padding: tokens.$space-16;
+}
+
+.sync-panel__title {
+  margin: 0;
+  color: tokens.c(content-1);
+
+  @include typography.title-md;
+}
+
+.sync-panel__note {
+  margin: 0;
+  color: tokens.c(content-2);
+
+  @include typography.body-md;
+}
+
+.sync-panel__list {
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$space-8;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.sync-item {
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$space-8;
+  padding: tokens.$space-16;
+  border: 1px solid tokens.c(border);
+  border-radius: tokens.$radius-md;
+  background: tokens.c(surface);
+
+  &[data-status='failed'],
+  &[data-status='conflict'] {
+    border-color: tokens.c(comm-alert);
+  }
+}
+
+.sync-item__head {
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$space-4;
+}
+
+.sync-item__title {
+  color: tokens.c(content-1);
+
+  @include typography.title-md;
+}
+
+.sync-item__state,
+.sync-item__meta,
+.sync-item__reason {
+  color: tokens.c(content-2);
+
+  @include typography.caption;
+}
+
+.sync-item__actions {
+  display: flex;
+  gap: tokens.$space-16;
+}
+
+.sync-versions {
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$space-8;
+}
+
+.sync-version {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: tokens.$space-8;
+  padding: tokens.$space-8;
+  border-radius: tokens.$radius-md;
+  background: tokens.c(surface-2);
+}
+
+.sync-version__label {
+  color: tokens.c(content-1);
+
+  @include typography.label-md;
+}
+
+.sync-version__text {
+  margin: 0;
+  color: tokens.c(content-1);
+  white-space: pre-wrap;
+
+  @include typography.body-md;
+}
+
+.sync-item__preview {
+  margin: 0;
+  color: tokens.c(content-1);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+
+  @include typography.body-md;
+}

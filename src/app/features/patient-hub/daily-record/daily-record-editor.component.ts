@@ -6,7 +6,6 @@ import {
   AssistantEditorController,
   type EditorAction,
 } from '../../../shared/services/assistant-editor-controller.service';
-import { ConnectivityService } from '../../../shared/services/connectivity.service';
 import { NOW, ProfessionalProfileReader } from '../../home/professional-profile';
 import { PrescriptionGuidanceComponent } from '../prescription/prescription-guidance.component';
 import { DailyEvolutionComponent } from './daily-evolution.component';
@@ -20,7 +19,6 @@ import {
 } from './daily-record.models';
 import { DailyRecordWriter } from './daily-record-writer';
 
-export const DAILY_OFFLINE_HINT = 'Sem conexão: salvar fica indisponível. Os valores digitados serão mantidos.';
 export const DAILY_SAVE_FAILED_HINT =
   'Não foi possível salvar o registro. Os valores digitados foram mantidos; tente novamente.';
 export const DAILY_NAME_REQUIRED_HINT = 'Informe o nome do resultado para salvar.';
@@ -64,7 +62,6 @@ export class DailyRecordEditorComponent {
   private readonly writer = inject(DailyRecordWriter);
   private readonly assistant = inject(AiAssistantService);
   private readonly editor = inject(AssistantEditorController);
-  private readonly connectivity = inject(ConnectivityService);
   private readonly professional = inject(ProfessionalProfileReader);
   private readonly now = inject(NOW);
   private labSequence = 0;
@@ -125,11 +122,6 @@ export class DailyRecordEditorComponent {
 
     if (entries.length === 0 && !writesEvolution) {
       this.hint.set(NOTHING_TO_SAVE_HINT);
-
-      return;
-    }
-    if (!this.connectivity.online()) {
-      this.hint.set(DAILY_OFFLINE_HINT);
 
       return;
     }

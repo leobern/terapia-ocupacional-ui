@@ -57,10 +57,13 @@ describe('ApiAccountPasswordVerifier', () => {
     const before = store.accessToken();
 
     login.and.resolveTo({ kind: 'invalid-credentials' } satisfies LoginResult);
+
     expect(await verifier.verify('x')).toBe('invalid');
     login.and.resolveTo({ kind: 'locked' } satisfies LoginResult);
+
     expect(await verifier.verify('x')).toBe('locked');
     login.and.resolveTo({ kind: 'network-error' } satisfies LoginResult);
+
     expect(await verifier.verify('x')).toBe('unavailable');
     expect(store.accessToken()).toBe(before);
     expect(store.refreshToken()).toBe('antigo');

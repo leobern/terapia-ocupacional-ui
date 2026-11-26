@@ -24,6 +24,8 @@ import { DrawerComponent, type DrawerSnap } from './shared/components/drawer/dra
 import { InputChatComponent, type InputChatMode } from './shared/components/input-chat/input-chat.component';
 import { NavMenuComponent, type NavMenuItemKey } from './shared/components/nav-menu/nav-menu.component';
 import { PrivacyOverlayComponent } from './shared/components/privacy-overlay/privacy-overlay.component';
+import { SyncStatusComponent } from './shared/components/sync-status/sync-status.component';
+import { OutboxService } from './shared/offline/outbox.service';
 import { AiAssistantService } from './shared/services/ai-assistant.service';
 import { ScreenActionsService, type ScreenSuggestion } from './shared/services/screen-actions.service';
 import { ViewportBreakpointService } from './shared/services/viewport-breakpoint.service';
@@ -60,6 +62,7 @@ const MAX_NAV_SUGGESTIONS = 3;
     LogoutConfirmComponent,
     NavMenuComponent,
     PrivacyOverlayComponent,
+    SyncStatusComponent,
     RouterOutlet,
   ],
   selector: 'app-root',
@@ -162,6 +165,9 @@ export class AppComponent {
     // Tela com ações: só os atalhos dela (poucos chips, como no Figma). Sem ações: as perguntas rápidas genéricas.
     return actions.length > 0 ? actions : this.aiShortcuts;
   });
+
+  /** Gravações offline ainda não sincronizadas: o logout avisa quantas ficam guardadas neste aparelho. */
+  protected readonly pendingWrites = inject(OutboxService).totalCount;
 
   protected readonly aiShortcuts: readonly ChatShortcut[] = [
     { id: 'pendencias', label: 'Quais são minhas pendências de hoje?' },

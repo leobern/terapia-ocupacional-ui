@@ -134,3 +134,14 @@
 
   @include typography.body-md;
 }
+
+// Estado de sincronização da gravação offline (ADR-003): texto sempre junto do ícone.
+.evo__sync {
+  display: inline-flex;
+  align-items: center;
+  gap: tokens.$space-4;
+  margin: 0;
+  color: tokens.c(content-3);
+
+  @include typography.caption;
+}
