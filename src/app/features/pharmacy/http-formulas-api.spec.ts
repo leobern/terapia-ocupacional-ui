@@ -103,7 +103,20 @@ describe('HttpFormulasApi', () => {
     await promise;
   });
 
-  it('rejeita hospital que não é numérico, sem chamar a API', async () => {
-    await expectAsync(api.list(Number.NaN)).toBeRejected();
+  it('hospital cadastrado só no aparelho (id negativo) usa o provisório, sem chamar a API', async () => {
+    const hospitalId = -1700000000000;
+    const catalog = await api.list(hospitalId);
+
+    expect(catalog.length).toBeGreaterThan(0);
+    expect(catalog.every(formula => !formula.standardized)).toBeTrue();
+
+    await api.setStandardized(hospitalId, catalog[0].id, true);
+    await api.requestFormula(hospitalId, 'Fórmula Z');
+
+    expect((await api.list(hospitalId)).filter(formula => formula.standardized).length).toBe(1);
+  });
+
+  it('hospital de exemplo não numérico não chega na API', async () => {
+    expect((await api.list(Number.NaN)).length).toBeGreaterThan(0);
   });
 });

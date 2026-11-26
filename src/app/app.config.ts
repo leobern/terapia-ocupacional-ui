@@ -147,7 +147,7 @@ import { PatientCreationPort } from './features/patient-registration/patient-cre
 import { PatientDuplicateApiService } from './features/patient-registration/patient-duplicate-api.service';
 import { PatientDuplicateSource } from './features/patient-registration/patient-duplicate-source';
 import { FormulasApi } from './features/pharmacy/formulas-api';
-import { ProvisionalFormulasApi } from './features/pharmacy/provisional-formulas-api';
+import { HttpFormulasApi } from './features/pharmacy/http-formulas-api';
 import { HospitalSiteSource } from './features/shift/hospital-site-source';
 import { ProvisionalHospitalSiteSource } from './features/shift/provisional-hospital-site-source';
 import { ProvisionalShiftSource } from './features/shift/provisional-shift-source';
@@ -160,7 +160,6 @@ import { WelcomeApiService } from './features/welcome/welcome-api.service';
 import { WelcomeSource } from './features/welcome/welcome-source';
 import { JwtSessionRoleReader } from './shared/auth/jwt-session-role-reader';
 import { SessionRoleReader } from './shared/auth/session-role';
-import { DEV_BACKEND_PROVIDERS } from './shared/dev-backend/dev-backend.providers';
 import { devTokenInterceptor } from './shared/dev-backend/dev-token.interceptor';
 import { ASSISTANT_QUERY_RESOLVERS } from './shared/services/assistant-query-resolver';
 import { AudioTranscriber } from './shared/services/audio-transcriber';
@@ -261,7 +260,7 @@ export const appConfig: ApplicationConfig = {
     { provide: AnnouncementAssistant, useClass: ProvisionalAnnouncementAssistant },
     { provide: SessionRoleReader, useClass: JwtSessionRoleReader },
     { provide: PatientDuplicateSource, useClass: PatientDuplicateApiService },
-    { provide: FormulasApi, useClass: ProvisionalFormulasApi },
+    { provide: FormulasApi, useClass: HttpFormulasApi },
     // Consultas de leitura do assistente (um resolvedor por intenção).
     { multi: true, provide: ASSISTANT_QUERY_RESOLVERS, useClass: PendingNotificationsQueryResolver },
     // Observa segundo plano/primeiro plano para o bloqueio por inatividade (US-001-1-08).
@@ -276,7 +275,5 @@ export const appConfig: ApplicationConfig = {
     provideStore(),
     provideEffects(),
     provideRouterStore(),
-    // Backend real do EP-009 com token de teste: só em `ng serve --configuration local`.
-    ...(environment.devBackend ? DEV_BACKEND_PROVIDERS : []),
   ],
 };

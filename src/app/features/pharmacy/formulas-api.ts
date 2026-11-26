@@ -2,7 +2,8 @@ import { Formula } from './formulas.models';
 
 /**
  * Fronteira do catálogo de fórmulas e da padronização por hospital (FR-004..FR-006).
- * A API real (`HttpFormulasApi`, só com o backend de dev ligado) substitui `ProvisionalFormulasApi` em `app.config.ts`.
+ * `HttpFormulasApi` (API real, em todos os ambientes) é a implementação de `app.config.ts`; ela delega a
+ * `ProvisionalFormulasApi` quando o hospital ou o paciente é de exemplo (id sem correspondente no backend).
  */
 export abstract class FormulasApi {
   /** Catálogo compartilhado, com `standardized` calculado para o hospital. */
