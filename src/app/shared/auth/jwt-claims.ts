@@ -2,6 +2,7 @@
 export interface AccessTokenClaims {
   readonly groups?: unknown;
   readonly nomeCompleto?: unknown;
+  readonly sub?: unknown;
   readonly upn?: unknown;
 }
 
