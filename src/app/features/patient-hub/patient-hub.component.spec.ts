@@ -299,7 +299,7 @@ async function setup(
       { provide: AssessmentWriter, useValue: { save: (): Promise<void> => Promise.resolve() } },
       { provide: DailyRecordSource, useValue: { loadEntries: (): Promise<[]> => Promise.resolve([]) } },
       { provide: DailyRecordWriter, useValue: { record: (): Promise<[]> => Promise.resolve([]) } },
-      { provide: FormulasApi, useValue: { list: (): Promise<[]> => Promise.resolve([]) } },
+      { provide: FormulasApi, useValue: { listStandardizedForPatient: (): Promise<[]> => Promise.resolve([]) } },
       { provide: NutritionTargetsReader, useValue: { current: (): Promise<null> => Promise.resolve(null) } },
       InMemoryPatientMessages,
       {

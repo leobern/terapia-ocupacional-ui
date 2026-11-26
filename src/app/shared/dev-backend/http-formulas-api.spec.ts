@@ -56,6 +56,33 @@ describe('HttpFormulasApi', () => {
     ]);
   });
 
+  it('lista as padronizadas do hospital do paciente real (endpoint de leitura do profissional)', async () => {
+    const promise = api.listStandardizedForPatient('42', 1);
+
+    controller.expectOne('/api/v1/pacientes/42/formulas-padronizadas').flush([
+      {
+        categoria: 'ENTERAL',
+        fibra: false,
+        gluten: false,
+        id: 9,
+        kcalPorMl: 1,
+        lactose: false,
+        nome: 'Polimérica',
+        padronizada: true,
+        proteinaPorMl: 0.04,
+        sacarose: false,
+        vegano: false,
+        vegetariano: false,
+      },
+    ]);
+
+    expect(await promise).toEqual([jasmine.objectContaining({ category: 'enteral', id: '9', standardized: true })]);
+  });
+
+  it('paciente de exemplo usa o provisório, sem chamar a API', async () => {
+    expect(await api.listStandardizedForPatient('p1', 1)).toEqual([]);
+  });
+
   it('padroniza com PUT no hospital informado', async () => {
     const promise = api.setStandardized(2, '7', true);
     const request = controller.expectOne('/api/v1/hospitais/2/formulas/7/padronizacao');

@@ -119,6 +119,7 @@ import { PlanSource } from './features/patient-hub/plan/plan-source';
 import { ProvisionalPlanSource } from './features/patient-hub/plan/provisional-plan-source';
 import { ProvisionalRefeedingRiskSource } from './features/patient-hub/plan/provisional-refeeding-risk-source';
 import { RefeedingRiskSource } from './features/patient-hub/plan/refeeding-risk-source';
+import { ApiPrescriptionSource } from './features/patient-hub/prescription/api-prescription-source';
 import { PrescriptionSource } from './features/patient-hub/prescription/prescription-source';
 import { ProvisionalPrescriptionSource } from './features/patient-hub/prescription/provisional-prescription-source';
 import {
@@ -232,7 +233,7 @@ export const appConfig: ApplicationConfig = {
     ProvisionalDailyEvolutionSource,
     { provide: DailyEvolutionSource, useClass: ApiDailyEvolutionSource },
     { provide: EvolutionAiStructurer, useClass: ProvisionalEvolutionAiStructurer },
-    { provide: PrescriptionSource, useClass: ProvisionalPrescriptionSource },
+    ProvisionalPrescriptionSource,
     { provide: ParameterAiStructurer, useClass: ProvisionalParameterAiStructurer },
     { provide: PatientMessageSource, useClass: PatientMessageApiService },
     { provide: PatientTeamSource, useClass: PatientTeamApiService },
@@ -240,7 +241,7 @@ export const appConfig: ApplicationConfig = {
     { provide: MessageAiAssistant, useClass: ProvisionalMessageAiAssistant },
     ProvisionalPlanSource,
     { provide: PlanSource, useClass: ApiPlanSource },
-    { provide: PrescriptionSource, useClass: ProvisionalPrescriptionSource },
+    { provide: PrescriptionSource, useClass: ApiPrescriptionSource },
     { provide: NutritionTargetsReader, useClass: PlanNutritionTargetsReader },
     { provide: RefeedingRiskSource, useClass: ProvisionalRefeedingRiskSource },
     { provide: InfusedIntakeSource, useClass: ProvisionalInfusedIntakeSource },

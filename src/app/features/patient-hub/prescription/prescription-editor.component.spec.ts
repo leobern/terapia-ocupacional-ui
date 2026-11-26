@@ -123,7 +123,7 @@ describe('PrescriptionEditorComponent', () => {
         {
           provide: FormulasApi,
           useValue: {
-            list: (): Promise<readonly Formula[]> =>
+            listStandardizedForPatient: (): Promise<readonly Formula[]> =>
               catalogFails ? Promise.reject(new Error('x')) : Promise.resolve([FORMULA]),
           },
         },

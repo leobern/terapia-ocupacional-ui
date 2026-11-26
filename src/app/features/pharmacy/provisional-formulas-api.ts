@@ -71,6 +71,10 @@ export class ProvisionalFormulasApi extends FormulasApi {
     return Promise.resolve(CATALOG.map(item => ({ ...item, standardized: ids?.has(item.id) ?? false })));
   }
 
+  async listStandardizedForPatient(_: string, hospitalId: number): Promise<readonly Formula[]> {
+    return (await this.list(hospitalId)).filter(formula => formula.standardized);
+  }
+
   setStandardized(hospitalId: number, formulaId: string, standardized: boolean): Promise<void> {
     const ids = this.standardizedByHospital.get(hospitalId) ?? new Set<string>();
 

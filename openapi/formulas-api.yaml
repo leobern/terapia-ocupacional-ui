@@ -1,0 +1,264 @@
+openapi: 3.0.3
+info:
+  title: Fórmulas e Farmácia API
+  version: 1.0.0
+  description: >
+    Catálogo compartilhado de fórmulas e a padronização por hospital (Farmácia, EP-009), mais a leitura
+    das fórmulas padronizadas para quem prescreve (Hub). Espelha o modelo Formula da UI (features/pharmacy).
+    O catálogo completo, a padronização e a solicitação de fórmula nova são exclusivos do perfil GESTOR
+    (autorização global no MVP, sem checagem gestor-hospital). A prescrição lê, somente leitura, só as
+    fórmulas padronizadas no hospital do paciente, com a mesma regra de acesso da prescrição.
+servers:
+  - url: /
+security:
+  - bearerAuth: []
+paths:
+  /api/v1/hospitais/{hospitalId}/formulas:
+    get:
+      operationId: listarCatalogoFormulas
+      x-implemented: true
+      summary: Catálogo de fórmulas com a padronização do hospital
+      description: >
+        Todas as fórmulas do catálogo, ordenadas por categoria e nome, com `padronizada` calculada para o
+        hospital informado. Apenas GESTOR.
+      parameters:
+        - $ref: "#/components/parameters/HospitalId"
+      responses:
+        "200":
+          description: Catálogo
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Formula"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          description: Perfil sem permissão (não é GESTOR)
+        "404":
+          description: Hospital inexistente
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/v1/hospitais/{hospitalId}/formulas/{formulaId}/padronizacao:
+    put:
+      operationId: definirPadronizacaoFormula
+      x-implemented: true
+      summary: Marcar ou desmarcar a fórmula como padronizada no hospital
+      description: >
+        Idempotente; afeta só o hospital informado. Devolve a fórmula com o novo estado. Apenas GESTOR.
+      parameters:
+        - $ref: "#/components/parameters/HospitalId"
+        - name: formulaId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PadronizacaoRequest"
+      responses:
+        "200":
+          description: Fórmula com a padronização atualizada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Formula"
+        "400":
+          description: Campo `padronizada` ausente
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          description: Perfil sem permissão (não é GESTOR)
+        "404":
+          description: Hospital ou fórmula inexistente
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/v1/hospitais/{hospitalId}/solicitacoes-formula:
+    post:
+      operationId: solicitarFormula
+      x-implemented: true
+      summary: Solicitar a inclusão de uma fórmula ainda não cadastrada
+      description: >
+        Registra o pedido com hospital, solicitante (usuário do token) e data/hora, sem fluxo de aprovação.
+        Apenas GESTOR.
+      parameters:
+        - $ref: "#/components/parameters/HospitalId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SolicitacaoFormulaRequest"
+      responses:
+        "201":
+          description: Solicitação registrada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SolicitacaoFormula"
+        "400":
+          description: Descrição vazia ou acima de 2000 caracteres
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          description: Perfil sem permissão (não é GESTOR)
+        "404":
+          description: Hospital inexistente
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/v1/pacientes/{pacienteId}/formulas-padronizadas:
+    get:
+      operationId: listFormulasPadronizadasPaciente
+      x-implemented: true
+      summary: Fórmulas padronizadas no hospital do paciente (somente leitura)
+      description: >
+        Para o editor da prescrição: só as fórmulas padronizadas no hospital do paciente (`padronizada` é
+        sempre true), ordenadas por categoria e nome. Fórmulas sem `kcalPorMl`/`proteinaPorMl` aparecem na
+        lista, mas a gravação da prescrição as recusa com 400. Exige vínculo aprovado do profissional com o
+        hospital do paciente; paciente inexistente, de outro hospital ou com vínculo não aprovado respondem o
+        mesmo 404. Qualquer perfil autenticado com acesso ao paciente (não só GESTOR).
+      parameters:
+        - name: pacienteId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        "200":
+          description: Fórmulas padronizadas (lista vazia se o hospital não padronizou nenhuma)
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Formula"
+        "401":
+          $ref: "#/components/responses/Error"
+        "404":
+          description: Paciente inexistente ou de hospital sem vínculo aprovado do profissional
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  parameters:
+    HospitalId:
+      name: hospitalId
+      in: path
+      required: true
+      schema:
+        type: integer
+        format: int64
+  responses:
+    Error:
+      description: Erro
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+  schemas:
+    ErrorResponse:
+      type: object
+      required: [message, timestamp]
+      properties:
+        message:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+    Formula:
+      type: object
+      required: [id, nome, categoria, padronizada]
+      properties:
+        id:
+          type: integer
+          format: int64
+        nome:
+          type: string
+        categoria:
+          type: string
+          enum: [ENTERAL, PARENTERAL, SUPLEMENTO_ORAL, MEDICAMENTO]
+        kcalPorMl:
+          type: number
+          nullable: true
+        proteinaPorMl:
+          type: number
+          nullable: true
+        fibra:
+          type: boolean
+          nullable: true
+        sacarose:
+          type: boolean
+          nullable: true
+        lactose:
+          type: boolean
+          nullable: true
+        gluten:
+          type: boolean
+          nullable: true
+        vegetariano:
+          type: boolean
+          nullable: true
+        vegano:
+          type: boolean
+          nullable: true
+        padronizada:
+          type: boolean
+          description: Padronizada no hospital consultado
+    PadronizacaoRequest:
+      type: object
+      required: [padronizada]
+      properties:
+        padronizada:
+          type: boolean
+    SolicitacaoFormulaRequest:
+      type: object
+      required: [descricao]
+      properties:
+        descricao:
+          type: string
+          minLength: 1
+          maxLength: 2000
+    SolicitacaoFormula:
+      type: object
+      required: [id, hospitalId, usuarioId, descricao, createdAt]
+      properties:
+        id:
+          type: integer
+          format: int64
+        hospitalId:
+          type: integer
+          format: int64
+        usuarioId:
+          type: integer
+          format: int64
+        descricao:
+          type: string
+        createdAt:
+          type: string
+          format: date-time

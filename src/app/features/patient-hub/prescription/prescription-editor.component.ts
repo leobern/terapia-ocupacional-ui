@@ -239,7 +239,7 @@ export class PrescriptionEditorComponent {
   private async load(patientId: string, hospitalId: number): Promise<void> {
     try {
       const [catalog, targets] = await Promise.all([
-        this.catalog.list(hospitalId),
+        this.catalog.listStandardizedForPatient(patientId, hospitalId),
         this.targetsReader.current(patientId),
       ]);
 

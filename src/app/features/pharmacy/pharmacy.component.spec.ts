@@ -75,6 +75,15 @@ describe('PharmacyComponent', () => {
     expect(fixture.nativeElement.querySelector('.pharmacy__status--on')).toBeNull();
   });
 
+  it('provisório: o editor da prescrição só recebe as fórmulas padronizadas do hospital', async () => {
+    expect(await api.listStandardizedForPatient('p1', 1)).toEqual([]);
+
+    await api.setStandardized(1, 'enteral-1', true);
+
+    expect((await api.listStandardizedForPatient('p1', 1)).map(f => f.id)).toEqual(['enteral-1']);
+    expect(await api.listStandardizedForPatient('p1', 2)).toEqual([]);
+  });
+
   it('a padronização do hospital A não afeta o B', async () => {
     await api.setStandardized(1, 'enteral-1', true);
 
