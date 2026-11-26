@@ -106,6 +106,7 @@ import {
   PriorStaysSource,
   PriorStaysSynthesizer,
 } from './features/patient-hub/patient-hub-source';
+import { ApiPlanSource } from './features/patient-hub/plan/api-plan-source';
 import {
   NutritionTargetsReader,
   PlanNutritionTargetsReader,
@@ -229,7 +230,8 @@ export const appConfig: ApplicationConfig = {
     { provide: PatientTeamSource, useClass: PatientTeamApiService },
     { provide: ObservationFollowUpPort, useClass: ObservationFollowUpApiService },
     { provide: MessageAiAssistant, useClass: ProvisionalMessageAiAssistant },
-    { provide: PlanSource, useClass: ProvisionalPlanSource },
+    ProvisionalPlanSource,
+    { provide: PlanSource, useClass: ApiPlanSource },
     { provide: PrescriptionSource, useClass: ProvisionalPrescriptionSource },
     { provide: NutritionTargetsReader, useClass: PlanNutritionTargetsReader },
     { provide: RefeedingRiskSource, useClass: ProvisionalRefeedingRiskSource },
