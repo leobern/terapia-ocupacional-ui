@@ -1,0 +1,274 @@
+openapi: 3.0.3
+info:
+  title: Evoluções API
+  version: 1.0.0
+  description: >
+    Contrato da Evolução diária / Registro diário do paciente (Hub): parâmetros assistenciais do dia (glicemia,
+    evacuações, diurese, resultados...) e texto da evolução, por paciente e por data. Cada gravação é uma versão
+    nova e imutável do dia (trilha de auditoria, autor do token, data/hora do servidor); a leitura do dia devolve
+    a mais recente. Espelha DailyRecordSource, DailyRecordWriter e DailyEvolutionSource da UI. Os estruturadores de
+    IA (texto livre para parâmetros e evolução) estão fora deste contrato.
+servers:
+  - url: /
+security:
+  - bearerAuth: []
+paths:
+  /api/v1/pacientes/{pacienteId}/evolucoes:
+    get:
+      operationId: listEvolucoesPaciente
+      x-implemented: true
+      summary: Registros diários do paciente, do dia mais recente ao mais antigo
+      description: >
+        Devolve a versão vigente de cada dia que tem registro, do dia mais recente ao mais antigo. Paginação por
+        data: passe em `before` o `nextBefore` da página anterior (dias estritamente anteriores). `nextBefore` é
+        null na última página. Acesso exige vínculo APROVADO com o hospital do paciente; paciente inexistente e de
+        outro hospital respondem ambos 404.
+      parameters:
+        - $ref: "#/components/parameters/PacienteId"
+        - name: limit
+          in: query
+          required: false
+          description: Quantidade de dias por página (padrão 30, de 1 a 100)
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 30
+        - name: before
+          in: query
+          required: false
+          description: Só dias anteriores a esta data (yyyy-MM-dd)
+          schema:
+            type: string
+            format: date
+      responses:
+        "200":
+          description: Página de registros diários (lista vazia quando o paciente não tem registros)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EvolucaoDiariaPage"
+        "400":
+          description: limit fora do intervalo ou before fora do formato yyyy-MM-dd
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          $ref: "#/components/responses/Error"
+        "404":
+          description: Paciente inexistente ou de hospital sem vínculo aprovado do profissional
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/v1/pacientes/{pacienteId}/evolucoes/{data}:
+    get:
+      operationId: getEvolucaoPacienteDia
+      x-implemented: true
+      summary: Registro diário vigente do paciente na data
+      description: >
+        Devolve a última versão gravada para o dia. 204 quando o dia não tem registro (estado vazio, não um erro).
+        Mesma regra de acesso de listEvolucoesPaciente.
+      parameters:
+        - $ref: "#/components/parameters/PacienteId"
+        - $ref: "#/components/parameters/Data"
+      responses:
+        "200":
+          description: Registro vigente do dia
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EvolucaoDiaria"
+        "204":
+          description: Dia sem registro
+        "400":
+          description: Data fora do formato yyyy-MM-dd
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          $ref: "#/components/responses/Error"
+        "404":
+          description: Paciente inexistente ou de hospital sem vínculo aprovado do profissional
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    put:
+      operationId: saveEvolucaoPacienteDia
+      x-implemented: true
+      summary: Grava uma nova versão do registro diário da data
+      description: >
+        Cada gravação cria uma versão imutável; regravar o mesmo dia não altera as anteriores e a leitura passa a
+        devolver a nova. O corpo é o retrato completo do dia (texto, parâmetros e reavaliações), não um
+        diferencial. Exige texto não vazio ou ao menos um parâmetro. Autor e data/hora vêm do servidor (token e
+        relógio), nunca do corpo. Datas futuras (além de amanhã, folga de fuso) são rejeitadas. Mesma regra de
+        acesso de listEvolucoesPaciente.
+      parameters:
+        - $ref: "#/components/parameters/PacienteId"
+        - $ref: "#/components/parameters/Data"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SalvarEvolucaoDiariaRequest"
+      responses:
+        "200":
+          description: Versão gravada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EvolucaoDiaria"
+        "400":
+          description: Corpo inválido, data malformada ou futura, ou nem texto nem parâmetros informados
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          $ref: "#/components/responses/Error"
+        "404":
+          description: Paciente inexistente ou de hospital sem vínculo aprovado do profissional
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  parameters:
+    PacienteId:
+      name: pacienteId
+      in: path
+      required: true
+      schema:
+        type: integer
+        format: int64
+    Data:
+      name: data
+      in: path
+      required: true
+      description: Dia do registro (yyyy-MM-dd)
+      schema:
+        type: string
+        format: date
+  responses:
+    Error:
+      description: Erro
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+  schemas:
+    ErrorResponse:
+      type: object
+      required: [message, timestamp]
+      properties:
+        message:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+    ParametroDiario:
+      type: object
+      required: [parameterId, value]
+      properties:
+        parameterId:
+          type: string
+          maxLength: 100
+          description: Id do catálogo (glycemia, bowel, ileostomy, diuresis, lab) ou "custom:nome" para parâmetro novo
+        value:
+          type: number
+          minimum: 0
+          maximum: 1000000000
+        parameterLabel:
+          type: string
+          maxLength: 100
+          description: Nome, só nos parâmetros fora do catálogo
+          nullable: true
+        unit:
+          type: string
+          maxLength: 30
+          description: Unidade, só nos parâmetros fora do catálogo
+          nullable: true
+    Reavaliacao:
+      type: object
+      required: [id, name, dueAt]
+      properties:
+        id:
+          type: string
+          maxLength: 60
+        name:
+          type: string
+          maxLength: 200
+        dueAt:
+          type: string
+          format: date-time
+          description: Quando a reavaliação deve acontecer
+    SalvarEvolucaoDiariaRequest:
+      type: object
+      required: [origin]
+      properties:
+        text:
+          type: string
+          maxLength: 20000
+          description: Texto da evolução do dia (pode ser vazio quando há parâmetros)
+        origin:
+          type: string
+          enum: [AI, AI_EDITED, MANUAL]
+        parameters:
+          type: array
+          maxItems: 50
+          items:
+            $ref: "#/components/schemas/ParametroDiario"
+        reevaluations:
+          type: array
+          maxItems: 20
+          items:
+            $ref: "#/components/schemas/Reavaliacao"
+    EvolucaoDiaria:
+      type: object
+      required: [date, text, origin, parameters, reevaluations, author, at]
+      properties:
+        date:
+          type: string
+          format: date
+        text:
+          type: string
+        origin:
+          type: string
+          enum: [AI, AI_EDITED, MANUAL]
+        parameters:
+          type: array
+          items:
+            $ref: "#/components/schemas/ParametroDiario"
+        reevaluations:
+          type: array
+          items:
+            $ref: "#/components/schemas/Reavaliacao"
+        author:
+          type: string
+          description: Nome do autor da versão (profissional do token)
+        at:
+          type: string
+          format: date-time
+          description: Data/hora do servidor em que a versão foi gravada
+    EvolucaoDiariaPage:
+      type: object
+      required: [items, nextBefore]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/EvolucaoDiaria"
+        nextBefore:
+          type: string
+          format: date
+          nullable: true
+          description: Passe em `before` para a próxima página; null na última

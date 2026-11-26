@@ -15,7 +15,7 @@ import { AvatarComponent } from '../../../shared/components/avatar/avatar.compon
 import { ScrollRevealDirective } from '../../../shared/directives/scroll-reveal.directive';
 import { PhIconComponent } from '../../../shared/icons/ph-icon/ph-icon.component';
 import { NOW } from '../../home/professional-profile';
-import { DailyEvolutionSource } from '../daily-record/daily-evolution-source';
+import { DailyEvolutionDay, DailyEvolutionSource } from '../daily-record/daily-evolution-source';
 import {
   DailyEvolution,
   dayKey,
@@ -143,25 +143,32 @@ export class PatientEvolutionsComponent {
     });
 
     this.state.set('loading');
-    const results = await Promise.allSettled(days.map(d => this.source.load(patientId, d.key)));
+    let found: readonly DailyEvolutionDay[];
 
-    if (token !== this.token) {
+    try {
+      found = await this.source.list(
+        patientId,
+        days.map(d => d.key),
+      );
+    } catch {
+      if (token === this.token) {
+        this.entries.set([]);
+        this.state.set('error');
+      }
+
       return;
     }
-    if (results.every(r => r.status === 'rejected')) {
-      this.entries.set([]);
-      this.state.set('error');
-
+    if (token !== this.token) {
       return;
     }
     const list: EvolutionEntry[] = [];
 
-    results.forEach((r, i) => {
-      const evolution = r.status === 'fulfilled' ? r.value : null;
+    for (const { day, evolution } of found) {
+      const date = days.find(d => d.key === day)?.date;
 
-      if (evolution !== null) {
+      if (date !== undefined) {
         list.push({
-          date: days[i].date,
+          date,
           evolution,
           items: (evolution.reevaluations ?? []).map(item => ({
             id: item.id,
@@ -169,11 +176,11 @@ export class PatientEvolutionsComponent {
             name: item.name,
             status: reevaluationStatus(item.dueAt, now),
           })),
-          key: days[i].key,
+          key: day,
           registered: registeredAt(evolution.at),
         });
       }
-    });
+    }
     this.entries.set(list);
     this.state.set('ready');
   }

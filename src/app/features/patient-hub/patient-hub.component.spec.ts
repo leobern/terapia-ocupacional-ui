@@ -266,7 +266,10 @@ async function setup(
           loadResponsibleOptions: (): Promise<string[]> => Promise.resolve([]),
         },
       },
-      { provide: DailyEvolutionSource, useValue: { load: (): Promise<null> => Promise.resolve(null) } },
+      {
+        provide: DailyEvolutionSource,
+        useValue: { list: (): Promise<[]> => Promise.resolve([]), load: (): Promise<null> => Promise.resolve(null) },
+      },
       { provide: EvolutionAiStructurer, useValue: { suggest: (): Promise<string> => Promise.resolve('') } },
       {
         provide: PatientMessageSource,

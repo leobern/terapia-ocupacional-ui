@@ -72,6 +72,9 @@ import { ClinicalAssessmentSource } from './features/patient-hub/clinical-assess
 import { ClinicalItemHistorySource } from './features/patient-hub/clinical-assessment/clinical-item-history-source';
 import { ProvisionalClinicalAssessmentSource } from './features/patient-hub/clinical-assessment/provisional-clinical-assessment-source';
 import { ProvisionalClinicalItemHistorySource } from './features/patient-hub/clinical-assessment/provisional-clinical-item-history-source';
+import { ApiDailyEvolutionSource } from './features/patient-hub/daily-record/api-daily-evolution-source';
+import { ApiDailyRecordSource } from './features/patient-hub/daily-record/api-daily-record-source';
+import { ApiDailyRecordWriter } from './features/patient-hub/daily-record/api-daily-record-writer';
 import { DailyEvolutionSource } from './features/patient-hub/daily-record/daily-evolution-source';
 import { DailyRecordSource } from './features/patient-hub/daily-record/daily-record-source';
 import { DailyRecordWriter } from './features/patient-hub/daily-record/daily-record-writer';
@@ -220,11 +223,14 @@ export const appConfig: ApplicationConfig = {
     { provide: AssessmentSource, useExisting: ApiAssessmentSource },
     { provide: AssessmentWriter, useExisting: ApiAssessmentSource },
     ProvisionalDailyRecordSource,
-    { provide: DailyRecordSource, useExisting: ProvisionalDailyRecordSource },
-    { provide: DailyRecordWriter, useExisting: ProvisionalDailyRecordSource },
+    ApiDailyRecordSource,
+    { provide: DailyRecordSource, useExisting: ApiDailyRecordSource },
+    ApiDailyRecordWriter,
+    { provide: DailyRecordWriter, useExisting: ApiDailyRecordWriter },
     { provide: DiagnosisSource, useClass: ProvisionalDiagnosisSource },
     { provide: DiagnosisDecisionSource, useClass: ProvisionalDiagnosisDecisionSource },
-    { provide: DailyEvolutionSource, useClass: ProvisionalDailyEvolutionSource },
+    ProvisionalDailyEvolutionSource,
+    { provide: DailyEvolutionSource, useClass: ApiDailyEvolutionSource },
     { provide: EvolutionAiStructurer, useClass: ProvisionalEvolutionAiStructurer },
     { provide: PrescriptionSource, useClass: ProvisionalPrescriptionSource },
     { provide: ParameterAiStructurer, useClass: ProvisionalParameterAiStructurer },
