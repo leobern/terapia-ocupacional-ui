@@ -1,13 +1,26 @@
 openapi: 3.0.3
 info:
   title: Evoluções API
-  version: 1.0.0
+  version: 1.1.0
   description: >
     Contrato da Evolução diária / Registro diário do paciente (Hub): parâmetros assistenciais do dia (glicemia,
-    evacuações, diurese, resultados...) e texto da evolução, por paciente e por data. Cada gravação é uma versão
-    nova e imutável do dia (trilha de auditoria, autor do token, data/hora do servidor); a leitura do dia devolve
-    a mais recente. Espelha DailyRecordSource, DailyRecordWriter e DailyEvolutionSource da UI. Os estruturadores de
-    IA (texto livre para parâmetros e evolução) estão fora deste contrato.
+    evacuações, diurese, resultados...) e texto da evolução, por paciente e por data. Tudo é append-only: cada
+    gravação é uma versão (ou entrada) nova e imutável, com autor do token e data/hora do servidor. Espelha
+    DailyRecordSource, DailyRecordWriter e DailyEvolutionSource da UI. Os estruturadores de IA (texto livre para
+    parâmetros e evolução) estão fora deste contrato.
+
+
+    **Escritas reenviáveis (ADR-003, fila offline do cliente).** Toda escrita aceita o cabeçalho opcional
+    `Idempotency-Key` (UUID gerado no cliente, escopo do usuário do token) e o campo opcional `occurredAt` (hora do
+    cliente, guardada ao lado da hora do servidor, que continua mandando na ordenação "vigente"). Prefira as
+    operações aditivas (`/texto`, `/parametros`, `/reavaliacoes`) ao PUT do dia, que grava o retrato completo e,
+    por isso, não é seguro de reenviar quando outro profissional gravou no mesmo dia.
+
+
+    **Leitura do dia.** Texto = a versão de texto mais recente (hora do servidor). Parâmetros e reavaliações = os do
+    último retrato (PUT) mais as entradas acrescentadas depois dele, em ordem cronológica (`occurredAt` quando
+    informado, senão a hora do servidor). Um PUT novo substitui, daquele instante em diante, o que havia (é o
+    "retrato completo"); as entradas anteriores a ele continuam guardadas mas deixam de compor a leitura.
 servers:
   - url: /
 security:
@@ -19,10 +32,10 @@ paths:
       x-implemented: true
       summary: Registros diários do paciente, do dia mais recente ao mais antigo
       description: >
-        Devolve a versão vigente de cada dia que tem registro, do dia mais recente ao mais antigo. Paginação por
-        data: passe em `before` o `nextBefore` da página anterior (dias estritamente anteriores). `nextBefore` é
-        null na última página. Acesso exige vínculo APROVADO com o hospital do paciente; paciente inexistente e de
-        outro hospital respondem ambos 404.
+        Devolve a leitura de cada dia que tem registro (versão ou entrada acrescentada), do dia mais recente ao
+        mais antigo. Paginação por data: passe em `before` o `nextBefore` da página anterior (dias estritamente
+        anteriores). `nextBefore` é null na última página. Acesso exige vínculo APROVADO com o hospital do
+        paciente; paciente inexistente e de outro hospital respondem ambos 404.
       parameters:
         - $ref: "#/components/parameters/PacienteId"
         - name: limit
@@ -68,14 +81,16 @@ paths:
       x-implemented: true
       summary: Registro diário vigente do paciente na data
       description: >
-        Devolve a última versão gravada para o dia. 204 quando o dia não tem registro (estado vazio, não um erro).
-        Mesma regra de acesso de listEvolucoesPaciente.
+        Devolve a leitura do dia (ver a descrição do contrato). 204 quando o dia não tem registro (estado vazio,
+        não um erro). Quando a versão de texto vigente foi gravada sobre uma base defasada, `conflict` é true e
+        `conflictingVersions` traz as versões que ela não tinha visto, para o cliente mostrar as duas. Mesma regra
+        de acesso de listEvolucoesPaciente.
       parameters:
         - $ref: "#/components/parameters/PacienteId"
         - $ref: "#/components/parameters/Data"
       responses:
         "200":
-          description: Registro vigente do dia
+          description: Leitura do dia
           content:
             application/json:
               schema:
@@ -99,16 +114,19 @@ paths:
     put:
       operationId: saveEvolucaoPacienteDia
       x-implemented: true
-      summary: Grava uma nova versão do registro diário da data
+      summary: Grava uma nova versão do registro diário da data (retrato completo)
       description: >
-        Cada gravação cria uma versão imutável; regravar o mesmo dia não altera as anteriores e a leitura passa a
-        devolver a nova. O corpo é o retrato completo do dia (texto, parâmetros e reavaliações), não um
-        diferencial. Exige texto não vazio ou ao menos um parâmetro. Autor e data/hora vêm do servidor (token e
-        relógio), nunca do corpo. Datas futuras (além de amanhã, folga de fuso) são rejeitadas. Mesma regra de
-        acesso de listEvolucoesPaciente.
+        Mantido por compatibilidade. Cada gravação cria uma versão imutável; regravar o mesmo dia não altera as
+        anteriores e a leitura passa a devolver a nova. O corpo é o retrato completo do dia (texto, parâmetros e
+        reavaliações), não um diferencial, e substitui o que havia até aquele instante: não use para reenvio de
+        fila offline (use as operações aditivas). Exige texto não vazio ou ao menos um parâmetro. Autor e
+        data/hora vêm do servidor (token e relógio), nunca do corpo. Datas futuras (além de amanhã, folga de fuso)
+        são rejeitadas. `baseVersion` opcional segue a regra de conflito de saveEvolucaoPacienteTexto. Aceita
+        `Idempotency-Key`. Mesma regra de acesso de listEvolucoesPaciente.
       parameters:
         - $ref: "#/components/parameters/PacienteId"
         - $ref: "#/components/parameters/Data"
+        - $ref: "#/components/parameters/IdempotencyKey"
       requestBody:
         required: true
         content:
@@ -117,13 +135,18 @@ paths:
               $ref: "#/components/schemas/SalvarEvolucaoDiariaRequest"
       responses:
         "200":
-          description: Versão gravada
+          description: Versão gravada (ou a resposta original, numa repetição da mesma chave)
+          headers:
+            Idempotent-Replayed:
+              $ref: "#/components/headers/IdempotentReplayed"
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/EvolucaoDiaria"
         "400":
-          description: Corpo inválido, data malformada ou futura, ou nem texto nem parâmetros informados
+          description: >
+            Corpo inválido, data malformada ou futura, nem texto nem parâmetros informados, Idempotency-Key que não
+            é UUID, baseVersion de outro dia ou occurredAt fora da janela aceita
           content:
             application/json:
               schema:
@@ -136,6 +159,146 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+        "422":
+          $ref: "#/components/responses/IdempotencyKeyReused"
+  /api/v1/pacientes/{pacienteId}/evolucoes/{data}/texto:
+    post:
+      operationId: saveEvolucaoPacienteTexto
+      x-implemented: true
+      summary: Grava uma nova versão só do texto da evolução do dia
+      description: >
+        Não toca em parâmetros nem reavaliações. `baseVersion` opcional é o `version` do dia que o cliente tinha
+        visto (0 = dia ainda sem versão de texto). Se informado e não for a versão mais recente do dia, a versão é
+        gravada MESMO ASSIM (nada se perde), com `conflict` true, e a resposta traz em `conflictingVersions` as
+        versões que o cliente não tinha visto. O cliente resolve gravando um texto novo com `baseVersion` igual ao
+        `version` vigente (essa gravação não é conflito). Sem `baseVersion` não há checagem. `baseVersion` que não
+        pertence ao dia do paciente é 400. A versão mais recente continua sendo a de maior hora do servidor, nunca
+        a de maior `occurredAt`. Aceita `Idempotency-Key`. Mesma regra de acesso de listEvolucoesPaciente.
+      parameters:
+        - $ref: "#/components/parameters/PacienteId"
+        - $ref: "#/components/parameters/Data"
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SalvarTextoEvolucaoRequest"
+      responses:
+        "201":
+          description: Versão gravada, com a leitura do dia (ou a resposta original, numa repetição da chave)
+          headers:
+            Idempotent-Replayed:
+              $ref: "#/components/headers/IdempotentReplayed"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EvolucaoDiaria"
+        "400":
+          description: Corpo inválido, data malformada ou futura, texto em branco, Idempotency-Key que não é UUID, baseVersion de outro dia ou occurredAt fora da janela aceita
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          $ref: "#/components/responses/Error"
+        "404":
+          description: Paciente inexistente ou de hospital sem vínculo aprovado do profissional
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "422":
+          $ref: "#/components/responses/IdempotencyKeyReused"
+  /api/v1/pacientes/{pacienteId}/evolucoes/{data}/parametros:
+    post:
+      operationId: addEvolucaoPacienteParametros
+      x-implemented: true
+      summary: Acrescenta parâmetros ao dia
+      description: >
+        Grava uma entrada nova e imutável com os parâmetros informados, sem ler nem regravar o retrato do dia.
+        Duas gravações concorrentes nunca se perdem. Os parâmetros aparecem na leitura do dia na ordem
+        cronológica (`occurredAt` quando informado). Aceita `Idempotency-Key`. Mesma regra de acesso de
+        listEvolucoesPaciente e mesma regra de data de saveEvolucaoPacienteDia.
+      parameters:
+        - $ref: "#/components/parameters/PacienteId"
+        - $ref: "#/components/parameters/Data"
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AcrescentarParametrosRequest"
+      responses:
+        "201":
+          description: Entrada gravada (ou a resposta original, numa repetição da mesma chave)
+          headers:
+            Idempotent-Replayed:
+              $ref: "#/components/headers/IdempotentReplayed"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EntradaEvolucao"
+        "400":
+          description: Corpo inválido, lista vazia, data malformada ou futura, Idempotency-Key que não é UUID ou occurredAt fora da janela aceita
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          $ref: "#/components/responses/Error"
+        "404":
+          description: Paciente inexistente ou de hospital sem vínculo aprovado do profissional
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "422":
+          $ref: "#/components/responses/IdempotencyKeyReused"
+  /api/v1/pacientes/{pacienteId}/evolucoes/{data}/reavaliacoes:
+    post:
+      operationId: addEvolucaoPacienteReavaliacoes
+      x-implemented: true
+      summary: Acrescenta reavaliações ao dia
+      description: >
+        Igual a addEvolucaoPacienteParametros, para os itens a reavaliar.
+      parameters:
+        - $ref: "#/components/parameters/PacienteId"
+        - $ref: "#/components/parameters/Data"
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AcrescentarReavaliacoesRequest"
+      responses:
+        "201":
+          description: Entrada gravada (ou a resposta original, numa repetição da mesma chave)
+          headers:
+            Idempotent-Replayed:
+              $ref: "#/components/headers/IdempotentReplayed"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EntradaEvolucao"
+        "400":
+          description: Corpo inválido, lista vazia, data malformada ou futura, Idempotency-Key que não é UUID ou occurredAt fora da janela aceita
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          $ref: "#/components/responses/Error"
+        "404":
+          description: Paciente inexistente ou de hospital sem vínculo aprovado do profissional
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "422":
+          $ref: "#/components/responses/IdempotencyKeyReused"
 components:
   securitySchemes:
     bearerAuth:
@@ -158,9 +321,35 @@ components:
       schema:
         type: string
         format: date
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: false
+      description: >
+        UUID gerado no cliente, um por operação da fila (o mesmo valor a cada reenvio). Escopo do usuário do token.
+        Repetição com a mesma chave e o mesmo corpo devolve a resposta original (mesmo status, cabeçalho
+        Idempotent-Replayed true) sem gravar de novo. Mesma chave com corpo ou destino diferente é 422. Só
+        respostas de sucesso são guardadas (um erro pode ser reenviado). As chaves são descartadas depois de 7 dias.
+      schema:
+        type: string
+        format: uuid
+  headers:
+    IdempotentReplayed:
+      description: "true quando a resposta é a original guardada para a Idempotency-Key, sem nova gravação"
+      schema:
+        type: string
   responses:
     Error:
       description: Erro
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    IdempotencyKeyReused:
+      description: >
+        Idempotency-Key já usada pelo mesmo usuário em outra requisição (corpo ou destino diferente). Escolhido 422
+        e não 409, porque a requisição é bem formada mas semanticamente inválida para aquela chave, e porque 409
+        fica reservado a conflito de estado do recurso.
       content:
         application/json:
           schema:
@@ -211,6 +400,13 @@ components:
           type: string
           format: date-time
           description: Quando a reavaliação deve acontecer
+    OccurredAt:
+      type: string
+      format: date-time
+      description: >
+        Hora em que o cliente registrou o fato, com offset (ISO 8601). Opcional. Guardada ao lado da hora do
+        servidor, que continua sendo a de ordenação e de auditoria. Aceita de 30 dias atrás até 5 minutos à frente
+        do relógio do servidor (configuráveis); fora disso é 400 e nada é gravado.
     SalvarEvolucaoDiariaRequest:
       type: object
       required: [origin]
@@ -232,20 +428,123 @@ components:
           maxItems: 20
           items:
             $ref: "#/components/schemas/Reavaliacao"
+        baseVersion:
+          type: integer
+          format: int64
+          minimum: 0
+          description: Opcional. `version` do dia que o cliente viu (0 = dia sem versão). Ver saveEvolucaoPacienteTexto
+        occurredAt:
+          $ref: "#/components/schemas/OccurredAt"
+    SalvarTextoEvolucaoRequest:
+      type: object
+      required: [text, origin]
+      properties:
+        text:
+          type: string
+          minLength: 1
+          maxLength: 20000
+          description: Texto da evolução (não pode ser em branco)
+        origin:
+          type: string
+          enum: [AI, AI_EDITED, MANUAL]
+        baseVersion:
+          type: integer
+          format: int64
+          minimum: 0
+          description: Opcional. `version` do dia que o cliente viu (0 = dia sem versão de texto)
+        occurredAt:
+          $ref: "#/components/schemas/OccurredAt"
+    AcrescentarParametrosRequest:
+      type: object
+      required: [parameters]
+      properties:
+        parameters:
+          type: array
+          minItems: 1
+          maxItems: 50
+          items:
+            $ref: "#/components/schemas/ParametroDiario"
+        occurredAt:
+          $ref: "#/components/schemas/OccurredAt"
+    AcrescentarReavaliacoesRequest:
+      type: object
+      required: [reevaluations]
+      properties:
+        reevaluations:
+          type: array
+          minItems: 1
+          maxItems: 20
+          items:
+            $ref: "#/components/schemas/Reavaliacao"
+        occurredAt:
+          $ref: "#/components/schemas/OccurredAt"
+    EntradaEvolucao:
+      type: object
+      required: [id, type, author, at]
+      description: Entrada acrescentada ao dia (imutável)
+      properties:
+        id:
+          type: integer
+          format: int64
+        type:
+          type: string
+          enum: [PARAMETERS, REEVALUATIONS]
+        parameters:
+          type: array
+          description: Presente quando type é PARAMETERS
+          items:
+            $ref: "#/components/schemas/ParametroDiario"
+        reevaluations:
+          type: array
+          description: Presente quando type é REEVALUATIONS
+          items:
+            $ref: "#/components/schemas/Reavaliacao"
+        author:
+          type: string
+          description: Nome do autor (profissional do token)
+        at:
+          type: string
+          format: date-time
+          description: Data/hora do servidor em que a entrada foi gravada
+        occurredAt:
+          $ref: "#/components/schemas/OccurredAt"
+    VersaoTextoEvolucao:
+      type: object
+      required: [version, text, origin, author, at]
+      description: Uma versão de texto do dia (usada em conflictingVersions)
+      properties:
+        version:
+          type: integer
+          format: int64
+        text:
+          type: string
+        origin:
+          type: string
+          enum: [AI, AI_EDITED, MANUAL]
+        author:
+          type: string
+        at:
+          type: string
+          format: date-time
+          description: Data/hora do servidor
+        occurredAt:
+          $ref: "#/components/schemas/OccurredAt"
     EvolucaoDiaria:
       type: object
-      required: [date, text, origin, parameters, reevaluations, author, at]
+      required: [date, text, origin, parameters, reevaluations, author, at, version, conflict]
       properties:
         date:
           type: string
           format: date
         text:
           type: string
+          description: Texto da versão de texto vigente (vazio quando o dia só tem entradas)
         origin:
           type: string
           enum: [AI, AI_EDITED, MANUAL]
         parameters:
           type: array
+          description: Parâmetros do último retrato mais as entradas posteriores, em ordem cronológica
           items:
             $ref: "#/components/schemas/ParametroDiario"
         reevaluations:
@@ -254,11 +553,34 @@ components:
             $ref: "#/components/schemas/Reavaliacao"
         author:
           type: string
-          description: Nome do autor da versão (profissional do token)
+          description: Nome do autor da versão de texto vigente (do token)
         at:
           type: string
           format: date-time
-          description: Data/hora do servidor em que a versão foi gravada
+          description: Data/hora do servidor em que a versão de texto vigente foi gravada
+        version:
+          type: integer
+          format: int64
+          description: Id da versão de texto vigente, 0 quando o dia só tem entradas. Use como baseVersion da próxima gravação
+        occurredAt:
+          $ref: "#/components/schemas/OccurredAt"
+        conflict:
+          type: boolean
+          description: true quando a versão vigente foi gravada sobre uma baseVersion defasada
+        baseVersion:
+          type: integer
+          format: int64
+          description: A baseVersion informada na versão vigente; presente só quando conflict é true
+        conflictingVersions:
+          type: array
+          description: Versões de texto gravadas depois da baseVersion e antes da vigente, que ela não tinha visto. Vazia quando conflict é false
+          items:
+            $ref: "#/components/schemas/VersaoTextoEvolucao"
+        entries:
+          type: array
+          description: Entradas acrescentadas ao dia que compõem a leitura, em ordem cronológica
+          items:
+            $ref: "#/components/schemas/EntradaEvolucao"
     EvolucaoDiariaPage:
       type: object
       required: [items, nextBefore]
