@@ -62,6 +62,20 @@
     "unlock": "Unlock",
     "useBiometric": "Use biometrics"
   },
+  "login": {
+    "email": "Email",
+    "error": {
+      "invalid-credentials": "Incorrect email or password",
+      "locked": "Too many attempts. Try again later.",
+      "network-error": "No connection. Check your internet.",
+      "validation": "Enter a valid email and your password."
+    },
+    "forgotPassword": "Forgot my password",
+    "password": "Password",
+    "submit": "Sign in",
+    "submitting": "Signing in...",
+    "title": "Sign in"
+  },
   "logout": {
     "cancel": "Cancel",
     "confirm": "Sign out",
