@@ -2,7 +2,7 @@ import { formatRecordTime, groupOfSpecialty } from './patient-message.models';
 
 describe('patient-message.models', () => {
   it('formata data e hora', () => {
-    expect(formatRecordTime(new Date(2026, 10, 3, 9, 5).toISOString())).toBe('03/11/2026 09:05');
+    expect(formatRecordTime(new Date(2026, 10, 3, 9, 5).toISOString())).toBe('03/11/26 09:05');
   });
 
   it('descobre o grupo pela especialidade em texto livre e devolve null quando não reconhece', () => {

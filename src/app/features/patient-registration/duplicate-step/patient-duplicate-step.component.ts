@@ -12,8 +12,8 @@ import {
 
 import { ButtonComponent } from '../../../shared/components/button/button.component';
 import { I18nService } from '../../../shared/services/i18n.service';
+import { formatBirthDate } from '../../../shared/utils/br-date';
 import { HospitalContextService } from '../../home/hospital-context.service';
-import { formatBirthDate } from '../parse-birth-date';
 import { PatientMatch } from '../patient-duplicate.models';
 import { PatientDuplicateCheckService } from '../patient-duplicate-check.service';
 

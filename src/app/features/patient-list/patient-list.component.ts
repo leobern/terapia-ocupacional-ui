@@ -28,6 +28,7 @@ import { AiAssistantService } from '../../shared/services/ai-assistant.service';
 import { ConnectivityService } from '../../shared/services/connectivity.service';
 import { type ScreenAction, ScreenActionsService } from '../../shared/services/screen-actions.service';
 import { PATIENTS_CONTEXT } from '../../shared/services/screen-contexts';
+import { formatDayShortYear } from '../../shared/utils/br-date';
 import { ClosurePatient, FollowUpClosureSheetComponent } from '../follow-up-closure/follow-up-closure-sheet.component';
 import { HospitalContextService } from '../home/hospital-context.service';
 import { UnreadNotificationsReader } from '../home/unread-notifications-reader';
@@ -87,10 +88,6 @@ export interface DateHits {
 
 /** Quantos dias para trás a busca procura (a partir de hoje). */
 export const SEARCH_WINDOW_DAYS = 30;
-
-function dateLabel(day: Date): string {
-  return day.toLocaleDateString('pt-BR');
-}
 
 function matchesTerm(p: PatientCard, term: string): boolean {
   return normalize(`${p.name} ${p.ward} ${p.bed} leito ${p.ward} leito ${p.bed}`).includes(term);
@@ -559,7 +556,11 @@ export class PatientListComponent implements OnInit {
           seen.add(p.id);
         }
         if (found.length > 0) {
-          hits.push({ day, label: isSameDay(day, this.today) ? 'Hoje' : `Data ${dateLabel(day)}`, patients: found });
+          hits.push({
+            day,
+            label: isSameDay(day, this.today) ? 'Hoje' : `Data ${formatDayShortYear(day)}`,
+            patients: found,
+          });
         }
       });
     } catch {

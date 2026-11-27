@@ -74,8 +74,8 @@ describe('FollowUpStatusComponent', () => {
     await create();
 
     expect(button('Reabrir acompanhamento')).toBeDefined();
-    expect(el().textContent).toContain('Encerramento: Alta hospitalar · efeito em 20/11/2026');
-    expect(el().textContent).toContain('Ana · 21/11/2026 14:30');
+    expect(el().textContent).toContain('Encerramento: Alta hospitalar · efeito em 20/11/26');
+    expect(el().textContent).toContain('Ana · 21/11/26 14:30');
   });
 
   it('sem vínculo aprovado a ação não é oferecida, mas o histórico aparece', async () => {
@@ -116,9 +116,9 @@ describe('FollowUpStatusComponent', () => {
     expect(reopened).toHaveSize(1);
     expect(await store.list('p1')).toHaveSize(1);
     expect(button('Reabrir acompanhamento')).toBeUndefined();
-    expect(el().textContent).toContain('Revertido por reabertura em 22/11/2026 09:05');
+    expect(el().textContent).toContain('Revertido por reabertura em 22/11/26 09:05');
     expect(el().textContent).toContain('Reabertura do acompanhamento');
-    expect(el().textContent).toContain('Michelle · 22/11/2026 09:05');
+    expect(el().textContent).toContain('Michelle · 22/11/26 09:05');
   });
 
   it('com vários ciclos, mostra todos em ordem cronológica e dá para encerrar e reabrir de novo', async () => {
@@ -137,9 +137,9 @@ describe('FollowUpStatusComponent', () => {
     const entries = Array.from(el().querySelectorAll('.status__what')).map(n => n.textContent.trim());
 
     expect(entries).toEqual([
-      'Encerramento: Alta hospitalar · efeito em 10/11/2026',
+      'Encerramento: Alta hospitalar · efeito em 10/11/26',
       'Reabertura do acompanhamento',
-      'Encerramento: Alta hospitalar · efeito em 20/11/2026',
+      'Encerramento: Alta hospitalar · efeito em 20/11/26',
     ]);
 
     expect(button('Reabrir acompanhamento')).toBeDefined();

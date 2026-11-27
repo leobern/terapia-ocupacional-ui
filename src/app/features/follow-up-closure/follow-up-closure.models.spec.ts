@@ -4,7 +4,6 @@ import {
   CLOSURE_REASONS,
   FollowUpClosure,
   FollowUpReopening,
-  formatIsoDate,
   FUTURE_DATE_HINT,
   INVALID_DATE_HINT,
   reasonLabel,
@@ -33,7 +32,6 @@ describe('follow-up-closure.models', () => {
 
   it('formata datas no fuso local', () => {
     expect(toIsoDate(new Date(2026, 0, 5, 23, 59))).toBe('2026-01-05');
-    expect(formatIsoDate('2026-11-20')).toBe('20/11/2026');
   });
 
   it('aceita hoje e datas passadas, recusa futura e inválida', () => {

@@ -301,7 +301,7 @@ describe('AssistantFormComponent', () => {
     el().querySelectorAll<HTMLButtonElement>('.accordion__header')[2].click();
     fixture.detectChanges();
 
-    expect(el().querySelectorAll('.assistant-form__answer')[2].textContent).toContain('04/05/2030');
+    expect(el().querySelectorAll('.assistant-form__answer')[2].textContent).toContain('04/05/30');
   });
 
   describe('preenchimento por IA (apply)', () => {

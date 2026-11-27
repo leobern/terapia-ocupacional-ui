@@ -96,4 +96,14 @@ describe('admission rules (US-002-1-06)', () => {
     expect(validateNutritionalTherapyStartDate('25/12/2026')).toEqual({ value: '2026-12-25' });
     expect(validateNutritionalTherapyStartDate('30/02/2026')).toEqual({ code: 'invalidDate' });
   });
+
+  it('aceita os separadores combinados nas três datas do cadastro', () => {
+    const iso = { value: '2020-06-08' };
+
+    for (const text of ['08/06/2020', '08-06-2020', '08.06.2020', '08 06 2020', '08062020', '8-6-2020']) {
+      expect(validateBirthDate(text, today)).withContext(text).toEqual(iso);
+      expect(validateHospitalAdmissionDate(text, today)).withContext(text).toEqual(iso);
+      expect(validateNutritionalTherapyStartDate(text)).withContext(text).toEqual(iso);
+    }
+  });
 });

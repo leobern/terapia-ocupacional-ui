@@ -16,13 +16,13 @@ import { ButtonComponent } from '../../shared/components/button/button.component
 import { IconButtonComponent } from '../../shared/components/icon-button/icon-button.component';
 import { PhIconComponent } from '../../shared/icons/ph-icon/ph-icon.component';
 import { ConnectivityService } from '../../shared/services/connectivity.service';
+import { formatShortYearDate } from '../../shared/utils/br-date';
 import { NOW, ProfessionalProfileReader } from '../home/professional-profile';
 import {
   CLOSURE_FAILED_HINT,
   CLOSURE_REASONS,
   ClosureReason,
   FollowUpClosure,
-  formatIsoDate,
   OFFLINE_CLOSURE_HINT,
   REASON_REQUIRED_HINT,
   reasonLabel,
@@ -74,7 +74,7 @@ export class FollowUpClosureSheetComponent {
   protected readonly summary = computed(() => {
     const reason = this.reason();
 
-    return reason === null ? '' : `${reasonLabel(reason)} em ${formatIsoDate(this.date())}`;
+    return reason === null ? '' : `${reasonLabel(reason)} em ${formatShortYearDate(this.date())}`;
   });
 
   private readonly writer = inject(FollowUpClosureWriter);
