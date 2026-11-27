@@ -1,52 +1,70 @@
-<main class="lock">
-  <div class="lock__logo" aria-hidden="true">
-    <app-icon-logo state="default" />
-  </div>
-  <div class="lock__message">
-    <h1 class="lock__title">{{ i18n.t('lock.title') }}</h1>
-    <p class="lock__hint">{{ i18n.t('lock.message') }}</p>
-  </div>
-
+<!-- Figma "Conductia - V1", seção 12, tela 15 (bloqueio por inatividade): cadeado sobre o logo, só o ícone no cabeçalho. -->
+<app-auth-shell
+  logoIcon="lock-key"
+  [title]="i18n.t('lock.title')"
+  [text]="
+    i18n.t(mode() === 'password' ? 'lock.passwordMessage' : 'lock.message')
+  "
+>
   @if (mode() === 'biometric') {
-    <div class="lock__actions">
+    <div class="auth-form">
       @if (biometricFailed()) {
-        <p class="lock__error" role="alert">
+        <p class="auth-field__error" role="alert">
           {{ i18n.t('lock.biometricFailed') }}
         </p>
       }
-      <app-button
-        [fullWidth]="true"
-        [disabled]="busy()"
-        [label]="i18n.t('lock.useBiometric')"
-        (click)="tryBiometric()"
-      />
+      <div class="auth-actions">
+        <button
+          type="button"
+          class="auth-link auth-link--button"
+          (click)="signOut()"
+        >
+          {{ i18n.t('lock.signOut') }}
+        </button>
+        <app-button
+          [fullWidth]="!isDesktop()"
+          [disabled]="busy()"
+          [label]="i18n.t('lock.useBiometric')"
+          (click)="tryBiometric()"
+        />
+      </div>
     </div>
   } @else if (mode() === 'password') {
-    <form class="lock__form" novalidate (submit)="submitPassword($event)">
-      <label class="lock__label" for="lock-password">{{
-        i18n.t('lock.passwordLabel')
-      }}</label>
-      <input
-        id="lock-password"
-        class="lock__input"
-        type="password"
-        name="password"
-        autocomplete="current-password"
-        [attr.aria-invalid]="passwordIssue() === 'invalid' ? 'true' : null"
-        [attr.aria-describedby]="passwordIssue() ? 'lock-password-error' : null"
-        (input)="onPasswordInput($event)"
-      />
-      @if (passwordIssue(); as issue) {
-        <p id="lock-password-error" class="lock__error" role="alert">
-          {{ i18n.t(passwordMessageKey[issue]) }}
-        </p>
-      }
-      <app-button
-        htmlType="submit"
-        [fullWidth]="true"
-        [disabled]="busy()"
-        [label]="i18n.t('lock.unlock')"
-      />
+    <form class="auth-form" novalidate (submit)="submitPassword($event)">
+      <div class="auth-fields">
+        <div class="auth-field">
+          <label class="auth-field__label" for="lock-password">{{
+            i18n.t('lock.passwordLabel')
+          }}</label>
+          <app-password-field
+            inputId="lock-password"
+            [invalid]="passwordIssue() === 'invalid'"
+            [describedBy]="passwordIssue() ? 'lock-password-error' : null"
+            [value]="password()"
+            (valueChange)="onPassword($event)"
+          />
+          @if (passwordIssue(); as issue) {
+            <p id="lock-password-error" class="auth-field__error" role="alert">
+              {{ i18n.t(passwordMessageKey[issue]) }}
+            </p>
+          }
+        </div>
+      </div>
+      <div class="auth-actions">
+        <button
+          type="button"
+          class="auth-link auth-link--button"
+          (click)="signOut()"
+        >
+          {{ i18n.t('lock.signOut') }}
+        </button>
+        <app-button
+          htmlType="submit"
+          [fullWidth]="!isDesktop()"
+          [disabled]="busy()"
+          [label]="i18n.t('lock.unlock')"
+        />
+      </div>
     </form>
   }
-</main>
+</app-auth-shell>
