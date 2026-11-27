@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
 
+import { demoDiagnosis } from '../patient-hub/demo-clinical-data';
 import { GlimReading } from './diagnosis.models';
 import { DiagnosisSource } from './diagnosis-source';
 
@@ -40,6 +41,6 @@ const SEED: Readonly<Record<string, GlimReading | undefined>> = {
 @Injectable()
 export class ProvisionalDiagnosisSource extends DiagnosisSource {
   load(patientId: string): Promise<GlimReading> {
-    return Promise.resolve(SEED[patientId] ?? NO_DATA);
+    return Promise.resolve(SEED[patientId] ?? demoDiagnosis(patientId) ?? NO_DATA);
   }
 }

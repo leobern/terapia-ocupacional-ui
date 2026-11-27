@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 
 import { provisionalCensusSeed } from '../patient-list/provisional-patient-list';
+import { demoHypothesis } from './demo-clinical-data';
 import { HypothesisSaveRequest, PatientHubProfile } from './patient-hub.models';
 import {
   HypothesisSynthesizer,
@@ -42,7 +43,9 @@ export class ProvisionalPatientHubSource extends PatientHubSource {
   }
 
   loadHypothesis(patientId: string): Promise<string | null> {
-    return Promise.resolve(localStorage.getItem(key(patientId)) ?? SEED[patientId] ?? null);
+    return Promise.resolve(
+      localStorage.getItem(key(patientId)) ?? SEED[patientId] ?? demoHypothesis(patientId) ?? null,
+    );
   }
 }
 

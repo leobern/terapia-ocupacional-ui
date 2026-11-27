@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
 
+import { demoAssessment } from '../demo-clinical-data';
 import {
   AssessmentFieldId,
   AssessmentPreviousValue,
@@ -27,7 +28,7 @@ interface StoredAssessment {
 }
 
 function seedStored(patientId: string): StoredAssessment | undefined {
-  const seed = SEED[patientId];
+  const seed = SEED[patientId] ?? demoAssessment(patientId);
 
   if (!seed) {
     return undefined;
