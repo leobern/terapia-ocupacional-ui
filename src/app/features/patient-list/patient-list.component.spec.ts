@@ -10,6 +10,7 @@ import {
   ScreenActionsService,
   type ScreenCommand,
 } from '../../shared/services/screen-actions.service';
+import { formatDayShortYear } from '../../shared/utils/br-date';
 import { FollowUpClosureWriter } from '../follow-up-closure/follow-up-closure-source';
 import { HospitalContextService } from '../home/hospital-context.service';
 import { LinkedHospitalsReader } from '../home/linked-hospitals';
@@ -825,7 +826,7 @@ describe('PatientListComponent', () => {
         await new Promise(resolve => setTimeout(resolve));
         fixture.detectChanges();
 
-        expect(labels()).toEqual([`Data ${yesterday().toLocaleDateString('pt-BR')}`]);
+        expect(labels()).toEqual([`Data ${formatDayShortYear(yesterday())}`]);
         expect(qa('.patient-list__table').length).toBe(1);
         expect(text()).toContain('Zélia Antiga');
         expect(text()).not.toContain('Nenhum paciente encontrado');

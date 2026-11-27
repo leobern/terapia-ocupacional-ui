@@ -22,6 +22,7 @@ import {
   type FormValues,
 } from '../../services/screen-actions.service';
 import { type DirectoryUser, UserDirectory } from '../../services/user-directory';
+import { formatShortYearDate } from '../../utils/br-date';
 import { AccordionComponent, type AccordionState } from '../accordion/accordion.component';
 import { AvatarComponent } from '../avatar/avatar.component';
 import { ButtonComponent } from '../button/button.component';
@@ -268,9 +269,7 @@ export class AssistantFormComponent {
   }
 
   protected formatDate(iso: string): string {
-    const [year, month, day] = iso.split('-');
-
-    return `${day}/${month}/${year}`;
+    return formatShortYearDate(iso);
   }
 
   private hasValue(field: FormFieldDefinition): boolean {

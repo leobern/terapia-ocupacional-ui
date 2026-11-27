@@ -1,9 +1,10 @@
 import { inject, Injectable } from '@angular/core';
 
 import { I18nService } from '../../shared/services/i18n.service';
+import { formatBirthDate } from '../../shared/utils/br-date';
 import { HospitalContextService } from '../home/hospital-context.service';
 import { LinkRevocationChecker } from '../home/link-revocation-checker';
-import { formatBirthDate, parseBirthDate } from './parse-birth-date';
+import { parseBirthDate } from './parse-birth-date';
 import { DuplicateCheckInput, DuplicateCheckOutcome, PatientMatch } from './patient-duplicate.models';
 import { PatientDuplicateError, PatientDuplicateFailure } from './patient-duplicate-error';
 import { PatientDuplicateSource } from './patient-duplicate-source';

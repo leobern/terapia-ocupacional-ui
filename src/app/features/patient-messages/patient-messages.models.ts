@@ -1,3 +1,5 @@
+import { formatDateTimeShortYear } from '../../shared/utils/br-date';
+
 /** Origem do texto de uma resposta: digitado ou transcrito de áudio (FR-009). */
 export type ReplyOrigin = 'text' | 'audio';
 
@@ -70,14 +72,8 @@ export const REPLY_AUDIO_EMPTY_HINT = 'Nenhum texto foi identificado no áudio. 
 export const REPLY_MIC_DENIED_HINT = 'Sem acesso ao microfone. Digite a resposta ou permita o microfone.';
 export const REPLY_MIC_FAILED_HINT = 'Não foi possível gravar o áudio. Digite a resposta manualmente.';
 
-const pad = (n: number): string => String(n).padStart(2, '0');
-
-/** `dd/MM/yyyy HH:mm` no fuso local. */
-export const formatDateTime = (iso: string): string => {
-  const d = new Date(iso);
-
-  return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
-};
+/** `dd/mm/aa HH:mm` no fuso local. */
+export const formatDateTime = (iso: string): string => formatDateTimeShortYear(iso);
 
 /** Pendência com prazo já passado e ainda não resolvida (FR-014f): só indicador visual. */
 export const isOverdue = (thread: MessageThread, now: Date): boolean =>

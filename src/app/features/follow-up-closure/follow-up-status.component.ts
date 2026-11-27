@@ -3,6 +3,7 @@ import { ChangeDetectionStrategy, Component, computed, inject, input, OnInit, ou
 import { ButtonComponent } from '../../shared/components/button/button.component';
 import { ConfirmDialogComponent } from '../../shared/components/confirm-dialog/confirm-dialog.component';
 import { ConnectivityService } from '../../shared/services/connectivity.service';
+import { formatDateTimeShortYear, formatShortYearDate } from '../../shared/utils/br-date';
 import { NOW, ProfessionalProfileReader } from '../home/professional-profile';
 import {
   activeClosures,
@@ -10,19 +11,11 @@ import {
   FollowUpClosure,
   FollowUpHistoryEntry,
   FollowUpReopening,
-  formatIsoDate,
   OFFLINE_REOPEN_HINT,
   reasonLabel,
   REOPEN_FAILED_HINT,
 } from './follow-up-closure.models';
 import { FollowUpClosureSource, FollowUpClosureWriter } from './follow-up-closure-source';
-
-const dateTime = (iso: string): string => {
-  const d = new Date(iso);
-  const pad = (n: number): string => String(n).padStart(2, '0');
-
-  return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
-};
 
 /**
  * Acompanhamento encerrado no Hub (FT-004-9, US-004-9-02): ação de reabrir (com confirmação explícita) e
@@ -121,20 +114,20 @@ export class FollowUpStatusComponent implements OnInit {
   }
 
   protected closureLabel(closure: FollowUpClosure): string {
-    return `${reasonLabel(closure.reason)} em ${formatIsoDate(closure.effectiveDate)}`;
+    return `${reasonLabel(closure.reason)} em ${formatShortYearDate(closure.effectiveDate)}`;
   }
 
   protected closureText(entry: FollowUpHistoryEntry & { kind: 'closure' }): string {
     const { closure } = entry;
 
-    return `${reasonLabel(closure.reason)} · efeito em ${formatIsoDate(closure.effectiveDate)}`;
+    return `${reasonLabel(closure.reason)} · efeito em ${formatShortYearDate(closure.effectiveDate)}`;
   }
 
   protected stamp(author: string, at: string): string {
-    return `${author} · ${dateTime(at)}`;
+    return `${author} · ${formatDateTimeShortYear(at)}`;
   }
 
   protected revertedText(reopening: FollowUpReopening): string {
-    return `Revertido por reabertura em ${dateTime(reopening.at)}`;
+    return `Revertido por reabertura em ${formatDateTimeShortYear(reopening.at)}`;
   }
 }

@@ -18,6 +18,7 @@ import {
   AssistantEditorController,
   type EditorAction,
 } from '../../../shared/services/assistant-editor-controller.service';
+import { formatDayShortYear } from '../../../shared/utils/br-date';
 import {
   bodyMassIndex,
   ClinicalAssessment,
@@ -179,6 +180,11 @@ export class ClinicalAssessmentEditorComponent {
         }),
       );
     });
+  }
+
+  /** Instante ISO (API) vira `dd/mm/aa`; texto que já vem só com `dd/mm` fica como está. */
+  protected previousDate(at: string): string {
+    return /^\d{4}-/u.test(at) ? formatDayShortYear(new Date(at)) : at;
   }
 
   protected status(item: DraftItem): { label: string; tone: StatusTone } | null {
