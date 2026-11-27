@@ -64,9 +64,10 @@
   },
   "login": {
     "email": "E-mail",
+    "emailInvalid": "Informe um e-mail válido.",
     "error": {
       "invalid-credentials": "E-mail ou senha incorretos",
-      "locked": "Muitas tentativas. Tente novamente mais tarde.",
+      "locked": "Muitas tentativas. Tente novamente em alguns minutos ou redefina sua senha.",
       "network-error": "Sem conexão. Verifique sua internet.",
       "validation": "Informe um e-mail válido e a senha."
     },
@@ -74,6 +75,7 @@
     "password": "Senha",
     "submit": "Entrar",
     "submitting": "Entrando...",
+    "subtitle": "Use seu e-mail e senha para acessar a Conductia.",
     "title": "Entrar"
   },
   "logout": {
@@ -124,23 +126,32 @@
       "revoked": "Vínculo revogado"
     }
   },
+  "password": {
+    "hide": "Ocultar senha",
+    "show": "Mostrar senha"
+  },
   "passwordRecovery": {
-    "backToLogin": "Voltar ao login",
+    "backToLogin": "Voltar para o login",
     "forgot": {
-      "description": "Informe o e-mail cadastrado para receber o link de redefinição.",
+      "description": "Informe seu e-mail e enviaremos um link para criar uma nova senha.",
       "emailInvalid": "Informe um e-mail válido.",
       "emailLabel": "E-mail",
       "emailRequired": "Informe seu e-mail.",
+      "resend": "Reenviar e-mail",
       "retry": "Tentar novamente",
       "sentMessage": "Se o e-mail informado estiver cadastrado, enviaremos um link para redefinir sua senha. Confira também a caixa de spam: o link expira em pouco tempo.",
-      "sentTitle": "Verifique seu e-mail",
+      "sentTitle": "Confira seu e-mail",
       "serviceError": "Não foi possível concluir a solicitação. Tente novamente.",
       "submit": "Enviar link",
-      "title": "Recuperar senha"
+      "title": "Esqueceu a senha?"
     },
     "reset": {
       "confirmationLabel": "Confirmar nova senha",
-      "expiredMessage": "O link de redefinição expirou. Solicite um novo link.",
+      "description": "Escolha uma nova senha para acessar a Conductia.",
+      "doneAction": "Entrar",
+      "doneMessage": "Sua senha foi atualizada. Por segurança, todos os dispositivos foram desconectados.",
+      "doneTitle": "Senha alterada",
+      "expiredMessage": "Esse link não é mais válido. Peça um novo para redefinir sua senha.",
       "expiredTitle": "Link expirado",
       "mismatch": "As senhas não coincidem.",
       "passwordHint": "Use de 10 a 128 caracteres, com ao menos uma letra e um número.",
@@ -151,11 +162,11 @@
         "max-length": "Use no máximo 128 caracteres.",
         "min-length": "Use ao menos 10 caracteres."
       },
-      "requestNew": "Solicitar novo link",
+      "requestNew": "Pedir novo link",
       "retry": "Tentar novamente",
       "serviceError": "Não foi possível redefinir a senha. Tente novamente.",
-      "submit": "Redefinir senha",
-      "title": "Definir nova senha"
+      "submit": "Salvar nova senha",
+      "title": "Crie uma nova senha"
     }
   },
   "patientRegistration": {

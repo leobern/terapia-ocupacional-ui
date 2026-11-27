@@ -81,19 +81,18 @@ $color-comm-warning: #ffd400;
 $color-comm-focus: #de43dc;
 // Amarelo para ícones e gráficos (o comm-warning fica só como fundo de aviso).
 $color-comm-warning-strong: #edc000;
-// Texto/ícone sobre comm-warning: navy nos dois temas (Figma: content-1 no Light,
-// content-6 no Dark — ambos #002233).
+// fixed/on-warning — texto/ícone sobre comm-warning: navy nos dois temas (token fixo no Figma, criado em 2026-11-27;
+// antes era content-1 no Light e content-6 no Dark, ambos #002233).
 $color-on-warning: #002233;
 
-// focus/* — padrão único de foco por teclado para TODO elemento clicável do
-// design system (decisão do usuário, 2026-07-23, não vem de nenhum nó Figma
-// específico — é uma convenção de acessibilidade transversal): anel sólido de
-// `$focus-ring-width` na cor `comm-focus`, afastado `$focus-ring-offset` do
-// componente. Usar via `mixins.focus-ring` (_mixins.scss) — nunca declarar
-// `outline`/`outline-offset` manualmente em cada componente.
-$color-focus-ring: $color-comm-focus;
+// focus/* — padrão único de foco por teclado para TODO elemento clicável do design system. Figma `v2/FormField`
+// State=focus (4598:1891, Thiago 2026-11-27): anel VERDE (`comm-success`) de 2px, afastado 2px do componente, que
+// acompanha o raio dele (o anel tem o raio do elemento + 4px). Usar via `mixins.focus-ring` (_mixins.scss) — nunca
+// declarar `outline`/`outline-offset` manualmente em cada componente. (O rosa `comm-focus` continua só como token
+// de status, fora do foco.)
+$color-focus-ring: $color-comm-success;
 $focus-ring-width: 2px;
-$focus-ring-offset: 4px;
+$focus-ring-offset: 2px;
 
 // `$color-input-focus-ring` — anel de foco EMBUTIDO no próprio desenho do
 // DS-component-input-select (nó Figma `4344:6952`, `State=Focus`), distinto do
@@ -569,7 +568,7 @@ $shadow-elevation-bottomsheet: 0 -4px 24px rgba($color-primary, 0.08);
   --color-comm-warning-strong: #edc000;
   --color-on-warning: #002233;
   --color-comm-focus: #f66ff4;
-  --color-focus-ring: #f66ff4;
+  --color-focus-ring: #4ccd53;
   --color-input-focus-ring: rgb(245 247 248 / 60%);
   --shadow-elevation-bottomsheet: 0 -4px 24px rgb(0 0 0 / 48%);
 }

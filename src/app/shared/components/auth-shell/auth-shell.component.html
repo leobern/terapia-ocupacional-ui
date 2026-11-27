@@ -1,0 +1,54 @@
+<main class="auth-shell">
+  <div class="auth-shell__card">
+    <header class="auth-shell__header">
+      <div class="auth-shell__logo" [class.auth-shell__logo--brand]="brand()">
+        <span class="auth-shell__logo-slot"
+          ><app-icon-logo class="auth-shell__logo-badge" state="default"
+        /></span>
+        @if (brand()) {
+          <span class="auth-shell__brand" aria-hidden="true"
+            >Conduct<span class="auth-shell__brand-accent">ia</span></span
+          >
+        }
+      </div>
+      @if (title()) {
+        <div
+          class="auth-shell__heading"
+          [class.auth-shell__heading--tight]="brand()"
+        >
+          <h1 class="auth-shell__title">{{ title() }}</h1>
+          @if (text()) {
+            <p
+              class="auth-shell__text"
+              [attr.role]="statusText() ? 'status' : null"
+            >
+              {{ text() }}
+            </p>
+          }
+        </div>
+      }
+    </header>
+    <ng-content />
+  </div>
+
+  <div class="auth-shell__theme" role="group" aria-label="Tema da interface">
+    @for (theme of themes; track theme.value) {
+      <button
+        type="button"
+        class="auth-shell__theme-button"
+        [class.auth-shell__theme-button--active]="
+          themeService.theme() === theme.value
+        "
+        [attr.aria-pressed]="themeService.theme() === theme.value"
+        [attr.aria-label]="theme.label"
+        (click)="themeService.set(theme.value)"
+      >
+        <ph-icon
+          [name]="theme.icon"
+          [weight]="themeService.theme() === theme.value ? 'fill' : 'regular'"
+          [size]="24"
+        />
+      </button>
+    }
+  </div>
+</main>

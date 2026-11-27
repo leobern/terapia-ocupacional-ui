@@ -1,0 +1,33 @@
+@use '../../styles/tokens';
+@use '../../styles/typography';
+
+// Figma `v2/Banner`: padding 10/16, gap 8, raio 12, ícone de 20px alinhado ao topo do texto.
+:host {
+  display: flex;
+  align-items: flex-start;
+  gap: tokens.$space-8;
+  box-sizing: border-box;
+  width: 100%;
+  padding: 10px tokens.$space-16;
+  border-radius: tokens.$radius-12;
+
+  @include typography.label-md;
+}
+
+:host(.banner--warning) {
+  background: tokens.c(comm-warning);
+  color: tokens.c(on-warning);
+}
+
+:host(.banner--info) {
+  background: tokens.c(secondary);
+  color: tokens.c(content-6);
+}
+
+.banner__icon {
+  flex-shrink: 0;
+}
+
+.banner__text {
+  min-width: 0;
+}

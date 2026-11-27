@@ -1,0 +1,325 @@
+@use '../../styles/tokens';
+@use '../../styles/typography';
+@use '../../styles/input-shell';
+
+// =============================================================================
+// Telas de acesso — Figma "Conductia - V1", seção 12 (validada pelo Thiago em 2026-11-27).
+// Card 480 (desktop) ou 100% (mobile, margem 16), raio 40, padding 32 (24 nas laterais no mobile), gap 24.
+// =============================================================================
+
+.auth-shell {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  min-height: 100vh;
+  min-height: 100dvh;
+  // No mobile sobra espaço embaixo para o alternador de tema (56px + 24px de margem).
+  padding: tokens.$space-16 tokens.$space-16 calc(tokens.$space-16 + 80px);
+  color: tokens.c(content-1);
+}
+
+.auth-shell__card {
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$space-24;
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 480px;
+  padding: tokens.$space-32 tokens.$space-24;
+  border-radius: tokens.$radius-xl;
+  background: tokens.c(surface);
+}
+
+.auth-shell__header {
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$space-16;
+}
+
+// Sem `overflow: hidden`: o halo do logo transborda o círculo e não pode ser cortado (ajuste do Thiago no Figma).
+.auth-shell__logo {
+  --icon-logo-size: 48px;
+
+  display: flex;
+  align-items: center;
+  gap: tokens.$space-16;
+
+  &--brand {
+    padding-bottom: tokens.$space-16;
+    border-bottom: 1px solid tokens.c(border);
+  }
+}
+
+// Wordmark: Poppins SemiBold 24, "Conduct" em primary e "ia" em secondary (o mesmo do menu).
+.auth-shell__brand {
+  flex: 1;
+  // Compensa o logo à esquerda (48px + gap) para o nome ficar centrado no card.
+  padding-right: 64px;
+  color: tokens.c(primary);
+  font-family: Poppins, var(--font-family-base), sans-serif;
+  font-size: 24px;
+  font-weight: 600;
+  line-height: 36px;
+  text-align: center;
+}
+
+.auth-shell__brand-accent {
+  color: tokens.c(secondary);
+}
+
+.auth-shell__heading {
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$space-16;
+}
+
+.auth-shell__title {
+  margin: 0;
+  color: tokens.c(content-1);
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 28px;
+}
+
+.auth-shell__text {
+  margin: 0;
+  color: tokens.c(content-2);
+
+  @include typography.body-md;
+}
+
+// --- campos ---------------------------------------------------------------------------------
+
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$space-24;
+  margin: 0;
+}
+
+.auth-fields {
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$space-16;
+}
+
+.auth-field {
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$space-8;
+}
+
+.auth-field__label {
+  color: tokens.c(content-1);
+
+  @include typography.label-lg;
+}
+
+.auth-field__input {
+  @include input-shell.chrome;
+  @include input-shell.field-typography;
+
+  align-items: center;
+  padding: tokens.$space-8 tokens.$space-16;
+
+  &[aria-invalid='true'] {
+    border-color: tokens.c(comm-alert);
+  }
+
+  &:focus-visible {
+    outline: tokens.$focus-ring-width solid tokens.c(focus-ring);
+    outline-offset: tokens.$focus-ring-offset;
+  }
+}
+
+// Campo de senha com o botão mostrar/ocultar dentro (Figma: ícone de 20px à direita, área de toque de 40px).
+.auth-field__password {
+  position: relative;
+
+  .auth-field__input {
+    padding-right: 52px;
+  }
+}
+
+.auth-field__toggle {
+  position: absolute;
+  top: 4px;
+  right: 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border: 0;
+  border-radius: tokens.$radius-pill;
+  background: transparent;
+  color: tokens.c(content-3);
+  cursor: pointer;
+  outline: none;
+
+  &:hover {
+    color: tokens.c(content-1);
+  }
+
+  &:focus-visible {
+    outline: tokens.$focus-ring-width solid tokens.c(focus-ring);
+    outline-offset: tokens.$focus-ring-offset;
+  }
+}
+
+.auth-field__hint {
+  margin: 0;
+  color: tokens.c(content-3);
+
+  @include typography.caption;
+}
+
+.auth-field__error {
+  margin: 0;
+  color: tokens.c(comm-alert);
+
+  @include typography.caption;
+}
+
+// --- ações ----------------------------------------------------------------------------------
+// Mobile: coluna, botões 100% (o primário vem primeiro). Desktop: linha, um em cada ponta, largura do conteúdo.
+
+.auth-actions {
+  display: flex;
+  flex-direction: column-reverse;
+  align-items: stretch;
+  gap: tokens.$space-16;
+}
+
+// Altura visual de 20px (Figma); a área de toque de 44px vem do `::before` invisível.
+.auth-link {
+  position: relative;
+  align-self: center;
+  display: inline-flex;
+  align-items: center;
+  min-height: 20px;
+  color: tokens.c(secondary);
+  text-decoration: underline;
+
+  @include typography.label-md;
+
+  outline: none;
+
+  &:focus-visible {
+    outline: tokens.$focus-ring-width solid tokens.c(focus-ring);
+    outline-offset: tokens.$focus-ring-offset;
+  }
+
+  &::before {
+    position: absolute;
+    inset: -12px 0;
+    content: '';
+  }
+}
+
+@media (width >= 1200px) {
+  .auth-shell__card {
+    padding: tokens.$space-32;
+  }
+
+  .auth-actions {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+
+    // Os botões seguem o tamanho do conteúdo (o `fullWidth` do mobile não vale aqui).
+    .button--full-width {
+      width: auto;
+    }
+  }
+
+  // Um botão só (ex.: "Entrar" após trocar a senha): fica na ponta direita, como o primário das outras telas.
+  .auth-actions--single {
+    justify-content: flex-end;
+  }
+
+  .auth-link {
+    align-self: auto;
+  }
+}
+
+// --- alternador de tema -----------------------------------------------------------------------
+// Figma `bo-theme-toggle`: 2 botões de 40px (pílula), ativo em `secondary` com ícone `content-6`.
+// Mobile: centralizado na base (24px da borda); desktop: canto superior direito (40px).
+
+.auth-shell__theme {
+  position: absolute;
+  bottom: tokens.$space-24;
+  left: 50%;
+  display: flex;
+  gap: tokens.$space-8;
+  padding: tokens.$space-8;
+  transform: translateX(-50%);
+}
+
+.auth-shell__theme-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border: 0;
+  border-radius: tokens.$radius-pill;
+  background: transparent;
+  color: tokens.c(content-1);
+  cursor: pointer;
+  outline: none;
+
+  &:focus-visible {
+    outline: tokens.$focus-ring-width solid tokens.c(focus-ring);
+    outline-offset: tokens.$focus-ring-offset;
+  }
+
+  &--active {
+    background: tokens.c(secondary);
+    color: tokens.c(content-6);
+  }
+}
+
+@media (width >= 1200px) {
+  .auth-shell__theme {
+    inset: tokens.$space-40 tokens.$space-40 auto auto;
+    transform: none;
+  }
+}
+
+// Slot de 48x48 (tamanho do `icon-logo` no Figma): o componente tem uma caixa de 1.75x para o halo transbordar, então
+// ele é centralizado por posicionamento absoluto dentro do slot, sem inflar o layout nem ser cortado.
+.auth-shell__logo-slot {
+  position: relative;
+  display: block;
+  flex-shrink: 0;
+  width: 48px;
+  height: 48px;
+}
+
+.auth-shell__logo-badge {
+  // Borda azul (secondary) nos dois temas, igual ao logo do menu.
+  --icon-logo-accent-override: var(--color-secondary);
+
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+
+  // Sem glow no ícone (Thiago, 2026-11-27): só o círculo com a borda azul, sem o halo desfocado nem as luzes.
+  .icon-logo__halo,
+  .icon-logo__light {
+    display: none;
+  }
+}
+
+// Telas com o nome da marca (login e convite): título e texto ficam juntos (gap 4). Nas demais, o gap é o do cabeçalho (16).
+.auth-shell__heading--tight {
+  gap: tokens.$space-4;
+}

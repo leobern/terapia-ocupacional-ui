@@ -300,7 +300,7 @@ describe('InputSelectComponent', () => {
       expect(before.height).toBe(after.height);
     });
 
-    it('also applies the systemic pink ring alongside the box-shadow when focus arrives via keyboard', () => {
+    it('also applies the systemic green ring alongside the box-shadow when focus arrives via keyboard', () => {
       attachToDom();
       // Nenhum mousedown disparado antes — KeyboardFocusService assume
       // teclado por padrão (shared/services/keyboard-focus.service.ts).
@@ -310,11 +310,11 @@ describe('InputSelectComponent', () => {
       const cs = getComputedStyle(containerEl());
 
       expect(cs.outlineWidth).toBe('2px');
-      expect(cs.outlineColor).toBe('rgb(222, 67, 220)'); // comm-focus #DE43DC
-      expect(cs.outlineOffset).toBe('4px');
+      expect(cs.outlineColor).toBe('rgb(76, 205, 83)'); // comm-success #4CCD53
+      expect(cs.outlineOffset).toBe('2px');
     });
 
-    it('does NOT show the pink ring when focus arrives via mouse click, but keeps the box-shadow', () => {
+    it('does NOT show the green ring when focus arrives via mouse click, but keeps the box-shadow', () => {
       attachToDom();
       fieldEl().dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
       (fieldEl() as HTMLInputElement).focus();

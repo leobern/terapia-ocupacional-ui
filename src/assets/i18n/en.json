@@ -64,9 +64,10 @@
   },
   "login": {
     "email": "Email",
+    "emailInvalid": "Enter a valid email.",
     "error": {
       "invalid-credentials": "Incorrect email or password",
-      "locked": "Too many attempts. Try again later.",
+      "locked": "Too many attempts. Try again in a few minutes or reset your password.",
       "network-error": "No connection. Check your internet.",
       "validation": "Enter a valid email and your password."
     },
@@ -74,6 +75,7 @@
     "password": "Password",
     "submit": "Sign in",
     "submitting": "Signing in...",
+    "subtitle": "Use your email and password to access Conductia.",
     "title": "Sign in"
   },
   "logout": {
@@ -124,23 +126,32 @@
       "revoked": "Link revoked"
     }
   },
+  "password": {
+    "hide": "Hide password",
+    "show": "Show password"
+  },
   "passwordRecovery": {
-    "backToLogin": "Back to login",
+    "backToLogin": "Back to sign in",
     "forgot": {
-      "description": "Enter your registered e-mail to receive the reset link.",
+      "description": "Enter your email and we will send you a link to create a new password.",
       "emailInvalid": "Enter a valid e-mail.",
       "emailLabel": "E-mail",
       "emailRequired": "Enter your e-mail.",
+      "resend": "Resend email",
       "retry": "Try again",
       "sentMessage": "If the e-mail address is registered, we will send you a link to reset your password. Also check your spam folder: the link expires shortly.",
-      "sentTitle": "Check your e-mail",
+      "sentTitle": "Check your email",
       "serviceError": "We could not complete the request. Try again.",
       "submit": "Send link",
-      "title": "Recover password"
+      "title": "Forgot your password?"
     },
     "reset": {
       "confirmationLabel": "Confirm new password",
-      "expiredMessage": "The reset link has expired. Request a new link.",
+      "description": "Choose a new password to access Conductia.",
+      "doneAction": "Sign in",
+      "doneMessage": "Your password was updated. For security, all devices were signed out.",
+      "doneTitle": "Password changed",
+      "expiredMessage": "This link is no longer valid. Request a new one to reset your password.",
       "expiredTitle": "Link expired",
       "mismatch": "Passwords do not match.",
       "passwordHint": "Use 10 to 128 characters, with at least one letter and one number.",
@@ -151,11 +162,11 @@
         "max-length": "Use at most 128 characters.",
         "min-length": "Use at least 10 characters."
       },
-      "requestNew": "Request new link",
+      "requestNew": "Request a new link",
       "retry": "Try again",
       "serviceError": "We could not reset the password. Try again.",
-      "submit": "Reset password",
-      "title": "Set new password"
+      "submit": "Save new password",
+      "title": "Create a new password"
     }
   },
   "patientRegistration": {

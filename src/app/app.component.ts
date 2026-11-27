@@ -135,7 +135,10 @@ export class AppComponent {
       return 'notifications';
     }
 
-    return url.startsWith('/home') ? 'gradient' : 'blobs';
+    // Telas de acesso (Figma seção 12) usam o mesmo gradiente da Home, no claro e no escuro.
+    return ['/home', '/login', '/forgot-password', '/reset-password'].some(prefix => url.startsWith(prefix))
+      ? 'gradient'
+      : 'blobs';
   });
   protected readonly isNotificationsRoute = computed(() => this.currentUrl().startsWith('/notifications'));
   protected readonly aiSheetSnap = signal<BottomSheetSnap>('default');

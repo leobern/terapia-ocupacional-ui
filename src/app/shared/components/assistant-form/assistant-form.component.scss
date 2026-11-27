@@ -145,7 +145,7 @@
   color: tokens.c(content-4);
 
   &:focus-visible {
-    outline: 2px solid tokens.c(secondary);
+    outline: tokens.$focus-ring-width solid tokens.c(focus-ring);
   }
 }
 
@@ -202,6 +202,6 @@
   color: tokens.c(secondary);
 
   &:focus-visible {
-    outline: 2px solid tokens.c(secondary);
+    outline: tokens.$focus-ring-width solid tokens.c(focus-ring);
   }
 }
