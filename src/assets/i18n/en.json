@@ -135,6 +135,7 @@
       "keyLabel": "Setup key",
       "leave": "Sign out",
       "openApp": "Open in authenticator app",
+      "qrAlt": "QR code to add the authenticator app",
       "submit": "Activate",
       "title": "Turn on two-step verification"
     }

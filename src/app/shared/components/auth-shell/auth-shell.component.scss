@@ -191,12 +191,14 @@
   display: flex;
   flex-direction: column-reverse;
   align-items: stretch;
-  gap: tokens.$space-16;
+  // 8px entre dois botões empilhados; entre botão e link são 16px (8 do gap + 8 da margem do link). Figma 4822:16112.
+  gap: tokens.$space-8;
 }
 
 // Altura visual de 20px (Figma); a área de toque de 44px vem do `::before` invisível.
 .auth-link {
   position: relative;
+  margin-block: tokens.$space-8;
   align-self: center;
   display: inline-flex;
   align-items: center;
@@ -229,6 +231,7 @@
     flex-direction: row;
     align-items: center;
     justify-content: space-between;
+    gap: tokens.$space-16;
 
     // Os botões seguem o tamanho do conteúdo (o `fullWidth` do mobile não vale aqui).
     .button--full-width {
@@ -243,6 +246,7 @@
 
   .auth-link {
     align-self: auto;
+    margin-block: 0;
   }
 }
 
@@ -254,7 +258,7 @@
   cursor: pointer;
 }
 
-// Chave de configuração do app autenticador (no lugar do QR code, que ainda não é desenhado).
+// QR code do app autenticador e, abaixo, a chave em texto (alternativa a ler o QR).
 .auth-qr {
   display: flex;
   flex-direction: column;
@@ -265,6 +269,13 @@
   border-radius: tokens.$radius-sm;
   background: tokens.c(surface-2);
   text-align: center;
+}
+
+// O QR fica sobre um tile claro nos dois temas (token fixo): leitores precisam de escuro sobre claro.
+.auth-qr__image {
+  padding: tokens.$space-8;
+  border-radius: tokens.$radius-xs;
+  background: tokens.c(qr-surface);
 }
 
 .auth-qr__label {
@@ -281,22 +292,32 @@
   word-break: break-all;
 }
 
-// Códigos de recuperação: duas colunas, uma linha por par.
+// Códigos de recuperação (Figma 4822:16302): cartão surface-2 de raio 24 com uma linha surface (raio 8) por par de códigos.
 .auth-codes {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: tokens.$space-8 tokens.$space-16;
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$space-8;
   margin: 0;
   padding: tokens.$space-16;
-  border-radius: tokens.$radius-sm;
+  border-radius: tokens.$radius-md;
   background: tokens.c(surface-2);
   list-style: none;
 }
 
+.auth-codes__row {
+  display: flex;
+  gap: tokens.$space-16;
+  padding: tokens.$space-8;
+  border-radius: tokens.$radius-xs;
+  background: tokens.c(surface);
+}
+
 .auth-codes__item {
+  flex: 1;
   color: tokens.c(content-1);
   font-family: ui-monospace, 'Cascadia Mono', Consolas, monospace;
-  font-size: 16px;
+  font-size: 14px;
+  line-height: 20px;
 }
 
 // --- alternador de tema -----------------------------------------------------------------------

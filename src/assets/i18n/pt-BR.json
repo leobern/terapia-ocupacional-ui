@@ -135,6 +135,7 @@
       "keyLabel": "Chave de configuração",
       "leave": "Sair",
       "openApp": "Abrir no app autenticador",
+      "qrAlt": "QR code para cadastrar o app autenticador",
       "submit": "Ativar",
       "title": "Ative a verificação em duas etapas"
     }

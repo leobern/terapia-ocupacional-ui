@@ -7,7 +7,6 @@
     <div class="auth-actions auth-actions--single">
       <app-button
         [fullWidth]="!isDesktop()"
-        [size]="isDesktop() ? 'lg' : 'md'"
         [label]="i18n.t('invite.goToLogin')"
         (click)="goToLogin()"
       />
@@ -108,7 +107,6 @@
         <app-button
           htmlType="submit"
           [fullWidth]="!isDesktop()"
-          [size]="isDesktop() ? 'lg' : 'md'"
           [disabled]="state() === 'SUBMITTING'"
           [label]="i18n.t(serviceError() ? 'invite.retry' : 'invite.submit')"
         />

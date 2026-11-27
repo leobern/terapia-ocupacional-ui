@@ -17,8 +17,8 @@ export type MfaSetupStep = 'SCAN' | 'CODES';
  * primeiro código e mostra os códigos de recuperação (cada um vale uma vez). A sessão só abre depois de a pessoa
  * confirmar que guardou os códigos.
  *
- * O QR code ainda não é desenhado (falta decidir a biblioteca): enquanto isso a tela mostra a chave em texto e o
- * link `otpauth://`, que o app autenticador abre no celular.
+ * O QR code é desenhado a partir do `otpauth://`; a chave em texto e o link do app ficam abaixo, para quem não
+ * consegue ler o QR (ou configura no próprio celular).
  */
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -31,11 +31,19 @@ export class MfaSetupComponent implements OnInit {
   protected readonly step = signal<MfaSetupStep>('SCAN');
   protected readonly setup = signal<MfaSetup | null>(null);
   protected readonly setupFailed = signal(false);
+  /** QR code do `otpauthUri` como imagem (data URL); vazio enquanto não foi gerado. */
+  protected readonly qrCode = signal('');
   protected readonly code = signal('');
   protected readonly loading = signal(false);
   protected readonly error = signal<'invalid-code' | 'locked' | 'expired' | 'network-error' | 'required' | null>(null);
   protected readonly recoveryCodes = signal<readonly string[]>([]);
   protected readonly copied = signal(false);
+  /** Os códigos de recuperação em linhas de 2 (uma linha branca por par, Figma 14). */
+  protected readonly codePairs = computed(() => {
+    const codes = this.recoveryCodes();
+
+    return Array.from({ length: Math.ceil(codes.length / 2) }, (_, i) => codes.slice(i * 2, i * 2 + 2));
+  });
   protected readonly isDesktop = inject(ViewportBreakpointService).isDesktop;
   /** Chave em grupos de 4 caracteres, mais fácil de digitar no app. */
   protected readonly secretGroups = computed(() => (this.setup()?.secret ?? '').replace(/(.{4})/g, '$1 ').trim());
@@ -68,6 +76,9 @@ export class MfaSetupComponent implements OnInit {
     }
     void this.gateway.beginSetup(challenge.token).then(setup => {
       this.setup.set(setup);
+      if (setup !== null) {
+        void this.drawQrCode(setup.otpauthUri);
+      }
       this.setupFailed.set(setup === null);
     });
   }
@@ -119,6 +130,19 @@ export class MfaSetupComponent implements OnInit {
     this.session.open(this.pendingTokens);
     this.pendingTokens = null;
     void this.router.navigate(['/splash'], { queryParams: { returnUrl: safeReturnUrl(null) }, replaceUrl: true });
+  }
+
+  /** A biblioteca só carrega nesta tela (import dinâmico). Falha ao gerar não impede o uso da chave em texto. */
+  private async drawQrCode(uri: string): Promise<void> {
+    try {
+      // CommonJS: conforme o empacotador, as funções vêm no módulo ou em `default`.
+      const lib = await import('qrcode');
+      const { toDataURL } = (lib as unknown as { default?: typeof lib }).default ?? lib;
+
+      this.qrCode.set(await toDataURL(uri, { color: { dark: '#002233', light: '#ffffff' }, margin: 1, width: 176 }));
+    } catch {
+      this.qrCode.set('');
+    }
   }
 
   private handle(result: MfaResult): void {

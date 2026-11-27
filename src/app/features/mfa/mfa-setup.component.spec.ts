@@ -39,6 +39,13 @@ describe('MfaSetupComponent', () => {
   const buttonByText = (text: string): HTMLButtonElement | undefined =>
     Array.from(el.querySelectorAll('button')).find(b => b.textContent?.includes(text));
 
+  /** Espera o import dinâmico da biblioteca de QR e a geração da imagem. */
+  async function settle(): Promise<void> {
+    await new Promise(resolve => setTimeout(resolve, 300));
+    await fixture.whenStable();
+    fixture.detectChanges();
+  }
+
   async function activate(code: string): Promise<void> {
     input().value = code;
     input().dispatchEvent(new Event('input'));
@@ -73,6 +80,25 @@ describe('MfaSetupComponent', () => {
     expect(el.textContent).toContain('Ative a verificação em duas etapas');
     expect(el.querySelector('.auth-qr__secret')?.textContent).toBe('ABCD EFGH IJKL MNOP');
     expect(el.querySelector('.auth-qr a')?.getAttribute('href')).toContain('otpauth://');
+  });
+
+  it('desenha o QR code a partir do link otpauth', async () => {
+    await open();
+    await settle();
+
+    const image = el.querySelector('.auth-qr__image') as HTMLImageElement | null;
+
+    expect(image?.src.startsWith('data:image/png;base64,')).toBeTrue();
+    expect(image?.alt).toBe('QR code para cadastrar o app autenticador');
+  });
+
+  it('sem a imagem (falha ao gerar), a chave em texto continua disponível', async () => {
+    gateway.beginSetup.and.resolveTo({ otpauthUri: '', secret: 'ABCDEFGHIJKLMNOP' });
+    await open();
+    await settle();
+
+    expect(el.querySelector('.auth-qr__image')).toBeNull();
+    expect(el.querySelector('.auth-qr__secret')?.textContent).toBe('ABCD EFGH IJKL MNOP');
   });
 
   it('sem desafio volta ao login e não chama o serviço', async () => {
