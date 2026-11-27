@@ -1,0 +1,94 @@
+<!-- Figma "Conductia - V1", seção 12, telas 13 (primeiro acesso) e 14 (códigos de recuperação). -->
+@if (step() === 'CODES') {
+  <app-auth-shell
+    [title]="i18n.t('mfa.codes.title')"
+    [text]="i18n.t('mfa.codes.description')"
+  >
+    <ul class="auth-codes" [attr.aria-label]="i18n.t('mfa.codes.title')">
+      @for (item of recoveryCodes(); track item) {
+        <li class="auth-codes__item">{{ item }}</li>
+      }
+    </ul>
+    <div class="auth-actions">
+      <app-button
+        kind="primary"
+        appearance="outlined"
+        [fullWidth]="!isDesktop()"
+        [size]="isDesktop() ? 'lg' : 'md'"
+        [label]="i18n.t(copied() ? 'mfa.codes.copied' : 'mfa.codes.copy')"
+        (click)="copyCodes()"
+      />
+      <app-button
+        [fullWidth]="!isDesktop()"
+        [size]="isDesktop() ? 'lg' : 'md'"
+        [label]="i18n.t('mfa.codes.done')"
+        (click)="finish()"
+      />
+    </div>
+  </app-auth-shell>
+} @else {
+  <app-auth-shell
+    [title]="i18n.t('mfa.setup.title')"
+    [text]="i18n.t('mfa.setup.description')"
+  >
+    @if (bannerMessage(); as message) {
+      <app-banner type="warning">{{ message }}</app-banner>
+    }
+    @if (setupFailed()) {
+      <app-banner type="warning">{{ i18n.t('mfa.setup.failed') }}</app-banner>
+    }
+    @if (setup(); as data) {
+      <!-- Placeholder do QR code (falta a biblioteca): chave em texto e link do app autenticador. -->
+      <div class="auth-qr">
+        <span class="auth-qr__label">{{ i18n.t('mfa.setup.keyLabel') }}</span>
+        <code class="auth-qr__secret">{{ secretGroups() }}</code>
+        <a class="auth-link" [href]="data.otpauthUri">{{
+          i18n.t('mfa.setup.openApp')
+        }}</a>
+      </div>
+    }
+    <form class="auth-form" novalidate (submit)="activate($event)">
+      <div class="auth-fields">
+        <div class="auth-field">
+          <label class="auth-field__label" for="mfa-setup-code">{{
+            i18n.t('mfa.code.label')
+          }}</label>
+          <input
+            id="mfa-setup-code"
+            class="auth-field__input"
+            type="text"
+            name="code"
+            autocomplete="one-time-code"
+            inputmode="numeric"
+            maxlength="6"
+            [attr.aria-invalid]="fieldError() ? 'true' : null"
+            [attr.aria-describedby]="fieldError() ? 'mfa-setup-error' : null"
+            [value]="code()"
+            (input)="onCode($event)"
+          />
+          @if (fieldError(); as message) {
+            <p id="mfa-setup-error" class="auth-field__error" role="alert">
+              {{ message }}
+            </p>
+          }
+        </div>
+      </div>
+      <div class="auth-actions">
+        <button
+          type="button"
+          class="auth-link auth-link--button"
+          (click)="leave()"
+        >
+          {{ i18n.t('mfa.setup.leave') }}
+        </button>
+        <app-button
+          htmlType="submit"
+          [fullWidth]="!isDesktop()"
+          [size]="isDesktop() ? 'lg' : 'md'"
+          [disabled]="loading() || setup() === null"
+          [label]="i18n.t('mfa.setup.submit')"
+        />
+      </div>
+    </form>
+  </app-auth-shell>
+}

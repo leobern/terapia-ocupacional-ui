@@ -1,0 +1,58 @@
+<!-- Figma "Conductia - V1", seção 12, tela 12 (MFA · código). -->
+<app-auth-shell
+  [title]="i18n.t('mfa.code.title')"
+  [text]="
+    i18n.t(
+      useRecovery() ? 'mfa.code.recoveryDescription' : 'mfa.code.description'
+    )
+  "
+>
+  @if (bannerMessage(); as message) {
+    <app-banner type="warning">{{ message }}</app-banner>
+  }
+  <form class="auth-form" novalidate (submit)="submit($event)">
+    <div class="auth-fields">
+      <div class="auth-field">
+        <label class="auth-field__label" for="mfa-code">{{
+          i18n.t(useRecovery() ? 'mfa.code.recoveryLabel' : 'mfa.code.label')
+        }}</label>
+        <input
+          id="mfa-code"
+          class="auth-field__input"
+          type="text"
+          name="code"
+          autocomplete="one-time-code"
+          autocapitalize="none"
+          spellcheck="false"
+          [attr.inputmode]="useRecovery() ? 'text' : 'numeric'"
+          [attr.maxlength]="useRecovery() ? 32 : 6"
+          [attr.aria-invalid]="fieldError() ? 'true' : null"
+          [attr.aria-describedby]="fieldError() ? 'mfa-code-error' : null"
+          [value]="code()"
+          (input)="onCode($event)"
+        />
+        @if (fieldError(); as message) {
+          <p id="mfa-code-error" class="auth-field__error" role="alert">
+            {{ message }}
+          </p>
+        }
+      </div>
+    </div>
+    <div class="auth-actions">
+      <button
+        type="button"
+        class="auth-link auth-link--button"
+        (click)="toggleRecovery()"
+      >
+        {{ i18n.t(useRecovery() ? 'mfa.code.useApp' : 'mfa.code.useRecovery') }}
+      </button>
+      <app-button
+        htmlType="submit"
+        [fullWidth]="!isDesktop()"
+        [size]="isDesktop() ? 'lg' : 'md'"
+        [disabled]="loading()"
+        [label]="i18n.t('mfa.code.submit')"
+      />
+    </div>
+  </form>
+</app-auth-shell>

@@ -62,4 +62,27 @@ describe('HttpAuthGateway', () => {
     fetchSpy.and.rejectWith(new TypeError('offline'));
     await expectAsync(gateway.login('a@b.co', 'pw')).toBeResolvedTo({ kind: 'network-error' });
   });
+
+  it('202 com desafio de MFA devolve mfa-required', async () => {
+    respond(202, { mfaToken: 'desafio', setupObrigatorio: true });
+
+    await expectAsync(gateway.login('a@b.co', 'pw')).toBeResolvedTo({
+      challenge: 'desafio',
+      kind: 'mfa-required',
+      setupRequired: true,
+    });
+    respond(202, { mfaToken: 'desafio' });
+
+    await expectAsync(gateway.login('a@b.co', 'pw')).toBeResolvedTo({
+      challenge: 'desafio',
+      kind: 'mfa-required',
+      setupRequired: false,
+    });
+  });
+
+  it('202 sem desafio vira network-error', async () => {
+    respond(202, {});
+
+    await expectAsync(gateway.login('a@b.co', 'pw')).toBeResolvedTo({ kind: 'network-error' });
+  });
 });

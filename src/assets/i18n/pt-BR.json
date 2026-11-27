@@ -51,6 +51,23 @@
     },
     "stale": "Os dados podem estar desatualizados. Sem conexão no momento."
   },
+  "invite": {
+    "alreadyRegistered": "Este e-mail já tem conta. Entre com sua senha.",
+    "confirmationLabel": "Confirmar senha",
+    "created": "Conta criada. Entre com seu e-mail e senha.",
+    "description": "Você foi convidado(a) para participar da equipe Conductia. Crie seu cadastro para começar.",
+    "goToLogin": "Ir para o login",
+    "haveAccount": "Já tenho conta · Entrar",
+    "invalidMessage": "Este convite não é mais válido. Peça um novo convite a quem convidou você.",
+    "invalidTitle": "Convite inválido",
+    "nameLabel": "Nome completo",
+    "nameRequired": "Informe seu nome completo.",
+    "passwordLabel": "Senha",
+    "retry": "Tentar novamente",
+    "serviceError": "Não foi possível criar a conta. Tente novamente.",
+    "submit": "Criar conta",
+    "title": "Boas-vindas"
+  },
   "lock": {
     "biometricFailed": "Não foi possível reconhecer a biometria. Tente novamente.",
     "message": "Por segurança, o app foi bloqueado após 30 minutos sem uso.",
@@ -86,6 +103,41 @@
     "message": "Sua sessão neste dispositivo será encerrada e os dados salvos nele serão removidos.",
     "signOut": "Sair",
     "title": "Deseja sair da conta?"
+  },
+  "mfa": {
+    "code": {
+      "description": "Abra o app autenticador e digite o código de 6 dígitos.",
+      "label": "Código de 6 dígitos",
+      "recoveryDescription": "Digite um dos códigos de recuperação que você guardou. Cada código vale uma vez.",
+      "recoveryLabel": "Código de recuperação",
+      "submit": "Verificar",
+      "title": "Verificação em duas etapas",
+      "useApp": "Usar o app autenticador",
+      "useRecovery": "Usar código de recuperação"
+    },
+    "codes": {
+      "copied": "Códigos copiados",
+      "copy": "Copiar códigos",
+      "description": "Use um código se perder o acesso ao app autenticador. Cada código vale uma vez. Se perder todos, um Admin redefine seu acesso.",
+      "done": "Já guardei os códigos",
+      "title": "Guarde seus códigos de recuperação"
+    },
+    "error": {
+      "expired": "A verificação expirou. Entre novamente.",
+      "invalid-code": "Código incorreto. Tente novamente.",
+      "locked": "Muitas tentativas. Aguarde alguns minutos e tente de novo.",
+      "network-error": "Sem conexão. Verifique sua internet.",
+      "required": "Informe o código."
+    },
+    "setup": {
+      "description": "Obrigatória para Admin e Gestor. Cadastre a chave no app autenticador e digite o código gerado.",
+      "failed": "Não foi possível gerar a chave. Saia e tente novamente.",
+      "keyLabel": "Chave de configuração",
+      "leave": "Sair",
+      "openApp": "Abrir no app autenticador",
+      "submit": "Ativar",
+      "title": "Ative a verificação em duas etapas"
+    }
   },
   "moveBed": {
     "messages": {

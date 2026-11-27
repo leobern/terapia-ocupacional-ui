@@ -246,6 +246,59 @@
   }
 }
 
+// Link que é um botão (ex.: "Usar código de recuperação"): mesmo visual do link.
+.auth-link--button {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+// Chave de configuração do app autenticador (no lugar do QR code, que ainda não é desenhado).
+.auth-qr {
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$space-8;
+  align-items: center;
+  padding: tokens.$space-16;
+  border: 1px solid tokens.c(border);
+  border-radius: tokens.$radius-sm;
+  background: tokens.c(surface-2);
+  text-align: center;
+}
+
+.auth-qr__label {
+  color: tokens.c(content-3);
+
+  @include typography.caption;
+}
+
+.auth-qr__secret {
+  color: tokens.c(content-1);
+  font-family: ui-monospace, 'Cascadia Mono', Consolas, monospace;
+  font-size: 16px;
+  letter-spacing: 0.08em;
+  word-break: break-all;
+}
+
+// Códigos de recuperação: duas colunas, uma linha por par.
+.auth-codes {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: tokens.$space-8 tokens.$space-16;
+  margin: 0;
+  padding: tokens.$space-16;
+  border-radius: tokens.$radius-sm;
+  background: tokens.c(surface-2);
+  list-style: none;
+}
+
+.auth-codes__item {
+  color: tokens.c(content-1);
+  font-family: ui-monospace, 'Cascadia Mono', Consolas, monospace;
+  font-size: 16px;
+}
+
 // --- alternador de tema -----------------------------------------------------------------------
 // Figma `bo-theme-toggle`: 2 botões de 40px (pílula), ativo em `secondary` com ícone `content-6`.
 // Mobile: centralizado na base (24px da borda); desktop: canto superior direito (40px).

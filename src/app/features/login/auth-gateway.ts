@@ -7,6 +7,8 @@ export type LoginResult =
   | { readonly kind: 'invalid-credentials' }
   /** Bloqueio temporário (RN02, HTTP 423). `retryAfterSeconds` só existe se o servidor informar. */
   | { readonly kind: 'locked'; readonly retryAfterSeconds?: number }
+  /** Perfil com segundo fator (ADMIN e GESTOR): o login devolve um desafio, não tokens (HTTP 202, contrato proposto). */
+  | { readonly kind: 'mfa-required'; readonly challenge: string; readonly setupRequired: boolean }
   | { readonly kind: 'network-error' };
 
 /**

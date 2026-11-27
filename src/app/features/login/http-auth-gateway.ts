@@ -7,6 +7,9 @@ import { AuthGateway, LoginResult } from './auth-gateway';
 interface LoginResponseBody {
   readonly accessToken?: string;
   readonly refreshToken?: string;
+  /** Só no 202 (MFA): desafio a trocar por tokens em `/v1/auth/mfa/*` e se a pessoa ainda precisa ativar o app. */
+  readonly mfaToken?: string;
+  readonly setupObrigatorio?: boolean;
 }
 
 /**
@@ -33,6 +36,13 @@ export class HttpAuthGateway extends AuthGateway {
       }
       if (response.status === 401 || response.status === 400) {
         return { kind: 'invalid-credentials' };
+      }
+      if (response.status === 202) {
+        const challenge = (await response.json()) as LoginResponseBody;
+
+        return challenge.mfaToken
+          ? { challenge: challenge.mfaToken, kind: 'mfa-required', setupRequired: challenge.setupObrigatorio === true }
+          : { kind: 'network-error' };
       }
       if (!response.ok) {
         return { kind: 'network-error' };

@@ -2,6 +2,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, convertToParamMap, provideRouter, Router } from '@angular/router';
 
 import { LocalSessionStore } from '../auth/local-session-store';
+import { MfaChallengeStore } from '../mfa/mfa-gateway';
 import { AuthGateway, LoginResult } from './auth-gateway';
 import { LoginComponent } from './login.component';
 
@@ -318,6 +319,31 @@ describe('LoginComponent', () => {
       fixture.destroy();
 
       expect(() => jasmine.clock().tick(5000)).not.toThrow();
+    });
+  });
+
+  describe('MFA (ADMIN e GESTOR)', () => {
+    it('guarda o desafio em memória e vai à verificação do código', async () => {
+      const navigateByUrl = spyOn(TestBed.inject(Router), 'navigateByUrl').and.resolveTo(true);
+
+      gateway.login.and.resolveTo({ challenge: 'desafio', kind: 'mfa-required', setupRequired: false });
+      fill('a@b.com', 'Senha12345');
+      await submit();
+
+      expect(TestBed.inject(MfaChallengeStore).current()).toEqual({ setupRequired: false, token: 'desafio' });
+      expect(navigateByUrl).toHaveBeenCalledWith('/mfa', { replaceUrl: true });
+      TestBed.inject(MfaChallengeStore).current.set(null);
+    });
+
+    it('no primeiro acesso vai à ativação do app autenticador', async () => {
+      const navigateByUrl = spyOn(TestBed.inject(Router), 'navigateByUrl').and.resolveTo(true);
+
+      gateway.login.and.resolveTo({ challenge: 'desafio', kind: 'mfa-required', setupRequired: true });
+      fill('a@b.com', 'Senha12345');
+      await submit();
+
+      expect(navigateByUrl).toHaveBeenCalledWith('/mfa/setup', { replaceUrl: true });
+      TestBed.inject(MfaChallengeStore).current.set(null);
     });
   });
 });
