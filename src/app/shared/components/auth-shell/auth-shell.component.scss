@@ -377,6 +377,16 @@
   height: 48px;
 }
 
+// Ícone por cima do logo (Figma 15: `lock-key` de 32px centrado no logo de 48px, na cor secundária).
+.auth-shell__logo-icon {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  display: flex;
+  color: tokens.c(secondary);
+  transform: translate(-50%, -50%);
+}
+
 .auth-shell__logo-badge {
   // Borda azul (secondary) nos dois temas, igual ao logo do menu.
   --icon-logo-accent-override: var(--color-secondary);

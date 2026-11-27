@@ -1,9 +1,12 @@
 import { ChangeDetectionStrategy, Component, inject, OnInit, signal } from '@angular/core';
 import { Router } from '@angular/router';
 
+import { AuthShellComponent } from '../../../shared/components/auth-shell/auth-shell.component';
 import { ButtonComponent } from '../../../shared/components/button/button.component';
-import { IconLogoComponent } from '../../../shared/components/icon-logo/icon-logo.component';
+import { PasswordFieldComponent } from '../../../shared/components/password-field/password-field.component';
 import { I18nService } from '../../../shared/services/i18n.service';
+import { ViewportBreakpointService } from '../../../shared/services/viewport-breakpoint.service';
+import { LogoutService } from '../logout.service';
 import { AccountPasswordVerifier, PasswordCheck } from './account-password-verifier';
 import { BiometricAuth } from './biometric-auth';
 import { InactivityLockService } from './inactivity-lock.service';
@@ -25,9 +28,8 @@ export const MAX_BIOMETRIC_FAILURES = 3;
  */
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ButtonComponent, IconLogoComponent],
+  imports: [AuthShellComponent, ButtonComponent, PasswordFieldComponent],
   selector: 'app-lock-screen',
-  styleUrl: './lock-screen.component.scss',
   templateUrl: './lock-screen.component.html',
 })
 export class LockScreenComponent implements OnInit {
@@ -39,13 +41,16 @@ export class LockScreenComponent implements OnInit {
   protected readonly biometricFailed = signal(false);
   protected readonly busy = signal(false);
   protected readonly passwordMessageKey = PASSWORD_MESSAGE_KEYS;
+  protected readonly isDesktop = inject(ViewportBreakpointService).isDesktop;
+  /** Senha digitada (o campo é o `app-password-field`, com mostrar/ocultar). */
+  protected readonly password = signal('');
 
   private readonly biometric = inject(BiometricAuth);
   private readonly verifier = inject(AccountPasswordVerifier);
   private readonly lock = inject(InactivityLockService);
   private readonly router = inject(Router);
+  private readonly logoutService = inject(LogoutService);
   private failures = 0;
-  private password = '';
 
   async ngOnInit(): Promise<void> {
     if (await this.biometric.isAvailable().catch(() => false)) {
@@ -80,9 +85,15 @@ export class LockScreenComponent implements OnInit {
     }
   }
 
-  protected onPasswordInput(event: Event): void {
-    this.password = (event.target as HTMLInputElement).value;
+  protected onPassword(value: string): void {
+    this.password.set(value);
     this.passwordIssue.set(null);
+  }
+
+  /** "Sair da conta" (Figma 15): encerra a sessão deste dispositivo e volta ao login. */
+  protected async signOut(): Promise<void> {
+    await this.logoutService.logout();
+    await this.router.navigateByUrl('/login', { replaceUrl: true });
   }
 
   protected async submitPassword(event?: Event): Promise<void> {
@@ -93,7 +104,7 @@ export class LockScreenComponent implements OnInit {
     }
 
     this.busy.set(true);
-    const check = await this.verifier.verify(this.password).catch((): PasswordCheck => 'unavailable');
+    const check = await this.verifier.verify(this.password()).catch((): PasswordCheck => 'unavailable');
 
     this.busy.set(false);
 

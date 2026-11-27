@@ -136,7 +136,7 @@ export class AppComponent {
     }
 
     // Telas de acesso (Figma seção 12) usam o mesmo gradiente da Home, no claro e no escuro.
-    return ['/home', '/login', '/forgot-password', '/reset-password', '/invite', '/mfa'].some(prefix =>
+    return ['/home', '/login', '/forgot-password', '/reset-password', '/invite', '/mfa', '/lock'].some(prefix =>
       url.startsWith(prefix),
     )
       ? 'gradient'

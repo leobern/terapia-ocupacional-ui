@@ -1,6 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
 
+import { LogoutService } from '../logout.service';
 import { AccountPasswordVerifier } from './account-password-verifier';
 import { BiometricAuth } from './biometric-auth';
 import { InactivityLockService } from './inactivity-lock.service';
@@ -12,6 +13,7 @@ describe('LockScreenComponent', () => {
   let navigateByUrl: jasmine.Spy;
   let unlock: jasmine.Spy;
   let verify: jasmine.Spy;
+  let logout: jasmine.Spy;
   let authenticate: jasmine.Spy;
   let available: boolean;
 
@@ -48,6 +50,7 @@ describe('LockScreenComponent', () => {
     available = true;
     navigateByUrl = jasmine.createSpy('navigateByUrl').and.resolveTo(true);
     unlock = jasmine.createSpy('unlock');
+    logout = jasmine.createSpy('logout').and.resolveTo();
     verify = jasmine
       .createSpy('verify')
       .and.callFake((p: string) => Promise.resolve(p === 'correta' ? 'ok' : 'invalid'));
@@ -55,6 +58,7 @@ describe('LockScreenComponent', () => {
     TestBed.configureTestingModule({
       providers: [
         { provide: Router, useValue: { navigateByUrl } },
+        { provide: LogoutService, useValue: { logout } },
         { provide: InactivityLockService, useValue: { returnUrl: (): string => '/patients/7', unlock } },
         { provide: AccountPasswordVerifier, useValue: { verify } },
         {
@@ -232,5 +236,30 @@ describe('LockScreenComponent', () => {
     await (fixture.componentInstance as unknown as { submitPassword(): Promise<void> }).submitPassword();
 
     expect(unlock).toHaveBeenCalledWith();
+  });
+
+  it('Figma 15: o cadeado fica sobre o logo e a senha tem mostrar/ocultar', async () => {
+    available = false;
+    await create();
+
+    expect(el.querySelector('.auth-shell__logo-icon i')?.className).toContain('ph-lock-key');
+    expect(el.querySelector('.auth-field__toggle')).not.toBeNull();
+    expect(el.textContent).toContain('Digite sua senha para continuar');
+  });
+
+  it('"Sair da conta" encerra a sessão do dispositivo e volta ao login', async () => {
+    available = false;
+    await create();
+    click('Sair da conta');
+    await flush();
+
+    expect(logout).toHaveBeenCalledTimes(1);
+    expect(navigateByUrl).toHaveBeenCalledWith('/login', { replaceUrl: true });
+  });
+
+  it('no modo biometria também oferece "Sair da conta"', async () => {
+    await create();
+
+    expect(el.textContent).toContain('Sair da conta');
   });
 });

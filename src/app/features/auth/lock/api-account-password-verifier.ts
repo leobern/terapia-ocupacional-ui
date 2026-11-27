@@ -42,9 +42,11 @@ export class ApiAccountPasswordVerifier extends AccountPasswordVerifier {
         return 'invalid';
       case 'locked':
         return 'locked';
-      // Perfil com MFA: a senha sozinha não reabre a sessão (falta o segundo fator). Decisão de produto pendente
-      // (docs/regras-de-negocio/pendencias-backend-acesso.md): por ora o desbloqueio fica indisponível.
+      // Perfil com MFA (Thiago, 2026-11-27, opção A): o desbloqueio pede só a senha. O 202 do login só vem depois de a
+      // senha ser aceita, então confirma a pessoa sem abrir sessão nova nem pedir o código (o MFA vale na entrada).
+      // O ideal é um endpoint de reautenticação no backend (docs/regras-de-negocio/pendencias-backend-acesso.md).
       case 'mfa-required':
+        return 'ok';
       case 'network-error':
         return 'unavailable';
     }

@@ -72,9 +72,11 @@
     "biometricFailed": "Biometrics were not recognized. Try again.",
     "message": "For your security, the app was locked after 30 minutes of inactivity.",
     "passwordError": "Incorrect password. Try again.",
-    "passwordLabel": "Account password",
+    "passwordLabel": "Password",
     "passwordLocked": "Too many attempts. Try again later.",
+    "passwordMessage": "For security, we lock the app after it has been idle for a while. Enter your password to continue.",
     "passwordUnavailable": "No connection. Connect to unlock with your account password.",
+    "signOut": "Sign out",
     "title": "App locked",
     "unlock": "Unlock",
     "useBiometric": "Use biometrics"

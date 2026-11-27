@@ -3,8 +3,16 @@
     <header class="auth-shell__header">
       <div class="auth-shell__logo" [class.auth-shell__logo--brand]="brand()">
         <span class="auth-shell__logo-slot"
-          ><app-icon-logo class="auth-shell__logo-badge" state="default"
-        /></span>
+          ><app-icon-logo class="auth-shell__logo-badge" state="default" />
+          @if (logoIcon(); as iconName) {
+            <ph-icon
+              class="auth-shell__logo-icon"
+              weight="fill"
+              [name]="iconName"
+              [size]="32"
+            />
+          }
+        </span>
         @if (brand()) {
           <span class="auth-shell__brand" aria-hidden="true"
             >Conduct<span class="auth-shell__brand-accent">ia</span></span
