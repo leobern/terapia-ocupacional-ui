@@ -57,10 +57,13 @@ describe('ApiAccountPasswordVerifier', () => {
     const before = store.accessToken();
 
     login.and.resolveTo({ kind: 'invalid-credentials' } satisfies LoginResult);
+
     expect(await verifier.verify('x')).toBe('invalid');
     login.and.resolveTo({ kind: 'locked' } satisfies LoginResult);
+
     expect(await verifier.verify('x')).toBe('locked');
     login.and.resolveTo({ kind: 'network-error' } satisfies LoginResult);
+
     expect(await verifier.verify('x')).toBe('unavailable');
     expect(store.accessToken()).toBe(before);
     expect(store.refreshToken()).toBe('antigo');
@@ -72,5 +75,11 @@ describe('ApiAccountPasswordVerifier', () => {
 
     expect(await verifier.verify('x')).toBe('unavailable');
     expect(login).not.toHaveBeenCalled();
+  });
+
+  it('perfil com MFA: a senha sozinha não reabre a sessão (indisponível)', async () => {
+    login.and.resolveTo({ challenge: 'd', kind: 'mfa-required', setupRequired: false } satisfies LoginResult);
+
+    expect(await verifier.verify('x')).toBe('unavailable');
   });
 });

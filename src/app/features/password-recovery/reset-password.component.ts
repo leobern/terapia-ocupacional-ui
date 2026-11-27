@@ -1,19 +1,22 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
-import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 
 import { validatePassword } from '../../shared/auth/password-policy';
+import { AuthShellComponent } from '../../shared/components/auth-shell/auth-shell.component';
+import { BannerComponent } from '../../shared/components/banner/banner.component';
 import { ButtonComponent } from '../../shared/components/button/button.component';
+import { PasswordFieldComponent } from '../../shared/components/password-field/password-field.component';
 import { I18nService } from '../../shared/services/i18n.service';
+import { ViewportBreakpointService } from '../../shared/services/viewport-breakpoint.service';
 import { PasswordResetGateway } from './password-reset-gateway';
 
-export type ResetPasswordState = 'FORM' | 'SUBMITTING' | 'LINK_EXPIRED';
+export type ResetPasswordState = 'FORM' | 'SUBMITTING' | 'LINK_EXPIRED' | 'DONE';
 
 /** Definição da nova senha pelo link do e-mail (US-001-1-06, cenários 3 e 4). */
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ButtonComponent, RouterLink],
+  imports: [AuthShellComponent, BannerComponent, ButtonComponent, PasswordFieldComponent],
   selector: 'app-reset-password',
-  styleUrl: './password-recovery.component.scss',
   templateUrl: './reset-password.component.html',
 })
 export class ResetPasswordComponent {
@@ -24,6 +27,7 @@ export class ResetPasswordComponent {
   protected readonly passwordError = signal<string | null>(null);
   protected readonly confirmationError = signal<string | null>(null);
   protected readonly serviceError = signal(false);
+  protected readonly isDesktop = inject(ViewportBreakpointService).isDesktop;
 
   private readonly token = inject(ActivatedRoute).snapshot.queryParamMap.get('token');
   private readonly gateway = inject(PasswordResetGateway);
@@ -35,12 +39,12 @@ export class ResetPasswordComponent {
     }
   }
 
-  protected onPassword(event: Event): void {
-    this.password.set((event.target as HTMLInputElement).value);
+  protected goToLogin(): void {
+    void this.router.navigateByUrl('/login', { replaceUrl: true });
   }
 
-  protected onConfirmation(event: Event): void {
-    this.confirmation.set((event.target as HTMLInputElement).value);
+  protected requestNewLink(): void {
+    void this.router.navigateByUrl('/forgot-password');
   }
 
   protected submit(event?: Event): void {
@@ -64,7 +68,8 @@ export class ResetPasswordComponent {
     this.gateway.confirmReset(this.token, this.password()).then(
       result => {
         if (result === 'ok') {
-          void this.router.navigateByUrl('/login', { replaceUrl: true });
+          // Figma 11: tela de sucesso antes de voltar ao login.
+          this.state.set('DONE');
         } else {
           this.state.set('LINK_EXPIRED');
         }

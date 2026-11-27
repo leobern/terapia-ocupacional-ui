@@ -1,11 +1,15 @@
 import { ChangeDetectionStrategy, Component, computed, DestroyRef, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 
+import { AuthShellComponent } from '../../shared/components/auth-shell/auth-shell.component';
+import { BannerComponent, type BannerType } from '../../shared/components/banner/banner.component';
 import { ButtonComponent } from '../../shared/components/button/button.component';
-import { IconLogoComponent } from '../../shared/components/icon-logo/icon-logo.component';
+import { PasswordFieldComponent } from '../../shared/components/password-field/password-field.component';
 import { I18nService } from '../../shared/services/i18n.service';
+import { ViewportBreakpointService } from '../../shared/services/viewport-breakpoint.service';
 import { LocalSessionStore } from '../auth/local-session-store';
 import { safeReturnUrl } from '../auth/return-url';
+import { MfaChallengeStore } from '../mfa/mfa-gateway';
 import { AuthGateway } from './auth-gateway';
 
 export type LoginError = 'invalid-credentials' | 'locked' | 'network-error' | 'validation';
@@ -26,15 +30,16 @@ function isEmailShaped(value: string): boolean {
  */
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ButtonComponent, IconLogoComponent, RouterLink],
+  imports: [AuthShellComponent, BannerComponent, ButtonComponent, PasswordFieldComponent, RouterLink],
   selector: 'app-login',
-  styleUrl: './login.component.scss',
   templateUrl: './login.component.html',
 })
 export class LoginComponent {
   protected readonly i18n = inject(I18nService);
   protected readonly email = signal('');
   protected readonly password = signal('');
+  /** Erro de formato do e-mail: aparece ao sair do campo (blur) ou ao enviar, sob o próprio campo. */
+  protected readonly emailError = signal('');
   protected readonly loading = signal(false);
   protected readonly error = signal<LoginError | null>(null);
   protected readonly errorMessage = computed(() => {
@@ -43,17 +48,44 @@ export class LoginComponent {
     return error === null ? '' : this.i18n.t(`login.error.${error}`);
   });
 
+  /** Erro de credencial/preenchimento: aparece sob o campo de senha (Figma 02). */
+  protected readonly fieldError = computed(() => {
+    const error = this.error();
+
+    if (error === 'validation') {
+      // O e-mail inválido já tem mensagem no próprio campo; aqui sobra só a senha vazia.
+      return this.emailError() !== '' && this.password() !== '' ? '' : this.errorMessage();
+    }
+
+    return error === 'invalid-credentials' ? this.errorMessage() : '';
+  });
+
   /** Aviso vindo da navegação (ex.: sessão expirada), exibido acima do formulário. */
   protected readonly notice = signal<string>(this.readNotice());
 
   /** Bloqueio informado pelo servidor (RN02): impede novas tentativas. */
   protected readonly locked = signal(false);
 
+  /** Aviso no topo do card: bloqueio e falta de rede (amarelo) ou sessão expirada/encerrada (azul). */
+  protected readonly banner = computed<{ message: string; type: BannerType } | null>(() => {
+    const error = this.error();
+
+    if (error === 'locked' || error === 'network-error') {
+      return { message: this.errorMessage(), type: 'warning' };
+    }
+    const notice = this.notice();
+
+    return notice === '' ? null : { message: notice, type: 'info' };
+  });
+
+  protected readonly isDesktop = inject(ViewportBreakpointService).isDesktop;
+
   private unlockTimer: ReturnType<typeof setTimeout> | undefined;
   private readonly gateway = inject(AuthGateway);
   private readonly session = inject(LocalSessionStore);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
+  private readonly mfa = inject(MfaChallengeStore);
 
   constructor() {
     inject(DestroyRef).onDestroy(() => clearTimeout(this.unlockTimer));
@@ -67,6 +99,7 @@ export class LoginComponent {
 
     // Validação só de formato/preenchimento: nada sobre existência de contas.
     if (!isEmailShaped(email) || this.password() === '') {
+      this.validateEmail();
       this.error.set('validation');
 
       return;
@@ -96,12 +129,28 @@ export class LoginComponent {
         case 'locked':
           this.lock(result.retryAfterSeconds);
           break;
+        case 'mfa-required':
+          // Segundo fator (ADMIN e GESTOR): o desafio fica só em memória e a verificação abre a sessão.
+          this.mfa.current.set({ setupRequired: result.setupRequired, token: result.challenge });
+          void this.router.navigateByUrl(result.setupRequired ? '/mfa/setup' : '/mfa', { replaceUrl: true });
+          break;
       }
     });
   }
 
   protected onInput(field: 'email' | 'password', event: Event): void {
     (field === 'email' ? this.email : this.password).set((event.target as HTMLInputElement).value);
+    // Com o erro de formato já exibido, ele some assim que o e-mail passa a ser válido.
+    if (field === 'email' && this.emailError() !== '' && isEmailShaped(this.email().trim())) {
+      this.emailError.set('');
+    }
+  }
+
+  /** Ao sair do campo: e-mail preenchido fora do formato `texto@texto.texto` mostra o erro (vazio só falha no envio). */
+  protected validateEmail(): void {
+    const email = this.email().trim();
+
+    this.emailError.set(email === '' || isEmailShaped(email) ? '' : this.i18n.t('login.emailInvalid'));
   }
 
   private readNotice(): string {

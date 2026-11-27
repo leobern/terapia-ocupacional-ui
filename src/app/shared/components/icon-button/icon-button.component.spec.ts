@@ -198,7 +198,7 @@ describe('IconButtonComponent', () => {
     });
   });
 
-  it('shows the design-system focus ring (comm-focus, 2px, 4px offset) when focus arrives via keyboard', () => {
+  it('shows the design-system focus ring (comm-success, 2px, 2px offset) when focus arrives via keyboard', () => {
     attachToDom();
     // Nenhum mousedown disparado antes — KeyboardFocusService assume teclado
     // por padrão (ver shared/services/keyboard-focus.service.ts).
@@ -209,8 +209,8 @@ describe('IconButtonComponent', () => {
 
     expect(cs.outlineWidth).toBe('2px');
     expect(cs.outlineStyle).toBe('solid');
-    expect(cs.outlineColor).toBe('rgb(222, 67, 220)'); // comm-focus #DE43DC
-    expect(cs.outlineOffset).toBe('4px');
+    expect(cs.outlineColor).toBe('rgb(76, 205, 83)'); // comm-success #4CCD53
+    expect(cs.outlineOffset).toBe('2px');
   });
 
   it('does NOT show the pink focus ring when focus arrives via mouse click', () => {

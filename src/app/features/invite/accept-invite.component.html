@@ -1,0 +1,116 @@
+<!-- Figma "Conductia - V1", seção 12, tela 06 (aceitar convite) e estado de convite inválido. -->
+@if (state() === 'INVALID') {
+  <app-auth-shell
+    [title]="i18n.t('invite.invalidTitle')"
+    [text]="i18n.t('invite.invalidMessage')"
+  >
+    <div class="auth-actions auth-actions--single">
+      <app-button
+        [fullWidth]="!isDesktop()"
+        [label]="i18n.t('invite.goToLogin')"
+        (click)="goToLogin()"
+      />
+    </div>
+  </app-auth-shell>
+} @else {
+  <app-auth-shell
+    [brand]="true"
+    [title]="i18n.t('invite.title')"
+    [text]="i18n.t('invite.description')"
+  >
+    <form class="auth-form" novalidate (submit)="submit($event)">
+      <div class="auth-fields">
+        <div class="auth-field">
+          <label class="auth-field__label" for="invite-name">{{
+            i18n.t('invite.nameLabel')
+          }}</label>
+          <input
+            id="invite-name"
+            class="auth-field__input"
+            type="text"
+            name="name"
+            autocomplete="name"
+            [value]="fullName()"
+            [attr.aria-invalid]="nameError() ? 'true' : null"
+            [attr.aria-describedby]="nameError() ? 'invite-name-error' : null"
+            (input)="onName($event)"
+          />
+          @if (nameError(); as error) {
+            <p id="invite-name-error" class="auth-field__error" role="alert">
+              {{ error }}
+            </p>
+          }
+        </div>
+        <div class="auth-field">
+          <label class="auth-field__label" for="invite-password">{{
+            i18n.t('invite.passwordLabel')
+          }}</label>
+          <app-password-field
+            inputId="invite-password"
+            name="password"
+            autocomplete="new-password"
+            [invalid]="!!passwordError()"
+            [describedBy]="
+              passwordError()
+                ? 'invite-password-hint invite-password-error'
+                : 'invite-password-hint'
+            "
+            [(value)]="password"
+          />
+          <p id="invite-password-hint" class="auth-field__hint">
+            {{ i18n.t('passwordRecovery.reset.passwordHint') }}
+          </p>
+          @if (passwordError(); as error) {
+            <p
+              id="invite-password-error"
+              class="auth-field__error"
+              role="alert"
+            >
+              {{ error }}
+            </p>
+          }
+        </div>
+        <div class="auth-field">
+          <label class="auth-field__label" for="invite-confirmation">{{
+            i18n.t('invite.confirmationLabel')
+          }}</label>
+          <app-password-field
+            inputId="invite-confirmation"
+            name="confirmation"
+            autocomplete="new-password"
+            [invalid]="!!confirmationError()"
+            [describedBy]="
+              confirmationError() ? 'invite-confirmation-error' : null
+            "
+            [(value)]="confirmation"
+          />
+          @if (confirmationError(); as error) {
+            <p
+              id="invite-confirmation-error"
+              class="auth-field__error"
+              role="alert"
+            >
+              {{ error }}
+            </p>
+          }
+        </div>
+        @if (serviceError()) {
+          <app-banner type="warning">{{
+            i18n.t('invite.serviceError')
+          }}</app-banner>
+        }
+      </div>
+      <div class="auth-actions">
+        <a class="auth-link" routerLink="/login">{{
+          i18n.t('invite.haveAccount')
+        }}</a>
+        <app-button
+          htmlType="submit"
+          [fullWidth]="!isDesktop()"
+          [disabled]="state() === 'SUBMITTING'"
+          [label]="i18n.t(serviceError() ? 'invite.retry' : 'invite.submit')"
+        />
+      </div>
+    </form>
+  </app-auth-shell>
+}

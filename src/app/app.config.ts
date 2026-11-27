@@ -49,8 +49,12 @@ import { ProfessionalAccessApiService } from './features/hospital-team/professio
 import { ProfessionalAccessRevoker, ProfessionalAccessSource } from './features/hospital-team/professional-access-port';
 import { ProvisionalProfessionalAccess } from './features/hospital-team/provisional-professional-access';
 import { SessionManagerAccess } from './features/hospital-team/session-manager-access';
+import { HttpInviteGateway } from './features/invite/http-invite-gateway';
+import { InviteGateway } from './features/invite/invite-gateway';
 import { AuthGateway } from './features/login/auth-gateway';
 import { HttpAuthGateway } from './features/login/http-auth-gateway';
+import { HttpMfaGateway } from './features/mfa/http-mfa-gateway';
+import { MfaGateway } from './features/mfa/mfa-gateway';
 import { AnnouncementAssistant } from './features/notifications/assistant/announcement-assistant';
 import { PendingNotificationsQueryResolver } from './features/notifications/assistant/pending-notifications-query.resolver';
 import { ProvisionalAnnouncementAssistant } from './features/notifications/assistant/provisional-announcement-assistant';
@@ -178,6 +182,8 @@ export const appConfig: ApplicationConfig = {
     { provide: ProfessionalProfileReader, useClass: LocalProfessionalProfileReader },
     { provide: AuthGateway, useClass: HttpAuthGateway },
     { provide: PasswordResetGateway, useClass: HttpPasswordResetGateway },
+    { provide: InviteGateway, useClass: HttpInviteGateway },
+    { provide: MfaGateway, useClass: HttpMfaGateway },
     // Biometria: provisória até haver shell nativo. Senha do desbloqueio: reautentica pelo login real.
     { provide: BiometricAuth, useClass: ProvisionalBiometricAuth },
     { provide: AccountPasswordVerifier, useClass: ApiAccountPasswordVerifier },

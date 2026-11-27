@@ -1,63 +1,76 @@
-<main class="login">
-  <div class="login__logo" aria-hidden="true">
-    <app-icon-logo state="default" />
-  </div>
-  <h1 class="login__title">{{ i18n.t('login.title') }}</h1>
-  @if (notice(); as message) {
-    <p class="login__notice" role="status">{{ message }}</p>
+<!--
+  Figma "Conductia - V1", seção 12 (telas 01 a 05): com aviso (sessão expirada, bloqueio, sem conexão) o título e o
+  texto saem e o aviso assume o topo.
+-->
+<app-auth-shell
+  [brand]="true"
+  [title]="banner() ? '' : i18n.t('login.title')"
+  [text]="banner() ? '' : i18n.t('login.subtitle')"
+>
+  @if (banner(); as item) {
+    <app-banner [type]="item.type">{{ item.message }}</app-banner>
   }
   <form
-    class="login__form"
+    class="auth-form"
     novalidate
     (submit)="$event.preventDefault(); submit()"
   >
-    <div class="login__group">
-      <label class="login__label" for="login-email">{{
-        i18n.t('login.email')
-      }}</label>
-      <input
-        id="login-email"
-        class="login__field"
-        type="email"
-        name="email"
-        autocomplete="username"
-        inputmode="email"
-        autocapitalize="none"
-        spellcheck="false"
-        [value]="email()"
-        [attr.aria-invalid]="error() === 'validation' ? 'true' : null"
-        [attr.aria-describedby]="error() ? 'login-error' : null"
-        (input)="onInput('email', $event)"
+    <div class="auth-fields">
+      <div class="auth-field">
+        <label class="auth-field__label" for="login-email">{{
+          i18n.t('login.email')
+        }}</label>
+        <input
+          id="login-email"
+          class="auth-field__input"
+          type="email"
+          name="email"
+          autocomplete="username"
+          inputmode="email"
+          autocapitalize="none"
+          spellcheck="false"
+          [value]="email()"
+          [attr.aria-invalid]="emailError() ? 'true' : null"
+          [attr.aria-describedby]="emailError() ? 'login-email-error' : null"
+          (input)="onInput('email', $event)"
+          (blur)="validateEmail()"
+        />
+        @if (emailError(); as message) {
+          <p id="login-email-error" class="auth-field__error" role="alert">
+            {{ message }}
+          </p>
+        }
+      </div>
+      <div class="auth-field">
+        <label class="auth-field__label" for="login-password">{{
+          i18n.t('login.password')
+        }}</label>
+        <app-password-field
+          inputId="login-password"
+          [invalid]="!!fieldError()"
+          [describedBy]="fieldError() ? 'login-error' : null"
+          [(value)]="password"
+        />
+        @if (fieldError(); as message) {
+          <p id="login-error" class="auth-field__error" role="alert">
+            {{ message }}
+          </p>
+        }
+      </div>
+    </div>
+    <div class="auth-actions">
+      <a class="auth-link" routerLink="/forgot-password">{{
+        i18n.t('login.forgotPassword')
+      }}</a>
+      <app-button
+        htmlType="submit"
+        [fullWidth]="!isDesktop()"
+        [disabled]="loading() || locked()"
+        [label]="
+          loading() ? i18n.t('login.submitting') : i18n.t('login.submit')
+        "
+        [attr.aria-busy]="loading()"
       />
     </div>
-    <div class="login__group">
-      <label class="login__label" for="login-password">{{
-        i18n.t('login.password')
-      }}</label>
-      <input
-        id="login-password"
-        class="login__field"
-        type="password"
-        name="password"
-        autocomplete="current-password"
-        [value]="password()"
-        [attr.aria-invalid]="error() === 'validation' ? 'true' : null"
-        [attr.aria-describedby]="error() ? 'login-error' : null"
-        (input)="onInput('password', $event)"
-      />
-    </div>
-    <p id="login-error" class="login__error" role="alert">
-      {{ errorMessage() }}
-    </p>
-    <app-button
-      htmlType="submit"
-      [fullWidth]="true"
-      [disabled]="loading() || locked()"
-      [label]="loading() ? i18n.t('login.submitting') : i18n.t('login.submit')"
-      [attr.aria-busy]="loading()"
-    />
-    <a class="login__link" routerLink="/forgot-password">{{
-      i18n.t('login.forgotPassword')
-    }}</a>
   </form>
-</main>
+</app-auth-shell>

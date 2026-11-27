@@ -2,6 +2,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, convertToParamMap, provideRouter, Router } from '@angular/router';
 
 import { LocalSessionStore } from '../auth/local-session-store';
+import { MfaChallengeStore } from '../mfa/mfa-gateway';
 import { AuthGateway, LoginResult } from './auth-gateway';
 import { LoginComponent } from './login.component';
 
@@ -91,11 +92,66 @@ describe('LoginComponent', () => {
     fill('not-an-email', 'x');
     await submit();
 
+    expect(input('email').getAttribute('aria-invalid')).toBe('true');
+
     fill('a@b.com', '');
     await submit();
 
     expect(gateway.login).not.toHaveBeenCalled();
-    expect(input('email').getAttribute('aria-invalid')).toBe('true');
+  });
+
+  it('o campo de e-mail é do tipo e-mail e valida o formato ao sair do campo', () => {
+    const email = input('email');
+    const emailError = (): string => el.querySelector('#login-email-error')?.textContent?.trim() ?? '';
+
+    expect(email.type).toBe('email');
+    // Vazio ao sair do campo não acusa erro (só no envio).
+    email.dispatchEvent(new Event('blur'));
+    fixture.detectChanges();
+
+    expect(emailError()).toBe('');
+
+    for (const invalid of ['abc', 'abc@', 'abc@dominio', '@dominio.com', 'a b@c.com']) {
+      email.value = invalid;
+      email.dispatchEvent(new Event('input'));
+      email.dispatchEvent(new Event('blur'));
+      fixture.detectChanges();
+
+      expect(emailError()).toBe('Informe um e-mail válido.');
+      expect(email.getAttribute('aria-invalid')).toBe('true');
+      expect(email.getAttribute('aria-describedby')).toBe('login-email-error');
+    }
+  });
+
+  it('o erro de formato some assim que o e-mail fica válido', () => {
+    const email = input('email');
+
+    email.value = 'abc';
+    email.dispatchEvent(new Event('input'));
+    email.dispatchEvent(new Event('blur'));
+    fixture.detectChanges();
+
+    expect(el.querySelector('#login-email-error')).not.toBeNull();
+    email.value = 'a@b.com';
+    email.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+
+    expect(el.querySelector('#login-email-error')).toBeNull();
+    expect(email.getAttribute('aria-invalid')).toBeNull();
+  });
+
+  it('a senha tem botão de mostrar/ocultar (eye-closed oculta, eye à mostra)', () => {
+    const toggle = el.querySelector('.auth-field__toggle') as HTMLButtonElement;
+
+    expect(input('password').type).toBe('password');
+    expect(toggle.getAttribute('aria-label')).toBe('Mostrar senha');
+    expect(toggle.querySelector('i')?.className).toContain('ph-eye-closed');
+    toggle.click();
+    fixture.detectChanges();
+
+    expect(input('password').type).toBe('text');
+    expect(toggle.getAttribute('aria-label')).toBe('Ocultar senha');
+    expect(toggle.querySelector('i')?.className).toMatch(/ph-eye(?!-)/);
   });
 
   it('disables the button while loading and ignores double submit', async () => {
@@ -231,7 +287,7 @@ describe('LoginComponent', () => {
       fill('a@b.com', 'secret');
       await submit();
 
-      expect(error()).toBe('Muitas tentativas. Tente novamente mais tarde.');
+      expect(error()).toBe('Muitas tentativas. Tente novamente em alguns minutos ou redefina sua senha.');
       expect(button().disabled).toBeTrue();
       expect(input('password').value).toBe('');
 
@@ -252,7 +308,7 @@ describe('LoginComponent', () => {
       fill('a@b.com', 'secret');
       await submit();
 
-      expect(error()).toBe('Muitas tentativas. Tente novamente mais tarde.');
+      expect(error()).toBe('Muitas tentativas. Tente novamente em alguns minutos ou redefina sua senha.');
       expect(button().disabled).toBeFalse();
     });
 
@@ -263,6 +319,31 @@ describe('LoginComponent', () => {
       fixture.destroy();
 
       expect(() => jasmine.clock().tick(5000)).not.toThrow();
+    });
+  });
+
+  describe('MFA (ADMIN e GESTOR)', () => {
+    it('guarda o desafio em memória e vai à verificação do código', async () => {
+      const navigateByUrl = spyOn(TestBed.inject(Router), 'navigateByUrl').and.resolveTo(true);
+
+      gateway.login.and.resolveTo({ challenge: 'desafio', kind: 'mfa-required', setupRequired: false });
+      fill('a@b.com', 'Senha12345');
+      await submit();
+
+      expect(TestBed.inject(MfaChallengeStore).current()).toEqual({ setupRequired: false, token: 'desafio' });
+      expect(navigateByUrl).toHaveBeenCalledWith('/mfa', { replaceUrl: true });
+      TestBed.inject(MfaChallengeStore).current.set(null);
+    });
+
+    it('no primeiro acesso vai à ativação do app autenticador', async () => {
+      const navigateByUrl = spyOn(TestBed.inject(Router), 'navigateByUrl').and.resolveTo(true);
+
+      gateway.login.and.resolveTo({ challenge: 'desafio', kind: 'mfa-required', setupRequired: true });
+      fill('a@b.com', 'Senha12345');
+      await submit();
+
+      expect(navigateByUrl).toHaveBeenCalledWith('/mfa/setup', { replaceUrl: true });
+      TestBed.inject(MfaChallengeStore).current.set(null);
     });
   });
 });

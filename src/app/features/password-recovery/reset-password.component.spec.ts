@@ -47,7 +47,7 @@ describe('ResetPasswordComponent', () => {
     p.dispatchEvent(new Event('input'));
     c.value = confirmation;
     c.dispatchEvent(new Event('input'));
-    el.querySelector('button')?.click();
+    el.querySelector<HTMLButtonElement>('button[type="submit"]')?.click();
     await fixture.whenStable();
     fixture.detectChanges();
   }
@@ -60,11 +60,19 @@ describe('ResetPasswordComponent', () => {
     });
   });
 
-  it('C3: sends token and password and redirects to login', async () => {
+  it('C3: sends token and password, shows success and goes to login', async () => {
     open();
     await fillAndSubmit('Senha12345', 'Senha12345');
 
     expect(gateway.confirmReset).toHaveBeenCalledOnceWith('tok-1', 'Senha12345');
+    fixture.detectChanges();
+    // Figma 11: mostra a tela de sucesso e o botão leva ao login.
+    expect(el.textContent).toContain('Senha alterada');
+    expect(navigate).not.toHaveBeenCalled();
+    Array.from(el.querySelectorAll('button'))
+      .find(b => b.textContent?.includes('Entrar'))
+      ?.click();
+
     expect(navigate).toHaveBeenCalledWith('/login', { replaceUrl: true });
   });
 
@@ -73,17 +81,26 @@ describe('ResetPasswordComponent', () => {
     gateway.confirmReset.and.resolveTo('invalid-token');
     await fillAndSubmit('Senha12345', 'Senha12345');
 
-    expect(el.textContent).toContain('expirou');
-    expect(el.querySelector('a')?.getAttribute('href')).toBe('/forgot-password');
+    expect(el.textContent).toContain('não é mais válido');
+    expect(el.textContent).toContain('Pedir novo link');
     expect(navigate).not.toHaveBeenCalled();
+  });
+
+  it('"Pedir novo link" leva à solicitação de um novo link (Figma 10)', () => {
+    open(null);
+    Array.from(el.querySelectorAll('button'))
+      .find(b => b.textContent?.includes('Pedir novo link'))
+      ?.click();
+
+    expect(navigate).toHaveBeenCalledWith('/forgot-password');
   });
 
   it('shows the expired state when there is no token', () => {
     open(null);
 
-    expect(el.textContent).toContain('expirou');
+    expect(el.textContent).toContain('não é mais válido');
     expect(el.querySelector('input')).toBeNull();
-    expect(el.querySelector('a')?.getAttribute('href')).toBe('/forgot-password');
+    expect(el.textContent).toContain('Pedir novo link');
   });
 
   it('RN04: rejects a password violating the policy without calling the service', async () => {
@@ -154,10 +171,18 @@ describe('ResetPasswordComponent', () => {
     expect((el.querySelector('input') as HTMLInputElement).value).toBe('Senha12345');
 
     gateway.confirmReset.and.resolveTo('ok');
-    el.querySelector('button')?.click();
+    el.querySelector<HTMLButtonElement>('button[type="submit"]')?.click();
     await fixture.whenStable();
 
     expect(gateway.confirmReset).toHaveBeenCalledTimes(2);
+    fixture.detectChanges();
+    // Figma 11: mostra a tela de sucesso e o botão leva ao login.
+    expect(el.textContent).toContain('Senha alterada');
+    expect(navigate).not.toHaveBeenCalled();
+    Array.from(el.querySelectorAll('button'))
+      .find(b => b.textContent?.includes('Entrar'))
+      ?.click();
+
     expect(navigate).toHaveBeenCalledWith('/login', { replaceUrl: true });
   });
 
@@ -170,12 +195,20 @@ describe('ResetPasswordComponent', () => {
     c.value = 'Senha12345';
     c.dispatchEvent(new Event('input'));
 
-    expect(el.querySelector('button')?.type).toBe('submit');
+    expect(el.querySelector<HTMLButtonElement>('button[type="submit"]')?.type).toBe('submit');
     // Enter num campo dispara o envio implícito do formulário via botão submit.
     el.querySelector('form')?.requestSubmit();
     await fixture.whenStable();
 
     expect(gateway.confirmReset).toHaveBeenCalledOnceWith('tok-1', 'Senha12345');
+    fixture.detectChanges();
+    // Figma 11: mostra a tela de sucesso e o botão leva ao login.
+    expect(el.textContent).toContain('Senha alterada');
+    expect(navigate).not.toHaveBeenCalled();
+    Array.from(el.querySelectorAll('button'))
+      .find(b => b.textContent?.includes('Entrar'))
+      ?.click();
+
     expect(navigate).toHaveBeenCalledWith('/login', { replaceUrl: true });
   });
 
@@ -194,6 +227,6 @@ describe('ResetPasswordComponent', () => {
     el.querySelector('form')?.dispatchEvent(new Event('submit'));
 
     expect(gateway.confirmReset).toHaveBeenCalledTimes(1);
-    expect(el.querySelector('button')?.disabled).toBeTrue();
+    expect(el.querySelector<HTMLButtonElement>('button[type="submit"]')?.disabled).toBeTrue();
   });
 });

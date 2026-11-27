@@ -143,6 +143,17 @@ const publicRoutes: Routes = [
     data: { hideShell: true },
     loadChildren: () => import('./features/login/login.routes').then(m => m.LOGIN_ROUTES),
   },
+  // Aceite de convite (Figma seção 12, tela 06) e segundo fator (telas 12 a 14): sem o shell de navegação.
+  {
+    path: 'invite',
+    data: { hideShell: true },
+    loadChildren: () => import('./features/invite/invite.routes').then(m => m.INVITE_ROUTES),
+  },
+  {
+    path: 'mfa',
+    data: { hideShell: true },
+    loadChildren: () => import('./features/mfa/mfa.routes').then(m => m.MFA_ROUTES),
+  },
   // A raiz vem ANTES da rota vazia de recuperação de senha: sem isso `/` casava com ela e ficava em branco.
   // A splash decide entre login, bloqueio, vínculos e Hospitais. Com o token de dev (`--configuration local`)
   // a raiz leva direto a Hospitais: a splash mandaria ao login quem não tem sessão real.

@@ -121,28 +121,49 @@ body::after {
 // Véus das áreas seguras do celular (Thiago, 2026-11-25): com `viewport-fit=cover` o conteúdo rola por baixo da barra de
 // status e da área do indicador. Em vez de uma faixa chapada (que aparecia como um corte entre dois fundos), o véu só
 // DESFOCA o que passa por baixo e some em degradê: o background-mesh continua visível, sem emenda. Valem 0 sem área segura.
-body::before {
+// Foco com raio mínimo de 4px (Thiago, 2026-11-27): o anel de foco acompanha o `border-radius` do elemento; quem não tem
+// raio (links, itens clicáveis simples) recebe 4px para o anel não ficar quadrado. `:where()` zera a especificidade do
+// seletor de tipo, então qualquer `border-radius` do componente (maior que 4px) continua valendo.
+:where(
+  a,
+  button,
+  summary,
+  [role='button'],
+  [role='link'],
+  [tabindex],
+  .keyboard-focus
+):focus-visible,
+:where(.keyboard-focus):focus {
+  border-radius: 4px;
+}
+
+// Dois véus (topo em `body::before`, base em `html::after`), cada um com a ALTURA da área segura. Com altura 0 (desktop e
+// celulares sem área segura) o elemento some e nada é desfocado. Antes era um véu de tela inteira com `mask-size` 0: em
+// alguns Chromium a máscara de tamanho 0 é ignorada e a tela inteira ficava borrada.
+body::before,
+html::after {
   content: '';
   position: fixed;
-  inset: 0;
+  right: 0;
+  left: 0;
   // Abaixo de tudo que flutua (menu, barra inferior, sheets) e acima do conteúdo que rola.
   z-index: 1;
   pointer-events: none;
   /* stylelint-disable-next-line property-no-vendor-prefix */
   -webkit-backdrop-filter: blur(16px);
   backdrop-filter: blur(16px);
-  // O véu ocupa só a área segura (altura 0 no desktop): opaco até 55% dela e em degradê até o fim.
-  --safe-veil-top: env(safe-area-inset-top, 0);
-  --safe-veil-bottom: env(safe-area-inset-bottom, 0);
+}
 
-  mask-image:
-    linear-gradient(to bottom, #000000 55%, transparent),
-    linear-gradient(to top, #000000 55%, transparent);
-  mask-size:
-    100% var(--safe-veil-top),
-    100% var(--safe-veil-bottom);
-  mask-position: top, bottom;
-  mask-repeat: no-repeat;
+body::before {
+  top: 0;
+  height: env(safe-area-inset-top, 0);
+  mask-image: linear-gradient(to bottom, #000000 55%, transparent);
+}
+
+html::after {
+  bottom: 0;
+  height: env(safe-area-inset-bottom, 0);
+  mask-image: linear-gradient(to top, #000000 55%, transparent);
 }
 
 @media print {
