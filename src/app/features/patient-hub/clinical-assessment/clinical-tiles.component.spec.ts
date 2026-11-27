@@ -78,4 +78,49 @@ describe('ClinicalTilesComponent', () => {
 
     expect(text().trim()).toBe('');
   });
+
+  describe('progressão do valor', () => {
+    const button = (label: string): HTMLButtonElement | undefined =>
+      Array.from((fixture.nativeElement as HTMLElement).querySelectorAll<HTMLButtonElement>('button.tiles__face')).find(
+        b => b.textContent.includes(label),
+      );
+
+    it('só os itens com número viram botão; tipo de TN, dispositivo e itens sem dados não', async () => {
+      await settle();
+
+      expect(button('Panturrilha')).toBeDefined();
+      expect(button('Tipo de TN')).toBeUndefined();
+      expect(button('NRS-2002')).toBeUndefined();
+    });
+
+    it('tocar no card abre o gráfico de progressão e o botão de fechar minimiza', async () => {
+      await settle();
+      button('Panturrilha')?.click();
+      await settle();
+      const root = fixture.nativeElement as HTMLElement;
+
+      expect(root.querySelector('app-measure-chart')).not.toBeNull();
+      expect(root.textContent).toContain('6 medições');
+      expect(button('Panturrilha')).toBeUndefined();
+
+      (root.querySelector('app-icon-button button') as HTMLButtonElement).click();
+      await settle();
+      await new Promise(resolve => setTimeout(resolve, 500));
+      fixture.detectChanges();
+
+      expect(root.querySelector('app-measure-chart')).toBeNull();
+    });
+
+    it('ao minimizar, o card volta ao estado inicial e pode ser aberto de novo', async () => {
+      await settle();
+      button('Panturrilha')?.click();
+      await settle();
+      (fixture.nativeElement.querySelector('app-icon-button button') as HTMLButtonElement).click();
+      await settle();
+      await new Promise(resolve => setTimeout(resolve, 500));
+      fixture.detectChanges();
+
+      expect(button('Panturrilha')).toBeDefined();
+    });
+  });
 });
