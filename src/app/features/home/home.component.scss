@@ -262,7 +262,7 @@
   flex-direction: column;
   min-width: 300px;
   margin: 0;
-  padding: tokens.$space-8 0;
+  padding: tokens.$space-8;
   border-radius: tokens.$radius-sm;
   background: tokens.c(surface);
   box-shadow: 0 4px 16px rgb(0 0 0 / 16%);
@@ -279,7 +279,9 @@
 
   @include typography.body-lg;
 
+  // O selecionado é uma pílula afastada 8px da borda da lista (padding da lista).
   &[aria-selected='true'] {
+    border-radius: tokens.$radius-pill;
     background: tokens.c(surface-2);
 
     @include typography.label-lg;
