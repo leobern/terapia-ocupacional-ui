@@ -60,19 +60,30 @@ describe('CardPatientsComponent', () => {
     expect(subtitle()).toBe('aguardando atendimento hoje');
   });
 
-  it('patientCount = 0 exibe "Todos os pacientes foram atendidos" no título e "metas médias do dia" no subtítulo (v2)', async () => {
+  it('patientCount = 0 exibe só "Todos os pacientes foram atendidos": sem subtítulo nem legenda (Thiago, 2026-11-25)', async () => {
     await createWith({ patientCount: 0 });
 
     expect(title()).toBe('Todos os pacientes foram atendidos');
-    expect(subtitle()).toBe('metas médias do dia');
+    expect(subtitleElement()).toBeNull();
+    expect(fixture.nativeElement.querySelector('.card-patients__legend')).toBeNull();
   });
 
-  it('repassa averageCaloricPercentage/averageProteinPercentage sem transformação ao graph-meta interno, mesmo com patientCount = 0 (média dos pacientes já atendidos)', async () => {
-    await createWith({ patientCount: 0, averageCaloricPercentage: 62, averageProteinPercentage: 48 });
+  it('repassa averageCaloricPercentage/averageProteinPercentage sem transformação ao graph-meta interno quando há pacientes', async () => {
+    await createWith({ patientCount: 3, averageCaloricPercentage: 62, averageProteinPercentage: 48 });
     const meta = graphMeta();
 
     expect(meta.topPercentage()).toBe(62);
     expect(meta.bottomPercentage()).toBe(48);
+    expect(meta.allSuccess()).toBeFalse();
+  });
+
+  it('com todos atendidos (patientCount = 0), os dois anéis ficam completos e verdes', async () => {
+    await createWith({ patientCount: 0, averageCaloricPercentage: 62, averageProteinPercentage: 48 });
+    const meta = graphMeta();
+
+    expect(meta.topPercentage()).toBe(100);
+    expect(meta.bottomPercentage()).toBe(100);
+    expect(meta.allSuccess()).toBeTrue();
   });
 
   it('seta fica desabilitado quando patientCount = 0', async () => {

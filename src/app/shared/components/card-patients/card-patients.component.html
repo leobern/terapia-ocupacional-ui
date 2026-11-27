@@ -11,31 +11,38 @@
 >
   <app-graph-meta
     size="large"
-    [topPercentage]="averageCaloricPercentage()"
-    [bottomPercentage]="averageProteinPercentage()"
+    [topPercentage]="isZero() ? 100 : averageCaloricPercentage()"
+    [bottomPercentage]="isZero() ? 100 : averageProteinPercentage()"
+    [allSuccess]="isZero()"
     [centerLabel]="isZero() ? '✓' : '' + patientCount()"
     [ariaLabel]="
-      'Aporte calórico ' +
-      averageCaloricPercentage() +
-      '%, aporte protéico ' +
-      averageProteinPercentage() +
-      '%'
+      isZero()
+        ? 'Todos os pacientes foram atendidos'
+        : 'Aporte calórico ' +
+          averageCaloricPercentage() +
+          '%, aporte protéico ' +
+          averageProteinPercentage() +
+          '%'
     "
   />
 
   <div class="card-patients__label">
     <p class="card-patients__title">{{ title() }}</p>
-    <p class="card-patients__subtitle">{{ subtitle() }}</p>
-    <div class="card-patients__legend">
-      <span class="card-patients__legend-item">
-        <span class="card-patients__dot card-patients__dot--caloric"></span>
-        Calórico {{ averageCaloricPercentage() }}%
-      </span>
-      <span class="card-patients__legend-item">
-        <span class="card-patients__dot card-patients__dot--protein"></span>
-        Protéico {{ averageProteinPercentage() }}%
-      </span>
-    </div>
+    @if (!isZero()) {
+      <p class="card-patients__subtitle">{{ subtitle() }}</p>
+    }
+    @if (!isZero()) {
+      <div class="card-patients__legend">
+        <span class="card-patients__legend-item">
+          <span class="card-patients__dot card-patients__dot--caloric"></span>
+          Calórico {{ averageCaloricPercentage() }}%
+        </span>
+        <span class="card-patients__legend-item">
+          <span class="card-patients__dot card-patients__dot--protein"></span>
+          Protéico {{ averageProteinPercentage() }}%
+        </span>
+      </div>
+    }
   </div>
 
   <button
