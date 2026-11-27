@@ -687,9 +687,9 @@ export class PatientListComponent implements OnInit {
     event.preventDefault();
   }
 
-  /** Cadastro pertence à FT-002-1: aqui só navega (FR-027). */
+  /** Cadastro pertence à FT-002-1: abre no painel a mesma conversa do atalho "Cadastrar paciente" (FR-027). */
   registerPatient(): void {
-    void this.router.navigate(['/patients', 'register']);
+    this.aiAssistant.openAction(this.patientRegistration.build());
   }
 
   /** Alteração de dados pertence à FT-002-1: entrada do fluxo de edição, onde o paciente é escolhido (FR-027). */

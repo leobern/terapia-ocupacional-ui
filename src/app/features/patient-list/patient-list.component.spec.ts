@@ -1159,13 +1159,17 @@ describe('PatientListComponent', () => {
     });
   });
 
-  it('mostra estado vazio e o botão de cadastrar apenas navega', async () => {
+  it('mostra estado vazio e o botão de cadastrar abre o cadastro por conversa, sem navegar', async () => {
     await create();
+    const assistant = TestBed.inject(AiAssistantService);
 
     expect(text()).toContain('Nenhum paciente para este dia');
     q('.patient-list__register button')?.click();
 
-    expect(router.navigate).toHaveBeenCalledWith(['/patients', 'register']);
+    expect(assistant.isOpen()).toBeTrue();
+    expect(assistant.view()).toBe('conversation');
+    expect(TestBed.inject(AssistantConversationService).messages()[0].text).toBe('Me fale o nome completo do paciente');
+    expect(router.navigate).not.toHaveBeenCalled();
   });
 
   describe('atalhos de cadastro e edição (US-004-1-07)', () => {
