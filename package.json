@@ -80,6 +80,7 @@
     "@ngrx/store": "^21.0.0",
     "@phosphor-icons/web": "^2.1.1",
     "primeng": "^17.0.0",
+    "qrcode": "^1.5.4",
     "rxjs": "~7.8.0",
     "tslib": "^2.3.0",
     "zone.js": "~0.15.0"
@@ -110,6 +111,7 @@
     "@stryker-mutator/karma-runner": "^9.0.0",
     "@stryker-mutator/typescript-checker": "^9.0.0",
     "@types/jasmine": "~5.1.0",
+    "@types/qrcode": "^1.5.6",
     "angular-eslint": "^21.0.0",
     "audit-export": "^2.0.0",
     "cors": "^2.8.5",

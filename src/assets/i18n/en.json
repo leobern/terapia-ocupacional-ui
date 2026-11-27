@@ -51,6 +51,23 @@
     },
     "stale": "Data may be out of date. No connection right now."
   },
+  "invite": {
+    "alreadyRegistered": "This email already has an account. Sign in with your password.",
+    "confirmationLabel": "Confirm password",
+    "created": "Account created. Sign in with your email and password.",
+    "description": "You were invited to join the Conductia team. Create your account to get started.",
+    "goToLogin": "Go to sign in",
+    "haveAccount": "I already have an account · Sign in",
+    "invalidMessage": "This invitation is no longer valid. Ask the person who invited you for a new one.",
+    "invalidTitle": "Invalid invitation",
+    "nameLabel": "Full name",
+    "nameRequired": "Enter your full name.",
+    "passwordLabel": "Password",
+    "retry": "Try again",
+    "serviceError": "Could not create the account. Try again.",
+    "submit": "Create account",
+    "title": "Welcome"
+  },
   "lock": {
     "biometricFailed": "Biometrics were not recognized. Try again.",
     "message": "For your security, the app was locked after 30 minutes of inactivity.",
@@ -86,6 +103,42 @@
     "message": "Your session on this device will end and data saved on it will be removed.",
     "signOut": "Sign out",
     "title": "Sign out of your account?"
+  },
+  "mfa": {
+    "code": {
+      "description": "Open your authenticator app and enter the 6-digit code.",
+      "label": "6-digit code",
+      "recoveryDescription": "Enter one of the recovery codes you saved. Each code works once.",
+      "recoveryLabel": "Recovery code",
+      "submit": "Verify",
+      "title": "Two-step verification",
+      "useApp": "Use the authenticator app",
+      "useRecovery": "Use a recovery code"
+    },
+    "codes": {
+      "copied": "Codes copied",
+      "copy": "Copy codes",
+      "description": "Use a code if you lose access to the authenticator app. Each code works once. If you lose all of them, an Admin resets your access.",
+      "done": "I saved the codes",
+      "title": "Save your recovery codes"
+    },
+    "error": {
+      "expired": "The verification expired. Sign in again.",
+      "invalid-code": "Incorrect code. Try again.",
+      "locked": "Too many attempts. Wait a few minutes and try again.",
+      "network-error": "No connection. Check your internet.",
+      "required": "Enter the code."
+    },
+    "setup": {
+      "description": "Required for Admin and Manager. Add the key to your authenticator app and enter the generated code.",
+      "failed": "Could not generate the key. Sign out and try again.",
+      "keyLabel": "Setup key",
+      "leave": "Sign out",
+      "openApp": "Open in authenticator app",
+      "qrAlt": "QR code to add the authenticator app",
+      "submit": "Activate",
+      "title": "Turn on two-step verification"
+    }
   },
   "moveBed": {
     "messages": {

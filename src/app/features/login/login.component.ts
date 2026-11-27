@@ -9,6 +9,7 @@ import { I18nService } from '../../shared/services/i18n.service';
 import { ViewportBreakpointService } from '../../shared/services/viewport-breakpoint.service';
 import { LocalSessionStore } from '../auth/local-session-store';
 import { safeReturnUrl } from '../auth/return-url';
+import { MfaChallengeStore } from '../mfa/mfa-gateway';
 import { AuthGateway } from './auth-gateway';
 
 export type LoginError = 'invalid-credentials' | 'locked' | 'network-error' | 'validation';
@@ -84,6 +85,7 @@ export class LoginComponent {
   private readonly session = inject(LocalSessionStore);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
+  private readonly mfa = inject(MfaChallengeStore);
 
   constructor() {
     inject(DestroyRef).onDestroy(() => clearTimeout(this.unlockTimer));
@@ -126,6 +128,11 @@ export class LoginComponent {
           break;
         case 'locked':
           this.lock(result.retryAfterSeconds);
+          break;
+        case 'mfa-required':
+          // Segundo fator (ADMIN e GESTOR): o desafio fica só em memória e a verificação abre a sessão.
+          this.mfa.current.set({ setupRequired: result.setupRequired, token: result.challenge });
+          void this.router.navigateByUrl(result.setupRequired ? '/mfa/setup' : '/mfa', { replaceUrl: true });
           break;
       }
     });
