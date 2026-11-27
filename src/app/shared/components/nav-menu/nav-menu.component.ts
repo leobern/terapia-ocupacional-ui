@@ -126,12 +126,12 @@ export class NavMenuComponent {
   // Ordem e ícones do Figma 4741:11339 (v2/NavRail). Ícones em peso "regular"; o item ativo é SÓLIDO ("fill").
   // Única exceção fixa: o ícone de Sair (template) é sempre bold, aberto ou fechado (CLAUDE.md).
   protected readonly items: readonly NavMenuItem[] = [
-    // A Home virou "Hospitais" (Thiago, 2026-11-25); Notificações saiu do menu e Configurações virou Tutorial.
-    { icon: 'hospital', key: 'home', label: 'Hospitais' },
+    // Home, Pacientes, Hospitais (os vínculos do profissional), Farmácia e Tutorial (Thiago, 2026-11-25).
+    { icon: 'house', key: 'home', label: 'Home' },
     { icon: 'users-three', key: 'pacientes', label: 'Pacientes' },
+    // Hospitais = vínculos com hospitais (US-001-2-02, RN03): sem desenho no Figma, ainda; pendente de aprovação.
+    { icon: 'hospital', key: 'vinculos', label: 'Hospitais' },
     { icon: 'pill', key: 'farmacia', label: 'Farmácia' },
-    // Vínculos com hospitais (US-001-2-02, RN03): sem desenho no Figma, ainda; pendente de aprovação.
-    { icon: 'link', key: 'vinculos', label: 'Vínculos' },
     { icon: 'graduation-cap', key: 'tutorial', label: 'Tutorial' },
   ];
 

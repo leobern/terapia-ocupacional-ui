@@ -40,10 +40,10 @@ describe('NavMenuComponent', () => {
 
   it('renders the 4 navigation items with the expected icons, all in "regular" weight and 24px', () => {
     const expected: { label: string; icon: string }[] = [
-      { icon: 'hospital', label: 'Hospitais' },
+      { icon: 'house', label: 'Home' },
       { icon: 'users-three', label: 'Pacientes' },
+      { icon: 'hospital', label: 'Hospitais' },
       { icon: 'pill', label: 'Farmácia' },
-      { icon: 'link', label: 'Vínculos' },
       { icon: 'graduation-cap', label: 'Tutorial' },
     ];
 
@@ -83,10 +83,10 @@ describe('NavMenuComponent', () => {
   });
 
   const clickCases: { label: string; output: keyof NavMenuComponent }[] = [
-    { label: 'Hospitais', output: 'homeClick' },
+    { label: 'Home', output: 'homeClick' },
     { label: 'Farmácia', output: 'farmaciaClick' },
     { label: 'Pacientes', output: 'pacientesClick' },
-    { label: 'Vínculos', output: 'vinculosClick' },
+    { label: 'Hospitais', output: 'vinculosClick' },
     { label: 'Tutorial', output: 'tutorialClick' },
   ];
 
@@ -122,7 +122,7 @@ describe('NavMenuComponent', () => {
     it('suprime o hover após clicar num item e volta quando o mouse sai do trilho', () => {
       const host = fixture.nativeElement as HTMLElement;
 
-      linkByLabel('Hospitais').click();
+      linkByLabel('Home').click();
       fixture.detectChanges();
 
       expect(host.classList).toContain('nav-menu--suppressed');
@@ -141,7 +141,7 @@ describe('NavMenuComponent', () => {
 
     it('não recolhe no mobile/tablet (menu controlado pelo consumidor)', () => {
       setDesktop(false);
-      linkByLabel('Hospitais').click();
+      linkByLabel('Home').click();
       fixture.detectChanges();
 
       expect((fixture.nativeElement as HTMLElement).classList).not.toContain('nav-menu--suppressed');
@@ -218,7 +218,7 @@ describe('NavMenuComponent', () => {
       fixture.componentRef.setInput('activeItem', 'home');
       fixture.detectChanges();
 
-      expect(weightOf('Hospitais')).toBe('fill');
+      expect(weightOf('Home')).toBe('fill');
       expect(weightOf('Pacientes')).toBe('regular');
     });
   });
@@ -265,8 +265,8 @@ describe('NavMenuComponent', () => {
       expect(closeButton.icon()).toBe('x');
     });
 
-    it('lists Hospitais as the first navigation item', () => {
-      expect(navLinks()[0].textContent).toContain('Hospitais');
+    it('lists Home as the first navigation item', () => {
+      expect(navLinks()[0].textContent).toContain('Home');
     });
 
     it('tocar no fundo escurecido fecha o menu', () => {

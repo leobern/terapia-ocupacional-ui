@@ -430,7 +430,7 @@ describe('AppComponent', () => {
       fixture.nativeElement.querySelectorAll('app-nav-menu .nav-menu__links .nav-menu__link'),
     ).map(el => el.textContent.trim());
 
-    expect(labels).toEqual(['Hospitais', 'Pacientes', 'Farmácia', 'Vínculos', 'Tutorial']);
+    expect(labels).toEqual(['Home', 'Pacientes', 'Hospitais', 'Farmácia', 'Tutorial']);
   });
 
   it('navigates to /settings/tutorial and closes the mobile menu when Tutorial is clicked', () => {
@@ -467,7 +467,7 @@ describe('AppComponent', () => {
     fixture.detectChanges();
     const item = Array.from<HTMLButtonElement>(
       fixture.nativeElement.querySelectorAll('app-nav-menu .nav-menu__links .nav-menu__link'),
-    ).find(el => el.textContent?.includes('Vínculos'));
+    ).find(el => el.textContent?.trim() === 'Hospitais');
 
     item?.click();
     fixture.detectChanges();
@@ -501,7 +501,7 @@ describe('AppComponent', () => {
     fixture.detectChanges();
     const home = Array.from<HTMLButtonElement>(
       fixture.nativeElement.querySelectorAll('app-nav-menu .nav-menu__links .nav-menu__link'),
-    ).find(el => el.textContent?.includes('Hospitais'));
+    ).find(el => el.textContent?.trim() === 'Home');
 
     home?.click();
     fixture.detectChanges();
