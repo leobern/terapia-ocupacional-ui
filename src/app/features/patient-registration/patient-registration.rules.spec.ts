@@ -106,4 +106,22 @@ describe('admission rules (US-002-1-06)', () => {
       expect(validateNutritionalTherapyStartDate(text)).withContext(text).toEqual(iso);
     }
   });
+
+  it('internação e início da terapia completam o ano de 2 dígitos com o século atual', () => {
+    const iso = { value: '2026-11-20' };
+
+    for (const text of ['20/11/26', '20-11-26', '20.11.26', '20 11 26', '201126']) {
+      expect(validateHospitalAdmissionDate(text, today)).withContext(text).toEqual(iso);
+      expect(validateNutritionalTherapyStartDate(text, today)).withContext(text).toEqual(iso);
+    }
+    expect(validateHospitalAdmissionDate('25/11/26', today)).toEqual({ code: 'MSG-08' });
+    expect(validateHospitalAdmissionDate('31/02/26', today)).toEqual({ code: 'invalidDate' });
+    expect(validateNutritionalTherapyStartDate('20/11/026', today)).toEqual({ code: 'invalidDate' });
+  });
+
+  it('o nascimento continua exigindo o ano com 4 dígitos', () => {
+    for (const text of ['20/11/26', '20-11-45', '201145']) {
+      expect(validateBirthDate(text, today)).withContext(text).toEqual({ code: 'MSG-02' });
+    }
+  });
 });

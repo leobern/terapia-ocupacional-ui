@@ -1,4 +1,5 @@
 import {
+  centuryOf,
   formatBirthDate,
   formatDateTimeShortYear,
   formatDayShortYear,
@@ -45,6 +46,15 @@ describe('br-date', () => {
         expect(parseBrDate(text)).toBeNull();
       });
     }
+
+    it('com o século informado, completa o ano de 2 dígitos', () => {
+      const century = centuryOf(new Date(2026, 10, 27));
+
+      expect(century).toBe(2000);
+      expect(parseBrDate('27-11-26', century)?.iso).toBe('2026-11-27');
+      expect(parseBrDate('8/6/00', century)?.iso).toBe('2000-06-08');
+      expect(parseBrDate('18/06/1945', century)?.iso).toBe('1945-06-18');
+    });
 
     it('aceita 29 de fevereiro em ano bissexto', () => {
       expect(parseBrDate('29.02.2024')?.iso).toBe('2024-02-29');

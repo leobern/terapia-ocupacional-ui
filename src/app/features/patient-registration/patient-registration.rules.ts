@@ -1,6 +1,6 @@
 /** Regras de validação dos dados fixos do paciente (US-002-1-02: RN-01 a RN-03). Funções puras. */
 
-import { parseBrDate } from '../../shared/utils/br-date';
+import { centuryOf, parseBrDate } from '../../shared/utils/br-date';
 
 export type PatientSex = 'MALE' | 'FEMALE' | 'NOT_INFORMED';
 
@@ -127,12 +127,12 @@ export function validateAdmissionNumber(raw: string): RuleResult<string> {
   return validateOptionalText(raw, ADMISSION_NUMBER_MAX, 'admissionNumberTooLong');
 }
 
-/** Data de internação hospitalar: dia-mês-ano real e não futura (RN-02, MSG-08); "não sei" deixa vazio. */
+/** Data de internação hospitalar: real e não futura (RN-02, MSG-08); aceita ano com 2 dígitos; "não sei" deixa vazio. */
 export function validateHospitalAdmissionDate(raw: string, today: Date): RuleResult<string> {
   if (isDontKnow(raw)) {
     return { value: '' };
   }
-  const parsed = parseBrDate(raw);
+  const parsed = parseBrDate(raw, centuryOf(today));
 
   if (!parsed) {
     return { code: 'invalidDate' };
@@ -141,12 +141,12 @@ export function validateHospitalAdmissionDate(raw: string, today: Date): RuleRes
   return parsed.date > startOfDay(today) ? { code: 'MSG-08' } : { value: parsed.iso };
 }
 
-/** Data de início da TN: dia-mês-ano real (pode ser futura); "não sei" deixa vazio. */
-export function validateNutritionalTherapyStartDate(raw: string): RuleResult<string> {
+/** Data de início da TN: real (pode ser futura); aceita ano com 2 dígitos; "não sei" deixa vazio. */
+export function validateNutritionalTherapyStartDate(raw: string, today: Date = new Date()): RuleResult<string> {
   if (isDontKnow(raw)) {
     return { value: '' };
   }
-  const parsed = parseBrDate(raw);
+  const parsed = parseBrDate(raw, centuryOf(today));
 
   return parsed ? { value: parsed.iso } : { code: 'invalidDate' };
 }

@@ -1,9 +1,9 @@
 /** Leitura e exibição de datas no padrão dia, mês, ano. O que vai para a API segue `aaaa-mm-dd`. */
 
-/** Dia e mês com 1 ou 2 dígitos, o mesmo separador (barra, traço, ponto ou espaço) e ano com 4. */
-const SEPARATED = /^(\d{1,2})([/. -])(\d{1,2})\2(\d{4})$/u;
-/** Sem separador, só os 8 dígitos `ddmmaaaa` (com menos, dia e mês ficam ambíguos). */
-const COMPACT = /^(\d{2})(\d{2})(\d{4})$/u;
+/** Dia e mês com 1 ou 2 dígitos, o mesmo separador (barra, traço, ponto ou espaço) e ano com 4 ou 2. */
+const SEPARATED = /^(\d{1,2})([/. -])(\d{1,2})\2(\d{4}|\d{2})$/u;
+/** Sem separador, dia e mês sempre com 2 dígitos: `ddmmaaaa` ou `ddmmaa`. */
+const COMPACT = /^(\d{2})(\d{2})(\d{4}|\d{2})$/u;
 
 export interface BrDate {
   readonly date: Date;
@@ -22,14 +22,24 @@ function split(text: string): readonly [string, string, string] | null {
   return compact ? [compact[1], compact[2], compact[3]] : null;
 }
 
-/** Data digitada em dia-mês-ano e existente; `null` se o formato não é aceito ou a data não existe. */
-export function parseBrDate(raw: string): BrDate | null {
-  const parts = split(raw.trim());
+/** Século de `today` (2026 → 2000), para completar um ano digitado com 2 dígitos. */
+export function centuryOf(today: Date): number {
+  return Math.floor(today.getFullYear() / 100) * 100;
+}
 
-  if (!parts) {
+/**
+ * Data digitada em dia-mês-ano e existente; `null` se o formato não é aceito ou a data não existe.
+ * Ano com 2 dígitos só vale quando `century` é informado (nunca no nascimento, que pode ser do século passado).
+ */
+export function parseBrDate(raw: string, century?: number): BrDate | null {
+  const parts = split(raw.trim());
+  const shortYear = parts?.[2].length === 2;
+
+  if (!parts || (shortYear && century === undefined)) {
     return null;
   }
-  const [day, month, year] = parts.map(Number);
+  const [day, month, typedYear] = parts.map(Number);
+  const year = shortYear ? Number(century) + typedYear : typedYear;
   const date = new Date(year, month - 1, day);
 
   // `new Date` trata os anos 0-99 como 19xx: a conferência do ano também os recusa.
@@ -37,7 +47,7 @@ export function parseBrDate(raw: string): BrDate | null {
     return null;
   }
 
-  return { date, iso: `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}` };
+  return { date, iso: `${year}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}` };
 }
 
 const two = (value: number): string => String(value).padStart(2, '0');
