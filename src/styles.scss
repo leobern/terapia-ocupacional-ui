@@ -37,10 +37,21 @@ body {
 // O `html` pinta a mesma cor do `body`: com `viewport-fit=cover` o fundo passa por baixo das barras do celular e nenhuma
 // faixa de outra cor pode aparecer em cima ou embaixo (Thiago, 2026-11-25).
 html {
-  background: tokens.c(surface-2);
+  // `--page-edge-*` vêm do background-mesh (topo e base do fundo da tela); sem ele, a cor lisa da superfície.
+  background: linear-gradient(
+    to bottom,
+    var(--page-edge-top, #{tokens.c(surface-2)}),
+    var(--page-edge-bottom, #{tokens.c(surface-2)})
+  );
+  background-color: tokens.c(surface-2);
 
   &[data-theme='dark'] {
-    background: tokens.c(surface);
+    background: linear-gradient(
+      to bottom,
+      var(--page-edge-top, #{tokens.c(surface)}),
+      var(--page-edge-bottom, #{tokens.c(surface)})
+    );
+    background-color: tokens.c(surface);
   }
 }
 

@@ -14,6 +14,10 @@
 // no `@Component`), já que não há mais um elemento de template para carregá-lo.
 @use '../../styles/breakpoints';
 
+// O fundo se estende além da tela, em cima e embaixo: no celular o navegador recorta a camada fixa na área visível e
+// deixava uma faixa de outra cor sob a barra de status e a barra de endereço (Thiago, 2026-11-25).
+$extend: 160px;
+
 :host {
   // O host não gera caixa nem contexto de empilhamento: as duas camadas abaixo são
   // `position: fixed` e participam direto do empilhamento da página. Assim o
@@ -33,11 +37,11 @@
 // de todo conteúdo normal (que vem depois dele no DOM, ver app.component.html).
 .background-mesh__blobs {
   position: fixed;
-  inset: 0;
+  inset: (-$extend) 0;
   z-index: 0;
   overflow: hidden;
   // Cobre a tela inteira, também sob as barras do navegador no celular.
-  min-height: 100lvh;
+  min-height: calc(100lvh + #{$extend * 2});
   pointer-events: none;
   mix-blend-mode: color;
 }
@@ -50,6 +54,8 @@
 // Figma usa a versão ampliada (692/692/297). Blur 200 do Figma = blur(100px) em CSS.
 // A ordem no DOM (3 → 2 → 1) é a ordem de empilhamento do Figma, de baixo para cima.
 .background-mesh__blob {
+  // A camada começa `$extend` acima da tela: devolve os círculos à posição do Figma.
+  margin-top: $extend;
   position: absolute;
   border-radius: 50%;
   filter: blur(100px);
@@ -101,11 +107,10 @@
 
 .background-mesh__gradient {
   position: fixed;
-  inset: 0;
+  inset: (-$extend) 0;
   z-index: 0;
   width: 100%;
-  height: 100%;
-  min-height: 100lvh;
+  height: calc(100lvh + #{$extend * 2});
   pointer-events: none;
 }
 
@@ -180,5 +185,28 @@
 
   .background-mesh__static {
     opacity: 1;
+  }
+}
+
+// Bordas sólidas (ver o template): altura da área segura, no mínimo 24px, e esmaecem para o fundo do degradê.
+.background-mesh__edge {
+  position: fixed;
+  z-index: 0;
+  right: 0;
+  left: 0;
+  height: max(env(safe-area-inset-top, 0px), 24px);
+  pointer-events: none;
+
+  &--top {
+    top: 0;
+    background-color: var(--page-edge-top, transparent);
+    mask-image: linear-gradient(to bottom, #000000 60%, transparent);
+  }
+
+  &--bottom {
+    bottom: 0;
+    height: max(env(safe-area-inset-bottom, 0px), 24px);
+    background-color: var(--page-edge-bottom, transparent);
+    mask-image: linear-gradient(to top, #000000 60%, transparent);
   }
 }
