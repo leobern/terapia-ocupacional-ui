@@ -44,4 +44,9 @@ export class HomeApiService {
   getHospitals(): Observable<Hospital[]> {
     return this.http.get<Hospital[]>(`${this.baseUrl}/hospitals`);
   }
+
+  /** `GET /api/v1/hospitais` (EP-009, só GESTOR): todos os hospitais; o gestor não tem vínculo (ADR-002). */
+  getManagedHospitals(): Observable<{ id: number; nome: string }[]> {
+    return this.http.get<{ id: number; nome: string }[]>(`${environment.apiBaseUrl}/v1/hospitais`);
+  }
 }

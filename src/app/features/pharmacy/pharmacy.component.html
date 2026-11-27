@@ -3,10 +3,7 @@
     <app-page-header
       icon="pill"
       title="Farmácia"
-      [subtitle]="
-        (hospital()?.name ?? '') +
-        ' · Fórmulas padronizadas ficam disponíveis na prescrição deste hospital.'
-      "
+      [subtitle]="subtitle()"
       [showBell]="true"
       [unreadCount]="unreadCount()"
       [bellLabel]="bellLabel()"
@@ -25,7 +22,33 @@
       </p>
     }
 
-    @switch (status()) {
+    @switch (hospital() ? status() : 'no-hospital') {
+      @case ('no-hospital') {
+        @switch (hospitalStatus()) {
+          @case ('loading') {
+            <p class="pharmacy__state" role="status">
+              Carregando os hospitais…
+            </p>
+          }
+          @case ('error') {
+            <div class="pharmacy__state" role="alert">
+              <p>Não foi possível carregar os hospitais.</p>
+              <button
+                type="button"
+                class="pharmacy__retry"
+                (click)="reloadHospitals()"
+              >
+                Tentar novamente
+              </button>
+            </div>
+          }
+          @default {
+            <p class="pharmacy__state" role="status">
+              Nenhum hospital disponível para você.
+            </p>
+          }
+        }
+      }
       @case ('loading') {
         <p class="pharmacy__state" role="status">
           Carregando o catálogo de fórmulas…

@@ -223,4 +223,49 @@ describe('PharmacyComponent', () => {
 
     expect(navigate).toHaveBeenCalledWith(['/notifications']);
   });
+
+  describe('sem hospital selecionado', () => {
+    const render = async (read: () => Promise<readonly { id: number; name: string }[]>): Promise<string> => {
+      const context = TestBed.inject(HospitalContextService);
+
+      spyOn(TestBed.inject(LinkedHospitalsReader), 'read').and.callFake(read);
+      await context.load();
+      const other = TestBed.createComponent(PharmacyComponent);
+
+      other.detectChanges();
+      await other.whenStable();
+      other.detectChanges();
+      fixture = other;
+
+      return other.nativeElement.textContent as string;
+    };
+
+    it('lista vazia: avisa em vez de carregar para sempre', async () => {
+      expect(await render(() => Promise.resolve([]))).toContain('Nenhum hospital disponível');
+    });
+
+    it('erro ao ler hospitais: mostra o erro e permite tentar de novo', async () => {
+      expect(await render(() => Promise.reject(new Error('403')))).toContain('Não foi possível carregar os hospitais');
+
+      const context = TestBed.inject(HospitalContextService);
+      const load = spyOn(context, 'load').and.resolveTo();
+
+      (fixture.nativeElement.querySelector('.pharmacy__retry') as HTMLButtonElement).click();
+
+      expect(load).toHaveBeenCalled();
+    });
+
+    it('enquanto os hospitais carregam, informa isso', () => {
+      const context = TestBed.inject(HospitalContextService);
+
+      spyOn(TestBed.inject(LinkedHospitalsReader), 'read').and.returnValue(new Promise(() => undefined));
+      context.hospitals.set([]);
+      void context.load();
+      const other = TestBed.createComponent(PharmacyComponent);
+
+      other.detectChanges();
+
+      expect(other.nativeElement.textContent).toContain('Carregando os hospitais');
+    });
+  });
 });
