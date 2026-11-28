@@ -34,9 +34,8 @@ type LoadStatus = 'loading' | 'ready' | 'error';
   templateUrl: './pharmacy.component.html',
 })
 export class PharmacyComponent implements OnInit {
-  private readonly context = inject(HospitalContextService);
-  protected readonly hospital = this.context.selected;
-  protected readonly hospitalStatus = this.context.status;
+  protected readonly hospital = inject(HospitalContextService).selected;
+  protected readonly hospitalStatus = inject(HospitalContextService).status;
   protected readonly unreadCount = signal(0);
   protected readonly status = signal<LoadStatus>('loading');
   protected readonly formulas = signal<readonly Formula[]>([]);
@@ -52,6 +51,7 @@ export class PharmacyComponent implements OnInit {
   );
 
   private readonly api = inject(FormulasApi);
+  private readonly context = inject(HospitalContextService);
   private readonly router = inject(Router);
   private readonly unread = inject(UnreadNotificationsReader);
   private readonly screenActions = inject(ScreenActionsService);
