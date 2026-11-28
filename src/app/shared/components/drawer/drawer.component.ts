@@ -7,6 +7,7 @@ import {
   type ElementRef,
   inject,
   input,
+  linkedSignal,
   output,
   viewChild,
 } from '@angular/core';
@@ -29,8 +30,9 @@ const MAX_SHORTCUTS = 3;
  *  `--space-80`: o rail encolheu para 72px (DS-component-menu, ajuste do usuário no Figma) —
  *  a referência antiga aqui tinha ficado desatualizada. */
 const WIDTH_DEFAULT = '480px';
-const WIDTH_EXPANDED = 'calc(100vw - var(--space-72))';
 const WIDTH_CLOSED = '0px';
+/** Duração da entrada da sidebar de 100%. */
+const ENTRANCE_MS = 320;
 
 /**
  * Instâncias vivas de `app-drawer`. `--drawer-width` mora em
@@ -146,6 +148,13 @@ export class DrawerComponent {
   readonly ariaLabel = input.required<string>();
 
   readonly closed = output();
+  /** Com `true`, fechar não fecha: emite `closeBlocked` e o consumidor pergunta antes (ex.: cadastro em andamento). */
+  readonly confirmBeforeClose = input<boolean>(false);
+  readonly closeBlocked = output();
+  /** Dica à direita da faixa de atalhos, acima do campo de mensagem (ex.: "Você também pode responder via áudio."). */
+  readonly hint = input<string>('');
+  /** A dica entra de baixo para cima quando fica visível. */
+  readonly hintVisible = input<boolean>(false);
   readonly snapChange = output<DrawerSnap>();
   readonly shortcutSelect = output<ChatShortcut>();
 
@@ -154,6 +163,7 @@ export class DrawerComponent {
   protected readonly visibleShortcuts = computed(() => this.shortcuts().slice(0, MAX_SHORTCUTS));
 
   protected readonly hasShortcuts = computed(() => this.visibleShortcuts().length > 0);
+  protected readonly showActionsBar = computed(() => this.hasShortcuts() || this.hint() !== '');
 
   /** `expanded` cobre a tela inteira exceto o rail — só aí faz sentido virar modal. */
   protected readonly isModal = computed(() => this.snap() === 'expanded');
@@ -167,12 +177,20 @@ export class DrawerComponent {
 
   protected readonly expandLabel = computed(() => (this.isModal() ? 'Recolher' : 'Expandir'));
 
-  private readonly drawerWidthPx = computed<string>(() => {
-    if (!this.open()) {
-      return WIDTH_CLOSED;
-    }
+  /**
+   * Largura que EMPURRA o conteúdo da página. Só a sidebar lateral (meia, 480px) empurra; a de 100% flutua por cima e não
+   * mexe no layout (Thiago, 2026-11-27): ao expandir mantém a largura que já valia (480 se veio da meia, 0 se abriu direto
+   * em 100%), então nada se remonta ao expandir ou recolher.
+   */
+  private readonly drawerWidthPx = linkedSignal<{ open: boolean; modal: boolean }, string>({
+    computation: (source, previous) => {
+      if (!source.open) {
+        return WIDTH_CLOSED;
+      }
 
-    return this.isModal() ? WIDTH_EXPANDED : WIDTH_DEFAULT;
+      return source.modal ? (previous?.value ?? WIDTH_CLOSED) : WIDTH_DEFAULT;
+    },
+    source: () => ({ modal: this.isModal(), open: this.open() }),
   });
 
   private readonly dialogRef = viewChild<ElementRef<HTMLDialogElement>>('dialogEl');
@@ -217,6 +235,11 @@ export class DrawerComponent {
       // semântica (foco preso a mão + `role`/`aria-modal`), não mecanismo do <dialog>.
       if (this.dialogMode === 'closed') {
         element.show();
+        // Abriu direto em 100% (ex.: cadastro): flutua por cima da página e se revela da esquerda para a direita. Só na
+        // abertura; expandir/recolher a partir da meia sidebar não anima, para o layout não se remontar (Thiago, 2026-11-27).
+        if (wantModal) {
+          this.playEntrance(element);
+        }
       }
 
       if (wantMode === 'modal') {
@@ -311,6 +334,11 @@ export class DrawerComponent {
    * o encaixe corrigido, e a próxima abertura reabriria expandida.
    */
   private dismiss(): void {
+    if (this.confirmBeforeClose()) {
+      this.closeBlocked.emit();
+
+      return;
+    }
     if (!this.dismissible()) {
       return;
     }
@@ -320,6 +348,19 @@ export class DrawerComponent {
     }
 
     this.closed.emit();
+  }
+
+  private playEntrance(element: HTMLDialogElement): void {
+    if (typeof element.animate !== 'function' || window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      return;
+    }
+    element.animate(
+      [
+        { clipPath: 'inset(-40px 100% -40px 0)', transform: 'translateX(-32px)' },
+        { clipPath: 'inset(-40px)', transform: 'translateX(0)' },
+      ],
+      { duration: ENTRANCE_MS, easing: 'cubic-bezier(0.2, 0, 0, 1)' },
+    );
   }
 
   private focusFirstFocusable(dialogEl: HTMLDialogElement): void {

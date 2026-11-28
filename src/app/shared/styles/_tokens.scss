@@ -134,7 +134,7 @@ $color-bg-gradient-patients-2: #f0f3f5;
 
 // fundo-gradiente-notificacoes/* — gradiente EXCLUSIVO da tela de Notificações (Figma `gradient-notificacoes`):
 // claro: rosado muito claro → superfície; escuro: vinho escuro → superfície.
-$color-bg-gradient-notifications-1: #f0dbee;
+$color-bg-gradient-notifications-1: #e9e2e9; // Figma gradient-notificacoes (ajustado em 2026-11-27; antes #f0dbee)
 $color-bg-gradient-notifications-2: #f0f3f5;
 
 // decorative/* — usados só no background animado das telas (não são Color
@@ -541,13 +541,13 @@ $shadow-elevation-bottomsheet: 0 -4px 24px rgba($color-primary, 0.08);
 // `tokens.$color-*` (valor fixo em tempo de compilação) migram para var() na
 // realinhação componente a componente.
 :root[data-theme='dark'] {
-  --color-bg-gradient-1: #273237; // Figma Dark v2 (ajustado pelo Thiago em 2026-11-19; antes #304a48)
+  --color-bg-gradient-1: #182c35; // Figma gradient-dark (2026-11-27): #182c35 → #182125; antes #273237
   --color-nav-active: #182125;
-  --color-bg-gradient-2: #182c35;
+  --color-bg-gradient-2: #18262c; // meio do gradiente de 2 paradas do Figma (interpolado)
   --color-bg-gradient-3: #182125;
   --color-bg-gradient-patients-1: #102f41;
   --color-bg-gradient-patients-2: #182125;
-  --color-bg-gradient-notifications-1: #301d30;
+  --color-bg-gradient-notifications-1: #2a222a; // Figma gradiente-notificacoes-dark (2026-11-27); antes #301d30
   --color-bg-gradient-notifications-2: #182125;
   --color-primary: #8cd0ff;
   --color-secondary: #43b9ff;

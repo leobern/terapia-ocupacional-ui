@@ -16,6 +16,8 @@
       (farmaciaClick)="onFarmaciaClick()"
       (tutorialClick)="onTutorialClick()"
       (vinculosClick)="onVinculosClick()"
+      (equipeClick)="onEquipeClick()"
+      (profileClick)="onProfileClick()"
       (logoutClick)="requestLogout()"
     />
   }
@@ -46,7 +48,11 @@
         [showLogo]="!showAssistantHeading()"
         [snap]="aiSheetSnap()"
         [shortcuts]="shortcuts()"
+        [confirmBeforeClose]="registrationInProgress()"
+        [hint]="assistantHint()"
+        [hintVisible]="assistantHintVisible()"
         (closed)="aiAssistant.closePanel()"
+        (closeBlocked)="onAssistantCloseBlocked()"
         (snapChange)="aiSheetSnap.set($event)"
         (shortcutSelect)="onAiShortcut($event)"
       >
@@ -89,10 +95,14 @@
         [showLogo]="!showAssistantHeading()"
         [expandable]="!showAssistantHeading()"
         [plain]="aiAssistant.view() === 'shortcuts'"
-        [snap]="aiDrawerSnap()"
+        [snap]="drawerSnap()"
         [shortcuts]="shortcuts()"
+        [confirmBeforeClose]="registrationInProgress()"
+        [hint]="assistantHint()"
+        [hintVisible]="assistantHintVisible()"
         (closed)="aiAssistant.closePanel()"
-        (snapChange)="aiDrawerSnap.set($event)"
+        (closeBlocked)="onAssistantCloseBlocked()"
+        (snapChange)="onDrawerSnapChange($event)"
         (shortcutSelect)="onAiShortcut($event)"
       >
         <app-assistant-heading drawerHeaderStart />
@@ -128,6 +138,16 @@
         }
       </app-drawer>
     }
+    <!-- Cadastro em andamento: fechar a sidebar ou trocar de tela pergunta antes de perder as respostas. -->
+    <app-confirm-dialog
+      title="Parar o cadastro?"
+      message="Você vai perder as informações que já respondeu."
+      confirmLabel="Sim, parar"
+      cancelLabel="Continuar cadastrando"
+      [open]="discardOpen()"
+      (confirmed)="confirmDiscard()"
+      (cancelled)="cancelDiscard()"
+    />
     <app-logout-confirm
       [open]="confirmOpen()"
       [busy]="loggingOut()"

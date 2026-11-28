@@ -30,6 +30,18 @@
     background: tokens.c(surface-2);
   }
 
+  &--primary {
+    border-color: tokens.c(primary);
+    background: tokens.c(primary);
+    color: tokens.c(content-6);
+
+    &:hover:not(:disabled),
+    &:active:not(:disabled) {
+      background: tokens.c(primary);
+      filter: brightness(1.15);
+    }
+  }
+
   &:disabled {
     border-color: tokens.c(state-disabled);
     color: tokens.c(state-disabled-2);

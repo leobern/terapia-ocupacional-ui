@@ -2,13 +2,16 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, provideRouter, Router } from '@angular/router';
 
 import { AcceptInviteComponent } from './accept-invite.component';
-import { AcceptInviteResult, InviteGateway } from './invite-gateway';
+import { AcceptInviteResult, InviteGateway, InvitePhoto, InviteSummary } from './invite-gateway';
 
 class FakeGateway extends InviteGateway {
-  accept!: jasmine.Spy<(token: string, fullName: string, password: string) => Promise<AcceptInviteResult>>;
+  check!: jasmine.Spy<(token: string) => Promise<InviteSummary | null>>;
+  accept!: jasmine.Spy<
+    (token: string, fullName: string, password: string, photo?: InvitePhoto) => Promise<AcceptInviteResult>
+  >;
 }
 
-describe('AcceptInviteComponent', () => {
+describe('AcceptInviteComponent (cadastro por conversa)', () => {
   let gateway: FakeGateway;
   let navigate: jasmine.Spy;
   let fixture: ComponentFixture<AcceptInviteComponent>;
@@ -19,6 +22,9 @@ describe('AcceptInviteComponent', () => {
     token = 'conv-1';
     spyOnProperty(navigator, 'language', 'get').and.returnValue('pt-BR');
     gateway = new FakeGateway();
+    gateway.check = jasmine
+      .createSpy('check')
+      .and.resolveTo({ email: 'ana@hsl.org', hospitals: ['Hospital A', 'Hospital B'], role: 'MEDICO' });
     gateway.accept = jasmine.createSpy('accept').and.resolveTo('ok');
     TestBed.configureTestingModule({
       imports: [AcceptInviteComponent],
@@ -31,115 +37,231 @@ describe('AcceptInviteComponent', () => {
     navigate = spyOn(TestBed.inject(Router), 'navigateByUrl').and.resolveTo(true);
   });
 
-  function open(withToken: string | null = 'conv-1'): void {
+  async function open(withToken: string | null = 'conv-1'): Promise<void> {
     token = withToken;
     fixture = TestBed.createComponent(AcceptInviteComponent);
+    fixture.detectChanges();
+    await fixture.whenStable();
     fixture.detectChanges();
     el = fixture.nativeElement as HTMLElement;
   }
 
-  const submitButton = (): HTMLButtonElement => el.querySelector('button[type="submit"]') as HTMLButtonElement;
-
-  async function fillAndSubmit(name: string, password: string, confirmation: string): Promise<void> {
-    const nameInput = el.querySelector('#invite-name') as HTMLInputElement;
-    const pw = el.querySelector('#invite-password') as HTMLInputElement;
-    const conf = el.querySelector('#invite-confirmation') as HTMLInputElement;
-
-    nameInput.value = name;
-    nameInput.dispatchEvent(new Event('input'));
-    pw.value = password;
-    pw.dispatchEvent(new Event('input'));
-    conf.value = confirmation;
-    conf.dispatchEvent(new Event('input'));
-    submitButton().click();
+  async function settle(): Promise<void> {
     await fixture.whenStable();
     fixture.detectChanges();
   }
 
-  it('mostra o formulário com nome da marca, nome e duas senhas (Figma 06)', () => {
-    open();
+  function type(selector: string, value: string): void {
+    const input = el.querySelector(selector) as HTMLInputElement;
 
-    expect(el.querySelector('.auth-shell__brand')?.textContent).toBe('Conductia');
-    expect(el.textContent).toContain('Boas-vindas');
-    expect(el.querySelectorAll('input').length).toBe(3);
-    expect(el.querySelectorAll('.auth-field__toggle').length).toBe(2);
-    expect(el.textContent).toContain('Já tenho conta');
+    input.value = value;
+    input.dispatchEvent(new Event('input'));
+  }
+
+  const submit = (): HTMLButtonElement => el.querySelector('button[type="submit"]') as HTMLButtonElement;
+  const text = (): string => el.textContent ?? '';
+
+  async function answerName(name = 'Ana Silva'): Promise<void> {
+    type('#invite-name', name);
+    submit().click();
+    await settle();
+  }
+
+  async function skipPhoto(): Promise<void> {
+    (
+      Array.from(el.querySelectorAll('button')).find(b => b.textContent?.includes('Pular')) as HTMLButtonElement
+    ).click();
+    await settle();
+  }
+
+  async function answerPassword(password = 'Senha-Forte-2026'): Promise<void> {
+    type('#invite-password', password);
+    submit().click();
+    await settle();
+  }
+
+  it('apresenta o convite (papel e hospitais) e pergunta o nome', async () => {
+    await open();
+
+    expect(gateway.check).toHaveBeenCalledWith('conv-1');
+    expect(text()).toContain('como médico em Hospital A, Hospital B');
+    expect(text()).toContain('Como você se chama?');
+    expect(el.querySelector('#invite-name')).not.toBeNull();
   });
 
-  it('cria a conta e volta ao login com o aviso', async () => {
-    open();
-    await fillAndSubmit(' Ana Silva ', 'Senha12345', 'Senha12345');
+  it('sem papel conhecido nem hospitais ainda apresenta o convite', async () => {
+    gateway.check.and.resolveTo({ email: 'x@y.com', hospitals: [], role: 'OUTRO' });
+    await open();
 
-    expect(gateway.accept).toHaveBeenCalledOnceWith('conv-1', 'Ana Silva', 'Senha12345');
-    expect(navigate).toHaveBeenCalledWith('/login', {
-      replaceUrl: true,
-      state: { notice: 'Conta criada. Entre com seu e-mail e senha.' },
-    });
+    expect(text()).toContain('como outro.');
   });
 
-  it('e-mail que já tem conta volta ao login com outro aviso', async () => {
-    open();
-    gateway.accept.and.resolveTo('already-registered');
-    await fillAndSubmit('Ana', 'Senha12345', 'Senha12345');
+  it('exige o nome antes de seguir', async () => {
+    await open();
+    await answerName('   ');
 
-    expect(navigate).toHaveBeenCalledWith('/login', {
-      replaceUrl: true,
-      state: { notice: 'Este e-mail já tem conta. Entre com sua senha.' },
-    });
+    expect(text()).toContain('Conte o seu nome completo');
+    expect(el.querySelector('#invite-name')).not.toBeNull();
   });
 
-  it('valida nome, política de senha e confirmação sem chamar o serviço', async () => {
-    open();
-    await fillAndSubmit('  ', '!!!', 'outra');
+  it('percorre nome, foto (pular), senha e confirmação e cria a conta', async () => {
+    await open();
+    await answerName();
+
+    expect(text()).toContain('Prazer, Ana!');
+    await skipPhoto();
+
+    expect(text()).toContain('crie uma senha'.replace('c', 'C') && 'Agora crie uma senha');
+    await answerPassword();
+    type('#invite-confirmation', 'Senha-Forte-2026');
+    submit().click();
+    await settle();
+
+    expect(gateway.accept).toHaveBeenCalledWith('conv-1', 'Ana Silva', 'Senha-Forte-2026', undefined);
+    expect(navigate).toHaveBeenCalledWith('/login', jasmine.objectContaining({ replaceUrl: true }));
+  });
+
+  it('rejeita senha fraca e senhas diferentes', async () => {
+    await open();
+    await answerName();
+    await skipPhoto();
+    await answerPassword('curta');
+
+    expect(el.querySelector('[role="alert"]')).not.toBeNull();
+    await answerPassword();
+    type('#invite-confirmation', 'outra-coisa-123');
+    submit().click();
+    await settle();
 
     expect(gateway.accept).not.toHaveBeenCalled();
-    expect(el.textContent).toContain('Informe seu nome completo');
-    expect(el.textContent).toContain('10 caracteres');
-    expect(el.textContent).toContain('não coincidem');
+    expect(el.querySelector('[role="alert"]')).not.toBeNull();
   });
 
-  it('token recusado mostra convite inválido', async () => {
-    open();
+  it('envia a foto escolhida junto com o aceite', async () => {
+    await open();
+    await answerName();
+    const file = new File([new Uint8Array([1, 2, 3])], 'foto.png', { type: 'image/png' });
+    const input = el.querySelector('[data-testid="invite-photo"]') as HTMLInputElement;
+    const transfer = new DataTransfer();
+
+    transfer.items.add(file);
+    input.files = transfer.files;
+    input.dispatchEvent(new Event('change'));
+    await new Promise(resolve => setTimeout(resolve, 50));
+    fixture.detectChanges();
+
+    expect(el.querySelector('.chat__preview')).not.toBeNull();
+    (
+      Array.from(el.querySelectorAll('button')).find(b => b.textContent?.includes('Continuar')) as HTMLButtonElement
+    ).click();
+    await settle();
+    await answerPassword();
+    type('#invite-confirmation', 'Senha-Forte-2026');
+    submit().click();
+    await settle();
+
+    expect(gateway.accept.calls.mostRecent().args[3]).toEqual({ base64: jasmine.any(String), type: 'image/png' });
+  });
+
+  it('recusa foto de tipo ou tamanho inválido', async () => {
+    await open();
+    await answerName();
+    const input = el.querySelector('[data-testid="invite-photo"]') as HTMLInputElement;
+    const send = async (file: File): Promise<void> => {
+      const transfer = new DataTransfer();
+
+      transfer.items.add(file);
+      input.files = transfer.files;
+      input.dispatchEvent(new Event('change'));
+      await new Promise(resolve => setTimeout(resolve, 20));
+      fixture.detectChanges();
+    };
+
+    await send(new File(['x'], 'a.gif', { type: 'image/gif' }));
+
+    expect(text()).toContain('JPEG, PNG ou WebP');
+    await send(new File([new Uint8Array(2 * 1024 * 1024 + 1)], 'a.png', { type: 'image/png' }));
+
+    expect(text()).toContain('até 2 MB');
+  });
+
+  it('ignora o evento de arquivo sem arquivo', async () => {
+    await open();
+    await answerName();
+    (el.querySelector('[data-testid="invite-photo"]') as HTMLInputElement).dispatchEvent(new Event('change'));
+
+    expect(el.querySelector('.chat__preview')).toBeNull();
+  });
+
+  it('mostra "convite inválido" sem token', async () => {
+    await open(null);
+
+    expect(gateway.check).not.toHaveBeenCalled();
+    expect(text()).toContain('Ir para o login');
+  });
+
+  it('mostra "convite inválido" quando o servidor recusa o token', async () => {
+    gateway.check.and.resolveTo(null);
+    await open();
+
+    expect(text()).toContain('Ir para o login');
+  });
+
+  it('mostra "convite inválido" quando o aceite recusa o token', async () => {
     gateway.accept.and.resolveTo('invalid-token');
-    await fillAndSubmit('Ana', 'Senha12345', 'Senha12345');
+    await open();
+    await answerName();
+    await skipPhoto();
+    await answerPassword();
+    type('#invite-confirmation', 'Senha-Forte-2026');
+    submit().click();
+    await settle();
 
-    expect(el.textContent).toContain('Convite inválido');
-    expect(el.querySelector('input')).toBeNull();
-    expect(navigate).not.toHaveBeenCalled();
+    expect(text()).toContain('Ir para o login');
   });
 
-  it('sem token mostra convite inválido e o botão leva ao login', () => {
-    open(null);
+  it('avisa quando o convite não abre por falha de rede', async () => {
+    gateway.check.and.rejectWith(new Error('rede'));
+    await open();
 
-    expect(el.textContent).toContain('Convite inválido');
-    el.querySelector('button')?.click();
+    expect(text()).toContain('Não foi possível abrir o convite');
+  });
+
+  it('volta à confirmação quando o aceite falha por rede', async () => {
+    gateway.accept.and.rejectWith(new Error('rede'));
+    await open();
+    await answerName();
+    await skipPhoto();
+    await answerPassword();
+    type('#invite-confirmation', 'Senha-Forte-2026');
+    submit().click();
+    await settle();
+
+    expect(text()).toContain('Não foi possível criar a conta agora');
+    expect(el.querySelector('#invite-confirmation')).not.toBeNull();
+  });
+
+  it('conta já existente segue para o login com o aviso', async () => {
+    gateway.accept.and.resolveTo('already-registered');
+    await open();
+    await answerName();
+    await skipPhoto();
+    await answerPassword();
+    type('#invite-confirmation', 'Senha-Forte-2026');
+    submit().click();
+    await settle();
+
+    expect(navigate).toHaveBeenCalledWith('/login', jasmine.objectContaining({ replaceUrl: true }));
+  });
+
+  it('"Voltar ao login" navega para o login', async () => {
+    await open(null);
+    (
+      Array.from(el.querySelectorAll('button')).find(b =>
+        b.textContent?.includes('Ir para o login'),
+      ) as HTMLButtonElement
+    ).click();
 
     expect(navigate).toHaveBeenCalledWith('/login', { replaceUrl: true });
-  });
-
-  it('falha de serviço mostra aviso, mantém os valores e permite tentar de novo', async () => {
-    open();
-    gateway.accept.and.rejectWith(new Error('offline'));
-    await fillAndSubmit('Ana', 'Senha12345', 'Senha12345');
-
-    expect(el.querySelector('[role="alert"]')?.textContent).toContain('Não foi possível criar a conta');
-    expect((el.querySelector('#invite-name') as HTMLInputElement).value).toBe('Ana');
-    expect(submitButton().textContent).toContain('Tentar novamente');
-
-    gateway.accept.and.resolveTo('ok');
-    submitButton().click();
-    await fixture.whenStable();
-
-    expect(gateway.accept).toHaveBeenCalledTimes(2);
-  });
-
-  it('não envia duas vezes enquanto envia', async () => {
-    open();
-    gateway.accept.and.returnValue(new Promise(() => undefined));
-    await fillAndSubmit('Ana', 'Senha12345', 'Senha12345');
-    el.querySelector('form')?.dispatchEvent(new Event('submit'));
-
-    expect(gateway.accept).toHaveBeenCalledTimes(1);
-    expect(submitButton().disabled).toBeTrue();
   });
 });

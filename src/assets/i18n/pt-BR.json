@@ -247,6 +247,10 @@
       "yes": "Sim, é o mesmo paciente",
       "yesThis": "Sim, é este paciente"
     },
+    "extras": {
+      "no": "Não, seguir",
+      "yes": "Sim, quero informar"
+    },
     "locationKind": {
       "ALA": "Ala",
       "UNIDADE": "Unidade"
@@ -274,17 +278,22 @@
       "locationNotInformed": "Essa localização não foi informada.",
       "locationTooLong": "O valor da localização deve ter no máximo 100 caracteres.",
       "locationTypeRepeated": "Esse tipo já foi informado. Selecione o outro tipo.",
-      "sameTooLong": "O SAME deve ter no máximo 30 caracteres."
+      "sameTooLong": "O SAME deve ter no máximo 30 caracteres.",
+      "saveChoice": "Toque em Salvar para concluir o cadastro."
     },
+    "moreData": "Informar mais dados",
     "prompts": {
       "addLocation": "Deseja adicionar Unidade e/ou Ala à internação?",
-      "admissionNumber": "Qual o número de atendimento? (opcional)",
+      "admissionNumber": "Qual o número de atendimento?",
       "admit": "Deseja internar o paciente agora?",
-      "bedNumber": "Qual o leito do paciente? (opcional)",
+      "bedNumber": "Qual o leito do paciente?",
       "birthDate": "Qual a data de nascimento? (dd/mm/aaaa)",
+      "confirmSave": "Tudo pronto. Confira os dados abaixo: posso salvar o cadastro do paciente?",
+      "extrasAdmission": "Tem alguma informação adicional sobre o paciente? Posso registrar:\n• SAME (número do prontuário)\n• Leito\n• Convênio\n• Número de atendimento\n• Data de internação hospitalar\n• Data de início da terapia nutricional\n• Unidade e/ou ala\nQuer informar algum desses?",
+      "extrasBasic": "Tem alguma informação adicional sobre o paciente? Posso registrar o SAME (número do prontuário). Quer informar?",
       "fullName": "Me fale o nome completo do paciente",
-      "healthInsurance": "Qual o convênio? (opcional)",
-      "hospitalAdmissionDate": "Qual a data de internação hospitalar? (dd/mm/aaaa, opcional)",
+      "healthInsurance": "Qual o convênio?",
+      "hospitalAdmissionDate": "Qual a data de internação hospitalar? (dd/mm/aaaa)",
       "location1More": "Deseja adicionar outra localização?",
       "location1Type": "Qual o tipo da localização? (Unidade ou Ala)",
       "location1Value": "Qual o valor da localização?",
@@ -292,17 +301,34 @@
       "location2Type": "Qual o tipo da outra localização? (Unidade ou Ala)",
       "location2Value": "Qual o valor da outra localização?",
       "locationRemove": "Deseja remover alguma localização antes de concluir?",
-      "medicalRecordNumber": "Qual o SAME do paciente? (opcional)",
-      "nutritionalTherapyStartDate": "Qual a data de início da terapia nutricional? (dd/mm/aaaa, opcional)",
+      "medicalRecordNumber": "Qual o SAME do paciente?",
+      "nutritionalTherapyStartDate": "Qual a data de início da terapia nutricional? (dd/mm/aaaa)",
       "sex": "Qual o sexo do paciente?"
     },
+    "save": "Salvar",
+    "savePatient": "Salvar paciente",
     "sex": {
       "FEMALE": "Feminino",
       "MALE": "Masculino",
       "NOT_INFORMED": "Não informado"
     },
     "skip": "Pular",
-    "title": "Cadastrar paciente"
+    "summary": {
+      "admissionNumber": "Nº de atendimento",
+      "admit": "Internar agora",
+      "bedNumber": "Leito",
+      "birthDate": "Nascimento",
+      "fullName": "Nome",
+      "healthInsurance": "Convênio",
+      "hospitalAdmissionDate": "Data de internação",
+      "locations": "Localização",
+      "medicalRecordNumber": "SAME",
+      "nutritionalTherapyStartDate": "Início da terapia nutricional",
+      "sex": "Sexo",
+      "title": "Dados do paciente"
+    },
+    "title": "Cadastrar paciente",
+    "today": "Hoje"
   },
   "session": {
     "expired": "Sua sessão expirou. Faça login novamente."

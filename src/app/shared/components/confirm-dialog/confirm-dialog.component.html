@@ -1,5 +1,5 @@
 @if (open()) {
-  <!-- Figma v2/Dialog Type=confirm: título, texto e duas ações md. Padrão dos modais (Thiago, 2026-11-23): ação
+  <!-- Figma v2/Dialog (4598:1865): título, texto e duas ações (md no desktop; no mobile, lg 100% uma sob a outra). Padrão dos modais (Thiago, 2026-11-23): ação
        primária à ESQUERDA da secundária, na mesma linha, alinhadas à direita, com 16px entre elas. -->
   <div #scrim class="confirm-dialog__scrim" popover="manual">
     <div
@@ -8,24 +8,28 @@
       aria-modal="true"
       aria-labelledby="confirm-dialog-title"
     >
-      <p id="confirm-dialog-title" class="confirm-dialog__title">
-        {{ title() }}
-      </p>
-      @if (message()) {
-        <p class="confirm-dialog__message">{{ message() }}</p>
-      }
+      <div class="confirm-dialog__text">
+        <p id="confirm-dialog-title" class="confirm-dialog__title">
+          {{ title() }}
+        </p>
+        @if (message()) {
+          <p class="confirm-dialog__message">{{ message() }}</p>
+        }
+      </div>
       <div class="confirm-dialog__actions">
         <app-button
           kind="primary"
           appearance="solid"
-          size="md"
+          [size]="buttonSize()"
+          [fullWidth]="mobile()"
           [label]="confirmLabel()"
           (click)="confirmed.emit()"
         />
         <app-button
           kind="primary"
-          appearance="ghost"
-          size="md"
+          appearance="outlined"
+          [size]="buttonSize()"
+          [fullWidth]="mobile()"
           [label]="cancelLabel()"
           (click)="cancelled.emit()"
         />

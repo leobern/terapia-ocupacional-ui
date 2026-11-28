@@ -1,6 +1,6 @@
 /** Regras de validação dos dados fixos do paciente (US-002-1-02: RN-01 a RN-03). Funções puras. */
 
-import { centuryOf, parseBrDate } from '../../shared/utils/br-date';
+import { type BrDate, centuryOf, parseBrDate } from '../../shared/utils/br-date';
 
 export type PatientSex = 'MALE' | 'FEMALE' | 'NOT_INFORMED';
 
@@ -56,6 +56,27 @@ export function validateFullName(raw: string): RuleResult<string> {
   }
 
   return name.length > FULL_NAME_MAX ? { code: 'MSG-05' } : { value: name };
+}
+
+function toIso(day: Date): string {
+  return `${String(day.getFullYear()).padStart(4, '0')}-${String(day.getMonth() + 1).padStart(2, '0')}-${String(day.getDate()).padStart(2, '0')}`;
+}
+
+/** "hoje"/"ontem" viram a data na hora, sem precisar da IA (Thiago, 2026-11-27); outra coisa devolve `null`. */
+function relativeDate(raw: string, today: Date): BrDate | null {
+  const word = normalize(raw);
+  const offsets = new Map<string, number>([
+    ['hoje', 0],
+    ['ontem', -1],
+  ]);
+  const offset = offsets.get(word);
+
+  if (offset === undefined) {
+    return null;
+  }
+  const date = new Date(today.getFullYear(), today.getMonth(), today.getDate() + offset);
+
+  return { date, iso: toIso(date) };
 }
 
 function startOfDay(day: Date): Date {
@@ -132,7 +153,7 @@ export function validateHospitalAdmissionDate(raw: string, today: Date): RuleRes
   if (isDontKnow(raw)) {
     return { value: '' };
   }
-  const parsed = parseBrDate(raw, centuryOf(today));
+  const parsed = parseBrDate(raw, centuryOf(today)) ?? relativeDate(raw, today);
 
   if (!parsed) {
     return { code: 'invalidDate' };
@@ -146,7 +167,7 @@ export function validateNutritionalTherapyStartDate(raw: string, today: Date = n
   if (isDontKnow(raw)) {
     return { value: '' };
   }
-  const parsed = parseBrDate(raw, centuryOf(today));
+  const parsed = parseBrDate(raw, centuryOf(today)) ?? relativeDate(raw, today);
 
   return parsed ? { value: parsed.iso } : { code: 'invalidDate' };
 }

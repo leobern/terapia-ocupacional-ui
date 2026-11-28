@@ -1,0 +1,87 @@
+<app-side-panel
+  title="Editar perfil"
+  description="Atualize os seus dados e a sua foto."
+  [open]="open()"
+  (closed)="closed.emit()"
+>
+  <div panelBody class="edit">
+    <div class="edit__card edit__photo">
+      <app-user-avatar
+        size="big"
+        [userId]="id()"
+        [name]="name()"
+        [hasPhoto]="hasPhoto()"
+      />
+      <div class="edit__photo-actions">
+        <label class="edit__upload">
+          <input
+            class="edit__file"
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            data-testid="photo-input"
+            (change)="onFile($event)"
+          />
+          <span>{{ hasPhoto() ? 'Trocar foto' : 'Enviar foto' }}</span>
+        </label>
+        @if (hasPhoto()) {
+          <button type="button" class="edit__remove" (click)="removePhoto()">
+            Remover foto
+          </button>
+        }
+        <p class="edit__hint">JPEG, PNG ou WebP, até 2 MB.</p>
+      </div>
+    </div>
+
+    <div class="edit__card">
+      <label class="edit__label" for="edit-name">Nome completo</label>
+      <input
+        id="edit-name"
+        class="edit__input"
+        type="text"
+        [value]="name()"
+        (input)="onText('name', $event)"
+      />
+    </div>
+    <div class="edit__card">
+      <label class="edit__label" for="edit-specialty">Especialidade</label>
+      <input
+        id="edit-specialty"
+        class="edit__input"
+        type="text"
+        [value]="specialty()"
+        (input)="onText('specialty', $event)"
+      />
+    </div>
+    <div class="edit__card">
+      <label class="edit__label" for="edit-registry"
+        >Registro profissional</label
+      >
+      <input
+        id="edit-registry"
+        class="edit__input"
+        type="text"
+        placeholder="CRM, CRN, COREN…"
+        [value]="registry()"
+        (input)="onText('registry', $event)"
+      />
+    </div>
+    <div class="edit__card">
+      <label class="edit__label" for="edit-phone">Telefone</label>
+      <input
+        id="edit-phone"
+        class="edit__input"
+        type="tel"
+        [value]="phone()"
+        (input)="onText('phone', $event)"
+      />
+    </div>
+
+    @if (error(); as message) {
+      <p class="edit__error" role="alert">{{ message }}</p>
+    }
+  </div>
+  <div panelFooter class="edit__footer">
+    <app-button label="Salvar" [disabled]="saving()" (click)="save()" />
+    <app-button kind="secondary" label="Cancelar" (click)="closed.emit()" />
+  </div>
+</app-side-panel>

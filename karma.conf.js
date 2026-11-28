@@ -81,6 +81,13 @@ module.exports = function (config) {
     },
     reporters: ['progress', 'coverage'],
     customLaunchers: {
+      // CI (Linux): o runner não permite o sandbox do Chromium do Playwright.
+      // `--no-sandbox` é também o padrão do próprio Playwright, e este navegador
+      // só carrega os testes do repositório.
+      ChromeHeadlessCI: {
+        base: 'ChromeHeadless',
+        flags: ['--no-sandbox'],
+      },
       ChromeDebuggingHeadless: {
         base: 'Chrome',
         flags: [

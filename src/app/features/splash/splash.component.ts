@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, DestroyRef, inject, OnInit, signal } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 
+import { Role, SessionRoleReader } from '../../shared/auth/session-role';
 import { ButtonComponent } from '../../shared/components/button/button.component';
 import { IconLogoComponent } from '../../shared/components/icon-logo/icon-logo.component';
 import { I18nService } from '../../shared/services/i18n.service';
@@ -33,6 +34,7 @@ export class SplashComponent implements OnInit {
   protected readonly i18n = inject(I18nService);
 
   private readonly reader = inject(StartupStateReader);
+  private readonly roleReader = inject(SessionRoleReader);
   private readonly tutorial = inject(TutorialStateStore);
   private readonly router = inject(Router);
   private readonly welcome = inject(WelcomeSource);
@@ -111,6 +113,13 @@ export class SplashComponent implements OnInit {
   private async navigate(attempt: number): Promise<void> {
     const state = this.reader.readLocal();
     let destination: string = decideDestination(state);
+
+    // ADMIN e GESTOR administram a plataforma (Equipe e Hospitais): não precisam de vínculo aprovado para entrar.
+    const role = this.roleReader.read();
+
+    if (destination === '/hospital-links' && (role === Role.ADMIN || role === Role.GESTOR)) {
+      destination = '/team';
+    }
 
     if (destination === '/home') {
       if (await this.welcomePending()) {

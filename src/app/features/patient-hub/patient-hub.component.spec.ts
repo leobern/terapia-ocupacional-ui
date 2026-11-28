@@ -1169,6 +1169,7 @@ describe('PatientHubComponent', () => {
       expect(hub.measures()?.weight?.caption).toContain('6 medições');
       expect(el().querySelectorAll('app-measure-chart').length).toBe(2);
       inputs.saved();
+
       expect(load).toHaveBeenCalledTimes(1);
 
       load.and.rejectWith(new Error('x'));

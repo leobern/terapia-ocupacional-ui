@@ -1,4 +1,5 @@
 @use '../../styles/tokens';
+@use '../../styles/typography';
 
 // -----------------------------------------------------------------------------
 // DS-component-drawer — nó Figma `4412:5749`. Par de DESKTOP do bottom-sheet.
@@ -83,8 +84,10 @@ $icon-hit-inset: ($min-touch-target - tokens.$control-height-md) * 0.5;
 // Expandido: o chat vira uma coluna central travada em 640px (Figma 4480:7718 — cabeçalho,
 // conversa, atalhos e campo de mensagem com 640px, centralizados no painel).
 .drawer--expanded {
-  // Sidebar em 100% da tela: sem a borda azul (Thiago, 2026-11-25).
+  // Sidebar em 100% da tela: sem a borda azul (Thiago, 2026-11-25) e com raio de 24px nos cantos da esquerda
+  // (topo e base; Thiago, 2026-11-27).
   border-inline-start: 0;
+  border-radius: tokens.$radius-md 0 0 tokens.$radius-md;
 
   .drawer__header,
   .drawer__actions,
@@ -199,4 +202,28 @@ $icon-hit-inset: ($min-touch-target - tokens.$control-height-md) * 0.5;
   flex-direction: column;
   flex-shrink: 0;
   padding: var(--space-16) 0 0;
+}
+
+// Dica à direita da faixa de atalhos (acima do campo de mensagem): entra de baixo para cima, alinhada à direita do campo.
+.drawer__hint {
+  align-self: flex-end;
+  margin-inline-start: auto;
+  color: var(--color-content-2);
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(8px);
+  transition:
+    opacity 0.4s ease,
+    transform 0.4s ease;
+
+  @include typography.chat-hint;
+
+  &--visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    transition: none;
+  }
 }

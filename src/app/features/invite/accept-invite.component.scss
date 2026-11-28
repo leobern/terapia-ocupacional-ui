@@ -1,0 +1,97 @@
+@use '../../shared/styles/tokens';
+@use '../../shared/styles/typography';
+
+.chat {
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$space-8;
+  margin-bottom: tokens.$space-16;
+}
+
+.chat__bubble {
+  align-self: flex-start;
+  max-width: 90%;
+  margin: 0;
+  padding: tokens.$space-12 tokens.$space-16;
+  border-radius: tokens.$radius-sm;
+  background: tokens.c(surface-2);
+  color: tokens.c(content-1);
+
+  @include typography.body-md;
+}
+
+.chat__bubble--user {
+  align-self: flex-end;
+  background: tokens.c(secondary);
+  color: tokens.c(content-6);
+}
+
+.chat__typing {
+  color: tokens.c(content-4);
+}
+
+.chat__form {
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$space-8;
+}
+
+.chat__label {
+  color: tokens.c(content-1);
+
+  @include typography.label-md;
+}
+
+.chat__input {
+  min-height: 48px;
+  padding: 0 tokens.$space-16;
+  border: 1px solid tokens.c(border-2);
+  border-radius: tokens.$radius-sm;
+  background: tokens.c(surface);
+  color: tokens.c(content-1);
+
+  @include typography.body-md;
+}
+
+.chat__upload {
+  display: inline-flex;
+  align-items: center;
+  align-self: flex-start;
+  min-height: 40px;
+  padding: 0 tokens.$space-16;
+  border: 1.5px solid tokens.c(secondary);
+  border-radius: tokens.$radius-pill;
+  color: tokens.c(content-1);
+  cursor: pointer;
+
+  @include typography.label-md;
+}
+
+.chat__file {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+}
+
+.chat__preview {
+  align-self: flex-start;
+  width: 96px;
+  height: 96px;
+  border-radius: tokens.$radius-pill;
+  object-fit: cover;
+}
+
+.chat__hint {
+  margin: 0;
+  color: tokens.c(content-4);
+
+  @include typography.caption;
+}
+
+.chat__error {
+  margin: tokens.$space-8 0 0;
+  color: tokens.c(comm-alert);
+
+  @include typography.body-md;
+}

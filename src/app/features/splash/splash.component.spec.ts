@@ -1,10 +1,13 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, convertToParamMap, provideRouter, Router } from '@angular/router';
 
+import { Role, SessionRoleReader } from '../../shared/auth/session-role';
 import { TutorialStateStore, TutorialStatus } from '../tutorial/tutorial-state';
 import { WelcomeSource, WelcomeStatus } from '../welcome/welcome-source';
 import { SPLASH_MIN_DISPLAY_MS, SPLASH_TIMEOUT_MS, SplashComponent } from './splash.component';
 import { LocalStartupState, StartupStateReader } from './startup-state';
+
+let role: Role | null = null;
 
 class FakeTutorial extends TutorialStateStore {
   status: Promise<TutorialStatus> = Promise.resolve('CONCLUIDO');
@@ -61,6 +64,7 @@ describe('SplashComponent', () => {
   }
 
   beforeEach(() => {
+    role = null;
     jasmine.clock().install();
     spyOnProperty(navigator, 'language', 'get').and.returnValue('pt-BR');
     reader = new FakeReader();
@@ -74,6 +78,7 @@ describe('SplashComponent', () => {
         { provide: StartupStateReader, useValue: reader },
         { provide: WelcomeSource, useValue: welcome },
         { provide: TutorialStateStore, useValue: tutorial },
+        { provide: SessionRoleReader, useValue: { read: (): Role | null => role } },
       ],
     });
     navigate = spyOn(TestBed.inject(Router), 'navigateByUrl').and.resolveTo(true);
@@ -251,6 +256,26 @@ describe('SplashComponent', () => {
   });
 
   it('RN-03: routes to hospital links without approved link', async () => {
+    reader.state = { hasApprovedHospitalLink: false, isLocked: false, isSessionValid: true };
+    open();
+    await tick(SPLASH_MIN_DISPLAY_MS);
+
+    expect(navigate).toHaveBeenCalledWith('/hospital-links', { replaceUrl: true });
+  });
+
+  for (const adminRole of [Role.ADMIN, Role.GESTOR]) {
+    it(`${adminRole} sem vínculo aprovado entra direto na Equipe (administra a plataforma)`, async () => {
+      role = adminRole;
+      reader.state = { hasApprovedHospitalLink: false, isLocked: false, isSessionValid: true };
+      open();
+      await tick(SPLASH_MIN_DISPLAY_MS);
+
+      expect(navigate).toHaveBeenCalledWith('/team', { replaceUrl: true });
+    });
+  }
+
+  it('terapeuta sem vínculo aprovado continua indo aos vínculos', async () => {
+    role = Role.TERAPEUTA;
     reader.state = { hasApprovedHospitalLink: false, isLocked: false, isSessionValid: true };
     open();
     await tick(SPLASH_MIN_DISPLAY_MS);

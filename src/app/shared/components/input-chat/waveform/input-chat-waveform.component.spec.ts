@@ -118,6 +118,11 @@ describe('InputChatWaveformComponent', () => {
     fixture.detectChanges();
   });
 
+  // Desfaz `stubVisibility`: sem isto o `document` seguia "escondido" para os
+  // testes seguintes da suíte, e a recarga ao voltar a ficar visível falhava
+  // conforme a ordem sorteada.
+  afterEach(() => delete (document as unknown as Record<string, unknown>)['visibilityState']);
+
   it('renderiza 6 grupos de 5 barras (geometria medida no SVG — research.md §3)', () => {
     expect(groups().length).toBe(6);
     expect(bars().length).toBe(WAVEFORM_BAR_COUNT);

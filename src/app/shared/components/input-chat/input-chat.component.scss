@@ -19,9 +19,10 @@
   border-radius: tokens.$radius-md;
   gap: tokens.$space-8;
   justify-content: flex-end;
-  // EXCEÇÃO DE ESPAÇAMENTO (Thiago, 2026-11-24, hardcode só aqui, fora dos tokens): o botão fica a 3px da lateral
-  // direita (2px de padding + a borda de 1px); em cima e embaixo são 3px + borda = 4px e o campo fecha em 48px.
-  padding: 3px 2px 3px 0;
+  // Thiago, 2026-11-27: o botão fica a 4px (token `space-4`) da borda externa, em cima, embaixo e à direita. A borda de 1px
+  // já ocupa parte desses 4px, daí o `- 1px` no padding. (Volta ao token: a exceção de 3px de 2026-11-24 acabou.)
+  padding: calc(#{tokens.$space-4} - 1px) calc(#{tokens.$space-4} - 1px)
+    calc(#{tokens.$space-4} - 1px) 0;
 
   // Âncora do botão de cancelar do modo áudio, que é posicionado
   // absolutamente dentro da barra de ondas (nó 4054:3363).

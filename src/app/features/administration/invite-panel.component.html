@@ -1,0 +1,113 @@
+<app-side-panel
+  [open]="open()"
+  [title]="result() ? 'Convite criado' : 'Convidar pessoa'"
+  [description]="
+    result()
+      ? ''
+      : 'Informe o e-mail, o papel e os hospitais. Quem ainda não tem conta recebe um link válido por 7 dias.'
+  "
+  (closed)="closed.emit()"
+>
+  <div panelBody class="invite">
+    @if (result(); as created) {
+      @if (created.vinculoDireto) {
+        <p class="invite__card" role="status">
+          {{ created.email }} já tinha conta: o vínculo com o hospital foi
+          criado e a pessoa foi avisada.
+        </p>
+      } @else {
+        <div class="invite__card">
+          <p class="invite__label">Link do convite</p>
+          <p class="invite__link" data-testid="invite-link">
+            {{ created.link }}
+          </p>
+          <app-button
+            kind="secondary"
+            size="md"
+            [label]="copied() ? 'Link copiado' : 'Copiar link'"
+            (click)="copy()"
+          />
+          <p class="invite__hint">
+            Uso único, válido por 7 dias. Envie o link para {{ created.email }};
+            quando o e-mail automático estiver ligado, o convite também segue
+            por e-mail.
+          </p>
+        </div>
+      }
+    } @else {
+      <div class="invite__card">
+        <label class="invite__label" for="invite-email">E-mail</label>
+        <input
+          id="invite-email"
+          class="invite__input"
+          type="email"
+          autocomplete="off"
+          placeholder="nome@hospital.org"
+          [value]="email()"
+          (input)="onEmail($event)"
+        />
+      </div>
+
+      <div class="invite__card">
+        <p class="invite__label" id="invite-role-label">Papel</p>
+        <div
+          class="invite__chips"
+          role="group"
+          aria-labelledby="invite-role-label"
+        >
+          @for (item of roles(); track item.key) {
+            <button
+              type="button"
+              class="invite__chip"
+              [attr.aria-pressed]="role() === item.key"
+              (click)="role.set(item.key)"
+            >
+              {{ item.label }}
+            </button>
+          }
+        </div>
+      </div>
+
+      <div class="invite__card">
+        <p class="invite__label" id="invite-hospitals-label">Hospitais</p>
+        <ul class="invite__list" aria-labelledby="invite-hospitals-label">
+          @for (hospital of hospitals(); track hospital.id) {
+            <li>
+              <label class="invite__check">
+                <input
+                  type="checkbox"
+                  [checked]="selected().includes(hospital.id)"
+                  (change)="toggle(hospital.id)"
+                />
+                <span>{{ hospital.nome }}</span>
+              </label>
+            </li>
+          } @empty {
+            <li class="invite__hint">Nenhum hospital disponível.</li>
+          }
+        </ul>
+      </div>
+    }
+    @if (error(); as message) {
+      <p class="invite__error" role="alert">{{ message }}</p>
+    }
+  </div>
+
+  <div panelFooter class="invite__footer">
+    @if (result()) {
+      <app-button label="Concluir" (click)="closed.emit()" />
+      <app-button
+        kind="secondary"
+        label="Convidar outra pessoa"
+        (click)="another()"
+      />
+    } @else {
+      <app-button
+        label="Enviar convite"
+        [disabled]="!canSubmit()"
+        (click)="submit()"
+      />
+      <app-button kind="secondary" label="Cancelar" (click)="closed.emit()" />
+    }
+  </div>
+</app-side-panel>

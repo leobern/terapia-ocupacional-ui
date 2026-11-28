@@ -1,0 +1,155 @@
+<app-page-container>
+  <div class="team">
+    <app-page-header
+      icon="identification-badge"
+      title="Equipe"
+      [subtitle]="subtitle()"
+    >
+      <div pageHeaderActions class="team__header-actions">
+        <app-button
+          size="md"
+          kind="secondary"
+          label="Hospitais"
+          (click)="openHospitals()"
+        />
+        <app-button
+          size="md"
+          label="+ Convidar pessoa"
+          (click)="inviteOpen.set(true)"
+        />
+      </div>
+    </app-page-header>
+
+    <div class="team__toolbar">
+      <input
+        class="team__search"
+        type="search"
+        placeholder="Buscar nome ou e-mail"
+        aria-label="Buscar nome ou e-mail"
+        [value]="search()"
+        (input)="onSearch($event)"
+      />
+      <div class="team__filters" role="group" aria-label="Situação">
+        @for (filter of filters; track filter.key) {
+          <button
+            type="button"
+            class="team__chip"
+            [attr.aria-pressed]="situation() === filter.key"
+            (click)="situation.set(filter.key)"
+          >
+            {{ filter.label }}
+          </button>
+        }
+      </div>
+    </div>
+
+    @if (actionError(); as message) {
+      <p class="team__state team__state--error" role="alert">{{ message }}</p>
+    }
+
+    @switch (status()) {
+      @case ('loading') {
+        <p class="team__state" role="status">Carregando a equipe…</p>
+      }
+      @case ('error') {
+        <div class="team__state team__state--error" role="alert">
+          <p>Erro ao carregar a equipe.</p>
+          <button type="button" class="team__retry" (click)="load()">
+            Tentar novamente
+          </button>
+        </div>
+      }
+      @default {
+        <div class="team__table" role="table" aria-label="Equipe">
+          <div class="team__row team__row--head" role="row">
+            <span role="columnheader">Pessoa</span>
+            <span role="columnheader">Papel</span>
+            <span role="columnheader">Hospitais</span>
+            <span role="columnheader">Convidado por</span>
+            <span role="columnheader">Situação</span>
+            <span role="columnheader"></span>
+          </div>
+          @for (
+            member of visible();
+            track member.usuarioId ?? 'c' + member.conviteId
+          ) {
+            <div
+              class="team__row"
+              role="row"
+              [class.team__row--link]="member.usuarioId !== null"
+            >
+              <button
+                type="button"
+                class="team__person"
+                role="cell"
+                [disabled]="member.usuarioId === null"
+                (click)="open(member)"
+              >
+                <app-user-avatar
+                  [userId]="member.usuarioId"
+                  [name]="member.nome"
+                  [hasPhoto]="member.temFoto"
+                />
+                <span class="team__person-text">
+                  <span class="team__name">{{ member.nome }}</span>
+                  <span class="team__email">{{ member.email }}</span>
+                </span>
+              </button>
+              <span class="team__cell team__cell--role" role="cell">{{
+                roleLabels[member.papel]
+              }}</span>
+              <span class="team__cell" role="cell">{{
+                hospitalsLabel(member)
+              }}</span>
+              <span class="team__cell team__cell--muted" role="cell">{{
+                member.convidadoPor ?? '—'
+              }}</span>
+              <span class="team__cell" role="cell">
+                <span
+                  class="team__status"
+                  [attr.data-status]="member.situacao"
+                  >{{ statusLabels[member.situacao] }}</span
+                >
+              </span>
+              <span class="team__cell team__cell--actions" role="cell">
+                @if (member.situacao === 'CONVIDADO') {
+                  <button
+                    type="button"
+                    class="team__link"
+                    (click)="resend(member)"
+                  >
+                    Reenviar
+                  </button>
+                  <button
+                    type="button"
+                    class="team__link"
+                    (click)="cancel(member)"
+                  >
+                    Cancelar
+                  </button>
+                } @else {
+                  <button
+                    type="button"
+                    class="team__link"
+                    [attr.aria-label]="'Abrir ' + member.nome"
+                    (click)="open(member)"
+                  >
+                    Abrir
+                  </button>
+                }
+              </span>
+            </div>
+          } @empty {
+            <p class="team__state" role="status">Ninguém encontrado.</p>
+          }
+        </div>
+      }
+    }
+  </div>
+</app-page-container>
+
+<app-invite-panel
+  [open]="inviteOpen()"
+  (closed)="inviteOpen.set(false)"
+  (done)="load()"
+/>

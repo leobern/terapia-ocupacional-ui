@@ -1,0 +1,61 @@
+@use '../../shared/styles/breakpoints';
+@use '../../shared/styles/tokens';
+@use '../../shared/styles/typography';
+
+@mixin page {
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$space-16;
+  padding: tokens.$space-8 0 tokens.$space-24;
+
+  @include breakpoints.md {
+    padding: tokens.$space-24 var(--layout-page-margin, 32px);
+  }
+}
+
+@mixin card {
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$space-16;
+  padding: tokens.$space-16;
+  border: 1px solid tokens.c(border);
+  border-radius: tokens.$radius-md;
+  background: tokens.c(surface);
+
+  @include breakpoints.md {
+    padding: tokens.$space-24;
+  }
+}
+
+@mixin field-input {
+  min-height: 48px;
+  padding: 0 tokens.$space-16;
+  border: 1px solid tokens.c(border-2);
+  border-radius: tokens.$radius-sm;
+  background: tokens.c(surface);
+  color: tokens.c(content-1);
+
+  @include typography.body-md;
+
+  &:focus-visible {
+    outline: 2px solid tokens.c(focus-ring);
+    outline-offset: 2px;
+  }
+}
+
+@mixin chip($selected: false) {
+  min-height: 40px;
+  padding: 0 tokens.$space-16;
+  border: 1.5px solid tokens.c(secondary);
+  border-radius: tokens.$radius-pill;
+  background: transparent;
+  color: tokens.c(content-1);
+  cursor: pointer;
+
+  @include typography.label-md;
+
+  &[aria-pressed='true'] {
+    background: tokens.c(secondary);
+    color: tokens.c(content-6);
+  }
+}

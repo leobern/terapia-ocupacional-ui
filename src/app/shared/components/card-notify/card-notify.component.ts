@@ -1,4 +1,17 @@
-import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
+import {
+  afterNextRender,
+  afterRenderEffect,
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  DestroyRef,
+  ElementRef,
+  inject,
+  input,
+  output,
+  signal,
+  viewChild,
+} from '@angular/core';
 
 import { PhIconComponent } from '../../icons/ph-icon/ph-icon.component';
 import { AvatarComponent, AvatarType } from '../avatar/avatar.component';
@@ -51,6 +64,8 @@ export class CardNotifyComponent {
   readonly actionDisabled = input<boolean>(false);
   /** Quando falso, o indicador de resolução não é oferecido (quem não participa da thread). */
   readonly canResolve = input<boolean>(true);
+  /** Só leitura (ex.: Últimas interações de uma pessoa): sem responder nem resolver. */
+  readonly readOnly = input<boolean>(false);
   /** Indicador de resolução visível porém indisponível (ex.: sem conexão). */
   readonly resolveDisabled = input<boolean>(false);
 
@@ -101,6 +116,11 @@ export class CardNotifyComponent {
   /** Áudio gravado no campo de resposta: o consumidor transcreve e devolve o texto em `draftText`. */
   readonly audioSend = output<Blob>();
 
+  /** Texto completo aberto por "Exibir mais" (só no card da tela de Notificações; na Home o texto segue em 2 linhas). */
+  protected readonly descriptionOpen = signal(false);
+  /** O texto passa de 3 linhas e está cortado com reticências: só então aparece "Exibir mais". */
+  protected readonly truncated = signal(false);
+
   protected readonly isResume = computed(() => this.type() === 'resume');
   protected readonly isDetail = computed(() => this.type() === 'detail');
   protected readonly isAnswerOpen = computed(() => this.type() === 'answer-open');
@@ -112,8 +132,12 @@ export class CardNotifyComponent {
   // respostas abertas. A resolvida mantém só o responder (o servidor a reabre ao receber a resposta);
   // não tem o Resolver. Variação ainda sem desenho próprio no Figma.
   // Figma v2/NotificationThread: o Resolver fica no cabeçalho de todo card pendente (não-Home).
-  protected readonly showResolveButton = computed(() => !this.isResume() && !this.resolved() && this.canResolve());
-  protected readonly showActionButton = computed(() => this.isDetail() || this.isAnswerOpen() || this.isDraft());
+  protected readonly showResolveButton = computed(
+    () => !this.isResume() && !this.resolved() && this.canResolve() && !this.readOnly(),
+  );
+  protected readonly showActionButton = computed(
+    () => (this.isDetail() || this.isAnswerOpen() || this.isDraft()) && !this.readOnly(),
+  );
   protected readonly repliesLabel = computed(() => {
     const total = this.replies().length;
 
@@ -123,6 +147,34 @@ export class CardNotifyComponent {
 
   protected readonly avatarType = computed<AvatarType>(() => (this.authorPhotoUrl() ? 'photo' : 'user'));
   protected readonly draftAvatarType = computed<AvatarType>(() => (this.draftAuthorPhotoUrl() ? 'photo' : 'user'));
+
+  private readonly descriptionElement = viewChild<ElementRef<HTMLElement>>('descriptionElement');
+
+  constructor() {
+    const destroyRef = inject(DestroyRef);
+
+    // Mede se o texto está cortado: ao mudar o texto, depois de renderizar e quando a largura do card muda.
+    afterRenderEffect(() => {
+      this.description();
+      this.descriptionOpen();
+      this.measureTruncation();
+    });
+    afterNextRender(() => {
+      const element = this.descriptionElement()?.nativeElement;
+
+      if (element && typeof ResizeObserver !== 'undefined') {
+        const observer = new ResizeObserver(() => this.measureTruncation());
+
+        observer.observe(element);
+        destroyRef.onDestroy(() => observer.disconnect());
+      }
+    });
+  }
+
+  protected onToggleDescription(event: Event): void {
+    event.stopPropagation();
+    this.descriptionOpen.update(open => !open);
+  }
 
   protected onCardClick(): void {
     if (this.isAnswering()) {
@@ -157,5 +209,13 @@ export class CardNotifyComponent {
   protected onCollapseClick(event: Event): void {
     event.stopPropagation();
     this.collapseClick.emit();
+  }
+
+  private measureTruncation(): void {
+    const element = this.descriptionElement()?.nativeElement;
+
+    if (element && !this.descriptionOpen()) {
+      this.truncated.set(element.scrollHeight > element.clientHeight + 1);
+    }
   }
 }

@@ -78,14 +78,22 @@
       <ng-content select="[bottomSheetContent]" />
     </div>
 
-    @if (hasShortcuts()) {
+    @if (showActionsBar()) {
       <div class="bottom-sheet__actions">
         @for (shortcut of visibleShortcuts(); track shortcut.id) {
           <app-tip
             class="bottom-sheet__shortcut"
             [label]="shortcut.label"
+            [primary]="shortcut.primary ?? false"
             (click)="onShortcut(shortcut)"
           />
+        }
+        @if (hint()) {
+          <span
+            class="bottom-sheet__hint"
+            [class.bottom-sheet__hint--visible]="hintVisible()"
+            >{{ hint() }}</span
+          >
         }
       </div>
     }
