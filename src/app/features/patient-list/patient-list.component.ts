@@ -28,6 +28,7 @@ import { AiAssistantService } from '../../shared/services/ai-assistant.service';
 import { ConnectivityService } from '../../shared/services/connectivity.service';
 import { type ScreenAction, ScreenActionsService } from '../../shared/services/screen-actions.service';
 import { PATIENTS_CONTEXT } from '../../shared/services/screen-contexts';
+import { formatDayShortYear } from '../../shared/utils/br-date';
 import { ClosurePatient, FollowUpClosureSheetComponent } from '../follow-up-closure/follow-up-closure-sheet.component';
 import { HospitalContextService } from '../home/hospital-context.service';
 import { UnreadNotificationsReader } from '../home/unread-notifications-reader';
@@ -87,10 +88,6 @@ export interface DateHits {
 
 /** Quantos dias para trás a busca procura (a partir de hoje). */
 export const SEARCH_WINDOW_DAYS = 30;
-
-function dateLabel(day: Date): string {
-  return day.toLocaleDateString('pt-BR');
-}
 
 function matchesTerm(p: PatientCard, term: string): boolean {
   return normalize(`${p.name} ${p.ward} ${p.bed} leito ${p.ward} leito ${p.bed}`).includes(term);
@@ -227,6 +224,8 @@ export class PatientListComponent implements OnInit {
   readonly closureTarget = signal<ClosurePatient | null>(null);
   /** Larguras das colunas (V1: só nesta sessão; a persistência por usuário fica para a V2 com o perfil). */
   readonly widths = signal<Readonly<Record<ColumnKey, number>>>(DEFAULT_WIDTHS);
+  /** Largura fixada da coluna da seta depois do 1º arrasto (a tabela também estica essa coluna); `null` = a padrão. */
+  readonly actionWidth = signal<number | null>(null);
   readonly resizing = signal<ColumnKey | null>(null);
   /** Botão de ajustar: só aparece quando as colunas precisam de ajuste (usuário mexeu ou há rolagem). */
   readonly fitState = signal<'needs' | 'fitted'>('fitted');
@@ -559,7 +558,11 @@ export class PatientListComponent implements OnInit {
           seen.add(p.id);
         }
         if (found.length > 0) {
-          hits.push({ day, label: isSameDay(day, this.today) ? 'Hoje' : `Data ${dateLabel(day)}`, patients: found });
+          hits.push({
+            day,
+            label: isSameDay(day, this.today) ? 'Hoje' : `Data ${formatDayShortYear(day)}`,
+            patients: found,
+          });
         }
       });
     } catch {
@@ -614,9 +617,22 @@ export class PatientListComponent implements OnInit {
   startResize(event: PointerEvent, key: ColumnKey): void {
     const handle = event.currentTarget as HTMLElement;
     const startX = event.clientX;
-    // A alça fica na borda esquerda do cabeçalho seguinte: a coluna ajustada é a anterior.
-    const startWidth =
-      handle.closest('th')?.previousElementSibling?.getBoundingClientRect().width ?? this.widths()[key];
+    // O que se vê é a largura renderizada: a tabela estica as colunas até preencher o card (`width: 100%`), então ela é
+    // maior que a guardada. Sem fixar isso antes, o primeiro movimento trocava as larguras guardadas pelas renderizadas e
+    // a tabela inteira dava um salto (maior quanto mais larga a tela). Aqui todas as colunas passam a valer o que se vê.
+    const headers = Array.from(handle.closest('tr')?.children ?? []);
+    const rendered = { ...this.widths() };
+
+    COLUMN_ORDER.forEach((column, index) => {
+      const width = headers.at(index)?.getBoundingClientRect().width ?? 0;
+
+      if (width > 0) {
+        rendered[column] = width;
+      }
+    });
+    this.widths.set(rendered);
+    this.actionWidth.set(headers.at(COLUMN_ORDER.length)?.getBoundingClientRect().width || null);
+    const startWidth = rendered[key];
 
     event.preventDefault();
     event.stopPropagation();
@@ -643,6 +659,7 @@ export class PatientListComponent implements OnInit {
    * mínimo cabem, todas ficam no mínimo e a rolagem horizontal continua.
    */
   fitColumns(): void {
+    this.actionWidth.set(null);
     const card = this.tableCard()?.nativeElement;
     const available = (card?.clientWidth ?? 0) - ACTION_COLUMN_WIDTH;
     const current = DEFAULT_WIDTHS;
@@ -686,7 +703,7 @@ export class PatientListComponent implements OnInit {
     event.preventDefault();
   }
 
-  /** Cadastro pertence à FT-002-1: o botão abre o mesmo cadastro (formulário em painel) dos Atalhos. */
+  /** Cadastro pertence à FT-002-1: abre no painel a mesma conversa do atalho "Cadastrar paciente" (FR-027). */
   registerPatient(): void {
     this.aiAssistant.openAction(this.patientRegistration.build());
   }

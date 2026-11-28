@@ -1,5 +1,6 @@
 @use '../../styles/breakpoints';
 @use '../../styles/tokens';
+@use '../../styles/typography';
 
 // -----------------------------------------------------------------------------
 // DS-component-bottom-sheet — nó Figma `4412:5973`.
@@ -370,5 +371,29 @@ $ease-sheet: cubic-bezier(0.32, 0.72, 0, 1);
   .bottom-sheet__footer {
     padding: var(--space-16) var(--space-16)
       calc(var(--space-16) + env(safe-area-inset-bottom));
+  }
+}
+
+// Dica à direita da faixa de atalhos (acima do campo de mensagem): entra de baixo para cima, alinhada à direita do campo.
+.bottom-sheet__hint {
+  align-self: flex-end;
+  margin-inline-start: auto;
+  color: var(--color-content-2);
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(8px);
+  transition:
+    opacity 0.4s ease,
+    transform 0.4s ease;
+
+  @include typography.chat-hint;
+
+  &--visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    transition: none;
   }
 }

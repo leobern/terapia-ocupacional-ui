@@ -133,9 +133,16 @@ describe('TeamListComponent', () => {
     expect(el.textContent).toContain('Ninguém encontrado');
   });
 
+  it('o botão Hospitais leva à administração de hospitais', async () => {
+    await open();
+    (el.querySelectorAll('app-page-header app-button button')[0] as HTMLElement).click();
+
+    expect(navigate).toHaveBeenCalledWith(['/hospitals']);
+  });
+
   it('abre o painel de convite pelo botão do cabeçalho', async () => {
     await open();
-    (el.querySelector('app-page-header app-button') as HTMLElement).click();
+    (el.querySelectorAll('app-page-header app-button button')[1] as HTMLElement).click();
     fixture.detectChanges();
 
     expect(el.querySelector('app-invite-panel app-side-panel .side-panel')).not.toBeNull();

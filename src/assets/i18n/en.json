@@ -72,9 +72,11 @@
     "biometricFailed": "Biometrics were not recognized. Try again.",
     "message": "For your security, the app was locked after 30 minutes of inactivity.",
     "passwordError": "Incorrect password. Try again.",
-    "passwordLabel": "Account password",
+    "passwordLabel": "Password",
     "passwordLocked": "Too many attempts. Try again later.",
+    "passwordMessage": "For security, we lock the app after it has been idle for a while. Enter your password to continue.",
     "passwordUnavailable": "No connection. Connect to unlock with your account password.",
+    "signOut": "Sign out",
     "title": "App locked",
     "unlock": "Unlock",
     "useBiometric": "Use biometrics"
@@ -245,6 +247,10 @@
       "yes": "Yes, it is the same patient",
       "yesThis": "Yes, it is this patient"
     },
+    "extras": {
+      "no": "Não, seguir",
+      "yes": "Sim, quero informar"
+    },
     "locationKind": {
       "ALA": "Ward",
       "UNIDADE": "Unit"
@@ -272,14 +278,19 @@
       "locationNotInformed": "That location was not provided.",
       "locationTooLong": "The location value must have at most 100 characters.",
       "locationTypeRepeated": "That type was already provided. Select the other type.",
-      "sameTooLong": "The medical record number must have at most 30 characters."
+      "sameTooLong": "The medical record number must have at most 30 characters.",
+      "saveChoice": "Toque em Salvar para concluir o cadastro."
     },
+    "moreData": "Informar mais dados",
     "prompts": {
       "addLocation": "Do you want to add a Unit and/or Ward to the admission?",
       "admissionNumber": "What is the admission number? (optional)",
       "admit": "Do you want to admit the patient now?",
       "bedNumber": "What is the patient's bed? (optional)",
       "birthDate": "What is the date of birth? (dd/mm/yyyy)",
+      "confirmSave": "Tudo pronto. Confira os dados abaixo: posso salvar o cadastro do paciente?",
+      "extrasAdmission": "Tem alguma informação adicional sobre o paciente? Posso registrar:\n• SAME (número do prontuário)\n• Leito\n• Convênio\n• Número de atendimento\n• Data de internação hospitalar\n• Data de início da terapia nutricional\n• Unidade e/ou ala\nQuer informar algum desses?",
+      "extrasBasic": "Tem alguma informação adicional sobre o paciente? Posso registrar o SAME (número do prontuário). Quer informar?",
       "fullName": "Tell me the patient's full name",
       "healthInsurance": "What is the health insurance? (optional)",
       "hospitalAdmissionDate": "What is the hospital admission date? (dd/mm/yyyy, optional)",
@@ -294,13 +305,30 @@
       "nutritionalTherapyStartDate": "What is the nutritional therapy start date? (dd/mm/yyyy, optional)",
       "sex": "What is the patient's sex?"
     },
+    "save": "Salvar",
+    "savePatient": "Salvar paciente",
     "sex": {
       "FEMALE": "Female",
       "MALE": "Male",
       "NOT_INFORMED": "Not informed"
     },
     "skip": "Skip",
-    "title": "Register patient"
+    "summary": {
+      "admissionNumber": "Nº de atendimento",
+      "admit": "Internar agora",
+      "bedNumber": "Leito",
+      "birthDate": "Nascimento",
+      "fullName": "Nome",
+      "healthInsurance": "Convênio",
+      "hospitalAdmissionDate": "Data de internação",
+      "locations": "Localização",
+      "medicalRecordNumber": "SAME",
+      "nutritionalTherapyStartDate": "Início da terapia nutricional",
+      "sex": "Sexo",
+      "title": "Dados do paciente"
+    },
+    "title": "Register patient",
+    "today": "Hoje"
   },
   "session": {
     "expired": "Your session has expired. Please sign in again."

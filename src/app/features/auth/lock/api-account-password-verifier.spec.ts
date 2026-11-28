@@ -77,9 +77,12 @@ describe('ApiAccountPasswordVerifier', () => {
     expect(login).not.toHaveBeenCalled();
   });
 
-  it('perfil com MFA: a senha sozinha não reabre a sessão (indisponível)', async () => {
+  it('perfil com MFA: a senha aceita destrava sem trocar a sessão (opção A)', async () => {
     login.and.resolveTo({ challenge: 'd', kind: 'mfa-required', setupRequired: false } satisfies LoginResult);
+    const before = store.accessToken();
 
-    expect(await verifier.verify('x')).toBe('unavailable');
+    expect(await verifier.verify('x')).toBe('ok');
+    expect(store.accessToken()).toBe(before);
+    expect(revokeToken).not.toHaveBeenCalled();
   });
 });

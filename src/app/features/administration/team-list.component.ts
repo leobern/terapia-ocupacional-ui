@@ -72,6 +72,10 @@ export class TeamListComponent implements OnInit {
     this.search.set((event.target as HTMLInputElement).value);
   }
 
+  openHospitals(): void {
+    void this.router.navigate(['/hospitals']);
+  }
+
   open(member: TeamMember): void {
     if (member.usuarioId !== null) {
       void this.router.navigate(['/team', member.usuarioId]);

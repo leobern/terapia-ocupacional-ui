@@ -50,7 +50,7 @@
   </div>
 
   <nav class="nav-menu__links" aria-label="Navegação principal">
-    @for (item of visibleItems(); track item.key) {
+    @for (item of items; track item.key) {
       <button
         type="button"
         class="nav-menu__link"

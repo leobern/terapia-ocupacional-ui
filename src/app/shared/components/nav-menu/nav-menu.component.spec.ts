@@ -38,12 +38,11 @@ describe('NavMenuComponent', () => {
     fixture.detectChanges();
   });
 
-  it('renders the 7 navigation items with the expected icons, all in "regular" weight and 24px', () => {
+  it('renders the navigation items in order (Home, Pacientes, Farmácia, Tutorial, Hospitais, Equipe) with the expected icons, all in "regular" weight and 24px', () => {
     const expected: { label: string; icon: string }[] = [
       { icon: 'house', label: 'Home' },
       { icon: 'users-three', label: 'Pacientes' },
       { icon: 'pill', label: 'Farmácia' },
-      { icon: 'link', label: 'Vínculos' },
       { icon: 'graduation-cap', label: 'Tutorial' },
       { icon: 'hospital', label: 'Hospitais' },
       { icon: 'identification-badge', label: 'Equipe' },
@@ -51,7 +50,7 @@ describe('NavMenuComponent', () => {
 
     const links = navLinks();
 
-    expect(links.length).toBe(7);
+    expect(links.length).toBe(6);
 
     expected.forEach(({ label, icon }) => {
       const link = linkByLabel(label);
@@ -77,7 +76,7 @@ describe('NavMenuComponent', () => {
     expect(iconDebugEl?.componentInstance.size()).toBe(24);
   });
 
-  it('wraps the 5 navigation items in a <nav aria-label="Navegação principal">, excluding logout', () => {
+  it('wraps the navigation items in a <nav aria-label="Navegação principal">, excluding logout', () => {
     const nav = fixture.nativeElement.querySelector('nav.nav-menu__links');
 
     expect(nav.getAttribute('aria-label')).toBe('Navegação principal');
@@ -86,12 +85,11 @@ describe('NavMenuComponent', () => {
 
   const clickCases: { label: string; output: keyof NavMenuComponent }[] = [
     { label: 'Home', output: 'homeClick' },
-    { label: 'Hospitais', output: 'hospitaisClick' },
-    { label: 'Equipe', output: 'equipeClick' },
     { label: 'Farmácia', output: 'farmaciaClick' },
     { label: 'Pacientes', output: 'pacientesClick' },
-    { label: 'Vínculos', output: 'vinculosClick' },
+    { label: 'Hospitais', output: 'vinculosClick' },
     { label: 'Tutorial', output: 'tutorialClick' },
+    { label: 'Equipe', output: 'equipeClick' },
   ];
 
   for (const { label, output } of clickCases) {
@@ -104,6 +102,15 @@ describe('NavMenuComponent', () => {
       expect(clickHandler).toHaveBeenCalledWith(undefined);
     });
   }
+
+  it('o avatar do usuário emite profileClick', () => {
+    const profileClick = jasmine.createSpy('profileClick');
+
+    fixture.componentInstance.profileClick.subscribe(profileClick);
+    (fixture.nativeElement.querySelector('.nav-menu__profile') as HTMLButtonElement).click();
+
+    expect(profileClick).toHaveBeenCalledWith(undefined);
+  });
 
   it('emits logoutClick when "Sair" is clicked', () => {
     const logoutClick = jasmine.createSpy('logoutClick');
@@ -126,7 +133,7 @@ describe('NavMenuComponent', () => {
     it('suprime o hover após clicar num item e volta quando o mouse sai do trilho', () => {
       const host = fixture.nativeElement as HTMLElement;
 
-      linkByLabel('Hospitais').click();
+      linkByLabel('Home').click();
       fixture.detectChanges();
 
       expect(host.classList).toContain('nav-menu--suppressed');
@@ -145,7 +152,7 @@ describe('NavMenuComponent', () => {
 
     it('não recolhe no mobile/tablet (menu controlado pelo consumidor)', () => {
       setDesktop(false);
-      linkByLabel('Hospitais').click();
+      linkByLabel('Home').click();
       fixture.detectChanges();
 
       expect((fixture.nativeElement as HTMLElement).classList).not.toContain('nav-menu--suppressed');
@@ -271,23 +278,6 @@ describe('NavMenuComponent', () => {
 
     it('lists Home as the first navigation item', () => {
       expect(navLinks()[0].textContent).toContain('Home');
-    });
-
-    it('esconde os itens que o perfil não vê (hiddenItems)', () => {
-      fixture.componentRef.setInput('hiddenItems', ['hospitais', 'equipe']);
-      fixture.detectChanges();
-
-      expect(navLinks().map(l => l.textContent?.trim())).not.toContain('Equipe');
-      expect(navLinks().length).toBe(5);
-    });
-
-    it('o avatar do usuário emite profileClick', () => {
-      const profileClick = jasmine.createSpy('profileClick');
-
-      fixture.componentInstance.profileClick.subscribe(profileClick);
-      (fixture.nativeElement.querySelector('.nav-menu__profile') as HTMLButtonElement).click();
-
-      expect(profileClick).toHaveBeenCalledWith(undefined);
     });
 
     it('tocar no fundo escurecido fecha o menu', () => {

@@ -537,7 +537,7 @@ describe('PlanSectionComponent', () => {
 
       expect(flagEls().length).toBe(1);
       expect(flagEls()[0].textContent).toContain('Liberar dieta por via oral');
-      expect(flagEls()[0].textContent).toContain('Dra. Ana · 20/11/2026');
+      expect(flagEls()[0].textContent).toContain('Dra. Ana · 20/11/26');
       expect(area()?.value).toBe('');
     });
 

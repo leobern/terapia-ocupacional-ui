@@ -20,14 +20,19 @@
   // centralizados na MESMA linha (Thiago, 2026-11-24).
   @include breakpoints.md {
     min-height: var(--header-band-height);
-    padding: 0 0 0 tokens.$space-16;
+    // Figma 4690:24435 (2026-11-27): a faixa de 56px ganha 16px em cima e embaixo (cabeçalho de 88px).
+    padding: tokens.$space-16 0 tokens.$space-16 tokens.$space-16;
+    // O centro do cabeçalho fica na linha da logo do menu (y=52 com 24px de respiro da página): sobe os 16px do padding de
+    // cima, então o conteúdo seguinte começa 16px mais acima que no Figma (Thiago, 2026-11-27: alinhar com a logo).
+    margin-top: calc(-1 * #{tokens.$space-16});
   }
 }
 
 :host(.page-header--back) .page-header {
   // Desktop, tela interna (Figma v2/PageHeader, 4722:10983): sem recuo à esquerda (o voltar alinha com o conteúdo).
   @include breakpoints.md {
-    padding: 0;
+    padding: tokens.$space-16 0;
+    margin-top: calc(-1 * #{tokens.$space-16});
   }
 }
 
@@ -83,6 +88,11 @@
   flex-direction: column;
   gap: tokens.$space-4;
   min-width: 0;
+
+  // Figma 4690:24437: título de 40 + subtítulo de 16, sem folga (56px).
+  @include breakpoints.md {
+    gap: 0;
+  }
 }
 
 .page-header__title {
@@ -93,6 +103,11 @@
   color: tokens.c(content-1);
 
   @include typography.headline;
+
+  // Figma 4690:24438: a linha do título tem 40px (ícone de 40), mais o subtítulo de 16 = 56px de conteúdo.
+  @include breakpoints.md {
+    min-height: tokens.$control-height-md;
+  }
 
   ph-icon {
     flex-shrink: 0;

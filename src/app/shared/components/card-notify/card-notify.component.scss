@@ -121,6 +121,17 @@
   }
 }
 
+// --- texto central (Figma 4851:28470: subtítulo + descrição, gap 4 e 8px de recuo lateral) -------------------------
+.card-notify__body {
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$space-4;
+}
+
+.card-notify--expanded .card-notify__body {
+  padding-inline: tokens.$space-8;
+}
+
 // --- tipo do conteúdo (texto, nunca só cor) ---------------------------------------
 .card-notify__kind {
   display: flex;
@@ -129,7 +140,7 @@
 }
 
 .card-notify__kind-label {
-  color: tokens.c(content-4);
+  color: tokens.c(content-5);
 
   @include typography.label-sm;
 
@@ -186,6 +197,37 @@
   -webkit-line-clamp: 2;
 }
 
+// Tela de Notificações: o texto fecha em até 3 linhas (com reticências) e a altura do card acompanha o texto (uma
+// frase = uma linha; Thiago, 2026-11-27): os cards têm alturas diferentes e se arrumam em mosaico. "Exibir mais" abre
+// o texto todo e o card cresce.
+.card-notify--expanded:not(.card-notify--description-open)
+  .card-notify__description {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+}
+
+.card-notify__more {
+  align-self: flex-start;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: tokens.c(secondary);
+  cursor: pointer;
+
+  @include typography.label-md;
+
+  &:hover {
+    text-decoration: underline;
+  }
+
+  // Sem corte não há o que expandir: o botão some e não ocupa linha.
+  &--hidden {
+    display: none;
+  }
+}
+
 .card-notify__description--placeholder {
   color: tokens.c(content-4);
 }
@@ -225,9 +267,8 @@
 
 // State=write: o bloco do campo de resposta ganha contorno (border-2) e o campo cai dentro dele.
 .card-notify__reply--writing {
-  // Figma 4722:10991: o bloco de escrita é só contorno, SEM fundo (o card aparece por trás).
-  background: transparent;
-  border: 1px solid tokens.c(border-2);
+  // Figma 4690:24387 (State=write): o bloco de escrita tem o fundo surface-2 (como as respostas), 12px de recuo e raio
+  // 16; o contorno é só do campo de mensagem (border-2, fundo surface).
 
   // Figma Frame 10: o aviso de rascunho/erro tem 16px de recuo lateral, alinhado ao texto do campo.
   .card-notify__draft-label,

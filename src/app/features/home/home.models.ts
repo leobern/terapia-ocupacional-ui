@@ -31,6 +31,8 @@ export interface HomeNotification {
   description: string;
   createdAt: string;
   read: boolean;
+  /** Preenchido quando a notificação já foi resolvida: a Home não a mostra. */
+  resolvedAt?: string | null;
 }
 
 export interface NotificationPage {

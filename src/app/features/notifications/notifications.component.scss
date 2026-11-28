@@ -84,6 +84,8 @@
   grid-template-columns: minmax(0, 1fr);
   gap: tokens.$space-16;
   align-items: start;
+  // Mede a largura do próprio espaço (não da janela): com a sidebar aberta a lista cai para 2 colunas.
+  container-type: inline-size;
   padding-bottom: calc(var(--bottom-nav-bar-height) + #{tokens.$space-16});
 
   @include breakpoints.md {
@@ -104,6 +106,9 @@
 
   @include breakpoints.md {
     height: 100%;
+    // O destaque do card aberto (outline de 4px) cabe dentro do scroll: sem folga ele era cortado nas bordas.
+    margin: -#{tokens.$space-4} 0 0 -#{tokens.$space-4};
+    padding: tokens.$space-4 0 0 tokens.$space-4;
     overflow-y: auto;
     // A barra de rolagem fica a 4px do card (esta folga) e só aparece enquanto se rola (`appScrollReveal`).
     padding-bottom: tokens.$space-32;
@@ -127,6 +132,36 @@
       margin-top: tokens.$space-8;
     }
   }
+}
+
+// Cards de uma seção: 1 coluna; em espaço largo (Thiago, 2026-11-27) viram 4 colunas no total (2 de Pendentes e 2 de
+// Resolvidas) num mosaico estilo Pinterest (colunas CSS): ao abrir "Exibir mais" o card cresce e os outros se rearranjam.
+.notifications__cards {
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$space-16;
+}
+
+@container (min-width: 1440px) {
+  .notifications__cards {
+    display: block;
+    column-count: 2;
+    column-gap: tokens.$space-16;
+
+    > * {
+      display: block;
+      margin-bottom: tokens.$space-16;
+      break-inside: avoid;
+    }
+  }
+}
+
+// Card aberto por `?abrir=<id>`: contorno azul (interação) por alguns segundos.
+.notifications__card--highlight {
+  display: block;
+  border-radius: tokens.$radius-md;
+  outline: 4px solid tokens.c(secondary);
+  outline-offset: 0;
 }
 
 // Título da seção: 16px de respiro lateral e mais perto do primeiro card (8px).

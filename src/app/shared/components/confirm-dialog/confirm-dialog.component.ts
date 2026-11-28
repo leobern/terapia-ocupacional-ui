@@ -1,4 +1,16 @@
-import { ChangeDetectionStrategy, Component, effect, type ElementRef, input, output, viewChild } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  DestroyRef,
+  effect,
+  type ElementRef,
+  inject,
+  input,
+  output,
+  signal,
+  viewChild,
+} from '@angular/core';
 
 import { ButtonComponent } from '../button/button.component';
 
@@ -31,9 +43,19 @@ export class ConfirmDialogComponent {
   readonly confirmed = output();
   readonly cancelled = output();
 
+  /** Figma v2/Dialog Type=Mobile: abaixo de 672px as ações viram lg, 100% e uma sob a outra. */
+  protected readonly mobile = signal(false);
+  protected readonly buttonSize = computed(() => (this.mobile() ? 'lg' : 'md'));
+
   private readonly scrim = viewChild<ElementRef<HTMLElement>>('scrim');
 
   constructor() {
+    const query = window.matchMedia('(max-width: 671px)');
+    const update = (): void => this.mobile.set(query.matches);
+
+    update();
+    query.addEventListener('change', update);
+    inject(DestroyRef).onDestroy(() => query.removeEventListener('change', update));
     // Vai para a camada superior do navegador (popover): fica acima de tudo, mesmo aberto de dentro do sidebar.
     effect(() => {
       const element = this.scrim()?.nativeElement;

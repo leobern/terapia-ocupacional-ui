@@ -25,7 +25,7 @@ import { IconLogoButtonComponent } from '../icon-logo/icon-logo-button.component
 import { UserAvatarComponent } from '../user-avatar/user-avatar.component';
 
 /** Mapeia as 6 chaves fixas dos itens de navegação (spec.md § Clarifications + Home). */
-export type NavMenuItemKey = 'home' | 'farmacia' | 'pacientes' | 'tutorial' | 'vinculos' | 'hospitais' | 'equipe';
+export type NavMenuItemKey = 'home' | 'farmacia' | 'pacientes' | 'tutorial' | 'vinculos' | 'equipe';
 
 interface NavMenuItem {
   readonly key: NavMenuItemKey;
@@ -75,6 +75,11 @@ const ROLE_LABELS: Readonly<Record<string, string>> = {
   [Role.TERAPEUTA]: 'Terapeuta',
 };
 
+/** Equipe (Administração): só ADMIN e GESTOR; sem sessão (desenvolvimento) também aparece. O backend autoriza de fato. */
+function canSeeTeam(role: Role | null): boolean {
+  return role === null || role === Role.ADMIN || role === Role.GESTOR;
+}
+
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
@@ -90,8 +95,6 @@ export class NavMenuComponent {
   readonly activeItem = input<NavMenuItemKey | null>(null);
   /** Itens sem acesso para o perfil atual: ficam desabilitados (ex.: Farmácia só para o gestor). */
   readonly disabledItems = input<readonly NavMenuItemKey[]>([]);
-  /** Itens que o perfil atual nem vê (Hospitais e Equipe só para ADMIN/GESTOR; Vínculos só para os demais). */
-  readonly hiddenItems = input<readonly NavMenuItemKey[]>([]);
 
   /** Controlado pelo consumidor — só tem efeito visual abaixo de `md` (ver docblock). */
   readonly open = input<boolean>(false);
@@ -104,7 +107,6 @@ export class NavMenuComponent {
   readonly pacientesClick = output();
   readonly tutorialClick = output();
   readonly vinculosClick = output();
-  readonly hospitaisClick = output();
   readonly equipeClick = output();
   /** Foto/nome do usuário: abre o perfil. */
   readonly profileClick = output();
@@ -133,19 +135,19 @@ export class NavMenuComponent {
 
   // Ordem e ícones do Figma 4741:11339 (v2/NavRail). Ícones em peso "regular"; o item ativo é SÓLIDO ("fill").
   // Única exceção fixa: o ícone de Sair (template) é sempre bold, aberto ou fechado (CLAUDE.md).
+  // Ordem (Thiago, 2026-11-27): Home, Pacientes, Farmácia, Tutorial, Hospitais e Equipe. Equipe é da Administração:
+  // só ADMIN e GESTOR (ou sem sessão, nos testes de desenvolvimento); o backend é quem autoriza de fato.
   protected readonly items: readonly NavMenuItem[] = [
-    // Ordem final (Thiago, 2026-11-27): Home, Pacientes, Farmácia, Tutorial, Hospitais, Equipe. Hospitais e Equipe
-    // são da Administração (só ADMIN/GESTOR); Vínculos (US-001-2-02) fica para quem não administra.
     { icon: 'house', key: 'home', label: 'Home' },
     { icon: 'users-three', key: 'pacientes', label: 'Pacientes' },
     { icon: 'pill', key: 'farmacia', label: 'Farmácia' },
-    { icon: 'link', key: 'vinculos', label: 'Vínculos' },
     { icon: 'graduation-cap', key: 'tutorial', label: 'Tutorial' },
-    { icon: 'hospital', key: 'hospitais', label: 'Hospitais' },
-    { icon: 'identification-badge', key: 'equipe', label: 'Equipe' },
+    // Hospitais = vínculos com hospitais (US-001-2-02, RN03).
+    { icon: 'hospital', key: 'vinculos', label: 'Hospitais' },
+    ...(canSeeTeam(inject(SessionRoleReader, { optional: true })?.read() ?? null)
+      ? [{ icon: 'identification-badge', key: 'equipe', label: 'Equipe' } satisfies NavMenuItem]
+      : []),
   ];
-
-  protected readonly visibleItems = computed(() => this.items.filter(item => !this.hiddenItems().includes(item.key)));
 
   // Anel de foco sistêmico compartilhado por todos os controles clicáveis do
   // menu (logo, 4 itens, Sair) — um único signal booleano funciona porque
@@ -182,9 +184,6 @@ export class NavMenuComponent {
         break;
       case 'vinculos':
         this.vinculosClick.emit();
-        break;
-      case 'hospitais':
-        this.hospitaisClick.emit();
         break;
       case 'equipe':
         this.equipeClick.emit();

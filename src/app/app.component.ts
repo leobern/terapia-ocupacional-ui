@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, effect, inject, Signal, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, Signal, signal, untracked } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { NavigationEnd, Router, RouterOutlet } from '@angular/router';
 import { filter, map } from 'rxjs';
@@ -20,11 +20,15 @@ import {
   type BottomSheetSnap,
   type ChatShortcut,
 } from './shared/components/bottom-sheet/bottom-sheet.component';
+import { ConfirmDialogComponent } from './shared/components/confirm-dialog/confirm-dialog.component';
 import { DrawerComponent, type DrawerSnap } from './shared/components/drawer/drawer.component';
 import { InputChatComponent, type InputChatMode } from './shared/components/input-chat/input-chat.component';
 import { NavMenuComponent, type NavMenuItemKey } from './shared/components/nav-menu/nav-menu.component';
 import { PrivacyOverlayComponent } from './shared/components/privacy-overlay/privacy-overlay.component';
 import { AiAssistantService } from './shared/services/ai-assistant.service';
+import { REGISTER_PATIENT_ACTION_ID } from './shared/services/assistant-action-router';
+import { AssistantConversationService } from './shared/services/assistant-conversation.service';
+import { I18nService } from './shared/services/i18n.service';
 import { ScreenActionsService, type ScreenSuggestion } from './shared/services/screen-actions.service';
 import { ViewportBreakpointService } from './shared/services/viewport-breakpoint.service';
 
@@ -42,12 +46,22 @@ import { ViewportBreakpointService } from './shared/services/viewport-breakpoint
  */
 /** Prefixo do id dos chips que são ações da tela (os outros são perguntas rápidas). */
 const ACTION_SHORTCUT_PREFIX = 'action:';
+/** Chips do cadastro por conversa (opções, "Pular", "Tentar novamente"): ficam acima do campo de mensagem. */
+const CONVERSATION_SHORTCUT_PREFIX = 'conversation:';
+const CONVERSATION_SKIP_ID = CONVERSATION_SHORTCUT_PREFIX + '__skip';
+const CONVERSATION_RETRY_ID = CONVERSATION_SHORTCUT_PREFIX + '__retry';
+const CONVERSATION_JUMP_ID = CONVERSATION_SHORTCUT_PREFIX + '__jump';
+/** Pausa "pensando" antes de cada pergunta da IA no cadastro por conversa. */
+const CONVERSATION_THINKING_MS = 700;
+/** A dica de texto/áudio entra acima do campo de mensagem este tempo depois de cada nova mensagem. */
+const ASSISTANT_HINT_DELAY_MS = 5000;
 /** Quantas ações da tela entram como sugestão sob o botão central da barra inferior. */
 const MAX_NAV_SUGGESTIONS = 3;
 
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
+    ConfirmDialogComponent,
     AssistantContentComponent,
     AssistantHeadingComponent,
     AssistantEditorFooterComponent,
@@ -92,12 +106,6 @@ export class AppComponent {
   protected readonly disabledNavItems = computed<readonly NavMenuItemKey[]>(() =>
     this.roleReader.read() === Role.GESTOR ? [] : ['farmacia'],
   );
-  /** Administração (Hospitais e Equipe) só para ADMIN/GESTOR; quem administra não usa "Vínculos" (US-001-2-02). */
-  protected readonly hiddenNavItems = computed<readonly NavMenuItemKey[]>(() => {
-    const role = this.roleReader.read();
-
-    return role === Role.ADMIN || role === Role.GESTOR ? ['vinculos'] : ['hospitais', 'equipe'];
-  });
 
   protected readonly viewportBreakpoint = inject(ViewportBreakpointService);
   /** Rotas com `data.hideShell` (ex.: splash) ocultam a navegação e o assistente. */
@@ -126,10 +134,6 @@ export class AppComponent {
       return 'vinculos';
     }
 
-    if (url.startsWith('/hospitals')) {
-      return 'hospitais';
-    }
-
     if (url.startsWith('/team')) {
       return 'equipe';
     }
@@ -150,7 +154,7 @@ export class AppComponent {
     }
 
     // Telas de acesso (Figma seção 12) usam o mesmo gradiente da Home, no claro e no escuro.
-    return ['/home', '/login', '/forgot-password', '/reset-password', '/invite', '/mfa'].some(prefix =>
+    return ['/home', '/login', '/forgot-password', '/reset-password', '/invite', '/mfa', '/lock'].some(prefix =>
       url.startsWith(prefix),
     )
       ? 'gradient'
@@ -159,8 +163,39 @@ export class AppComponent {
   protected readonly isNotificationsRoute = computed(() => this.currentUrl().startsWith('/notifications'));
   protected readonly aiSheetSnap = signal<BottomSheetSnap>('default');
   protected readonly aiDrawerSnap = signal<DrawerSnap>('default');
+  /** O usuário recolheu o cadastro (100%) para a meia sidebar: vale até fechar o painel. */
+  protected readonly drawerCollapsedByUser = signal(false);
+  /**
+   * Cadastro por conversa abre direto em 100% (Thiago, 2026-11-27). O encaixe sai já certo na primeira renderização
+   * (sem abrir na meia e depois expandir), para a sidebar entrar flutuando, com animação e sem mexer no layout.
+   */
+  protected readonly drawerSnap = computed<DrawerSnap>(() =>
+    this.aiAssistant.view() === 'conversation' && !this.drawerCollapsedByUser() ? 'expanded' : this.aiDrawerSnap(),
+  );
   protected readonly aiChatValue = signal('');
   protected readonly aiChatMode = signal<InputChatMode>('text');
+
+  /** Cadastro por conversa já iniciado (há resposta do usuário) e ainda não concluído: fechar pede confirmação. */
+  protected readonly registrationInProgress = computed(
+    () =>
+      this.aiAssistant.isOpen() &&
+      this.aiAssistant.view() === 'conversation' &&
+      !this.flow.finished() &&
+      this.flow.messages().some(message => message.role === 'user'),
+  );
+  /** Diálogo "Parar o cadastro?" (fechar a sidebar ou trocar de tela no meio do cadastro). */
+  protected readonly discardOpen = signal(false);
+  /** Texto de apoio acima do campo de mensagem (alinhado à direita), só no chat e no cadastro por conversa. */
+  protected readonly assistantHint = computed(() => {
+    const view = this.aiAssistant.view();
+
+    if (view === 'conversation') {
+      return 'Você também pode responder via áudio.';
+    }
+
+    return view === 'chat' ? 'Você pode conversar comigo via texto ou áudio.' : '';
+  });
+  protected readonly assistantHintVisible = signal(false);
 
   /** Faixa de botões do painel: perguntas rápidas só no chat; as ações da tela aparecem no próprio conteúdo. */
   /** Atalhos: o cabeçalho mostra o título "Atalhos" no lugar do logo (e não há redimensionar). */
@@ -170,7 +205,10 @@ export class AppComponent {
   // resposta já foi exibida (tela A2); continuam durante a busca e no aviso de falha.
   // Os atalhos (tips) da TELA ficam acima do campo de mensagem do chat. Só quando
   // existe o campo de mensagem/áudio: na primeira tela de "Atalhos" (sem campo) os tips ficam no próprio conteúdo.
-  protected readonly shortcuts = computed<readonly ChatShortcut[]>(() => {
+  protected readonly shortcuts = computed((): readonly ChatShortcut[] => {
+    if (this.aiAssistant.view() === 'conversation') {
+      return this.conversationShortcuts();
+    }
     if (this.aiAssistant.view() !== 'chat' || this.aiAssistant.conversation()?.status === 'answered') {
       return [];
     }
@@ -186,6 +224,39 @@ export class AppComponent {
     { id: 'pendencias', label: 'Quais são minhas pendências de hoje?' },
     { id: 'meta-nutricional', label: 'Pacientes fora da meta nutricional' },
   ];
+
+  private readonly flow = inject(AssistantConversationService);
+  private pendingAfterDiscard: (() => void) | null = null;
+  private readonly i18n = inject(I18nService);
+  /**
+   * Cadastro por conversa: as opções da pergunta atual (sexo, sim/não, "Hoje", "Salvar"), o "Pular" e o "Tentar de novo"
+   * viram chips junto do campo de mensagem, não botões de 100% no conteúdo (Thiago, 2026-11-27). Somem enquanto a IA
+   * "pensa" ou envia.
+   */
+  private readonly conversationShortcuts = computed((): readonly ChatShortcut[] => {
+    if (this.flow.thinking() || this.flow.submitting()) {
+      return [];
+    }
+    const chips: ChatShortcut[] = this.flow.options().map(option => ({
+      id: CONVERSATION_SHORTCUT_PREFIX + option.value,
+      label: option.label,
+      primary: option.primary === true,
+    }));
+
+    if (this.flow.canSkip()) {
+      chips.push({ id: CONVERSATION_SKIP_ID, label: this.flow.skipLabel() });
+    }
+    const jump = this.flow.jump();
+
+    if (jump) {
+      chips.push({ id: CONVERSATION_JUMP_ID, label: jump.label });
+    }
+    if (this.flow.canRetry()) {
+      chips.push({ id: CONVERSATION_RETRY_ID, label: this.i18n.t('assistant.conversation.retry') });
+    }
+
+    return chips;
+  });
 
   private readonly roleReader = inject(SessionRoleReader);
   private readonly screenActions = inject(ScreenActionsService);
@@ -205,6 +276,31 @@ export class AppComponent {
   );
 
   constructor() {
+    this.flow.thinkingMs = CONVERSATION_THINKING_MS;
+    // Cadastro de paciente salvo: a sidebar fecha e a tela já navegou para o detalhe do paciente (Thiago, 2026-11-27).
+    effect(() => {
+      const saved =
+        this.aiAssistant.view() === 'conversation' &&
+        this.aiAssistant.activeAction()?.id === REGISTER_PATIENT_ACTION_ID &&
+        this.flow.finished() &&
+        this.flow.messages().at(-1)?.tone === 'success';
+
+      if (saved) {
+        untracked(() => this.aiAssistant.closePanel());
+      }
+    });
+    // A dica some a cada nova mensagem e volta 5s depois, subindo de baixo (Thiago, 2026-11-27).
+    effect(onCleanup => {
+      this.flow.messages();
+      this.aiAssistant.openCount();
+      this.assistantHintVisible.set(false);
+      if (!this.aiAssistant.isOpen() || this.assistantHint() === '') {
+        return;
+      }
+      const timer = setTimeout(() => this.assistantHintVisible.set(true), ASSISTANT_HINT_DELAY_MS);
+
+      onCleanup(() => clearTimeout(timer));
+    });
     // RN-03: toda abertura começa limpa. Qualquer caminho de fechamento (botão, scrim,
     // Esc, arrastar) chega em `isOpen() === false`; a visão/ação já são zeradas pelo
     // serviço, aqui zera o que vive no shell: encaixe e campo de mensagem.
@@ -221,6 +317,7 @@ export class AppComponent {
       if (!this.aiAssistant.isOpen()) {
         this.aiSheetSnap.set('default');
         this.aiDrawerSnap.set('default');
+        this.drawerCollapsedByUser.set(false);
         this.aiChatValue.set('');
         this.aiChatMode.set('text');
       }
@@ -258,6 +355,23 @@ export class AppComponent {
   // public: exercitados diretamente pelo spec (ver `menuOpen`/`aiAssistant` acima).
   /** Chip de sugestão: envia a pergunta ao assistente (mesmo fluxo de digitar). */
   onAiShortcut(shortcut: ChatShortcut): void {
+    if (shortcut.id.startsWith(CONVERSATION_SHORTCUT_PREFIX)) {
+      if (shortcut.id === CONVERSATION_SKIP_ID) {
+        this.flow.skip();
+      } else if (shortcut.id === CONVERSATION_RETRY_ID) {
+        this.flow.retry();
+      } else if (shortcut.id === CONVERSATION_JUMP_ID) {
+        this.flow.jumpToTarget();
+      } else {
+        const option = this.flow.options().find(o => CONVERSATION_SHORTCUT_PREFIX + o.value === shortcut.id);
+
+        if (option) {
+          this.flow.choose(option);
+        }
+      }
+
+      return;
+    }
     if (shortcut.id.startsWith(ACTION_SHORTCUT_PREFIX)) {
       const action = this.screenActions.actions().find(a => ACTION_SHORTCUT_PREFIX + a.id === shortcut.id);
 
@@ -278,48 +392,71 @@ export class AppComponent {
     this.aiAssistant.ask(question);
   }
 
+  protected onDrawerSnapChange(snap: DrawerSnap): void {
+    this.aiDrawerSnap.set(snap);
+    if (this.aiAssistant.view() === 'conversation') {
+      this.drawerCollapsedByUser.set(snap === 'default');
+    }
+  }
+
   // specs/004-notificacoes FR-001/FR-002/research.md §8 — o Menu é global (montado
   // aqui, fora de qualquer feature), então não conhece o hospital em contexto; a
   // tela de Notificações resolve isso sozinha (GET /api/v1/home/hospitals, mesmo
   // default da Home) quando entra sem `hospitalId` na query.
   protected onHomeClick(): void {
     this.menuOpen.set(false);
-    void this.router.navigate(['/home']);
+    this.confirmDiscardThen(() => void this.router.navigate(['/home']));
   }
 
   protected onPacientesClick(): void {
     this.menuOpen.set(false);
-    void this.router.navigate(['/patients']);
+    this.confirmDiscardThen(() => void this.router.navigate(['/patients']));
   }
 
   protected onTutorialClick(): void {
     this.menuOpen.set(false);
-    void this.router.navigate(['/settings/tutorial']);
+    this.confirmDiscardThen(() => void this.router.navigate(['/settings/tutorial']));
   }
 
   protected onVinculosClick(): void {
     this.menuOpen.set(false);
-    void this.router.navigate(['/hospital-links']);
-  }
-
-  protected onHospitaisClick(): void {
-    this.menuOpen.set(false);
-    void this.router.navigate(['/hospitals']);
+    this.confirmDiscardThen(() => void this.router.navigate(['/hospital-links']));
   }
 
   protected onEquipeClick(): void {
     this.menuOpen.set(false);
-    void this.router.navigate(['/team']);
+    this.confirmDiscardThen(() => void this.router.navigate(['/team']));
   }
 
   protected onProfileClick(): void {
     this.menuOpen.set(false);
-    void this.router.navigate(['/profile']);
+    this.confirmDiscardThen(() => void this.router.navigate(['/profile']));
   }
 
   protected onFarmaciaClick(): void {
     this.menuOpen.set(false);
-    void this.router.navigate(['/pharmacy']);
+    this.confirmDiscardThen(() => void this.router.navigate(['/pharmacy']));
+  }
+
+  /** Fechar a sidebar (X, fora, Esc) no meio do cadastro: pergunta antes de perder as respostas. */
+  protected onAssistantCloseBlocked(): void {
+    this.pendingAfterDiscard = null;
+    this.discardOpen.set(true);
+  }
+
+  protected confirmDiscard(): void {
+    const next = this.pendingAfterDiscard;
+
+    this.pendingAfterDiscard = null;
+    this.discardOpen.set(false);
+    this.flow.reset();
+    this.aiAssistant.closePanel();
+    next?.();
+  }
+
+  protected cancelDiscard(): void {
+    this.pendingAfterDiscard = null;
+    this.discardOpen.set(false);
   }
 
   protected requestLogout(): void {
@@ -347,5 +484,19 @@ export class AppComponent {
     this.confirmOpen.set(false);
     // replaceUrl: a rota autenticada atual sai do histórico.
     await this.router.navigateByUrl('/login', { replaceUrl: true });
+  }
+
+  /**
+   * Com um cadastro em andamento, trocar de tela pergunta antes (perde o que já foi respondido); confirmado, fecha a
+   * sidebar e segue para o destino.
+   */
+  private confirmDiscardThen(run: () => void): void {
+    if (this.registrationInProgress()) {
+      this.pendingAfterDiscard = run;
+      this.discardOpen.set(true);
+
+      return;
+    }
+    run();
   }
 }

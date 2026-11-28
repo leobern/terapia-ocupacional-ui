@@ -11,6 +11,11 @@
   @include admin.page;
 }
 
+.team__header-actions {
+  display: flex;
+  gap: tokens.$space-8;
+}
+
 .team__toolbar {
   display: flex;
   flex-direction: column;

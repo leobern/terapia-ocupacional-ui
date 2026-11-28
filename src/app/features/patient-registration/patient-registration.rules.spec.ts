@@ -89,11 +89,46 @@ describe('admission rules (US-002-1-06)', () => {
     expect(validateHospitalAdmissionDate('01/01/2020', today)).toEqual({ value: '2020-01-01' });
     expect(validateHospitalAdmissionDate('25/11/2026', today)).toEqual({ code: 'MSG-08' });
     expect(validateHospitalAdmissionDate('31/02/2026', today)).toEqual({ code: 'invalidDate' });
-    expect(validateHospitalAdmissionDate('ontem', today)).toEqual({ code: 'invalidDate' });
+    expect(validateHospitalAdmissionDate('amanhã', today)).toEqual({ code: 'invalidDate' });
+  });
+
+  it('entende "hoje" e "ontem" sem precisar da IA', () => {
+    expect(validateHospitalAdmissionDate('Hoje', today)).toEqual({ value: '2026-11-24' });
+    expect(validateHospitalAdmissionDate(' ontem ', today)).toEqual({ value: '2026-11-23' });
+    expect(validateNutritionalTherapyStartDate('hoje', today)).toEqual({ value: '2026-11-24' });
   });
 
   it('accepts any valid nutritional therapy start date', () => {
     expect(validateNutritionalTherapyStartDate('25/12/2026')).toEqual({ value: '2026-12-25' });
     expect(validateNutritionalTherapyStartDate('30/02/2026')).toEqual({ code: 'invalidDate' });
+  });
+
+  it('aceita os separadores combinados nas três datas do cadastro', () => {
+    const iso = { value: '2020-06-08' };
+
+    for (const text of ['08/06/2020', '08-06-2020', '08.06.2020', '08 06 2020', '08062020', '8-6-2020']) {
+      expect(validateBirthDate(text, today)).withContext(text).toEqual(iso);
+      expect(validateHospitalAdmissionDate(text, today)).withContext(text).toEqual(iso);
+      expect(validateNutritionalTherapyStartDate(text)).withContext(text).toEqual(iso);
+    }
+  });
+
+  it('internação e início da terapia completam o ano de 2 dígitos com o século atual', () => {
+    const iso = { value: '2026-11-20' };
+
+    for (const text of ['20/11/26', '20-11-26', '20.11.26', '20 11 26', '201126']) {
+      expect(validateHospitalAdmissionDate(text, today)).withContext(text).toEqual(iso);
+      expect(validateNutritionalTherapyStartDate(text, today)).withContext(text).toEqual(iso);
+    }
+
+    expect(validateHospitalAdmissionDate('25/11/26', today)).toEqual({ code: 'MSG-08' });
+    expect(validateHospitalAdmissionDate('31/02/26', today)).toEqual({ code: 'invalidDate' });
+    expect(validateNutritionalTherapyStartDate('20/11/026', today)).toEqual({ code: 'invalidDate' });
+  });
+
+  it('o nascimento continua exigindo o ano com 4 dígitos', () => {
+    for (const text of ['20/11/26', '20-11-45', '201145']) {
+      expect(validateBirthDate(text, today)).withContext(text).toEqual({ code: 'MSG-02' });
+    }
   });
 });

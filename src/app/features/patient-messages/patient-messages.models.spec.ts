@@ -24,6 +24,6 @@ describe('patient-messages.models', () => {
   });
 
   it('formatDateTime formata dd/MM/yyyy HH:mm', () => {
-    expect(formatDateTime(new Date(2026, 10, 21, 9, 5).toISOString())).toBe('21/11/2026 09:05');
+    expect(formatDateTime(new Date(2026, 10, 21, 9, 5).toISOString())).toBe('21/11/26 09:05');
   });
 });

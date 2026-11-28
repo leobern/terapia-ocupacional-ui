@@ -5,12 +5,19 @@
       title="Equipe"
       [subtitle]="subtitle()"
     >
-      <app-button
-        pageHeaderActions
-        size="md"
-        label="+ Convidar pessoa"
-        (click)="inviteOpen.set(true)"
-      />
+      <div pageHeaderActions class="team__header-actions">
+        <app-button
+          size="md"
+          kind="secondary"
+          label="Hospitais"
+          (click)="openHospitals()"
+        />
+        <app-button
+          size="md"
+          label="+ Convidar pessoa"
+          (click)="inviteOpen.set(true)"
+        />
+      </div>
     </app-page-header>
 
     <div class="team__toolbar">

@@ -4,6 +4,7 @@ import {
   Component,
   computed,
   effect,
+  ElementRef,
   inject,
   linkedSignal,
   signal,
@@ -15,7 +16,6 @@ import { PhIconComponent } from '../../icons/ph-icon/ph-icon.component';
 import { AiAssistantService } from '../../services/ai-assistant.service';
 import { AssistantConversationService } from '../../services/assistant-conversation.service';
 import { type AssistantAnswerItem } from '../../services/assistant-query-resolver';
-import { I18nService } from '../../services/i18n.service';
 import { ScreenActionsService, type ScreenContext } from '../../services/screen-actions.service';
 import { AssistantFormComponent } from '../assistant-form/assistant-form.component';
 import { ButtonComponent } from '../button/button.component';
@@ -34,7 +34,7 @@ const ACTION_DESCRIPTIONS = {
 
 /** Linha pequena abaixo da descrição (como "Você também pode enviar via áudio." do Figma). */
 const ACTION_HINTS = {
-  conversation: 'Você também pode responder via áudio.',
+  conversation: '',
   editor: 'Você também pode enviar via áudio.',
   form: 'Você também pode enviar via áudio.',
   unavailable: '',
@@ -46,9 +46,6 @@ const DEFAULT_INTRO: ScreenContext = {
     'Quer tirar uma dúvida, ou quer que eu faça um resumo de todas as suas tarefas do dia? Eu posso fazer praticamente tudo, só me diz o que você precisa?',
   title: 'Como eu posso te ajudar?',
 };
-
-/** Depois que o texto termina de ser escrito, o aviso de texto/áudio aparece com fade após este tempo. */
-export const HINT_DELAY_MS = 2000;
 
 /** Atalhos de pergunta exibidos ao abrir o assistente (lista simples e substituível). */
 /**
@@ -95,10 +92,6 @@ export class AssistantContentComponent {
   protected readonly titleDone = computed(
     () => this.titleDoneKey() !== null && this.titleDoneKey() === this.typingKey(),
   );
-  protected readonly descriptionDone = computed(
-    () => this.descriptionDoneKey() !== null && this.descriptionDoneKey() === this.typingKey(),
-  );
-  protected readonly hintVisible = computed(() => this.hintKey() !== null && this.hintKey() === this.typingKey());
   protected readonly flow = inject(AssistantConversationService);
 
   /** Cadastro (formulário, conversa ou aviso): título e descrição digitados, e só depois surgem os componentes. */
@@ -130,25 +123,22 @@ export class AssistantContentComponent {
     () => this.actionDescDoneKey() !== null && this.actionDescDoneKey() === this.actionKey(),
   );
 
-  private readonly i18n = inject(I18nService);
+  private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly router = inject(Router);
   private readonly titleDoneKey = signal<object | null>(null);
-  private readonly descriptionDoneKey = signal<object | null>(null);
-  private readonly hintKey = signal<object | null>(null);
   private readonly actionTitleDoneKey = signal<object | null>(null);
   private readonly actionDescDoneKey = signal<object | null>(null);
 
   constructor() {
-    // O aviso de texto/áudio aparece com fade, um tempinho depois do último caractere.
-    effect(onCleanup => {
-      const key = this.typingKey();
+    // No cadastro por conversa, a última resposta do usuário sobe para o topo da tela (padrão das ferramentas de IA) a cada
+    // nova mensagem, e de novo quando a pergunta da IA aparece; o histórico continua acessível rolando para cima.
+    effect(() => {
+      const messages = this.flow.messages();
 
-      if (key === null || !this.descriptionDone()) {
+      if (this.assistant.view() !== 'conversation' || !messages.some(message => message.role === 'user')) {
         return;
       }
-      const timer = setTimeout(() => this.hintKey.set(key), HINT_DELAY_MS);
-
-      onCleanup(() => clearTimeout(timer));
+      untracked(() => this.scheduleScroll());
     });
   }
 
@@ -162,14 +152,6 @@ export class AssistantContentComponent {
 
   protected onActionDescriptionFinished(): void {
     this.actionDescDoneKey.set(this.actionKey());
-  }
-
-  protected onDescriptionFinished(): void {
-    this.descriptionDoneKey.set(this.typingKey());
-  }
-
-  protected t(key: string): string {
-    return this.i18n.t(key);
   }
 
   protected itemText(item: AssistantAnswerItem): string {
@@ -198,5 +180,33 @@ export class AssistantContentComponent {
   /** Cadastro concluído: volta para as ações da tela. */
   protected onSubmitted(): void {
     this.assistant.back();
+  }
+
+  /** Espera o layout assentar (a mensagem acabou de entrar no DOM) antes de rolar. */
+  private scheduleScroll(): void {
+    requestAnimationFrame(() => requestAnimationFrame(() => this.scrollLastAnswerToTop()));
+  }
+
+  /** Leva a última resposta do usuário ao topo da área rolável (a folga no fim do chat deixa espaço para isso). */
+  private scrollLastAnswerToTop(): void {
+    const answers = this.host.nativeElement.querySelectorAll<HTMLElement>('[data-user-message]');
+    const target = answers[answers.length - 1] as HTMLElement | undefined;
+
+    if (!target) {
+      return;
+    }
+    let container: HTMLElement | null = target.parentElement;
+
+    while (container && !/(auto|scroll)/u.test(getComputedStyle(container).overflowY)) {
+      container = container.parentElement;
+    }
+    if (!container) {
+      target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+      return;
+    }
+    const top = target.getBoundingClientRect().top - container.getBoundingClientRect().top + container.scrollTop;
+
+    container.scrollTo({ behavior: 'smooth', top });
   }
 }

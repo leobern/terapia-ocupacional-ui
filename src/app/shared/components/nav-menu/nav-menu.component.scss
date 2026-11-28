@@ -367,6 +367,11 @@ $duration-collapse: 90ms;
     background: var(--color-surface-2);
   }
 
+  // Figma 4592:854 (2026-11-27): ícones dos itens inativos em `primary`; o ativo é `secondary` (regra abaixo).
+  &:not(.nav-menu__link--active, :disabled) .nav-menu__icon {
+    color: #{tokens.c(primary)};
+  }
+
   // Figma v2: item ativo = fundo surface-2, ícone secondary, rótulo Label/Lg.
   &--active {
     // O fundo do ativo é uma camada atrás do conteúdo, sem `mix-blend-mode`: o `multiply` só entrava depois da animação de

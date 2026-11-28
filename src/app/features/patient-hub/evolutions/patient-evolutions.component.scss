@@ -59,8 +59,11 @@
 
 // "Avaliar": rótulo pequeno em verde-água (informação cadastrada).
 .evo__label {
+  // Figma v2/NotificationThread State=pendencias (4766:24763): subtítulo com 8px de respiro e linha embaixo.
   margin: 0;
-  color: tokens.c(content-3);
+  padding: tokens.$space-8;
+  border-bottom: 1px solid tokens.c(border);
+  color: tokens.c(content-2);
 
   @include typography.label-sm;
 }
@@ -68,25 +71,26 @@
 .evo__list {
   display: flex;
   flex-direction: column;
+  gap: tokens.$space-12;
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
+// Linha da avaliação: 8px nas laterais e embaixo, com a linha separadora (Figma 4766:24732).
 .evo__item {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: tokens.$space-8;
-  padding-block: tokens.$space-8;
-  border-top: 1px solid tokens.c(border);
-
-  &:last-child {
-    border-bottom: 1px solid tokens.c(border);
-  }
+  gap: tokens.$space-12;
+  padding: 0 tokens.$space-8 tokens.$space-8;
+  border-bottom: 1px solid tokens.c(border);
 }
 
 .evo__item-text {
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  gap: tokens.$space-4;
   min-width: 0;
 }
 
@@ -94,14 +98,16 @@
   margin: 0;
   color: tokens.c(content-1);
 
-  @include typography.label-lg;
+  @include typography.label-md;
+
+  font-weight: tokens.$font-weight-bold;
 }
 
 .evo__item-meta {
   margin: 0;
-  color: tokens.c(content-4);
+  color: tokens.c(content-5);
 
-  @include typography.caption;
+  @include typography.label-sm;
 }
 
 // Selo de prazo: sempre com texto e ícone (a cor nunca é o único sinal).
@@ -110,8 +116,7 @@
   align-items: center;
   flex: none;
   gap: tokens.$space-4;
-  height: 32px;
-  padding-inline: tokens.$space-12;
+  padding: tokens.$space-4 tokens.$space-12 tokens.$space-4 tokens.$space-8;
   border: 1px solid tokens.c(border);
   border-radius: tokens.$radius-pill;
   background: tokens.c(surface-2);

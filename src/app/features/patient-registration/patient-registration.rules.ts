@@ -1,5 +1,7 @@
 /** Regras de validação dos dados fixos do paciente (US-002-1-02: RN-01 a RN-03). Funções puras. */
 
+import { type BrDate, centuryOf, parseBrDate } from '../../shared/utils/br-date';
+
 export type PatientSex = 'MALE' | 'FEMALE' | 'NOT_INFORMED';
 
 export const PATIENT_SEXES: readonly PatientSex[] = ['MALE', 'FEMALE', 'NOT_INFORMED'];
@@ -36,8 +38,6 @@ export type PatientMessageCode =
 
 export type RuleResult<T> = { readonly value: T } | { readonly code: PatientMessageCode };
 
-const DATE_BR = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/u;
-
 function normalize(text: string): string {
   return text
     .normalize('NFD')
@@ -58,36 +58,32 @@ export function validateFullName(raw: string): RuleResult<string> {
   return name.length > FULL_NAME_MAX ? { code: 'MSG-05' } : { value: name };
 }
 
-interface ParsedDate {
-  readonly date: Date;
-  readonly iso: string;
+function toIso(day: Date): string {
+  return `${String(day.getFullYear()).padStart(4, '0')}-${String(day.getMonth() + 1).padStart(2, '0')}-${String(day.getDate()).padStart(2, '0')}`;
 }
 
-/** Data dd/mm/aaaa existente (ano ≥ 1); `null` se o texto não for uma data real. */
-function parseBrDate(raw: string): ParsedDate | null {
-  const match = DATE_BR.exec(raw.trim());
+/** "hoje"/"ontem" viram a data na hora, sem precisar da IA (Thiago, 2026-11-27); outra coisa devolve `null`. */
+function relativeDate(raw: string, today: Date): BrDate | null {
+  const word = normalize(raw);
+  const offsets = new Map<string, number>([
+    ['hoje', 0],
+    ['ontem', -1],
+  ]);
+  const offset = offsets.get(word);
 
-  if (!match) {
+  if (offset === undefined) {
     return null;
   }
-  const [day, month, year] = [Number(match[1]), Number(match[2]), Number(match[3])];
-  const date = new Date(year, month - 1, day);
+  const date = new Date(today.getFullYear(), today.getMonth(), today.getDate() + offset);
 
-  if (date.getFullYear() !== year || date.getMonth() !== month - 1 || date.getDate() !== day || year < 1) {
-    return null;
-  }
-
-  return {
-    date,
-    iso: `${String(year).padStart(4, '0')}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`,
-  };
+  return { date, iso: toIso(date) };
 }
 
 function startOfDay(day: Date): Date {
   return new Date(day.getFullYear(), day.getMonth(), day.getDate());
 }
 
-/** Data dd/mm/aaaa existente e não posterior a `today` (hoje é válido); devolve `aaaa-mm-dd` (MSG-02 se inválida). */
+/** Data dia-mês-ano existente e não posterior a `today` (hoje é válido); devolve `aaaa-mm-dd` (MSG-02 se inválida). */
 export function validateBirthDate(raw: string, today: Date): RuleResult<string> {
   const parsed = parseBrDate(raw);
 
@@ -152,12 +148,12 @@ export function validateAdmissionNumber(raw: string): RuleResult<string> {
   return validateOptionalText(raw, ADMISSION_NUMBER_MAX, 'admissionNumberTooLong');
 }
 
-/** Data de internação hospitalar: dd/mm/aaaa real e não futura (RN-02, MSG-08); "não sei" deixa vazio. */
+/** Data de internação hospitalar: real e não futura (RN-02, MSG-08); aceita ano com 2 dígitos; "não sei" deixa vazio. */
 export function validateHospitalAdmissionDate(raw: string, today: Date): RuleResult<string> {
   if (isDontKnow(raw)) {
     return { value: '' };
   }
-  const parsed = parseBrDate(raw);
+  const parsed = parseBrDate(raw, centuryOf(today)) ?? relativeDate(raw, today);
 
   if (!parsed) {
     return { code: 'invalidDate' };
@@ -166,12 +162,12 @@ export function validateHospitalAdmissionDate(raw: string, today: Date): RuleRes
   return parsed.date > startOfDay(today) ? { code: 'MSG-08' } : { value: parsed.iso };
 }
 
-/** Data de início da TN: dd/mm/aaaa real (pode ser futura); "não sei" deixa vazio. */
-export function validateNutritionalTherapyStartDate(raw: string): RuleResult<string> {
+/** Data de início da TN: real (pode ser futura); aceita ano com 2 dígitos; "não sei" deixa vazio. */
+export function validateNutritionalTherapyStartDate(raw: string, today: Date = new Date()): RuleResult<string> {
   if (isDontKnow(raw)) {
     return { value: '' };
   }
-  const parsed = parseBrDate(raw);
+  const parsed = parseBrDate(raw, centuryOf(today)) ?? relativeDate(raw, today);
 
   return parsed ? { value: parsed.iso } : { code: 'invalidDate' };
 }
