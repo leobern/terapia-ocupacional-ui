@@ -47,10 +47,22 @@ jobs:
       - name: Lint
         run: pnpm run lint
 
+      # Os testes rodam no chrome-headless-shell do Playwright, o mesmo que o
+      # karma.conf.js usa nas máquinas locais. No Google Chrome completo do runner,
+      # a janela às vezes perdia o foco no meio da suíte e os testes de foco
+      # falhavam sem que nada no código tivesse mudado.
+      - name: Install test browser
+        run: pnpm exec playwright install --with-deps --only-shell chromium
+
+      # O runner já define CHROME_BIN apontando para o Google Chrome; por isso é
+      # sobrescrito aqui. Sem o headless shell, o passo falha em vez de voltar ao
+      # Chrome em silêncio.
       - name: Test
-        run: pnpm exec ng test --watch=false --browsers=ChromeHeadless
-        env:
-          CHROME_BIN: /usr/bin/google-chrome
+        run: |
+          CHROME_BIN="$(find "$HOME/.cache/ms-playwright" -type f -name chrome-headless-shell | head -n 1)"
+          test -x "$CHROME_BIN"
+          export CHROME_BIN
+          pnpm exec ng test --watch=false --browsers=ChromeHeadlessCI
 
       - name: Build
         run: pnpm run build:ci
