@@ -7,7 +7,7 @@ on:
 jobs:
   diagnostico:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -22,12 +22,22 @@ jobs:
           set +e
           export CHROME_BIN="$(find "$HOME/.cache/ms-playwright" -type f -name chrome-headless-shell | head -n 1)"
           falhas=0
-          for n in $(seq 1 20); do
+          cat > src/app/zz-sonda.spec.ts <<'SPEC'
+          jasmine.getEnv().addReporter({
+            specDone: (r) => {
+              if (Object.getOwnPropertyDescriptor(document, 'visibilityState')) {
+                console.log(`VAZOU visibilidade depois de: ${r.fullName}`);
+              }
+            },
+          });
+          SPEC
+          for n in $(seq 1 30); do
             pnpm exec ng test --watch=false --browsers=ChromeHeadlessCI > saida.log 2>&1
             codigo=$?
             [ $codigo -ne 0 ] && falhas=$((falhas+1))
             echo "== shell $n codigo=$codigo $(grep -aoE 'TOTAL:.*' saida.log | tail -1)"
             grep -a ' FAILED' saida.log | grep -av Executed | head -8
+            echo "== vazamentos na rodada $n: $(grep -ac 'VAZOU' saida.log)"
           done
           # Mesma sabotagem que reproduziu a falha no Google Chrome: abrir outra aba no meio.
           sed -i "s/flags: \['--no-sandbox'\],/flags: ['--no-sandbox', '--remote-debugging-port=9222'],/" karma.conf.js
