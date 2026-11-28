@@ -121,6 +121,18 @@ describe('ClinicalAssessmentEditorComponent', () => {
     expect(root().querySelector<HTMLInputElement>('#clin-tn')?.value).toBe('NE');
   });
 
+  it('o peso anterior vindo da API (instante ISO) aparece como dd/mm/aa', async () => {
+    source.assessment = {
+      ...source.assessment,
+      previousWeight: { at: new Date(2026, 4, 20, 12).toISOString(), kg: 50.4 },
+    };
+    fixture = TestBed.createComponent(ClinicalAssessmentEditorComponent);
+    fixture.componentRef.setInput('patientId', 'p2');
+    await settle();
+
+    expect(text()).toContain('Anterior: 50.4 kg em 20/05/26.');
+  });
+
   it('falha ao carregar informa em texto', async () => {
     source.loadFails = true;
     fixture = TestBed.createComponent(ClinicalAssessmentEditorComponent);

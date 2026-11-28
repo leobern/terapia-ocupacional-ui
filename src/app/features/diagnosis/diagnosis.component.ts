@@ -10,6 +10,7 @@ import { PageContainerComponent } from '../../shared/components/page-container/p
 import { PageHeaderComponent } from '../../shared/components/page-header/page-header.component';
 import { SkeletonComponent } from '../../shared/components/skeleton/skeleton.component';
 import { ConnectivityService } from '../../shared/services/connectivity.service';
+import { formatDateTimeShortYear } from '../../shared/utils/br-date';
 import { NOW, ProfessionalProfileReader } from '../home/professional-profile';
 import { PatientHubProfile } from '../patient-hub/patient-hub.models';
 import { PatientHubSource } from '../patient-hub/patient-hub-source';
@@ -53,14 +54,6 @@ const OUTCOME_DETAILS: Readonly<Record<Exclude<GlimOutcome, 'confirmed'>, string
 };
 
 const EMPTY_RECORD: DiagnosisRecord = { audit: [], decision: null, override: null };
-
-/** dd/MM/aaaa HH:mm. */
-function formatDateTime(iso: string): string {
-  const d = new Date(iso);
-  const two = (n: number): string => String(n).padStart(2, '0');
-
-  return `${two(d.getDate())}/${two(d.getMonth() + 1)}/${d.getFullYear()} ${two(d.getHours())}:${two(d.getMinutes())}`;
-}
 
 const STAGING_LABELS: Readonly<Record<GlimSeverity, string>> = { moderate: 'moderada', severe: 'grave' };
 
@@ -115,7 +108,7 @@ export class DiagnosisComponent implements OnInit {
 
     return this.record().override === null || last === undefined
       ? ''
-      : `Alterado pelo médico: ${last.author} em ${formatDateTime(last.at)}.`;
+      : `Alterado pelo médico: ${last.author} em ${formatDateTimeShortYear(last.at)}.`;
   });
   protected readonly showActions = computed(
     () => this.isDoctor && this.shown() !== null && this.record().decision === null,
@@ -262,7 +255,7 @@ export class DiagnosisComponent implements OnInit {
   }
 
   protected decisionNote(d: DiagnosisDecision): string {
-    return `${d.status === 'confirmed' ? 'Confirmado' : 'Excluído'} por ${d.author} em ${formatDateTime(d.at)}.`;
+    return `${d.status === 'confirmed' ? 'Confirmado' : 'Excluído'} por ${d.author} em ${formatDateTimeShortYear(d.at)}.`;
   }
 
   protected canAct(): boolean {
