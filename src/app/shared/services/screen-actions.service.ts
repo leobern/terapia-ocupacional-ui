@@ -21,7 +21,20 @@ export type FormFieldValue = string | readonly DirectoryUser[];
 export type FormValues = Readonly<Record<string, FormFieldValue>>;
 
 /** Erro de envio com mensagem própria para o usuário (ex.: sem conexão); o formulário a exibe e mantém as respostas. */
-export class FormSubmitError extends Error {}
+export class FormSubmitError extends Error {
+  constructor(
+    message?: string,
+    /** Saída oferecida junto do aviso, como um botão (ex.: "Padronizar agora"). */
+    readonly action?: FormErrorAction,
+  ) {
+    super(message);
+  }
+}
+
+export interface FormErrorAction {
+  readonly label: string;
+  readonly run: () => void;
+}
 
 export interface FormFieldDefinition {
   readonly id: string;

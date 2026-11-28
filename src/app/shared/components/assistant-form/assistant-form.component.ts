@@ -17,6 +17,7 @@ import { PhIconComponent } from '../../icons/ph-icon/ph-icon.component';
 import { AssistantFormController } from '../../services/assistant-form-controller.service';
 import {
   type FormActionDefinition,
+  type FormErrorAction,
   type FormFieldDefinition,
   FormSubmitError,
   type FormValues,
@@ -51,6 +52,11 @@ export class AssistantFormComponent {
 
   protected readonly submitting = signal(false);
   protected readonly errorMessage = signal<string | null>(null);
+  /** Botão que acompanha o aviso; some junto com ele. */
+  protected readonly errorAction = linkedSignal<string | null, FormErrorAction | null>({
+    computation: () => null,
+    source: this.errorMessage,
+  });
   protected readonly suggestionsFor = signal<string | null>(null);
   protected readonly suggestions = signal<readonly DirectoryUser[]>([]);
   /** Sugestões da IA por campo: não valem nada até a confirmação explícita. */
@@ -150,6 +156,7 @@ export class AssistantFormComponent {
       this.errorMessage.set(
         error instanceof FormSubmitError ? error.message : 'Não foi possível salvar. Tente novamente.',
       );
+      this.errorAction.set((error instanceof FormSubmitError ? error.action : null) ?? null);
     } finally {
       this.submitting.set(false);
     }

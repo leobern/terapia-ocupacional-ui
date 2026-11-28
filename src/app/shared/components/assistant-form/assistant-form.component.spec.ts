@@ -124,6 +124,33 @@ describe('AssistantFormComponent', () => {
     expect(submit().disabled).toBeTrue();
   });
 
+  it('aviso com saída mostra o botão, que some junto com o aviso', async () => {
+    const run = jasmine.createSpy('run');
+
+    fixture.componentRef.setInput('definition', {
+      fields: [{ id: 'nome', kind: 'text', label: 'Nome', placeholder: '', required: true }],
+      submit: (): never => {
+        throw new FormSubmitError('Já existe.', { label: 'Resolver', run });
+      },
+      submitLabel: 'Enviar',
+      title: 'Teste',
+    });
+    fixture.detectChanges();
+    const action = (): HTMLButtonElement | null => el().querySelector('.assistant-form__error-action button');
+
+    await type(0, 'x');
+    button()?.click();
+    await fixture.whenStable();
+    fixture.detectChanges();
+    action()?.click();
+
+    expect(run).toHaveBeenCalledTimes(1);
+
+    await type(0, 'y');
+
+    expect(action()).toBeNull();
+  });
+
   it('typing @ opens the registered users and each letter after it narrows the list', async () => {
     await type(0, '@');
 

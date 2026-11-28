@@ -2,7 +2,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
 
 import { AiAssistantService } from '../../shared/services/ai-assistant.service';
-import { ScreenActionsService } from '../../shared/services/screen-actions.service';
+import { type FormSubmitError, ScreenActionsService } from '../../shared/services/screen-actions.service';
 import { HospitalContextService } from '../home/hospital-context.service';
 import { LinkedHospitalsReader } from '../home/linked-hospitals';
 import { UnreadNotificationsReader } from '../home/unread-notifications-reader';
@@ -250,6 +250,41 @@ describe('PharmacyComponent', () => {
       await expectAsync(Promise.resolve(submit?.({ description: 'espessante' }))).toBeRejected();
 
       expect(api.requests).toEqual([]);
+    });
+
+    it('do que já existe oferece padronizar ali mesmo, e não depois de padronizada', async () => {
+      const submit = action()?.form?.submit;
+      const assistant = TestBed.inject(AiAssistantService);
+
+      spyOn(assistant, 'openAction');
+      const open = assistant.openAction as jasmine.Spy<AiAssistantService['openAction']>;
+      const refusal = async (): Promise<FormSubmitError> => {
+        try {
+          await submit?.({ description: 'espessante' });
+        } catch (error) {
+          return error as FormSubmitError;
+        }
+        throw new Error('o pedido não foi barrado');
+      };
+
+      const first = await refusal();
+
+      first.action?.run();
+
+      expect(first.action?.label).toBe('Padronizar agora');
+      expect(open.calls.mostRecent().args[0].editor?.inputs?.['initialText']).toBe('Espessante');
+
+      const list = TestBed.inject(ScreenActionsService)
+        .actions()
+        .find(a => a.id === 'standardize-list')?.editor?.inputs as {
+        standardize: (ids: readonly string[]) => Promise<readonly string[]>;
+      };
+
+      await list.standardize(['espessante-1']);
+      const second = await refusal();
+
+      expect(second.message).toContain('Já está padronizada');
+      expect(second.action).toBeUndefined();
     });
 
     it('do que é parecido avisa uma vez e envia se confirmado', async () => {

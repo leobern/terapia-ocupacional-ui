@@ -172,6 +172,16 @@
   @if (errorMessage(); as message) {
     <p class="assistant-form__error" role="alert">{{ message }}</p>
   }
+  @if (errorAction(); as action) {
+    <app-button
+      class="assistant-form__error-action"
+      kind="primary"
+      appearance="outlined"
+      [label]="action.label"
+      [fullWidth]="true"
+      (click)="action.run()"
+    />
+  }
 
   <!-- Figma 4722:10983: o botão fica alinhado à direita, logo abaixo dos campos, e só surge quando o cadastro
        pode ser enviado (todas as perguntas obrigatórias respondidas). -->
