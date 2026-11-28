@@ -13,17 +13,17 @@ interface FormulaDto {
   readonly id: number;
   readonly nome: string;
   readonly categoria: 'ENTERAL' | 'PARENTERAL' | 'MODULO_PROTEICO' | 'SUPLEMENTO_ORAL' | 'ESPESSANTE' | 'MEDICAMENTO';
-  readonly fabricante: string | null;
-  readonly tipoApresentacao: string | null;
+  readonly fabricante?: string | null;
+  readonly tipoApresentacao?: string | null;
   readonly unidadeBase: 'ML' | 'G';
-  readonly viaAdministracao: string | null;
-  readonly embalagem: string | null;
-  readonly kcalPorMl: number | null;
-  readonly proteinaPorMl: number | null;
-  readonly fibra: boolean | null;
-  readonly sacarose: boolean | null;
-  readonly lactose: boolean | null;
-  readonly gluten: boolean | null;
+  readonly viaAdministracao?: string | null;
+  readonly embalagem?: string | null;
+  readonly kcalPorMl?: number | null;
+  readonly proteinaPorMl?: number | null;
+  readonly fibra?: boolean | null;
+  readonly sacarose?: boolean | null;
+  readonly lactose?: boolean | null;
+  readonly gluten?: boolean | null;
   readonly padronizada: boolean;
 }
 
@@ -36,23 +36,26 @@ const CATEGORY: Record<FormulaDto['categoria'], FormulaCategory> = {
   SUPLEMENTO_ORAL: 'suplemento-oral',
 };
 
-/** Atributo nulo continua nulo: "não informado" nunca vira "Não". */
+/**
+ * O backend omite os campos sem valor (`serialization-inclusion=non-null`): ausente e nulo viram `null`, para a
+ * tela mostrar "N/A". "Não informado" nunca vira "Não".
+ */
 function toFormula(dto: FormulaDto): Formula {
   return {
     category: CATEGORY[dto.categoria],
-    fiber: dto.fibra,
-    gluten: dto.gluten,
+    fiber: dto.fibra ?? null,
+    gluten: dto.gluten ?? null,
     id: String(dto.id),
-    kcalPerMl: dto.kcalPorMl,
-    lactose: dto.lactose,
-    manufacturer: dto.fabricante,
+    kcalPerMl: dto.kcalPorMl ?? null,
+    lactose: dto.lactose ?? null,
+    manufacturer: dto.fabricante ?? null,
     name: dto.nome,
-    packaging: dto.embalagem,
-    presentation: dto.tipoApresentacao,
-    proteinPerMl: dto.proteinaPorMl,
-    route: dto.viaAdministracao,
+    packaging: dto.embalagem ?? null,
+    presentation: dto.tipoApresentacao ?? null,
+    proteinPerMl: dto.proteinaPorMl ?? null,
+    route: dto.viaAdministracao ?? null,
     standardized: dto.padronizada,
-    sucrose: dto.sacarose,
+    sucrose: dto.sacarose ?? null,
     unit: dto.unidadeBase === 'G' ? 'g' : 'ml',
   };
 }

@@ -62,6 +62,34 @@ describe('HttpFormulasApi', () => {
     ]);
   });
 
+  it('campo que o backend omite vira null, nunca "Não" nem undefined', async () => {
+    const promise = api.list(1);
+
+    controller
+      .expectOne('/api/v1/hospitais/1/formulas')
+      .flush([{ categoria: 'ESPESSANTE', id: 3, nome: 'Espessante Z', padronizada: false, unidadeBase: 'G' }]);
+
+    expect(await promise).toEqual([
+      {
+        category: 'espessante',
+        fiber: null,
+        gluten: null,
+        id: '3',
+        kcalPerMl: null,
+        lactose: null,
+        manufacturer: null,
+        name: 'Espessante Z',
+        packaging: null,
+        presentation: null,
+        proteinPerMl: null,
+        route: null,
+        standardized: false,
+        sucrose: null,
+        unit: 'g',
+      },
+    ]);
+  });
+
   it('lista as padronizadas do hospital do paciente real (endpoint de leitura do profissional)', async () => {
     const promise = api.listStandardizedForPatient('42', 1);
 
