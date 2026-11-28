@@ -45,21 +45,27 @@ describe('PharmacyComponent', () => {
     await settle();
   });
 
-  it('mostra o catálogo agrupado nas 4 categorias com os atributos', () => {
+  it('mostra o catálogo agrupado nas 6 categorias com os atributos', () => {
     const titles = Array.from(fixture.nativeElement.querySelectorAll('.pharmacy__group-title')).map(el =>
       (el as HTMLElement).textContent?.trim(),
     );
 
-    expect(titles).toEqual(['Enterais', 'Parenterais', 'Suplementos orais', 'Medicamentos']);
-    for (const label of ['kcal/ml', 'Proteína/ml', 'Fibra', 'Sacarose', 'Lactose', 'Glúten', 'Vegetariano/vegano']) {
+    expect(titles).toEqual([
+      'Enterais',
+      'Parenterais',
+      'Módulos proteicos',
+      'Suplementos orais',
+      'Espessantes',
+      'Medicamentos',
+    ]);
+    for (const label of ['Fabricante', 'Tipo/apresentação', 'kcal/mL', 'Proteína (g/mL)', 'Via', 'Embalagem']) {
       expect(text()).toContain(label);
     }
 
-    expect(text()).toContain('Vegano');
-    expect(text()).toContain('Vegetariano');
-    expect(text()).toContain('Não se aplica');
-    expect(text()).toContain('—');
+    expect(text()).toContain('Proteína (g/g)');
+    expect(text()).toContain('N/A');
     expect(text()).toContain('Sim');
+    expect(text()).not.toContain('Vegetariano');
   });
 
   it('padroniza e desmarca com estado em texto', async () => {

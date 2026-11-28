@@ -12,39 +12,54 @@ import { ProvisionalFormulasApi } from './provisional-formulas-api';
 interface FormulaDto {
   readonly id: number;
   readonly nome: string;
-  readonly categoria: 'ENTERAL' | 'PARENTERAL' | 'SUPLEMENTO_ORAL' | 'MEDICAMENTO';
+  readonly categoria:
+    | 'ENTERAL'
+    | 'PARENTERAL'
+    | 'MODULO_PROTEICO'
+    | 'SUPLEMENTO_ORAL'
+    | 'ESPESSANTE'
+    | 'MEDICAMENTO';
+  readonly fabricante: string | null;
+  readonly tipoApresentacao: string | null;
+  readonly unidadeBase: 'ML' | 'G';
+  readonly viaAdministracao: string | null;
+  readonly embalagem: string | null;
   readonly kcalPorMl: number | null;
   readonly proteinaPorMl: number | null;
   readonly fibra: boolean | null;
   readonly sacarose: boolean | null;
   readonly lactose: boolean | null;
   readonly gluten: boolean | null;
-  readonly vegetariano: boolean | null;
-  readonly vegano: boolean | null;
   readonly padronizada: boolean;
 }
 
 const CATEGORY: Record<FormulaDto['categoria'], FormulaCategory> = {
   ENTERAL: 'enteral',
+  ESPESSANTE: 'espessante',
   MEDICAMENTO: 'medicamento',
+  MODULO_PROTEICO: 'modulo-proteico',
   PARENTERAL: 'parenteral',
   SUPLEMENTO_ORAL: 'suplemento-oral',
 };
 
+/** Atributo nulo continua nulo: "não informado" nunca vira "Não". */
 function toFormula(dto: FormulaDto): Formula {
   return {
     category: CATEGORY[dto.categoria],
-    fiber: dto.fibra ?? false,
-    gluten: dto.gluten ?? false,
+    fiber: dto.fibra,
+    gluten: dto.gluten,
     id: String(dto.id),
     kcalPerMl: dto.kcalPorMl,
-    lactose: dto.lactose ?? false,
+    lactose: dto.lactose,
+    manufacturer: dto.fabricante,
     name: dto.nome,
+    packaging: dto.embalagem,
+    presentation: dto.tipoApresentacao,
     proteinPerMl: dto.proteinaPorMl,
+    route: dto.viaAdministracao,
     standardized: dto.padronizada,
-    sucrose: dto.sacarose ?? false,
-    vegan: dto.vegano ?? false,
-    vegetarian: dto.vegetariano ?? false,
+    sucrose: dto.sacarose,
+    unit: dto.unidadeBase === 'G' ? 'g' : 'ml',
   };
 }
 

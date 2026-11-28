@@ -170,20 +170,25 @@ export class PharmacyComponent implements OnInit {
       this.savingId.set(null);
     }
   }
-  protected yesNo(value: boolean): string {
+  protected yesNo(value: boolean | null): string {
+    if (value === null) {
+      return 'N/A';
+    }
+
     return value ? 'Sim' : 'Não';
   }
 
+  /** Até 5 casas: a proteína por mL perderia precisão com o padrão de 3 (0,0465 viraria 0,047). */
   protected number(value: number | null): string {
-    return value === null ? '—' : value.toLocaleString('pt-BR');
+    return value === null ? 'N/A' : value.toLocaleString('pt-BR', { maximumFractionDigits: 5 });
   }
 
-  protected suitability(formula: Formula): string {
-    if (formula.vegan) {
-      return 'Vegano';
-    }
+  protected text(value: string | null): string {
+    return value || 'N/A';
+  }
 
-    return formula.vegetarian ? 'Vegetariano' : 'Não se aplica';
+  protected unitLabel(formula: Formula): string {
+    return formula.unit === 'g' ? 'g' : 'mL';
   }
 
   /** Envia o pedido pelo formulário dos atalhos; lançar erro mantém o formulário aberto com as respostas. */

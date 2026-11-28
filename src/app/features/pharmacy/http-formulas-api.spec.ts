@@ -24,6 +24,8 @@ describe('HttpFormulasApi', () => {
     controller.expectOne('/api/v1/hospitais/1/formulas').flush([
       {
         categoria: 'SUPLEMENTO_ORAL',
+        embalagem: 'Frasco 200 mL',
+        fabricante: 'Fabricante Y',
         fibra: true,
         gluten: null,
         id: 7,
@@ -33,8 +35,9 @@ describe('HttpFormulasApi', () => {
         padronizada: true,
         proteinaPorMl: null,
         sacarose: null,
-        vegano: null,
-        vegetariano: true,
+        tipoApresentacao: 'Líquido',
+        unidadeBase: 'ML',
+        viaAdministracao: 'Oral',
       },
     ]);
 
@@ -42,16 +45,19 @@ describe('HttpFormulasApi', () => {
       {
         category: 'suplemento-oral',
         fiber: true,
-        gluten: false,
+        gluten: null,
         id: '7',
         kcalPerMl: 1.5,
-        lactose: false,
+        lactose: null,
+        manufacturer: 'Fabricante Y',
         name: 'Suplemento Y',
+        packaging: 'Frasco 200 mL',
+        presentation: 'Líquido',
         proteinPerMl: null,
+        route: 'Oral',
         standardized: true,
-        sucrose: false,
-        vegan: false,
-        vegetarian: true,
+        sucrose: null,
+        unit: 'ml',
       },
     ]);
   });
@@ -71,8 +77,7 @@ describe('HttpFormulasApi', () => {
         padronizada: true,
         proteinaPorMl: 0.04,
         sacarose: false,
-        vegano: false,
-        vegetariano: false,
+        unidadeBase: 'ML',
       },
     ]);
 

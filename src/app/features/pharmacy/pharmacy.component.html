@@ -87,11 +87,19 @@
                   </div>
                   <dl class="pharmacy__attrs">
                     <div>
-                      <dt>kcal/ml</dt>
+                      <dt>Fabricante</dt>
+                      <dd>{{ text(formula.manufacturer) }}</dd>
+                    </div>
+                    <div>
+                      <dt>Tipo/apresentação</dt>
+                      <dd>{{ text(formula.presentation) }}</dd>
+                    </div>
+                    <div>
+                      <dt>kcal/{{ unitLabel(formula) }}</dt>
                       <dd>{{ number(formula.kcalPerMl) }}</dd>
                     </div>
                     <div>
-                      <dt>Proteína/ml</dt>
+                      <dt>Proteína (g/{{ unitLabel(formula) }})</dt>
                       <dd>{{ number(formula.proteinPerMl) }}</dd>
                     </div>
                     <div>
@@ -111,8 +119,12 @@
                       <dd>{{ yesNo(formula.gluten) }}</dd>
                     </div>
                     <div>
-                      <dt>Vegetariano/vegano</dt>
-                      <dd>{{ suitability(formula) }}</dd>
+                      <dt>Via</dt>
+                      <dd>{{ text(formula.route) }}</dd>
+                    </div>
+                    <div>
+                      <dt>Embalagem</dt>
+                      <dd>{{ text(formula.packaging) }}</dd>
                     </div>
                   </dl>
                   <button

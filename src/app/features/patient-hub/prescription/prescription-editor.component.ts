@@ -243,7 +243,8 @@ export class PrescriptionEditorComponent {
         this.targetsReader.current(patientId),
       ]);
 
-      this.formulas.set(catalog.filter(f => f.standardized));
+      // A prescrição é por volume (mL): pós e módulos medidos em gramas dariam um aporte errado.
+      this.formulas.set(catalog.filter(f => f.standardized && f.unit !== 'g'));
       this.targets.set(targets);
     } catch {
       this.hint.set(PRESCRIPTION_LOAD_FAILED_HINT);
