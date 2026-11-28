@@ -271,6 +271,7 @@ export class PharmacyComponent implements OnInit {
         component: FormulaListEditorComponent,
         description:
           'Escreva os nomes das fórmulas que você usa. Eu procuro no catálogo e você confirma quais padronizar.',
+        hint: 'Você também pode escrever os nomes no campo de mensagem.',
         inputs: {
           formulas: this.formulas.asReadonly(),
           initialText,
