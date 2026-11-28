@@ -20,44 +20,35 @@ jobs:
       - name: Sonda de foco
         run: |
           cat > src/app/zz-sonda.spec.ts <<'SPEC'
-          describe('zz sonda de foco', () => {
-            it('registra o estado de foco', () => {
-              const input = document.createElement('input');
-              let evento = false;
-              input.addEventListener('focus', () => (evento = true));
-              document.body.appendChild(input);
-              input.focus();
-              console.log(`SONDA hasFocus=${document.hasFocus()} evento=${evento} ativo=${document.activeElement === input}`);
-              input.remove();
-              expect(true).toBeTrue();
-            });
+          let anterior = '';
+          let ultimo = 'inicio';
+          const estado = (): string =>
+            `iframe=${document.hasFocus()} topo=${window.parent.document.hasFocus()} visivel=${document.visibilityState}`;
+          const olhar = (quando: string): void => {
+            const agora = estado();
+            if (agora !== anterior) {
+              console.log(`SONDA ${agora} | ${quando} | spec anterior: ${ultimo}`);
+              anterior = agora;
+            }
+          };
+          jasmine.getEnv().addReporter({
+            specStarted: (r) => olhar(`antes de: ${r.fullName}`),
+            specDone: (r) => {
+              olhar(`depois de: ${r.fullName}`);
+              ultimo = r.fullName;
+            },
           });
+          window.addEventListener('blur', () => console.log(`SONDA evento blur durante/apos: ${ultimo}`));
+          window.addEventListener('focus', () => console.log(`SONDA evento focus durante/apos: ${ultimo}`));
           SPEC
       - name: Rodadas
         run: |
           SHELL_BIN=$(find "$HOME/.cache/ms-playwright" -type f -name chrome-headless-shell | head -1)
           echo "shell=$SHELL_BIN google=$(google-chrome --version) CHROME_BIN_do_runner=$CHROME_BIN"
-          roubar() {
-            for i in $(seq 1 600); do
-              if curl -s http://localhost:9222/json/list | grep -q 'localhost:9876'; then
-                curl -s -X PUT 'http://localhost:9222/json/new?about:blank' >/dev/null && echo 'FOCO ROUBADO'
-                return
-              fi
-              sleep 0.1
-            done
-            echo 'NAO ROUBOU'
-          }
-          rodar() {
-            rotulo=$1; bin=$2; navegador=$3
-            CHROME_BIN=$bin pnpm exec ng test --watch=false --browsers="$navegador" > saida.log 2>&1
-            codigo=$?
-            echo "== $rotulo codigo=$codigo $(grep -aoE 'TOTAL:.*' saida.log | tail -1) $(grep -ao 'SONDA [^\x27]*' saida.log | head -1)"
-            grep -a ' FAILED' saida.log | grep -av Executed | sed 's/.*(Linux[^)]*) //' | sort -u | head -12
-            [ $codigo -ne 0 ] && grep -aiE 'sandbox|cannot start|error' saida.log | head -5
-          }
           set +e
-          for par in "google:/usr/bin/google-chrome" "shell:$SHELL_BIN"; do
-            nome=${par%%:*}; bin=${par#*:}
-            roubar & rodar "$nome foco-roubado" "$bin" ChromeDebuggingHeadless; wait
-            for n in $(seq 1 8); do rodar "$nome normal-$n" "$bin" ChromeHeadless; done
+          for n in $(seq 1 14); do
+            CHROME_BIN=/usr/bin/google-chrome pnpm exec ng test --watch=false --browsers=ChromeHeadless > saida.log 2>&1
+            echo "== google $n codigo=$? $(grep -aoE 'TOTAL:.*' saida.log | tail -1)"
+            grep -a 'SONDA' saida.log | head -14
+            grep -a ' FAILED' saida.log | grep -av Executed | sed 's/.*(Linux[^)]*) //' | sort -u | head -8
           done
