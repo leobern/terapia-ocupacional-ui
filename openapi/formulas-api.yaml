@@ -132,8 +132,8 @@ paths:
       summary: Fórmulas padronizadas no hospital do paciente (somente leitura)
       description: >
         Para o editor da prescrição: só as fórmulas padronizadas no hospital do paciente (`padronizada` é
-        sempre true), ordenadas por categoria e nome. Fórmulas sem `kcalPorMl`/`proteinaPorMl` aparecem na
-        lista, mas a gravação da prescrição as recusa com 400. Exige vínculo aprovado do profissional com o
+        sempre true), ordenadas por categoria e nome. Fórmulas sem `kcalPorMl`/`proteinaPorMl`, ou medidas em
+        gramas (`unidadeBase` = G), aparecem na lista, mas a gravação da prescrição as recusa com 400. Exige vínculo aprovado do profissional com o
         hospital do paciente; paciente inexistente, de outro hospital ou com vínculo não aprovado respondem o
         mesmo 404. Qualquer perfil autenticado com acesso ao paciente (não só GESTOR).
       parameters:
@@ -193,7 +193,7 @@ components:
           format: date-time
     Formula:
       type: object
-      required: [id, nome, categoria, padronizada]
+      required: [id, nome, categoria, unidadeBase, padronizada]
       properties:
         id:
           type: integer
@@ -202,13 +202,25 @@ components:
           type: string
         categoria:
           type: string
-          enum: [ENTERAL, PARENTERAL, SUPLEMENTO_ORAL, MEDICAMENTO]
+          enum: [ENTERAL, PARENTERAL, MODULO_PROTEICO, SUPLEMENTO_ORAL, ESPESSANTE, MEDICAMENTO]
+        fabricante:
+          type: string
+          nullable: true
+        tipoApresentacao:
+          type: string
+          nullable: true
+        unidadeBase:
+          type: string
+          enum: [ML, G]
+          description: Base de kcalPorMl e proteinaPorMl. Com G, os valores são por grama.
         kcalPorMl:
           type: number
           nullable: true
+          description: kcal por mL (por g quando unidadeBase = G)
         proteinaPorMl:
           type: number
           nullable: true
+          description: Proteína em g por mL (por g quando unidadeBase = G)
         fibra:
           type: boolean
           nullable: true
@@ -221,11 +233,11 @@ components:
         gluten:
           type: boolean
           nullable: true
-        vegetariano:
-          type: boolean
+        viaAdministracao:
+          type: string
           nullable: true
-        vegano:
-          type: boolean
+        embalagem:
+          type: string
           nullable: true
         padronizada:
           type: boolean

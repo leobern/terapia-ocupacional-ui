@@ -251,7 +251,7 @@ describe('PrescriptionEditorComponent', () => {
   });
 
   it('não oferece fórmulas medidas em gramas (a prescrição é por volume)', async () => {
-    await settle();
+    await create();
 
     expect(root().textContent).toContain('Fórmula A');
     expect(root().innerHTML).not.toContain('Módulo em pó');
