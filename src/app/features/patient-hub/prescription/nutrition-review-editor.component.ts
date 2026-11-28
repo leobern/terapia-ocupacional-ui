@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, effect, inject, input, si
 
 import { ButtonComponent } from '../../../shared/components/button/button.component';
 import { IconButtonComponent } from '../../../shared/components/icon-button/icon-button.component';
+import { ClickOutsideDirective } from '../../../shared/directives/click-outside.directive';
 import {
   AssistantEditorController,
   type EditorAction,
@@ -34,7 +35,13 @@ export const NR_NO_TARGETS_TEXT = 'Meta indisponível: defina a meta calórica e
  */
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ButtonComponent, IconButtonComponent, PrescriptionSummaryComponent, TargetsEditorComponent],
+  imports: [
+    ButtonComponent,
+    ClickOutsideDirective,
+    IconButtonComponent,
+    PrescriptionSummaryComponent,
+    TargetsEditorComponent,
+  ],
   selector: 'app-nutrition-review-editor',
   styleUrl: './nutrition-review-editor.component.scss',
   templateUrl: './nutrition-review-editor.component.html',

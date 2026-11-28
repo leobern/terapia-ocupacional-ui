@@ -19,7 +19,8 @@
   // Desktop: o PageContainer ocupa 100% entre menu e assistente; o respiro é da tela
   // (page-margin 32 nas laterais, 24 em cima, 32 embaixo — Figma v2/PageHeader/frame).
   @include breakpoints.md {
-    gap: tokens.$space-24;
+    // Figma 4690:23740: 16px entre cabeçalho, faixa de datas e tabela.
+    gap: tokens.$space-16;
     min-height: 100dvh;
     padding: tokens.$space-24 tokens.$space-32 tokens.$space-32;
   }
@@ -33,7 +34,8 @@
 
   @include breakpoints.md {
     flex-direction: row;
-    align-items: center;
+    // Figma: a busca fica alinhada à base da faixa de datas.
+    align-items: flex-end;
     justify-content: space-between;
   }
 
@@ -107,7 +109,7 @@
 
   @include breakpoints.md {
     flex: none;
-    width: 280px;
+    width: 360px;
   }
 
   input {

@@ -2,6 +2,7 @@
 export enum Role {
   ADMIN = 'ADMIN',
   GESTOR = 'GESTOR',
+  MEDICO = 'MEDICO',
   RECECIONISTA = 'RECECIONISTA',
   TERAPEUTA = 'TERAPEUTA',
 }

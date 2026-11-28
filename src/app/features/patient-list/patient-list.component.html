@@ -19,8 +19,7 @@
         <span class="patient-list__register" pageHeaderActions>
           <app-button
             size="md"
-            iconLeft="plus"
-            label="Cadastrar paciente"
+            label="+ Cadastrar paciente"
             (click)="registerPatient()"
           />
         </span>
@@ -335,7 +334,10 @@
             <col [style.width.px]="widths().protein" />
             <col [style.width.px]="widths().location" />
             <col [style.width.px]="widths().status" />
-            <col class="patient-list__col-action" />
+            <col
+              class="patient-list__col-action"
+              [style.width.px]="actionWidth()"
+            />
           </colgroup>
           <thead>
             <tr>

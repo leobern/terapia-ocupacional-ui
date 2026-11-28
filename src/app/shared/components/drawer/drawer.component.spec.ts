@@ -68,6 +68,33 @@ describe('DrawerComponent', () => {
   // T005 — dispensa e ARIA
   // ---------------------------------------------------------------------------
 
+  it('confirmBeforeClose: o botão de fechar não fecha, só avisa (closeBlocked) para o consumidor perguntar', () => {
+    const closed = jasmine.createSpy('closed');
+    const closeBlocked = jasmine.createSpy('closeBlocked');
+
+    fixture.componentInstance.closed.subscribe(closed);
+    fixture.componentInstance.closeBlocked.subscribe(closeBlocked);
+    fixture.componentRef.setInput('confirmBeforeClose', true);
+    openDrawer();
+    closeButton()?.click();
+
+    expect(closeBlocked).toHaveBeenCalledTimes(1);
+    expect(closed).not.toHaveBeenCalled();
+  });
+
+  it('a dica fica à direita da faixa de atalhos e sobe de baixo quando fica visível', () => {
+    fixture.componentRef.setInput('hint', 'Você também pode responder via áudio.');
+    openDrawer();
+    const hint = (): HTMLElement => fixture.nativeElement.querySelector('.drawer__hint') as HTMLElement;
+
+    expect(hint().textContent).toContain('responder via áudio');
+    expect(hint().classList).not.toContain('drawer__hint--visible');
+    fixture.componentRef.setInput('hintVisible', true);
+    fixture.detectChanges();
+
+    expect(hint().classList).toContain('drawer__hint--visible');
+  });
+
   it('não renderiza o dialog quando isDesktop é falso, mesmo com open=true', () => {
     isDesktop.set(false);
 
@@ -262,12 +289,59 @@ describe('DrawerComponent', () => {
 
     expect(readWidth()).toBe('480px');
 
+    // 100% flutua: ao expandir a partir da meia sidebar o conteúdo mantém a largura que já tinha (nada se remonta).
     setSnap('expanded');
 
-    expect(readWidth()).toBe('calc(100vw - var(--space-72))');
+    expect(readWidth()).toBe('480px');
+    setSnap('default');
+
+    expect(readWidth()).toBe('480px');
 
     fixture.componentRef.setInput('open', false);
     fixture.detectChanges();
+
+    expect(readWidth()).toBe('0px');
+  });
+
+  it('aberta direto em 100% a sidebar anima a entrada; com "reduzir movimento" ou ao expandir da meia, não', () => {
+    const animate = spyOn(HTMLElement.prototype, 'animate').and.callThrough();
+
+    openDrawer('expanded');
+
+    expect(animate).toHaveBeenCalledTimes(1);
+    fixture.componentRef.setInput('open', false);
+    fixture.detectChanges();
+    animate.calls.reset();
+    openDrawer('default');
+    setSnap('expanded');
+
+    expect(animate).not.toHaveBeenCalled();
+  });
+
+  it('com "reduzir movimento" a entrada em 100% não anima', () => {
+    const animate = spyOn(HTMLElement.prototype, 'animate').and.callThrough();
+    const original = window.matchMedia;
+
+    window.matchMedia = ((query: string): MediaQueryList =>
+      ({
+        addEventListener: (): void => undefined,
+        matches: true,
+        media: query,
+        removeEventListener: (): void => undefined,
+      }) as unknown as MediaQueryList) as typeof window.matchMedia;
+    try {
+      openDrawer('expanded');
+
+      expect(animate).not.toHaveBeenCalled();
+    } finally {
+      window.matchMedia = original;
+    }
+  });
+
+  it('aberta direto em 100% (cadastro), a sidebar flutua: não empurra o conteúdo', () => {
+    const readWidth = (): string => document.documentElement.style.getPropertyValue('--drawer-width');
+
+    openDrawer('expanded');
 
     expect(readWidth()).toBe('0px');
   });

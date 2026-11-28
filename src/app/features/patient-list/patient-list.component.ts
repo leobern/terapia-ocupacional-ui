@@ -227,6 +227,8 @@ export class PatientListComponent implements OnInit {
   readonly closureTarget = signal<ClosurePatient | null>(null);
   /** Larguras das colunas (V1: só nesta sessão; a persistência por usuário fica para a V2 com o perfil). */
   readonly widths = signal<Readonly<Record<ColumnKey, number>>>(DEFAULT_WIDTHS);
+  /** Largura fixada da coluna da seta depois do 1º arrasto (a tabela também estica essa coluna); `null` = a padrão. */
+  readonly actionWidth = signal<number | null>(null);
   readonly resizing = signal<ColumnKey | null>(null);
   /** Botão de ajustar: só aparece quando as colunas precisam de ajuste (usuário mexeu ou há rolagem). */
   readonly fitState = signal<'needs' | 'fitted'>('fitted');
@@ -614,9 +616,22 @@ export class PatientListComponent implements OnInit {
   startResize(event: PointerEvent, key: ColumnKey): void {
     const handle = event.currentTarget as HTMLElement;
     const startX = event.clientX;
-    // A alça fica na borda esquerda do cabeçalho seguinte: a coluna ajustada é a anterior.
-    const startWidth =
-      handle.closest('th')?.previousElementSibling?.getBoundingClientRect().width ?? this.widths()[key];
+    // O que se vê é a largura renderizada: a tabela estica as colunas até preencher o card (`width: 100%`), então ela é
+    // maior que a guardada. Sem fixar isso antes, o primeiro movimento trocava as larguras guardadas pelas renderizadas e
+    // a tabela inteira dava um salto (maior quanto mais larga a tela). Aqui todas as colunas passam a valer o que se vê.
+    const headers = Array.from(handle.closest('tr')?.children ?? []);
+    const rendered = { ...this.widths() };
+
+    COLUMN_ORDER.forEach((column, index) => {
+      const width = headers.at(index)?.getBoundingClientRect().width ?? 0;
+
+      if (width > 0) {
+        rendered[column] = width;
+      }
+    });
+    this.widths.set(rendered);
+    this.actionWidth.set(headers.at(COLUMN_ORDER.length)?.getBoundingClientRect().width || null);
+    const startWidth = rendered[key];
 
     event.preventDefault();
     event.stopPropagation();
@@ -643,6 +658,7 @@ export class PatientListComponent implements OnInit {
    * mínimo cabem, todas ficam no mínimo e a rolagem horizontal continua.
    */
   fitColumns(): void {
+    this.actionWidth.set(null);
     const card = this.tableCard()?.nativeElement;
     const available = (card?.clientWidth ?? 0) - ACTION_COLUMN_WIDTH;
     const current = DEFAULT_WIDTHS;
@@ -688,7 +704,8 @@ export class PatientListComponent implements OnInit {
 
   /** Cadastro pertence à FT-002-1: aqui só navega (FR-027). */
   registerPatient(): void {
-    void this.router.navigate(['/patients', 'register']);
+    // O CTA abre o cadastro conversacional no painel lateral, em 100% da tela (Thiago, 2026-11-27).
+    this.aiAssistant.openAction(this.patientRegistration.build());
   }
 
   /** Alteração de dados pertence à FT-002-1: entrada do fluxo de edição, onde o paciente é escolhido (FR-027). */

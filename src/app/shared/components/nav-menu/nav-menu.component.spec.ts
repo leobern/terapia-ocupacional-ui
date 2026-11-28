@@ -38,18 +38,19 @@ describe('NavMenuComponent', () => {
     fixture.detectChanges();
   });
 
-  it('renders the 4 navigation items with the expected icons, all in "regular" weight and 24px', () => {
+  it('renders the navigation items in order (Home, Pacientes, Farmácia, Tutorial, Hospitais, Equipe) with the expected icons, all in "regular" weight and 24px', () => {
     const expected: { label: string; icon: string }[] = [
       { icon: 'house', label: 'Home' },
       { icon: 'users-three', label: 'Pacientes' },
-      { icon: 'hospital', label: 'Hospitais' },
       { icon: 'pill', label: 'Farmácia' },
       { icon: 'graduation-cap', label: 'Tutorial' },
+      { icon: 'hospital', label: 'Hospitais' },
+      { icon: 'identification-badge', label: 'Equipe' },
     ];
 
     const links = navLinks();
 
-    expect(links.length).toBe(5);
+    expect(links.length).toBe(6);
 
     expected.forEach(({ label, icon }) => {
       const link = linkByLabel(label);
@@ -75,7 +76,7 @@ describe('NavMenuComponent', () => {
     expect(iconDebugEl?.componentInstance.size()).toBe(24);
   });
 
-  it('wraps the 5 navigation items in a <nav aria-label="Navegação principal">, excluding logout', () => {
+  it('wraps the navigation items in a <nav aria-label="Navegação principal">, excluding logout', () => {
     const nav = fixture.nativeElement.querySelector('nav.nav-menu__links');
 
     expect(nav.getAttribute('aria-label')).toBe('Navegação principal');
@@ -88,6 +89,7 @@ describe('NavMenuComponent', () => {
     { label: 'Pacientes', output: 'pacientesClick' },
     { label: 'Hospitais', output: 'vinculosClick' },
     { label: 'Tutorial', output: 'tutorialClick' },
+    { label: 'Equipe', output: 'equipeClick' },
   ];
 
   for (const { label, output } of clickCases) {

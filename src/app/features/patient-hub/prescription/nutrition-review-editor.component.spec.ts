@@ -320,6 +320,9 @@ describe('NutritionReviewEditorComponent', () => {
       await settle();
 
       expect(text()).toContain(NR_ROUTE_EMPTY_HINT);
+      // Clicar fora da lista (no botão Salvar) a fecha: abre de novo para marcar a via.
+      (el().querySelector('.nr__select') as HTMLButtonElement).click();
+      await settle();
       await toggle('NP');
       routeFails = true;
       iconButton('Salvar a via')?.click();

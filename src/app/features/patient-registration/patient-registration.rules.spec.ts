@@ -89,7 +89,13 @@ describe('admission rules (US-002-1-06)', () => {
     expect(validateHospitalAdmissionDate('01/01/2020', today)).toEqual({ value: '2020-01-01' });
     expect(validateHospitalAdmissionDate('25/11/2026', today)).toEqual({ code: 'MSG-08' });
     expect(validateHospitalAdmissionDate('31/02/2026', today)).toEqual({ code: 'invalidDate' });
-    expect(validateHospitalAdmissionDate('ontem', today)).toEqual({ code: 'invalidDate' });
+    expect(validateHospitalAdmissionDate('amanhã', today)).toEqual({ code: 'invalidDate' });
+  });
+
+  it('entende "hoje" e "ontem" sem precisar da IA', () => {
+    expect(validateHospitalAdmissionDate('Hoje', today)).toEqual({ value: '2026-11-24' });
+    expect(validateHospitalAdmissionDate(' ontem ', today)).toEqual({ value: '2026-11-23' });
+    expect(validateNutritionalTherapyStartDate('hoje', today)).toEqual({ value: '2026-11-24' });
   });
 
   it('accepts any valid nutritional therapy start date', () => {

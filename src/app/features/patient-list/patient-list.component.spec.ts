@@ -438,7 +438,8 @@ describe('PatientListComponent', () => {
 
       el.setPointerCapture = (): void => undefined;
       const th = (el.closest('th') as HTMLElement).previousElementSibling as HTMLElement;
-      const startWidth = th.getBoundingClientRect().width;
+      // Sem layout (tabela oculta no teste) vale a largura guardada.
+      const startWidth = th.getBoundingClientRect().width || width('age');
 
       el.dispatchEvent(
         new PointerEvent('pointerdown', { bubbles: true, cancelable: true, clientX: 100, pointerId: 1 }),
@@ -1158,13 +1159,17 @@ describe('PatientListComponent', () => {
     });
   });
 
-  it('mostra estado vazio e o botão de cadastrar apenas navega', async () => {
+  it('mostra estado vazio e o botão de cadastrar abre o cadastro conversacional no painel lateral', async () => {
     await create();
 
     expect(text()).toContain('Nenhum paciente para este dia');
     q('.patient-list__register button')?.click();
+    const assistant = TestBed.inject(AiAssistantService);
 
-    expect(router.navigate).toHaveBeenCalledWith(['/patients', 'register']);
+    expect(router.navigate).not.toHaveBeenCalled();
+    expect(assistant.isOpen()).toBeTrue();
+    expect(assistant.view()).toBe('conversation');
+    expect(assistant.activeAction()?.id).toBe('register-patient');
   });
 
   describe('atalhos de cadastro e edição (US-004-1-07)', () => {

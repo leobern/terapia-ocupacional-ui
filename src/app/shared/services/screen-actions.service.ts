@@ -69,6 +69,14 @@ export type ConversationParseResult = { readonly value: string } | { readonly er
 export interface ConversationOption {
   readonly value: string;
   readonly label: string;
+  /** Opção principal (chip preenchido), ex.: "Salvar" na pergunta final do cadastro. */
+  readonly primary?: boolean;
+}
+
+/** Uma linha do cartão de resumo mostrado antes de confirmar (ex.: "Nome" → "Ana Souza"). */
+export interface ConversationSummaryItem {
+  readonly label: string;
+  readonly value: string;
 }
 
 /** Uma pergunta da conversa: o assistente pergunta, valida a resposta e só avança se ela for válida. */
@@ -81,6 +89,20 @@ export interface ConversationStep {
   readonly optional?: boolean;
   /** Etapa condicional: só é perguntada quando devolve `true` para as respostas já dadas (ex.: internação só se "sim"). */
   readonly when?: (values: Readonly<Record<string, string>>) => boolean;
+  /** Atalho que pula direto para uma etapa adiante (ex.: "Salvar paciente" nas perguntas extras), dispensando as outras. */
+  readonly jumpTo?: { readonly label: string; readonly stepId: string };
+  /** Título do cartão de resumo (ex.: "Dados do paciente"). */
+  readonly summaryTitle?: string;
+  /** Cartão com os dados coletados, mostrado junto da pergunta (ex.: a confirmação final do cadastro). */
+  readonly summary?: (values: Readonly<Record<string, string>>) => readonly ConversationSummaryItem[];
+  /**
+   * Resposta que volta a uma etapa anterior em vez de seguir (ex.: "Informar mais dados"): devolve a etapa de destino e
+   * respostas a gravar; as respostas dessa etapa em diante são descartadas e ela é perguntada de novo.
+   */
+  readonly rewind?: (
+    answer: string,
+    values: Readonly<Record<string, string>>,
+  ) => { readonly stepId: string; readonly set?: Readonly<Record<string, string>> } | null;
   /** `values` são as respostas já aceitas (para regras que dependem de etapas anteriores). */
   readonly parse: (answer: string, values: Readonly<Record<string, string>>) => ConversationParseResult;
 }

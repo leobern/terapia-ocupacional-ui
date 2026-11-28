@@ -255,12 +255,36 @@ describe('CardNotifyComponent', () => {
       expect(fixture.nativeElement.querySelector('.card-notify__collapse').textContent).toContain('2 respostas'); // Figma: "N respostas" com seta para cima
     });
 
-    it('o texto aparece inteiro (sem corte em 2 linhas)', async () => {
+    it('texto longo fecha em 3 linhas com "Exibir mais"; ao abrir, mostra o texto todo (e "Exibir menos")', async () => {
       await createDetail({ description: 'linha '.repeat(80) });
+      // A medição do corte roda depois da renderização e liga o botão no ciclo seguinte.
+      await fixture.whenStable();
+      fixture.detectChanges();
       const text = fixture.nativeElement.querySelector('.card-notify__description') as HTMLElement;
+      const more = (): HTMLButtonElement =>
+        fixture.nativeElement.querySelector('.card-notify__more') as HTMLButtonElement;
+
+      expect(getComputedStyle(text).getPropertyValue('-webkit-line-clamp')).toBe('3');
+      expect(text.scrollHeight).toBeGreaterThan(text.clientHeight);
+      expect(more().classList).not.toContain('card-notify__more--hidden');
+      expect(more().textContent).toContain('Exibir mais');
+
+      more().click();
+      fixture.detectChanges();
 
       expect(getComputedStyle(text).overflow).toBe('visible');
       expect(text.scrollHeight).toBeLessThanOrEqual(text.clientHeight + 1);
+      expect(more().textContent).toContain('Exibir menos');
+    });
+
+    it('texto curto não mostra "Exibir mais" e a altura do texto acompanha o conteúdo (uma frase, uma linha)', async () => {
+      await createDetail({ description: 'Curto.' });
+      const more = fixture.nativeElement.querySelector('.card-notify__more') as HTMLElement;
+      const text = fixture.nativeElement.querySelector('.card-notify__description') as HTMLElement;
+
+      expect(more.classList).toContain('card-notify__more--hidden');
+      expect(getComputedStyle(more).display).toBe('none');
+      expect(text.clientHeight).toBeLessThan(40);
     });
 
     it('card resolvido usa o fundo surface-2 e o selo "Resolvida" (Figma v2/NotificationThread)', async () => {

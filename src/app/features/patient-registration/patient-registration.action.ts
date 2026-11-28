@@ -16,6 +16,7 @@ import {
   InternacaoFieldError,
   type InternacaoLocation,
 } from './internacao-creation.port';
+import { formatBirthDate } from './parse-birth-date';
 import { type CreatedPatient, PatientCreationPort, PatientFieldError } from './patient-creation.port';
 import {
   LOCATION_KINDS,
@@ -89,6 +90,23 @@ export class PatientRegistrationAction {
     >;
     const parse = <T extends string>(result: RuleResult<T>): ConversationParseResult =>
       'code' in result ? { error: message(result.code) } : { value: result.value };
+    const extrasOptions = [
+      { label: t('extras.yes'), value: 'yes' },
+      { label: t('extras.no'), value: 'no' },
+    ];
+    // "Sim, quero informar" / "Não, seguir" (e "sim"/"não" digitados) valem como resposta.
+    const parseExtras = (raw: string): ConversationParseResult => {
+      // Sem acento nem caixa: "Não, seguir" e "nao" valem igual (o rótulo pode vir em NFC ou NFD).
+      const answer = raw.normalize('NFD').replace(/[̀-ͯ]/gu, '').trim().toLowerCase();
+
+      if (answer.startsWith('sim')) {
+        return { value: 'yes' };
+      }
+
+      return answer.startsWith('nao') ? { value: 'no' } : parse(validateAdmitChoice(raw));
+    };
+    const wantsExtras = (values: Readonly<Record<string, string>>): boolean =>
+      values['extrasBasic'] === 'yes' || values['extrasAdmission'] === 'yes';
 
     return {
       conversation: {
@@ -108,12 +126,6 @@ export class PatientRegistrationAction {
             prompt: t('prompts.sex'),
           },
           {
-            id: 'medicalRecordNumber',
-            optional: true,
-            parse: raw => parse(validateMedicalRecordNumber(raw)),
-            prompt: t('prompts.medicalRecordNumber'),
-          },
-          {
             // US-002-1-05: internação é opcional; "sim" habilita as perguntas da US-002-1-06 (todas opcionais).
             id: 'admit',
             options: [
@@ -123,7 +135,61 @@ export class PatientRegistrationAction {
             parse: raw => parse(validateAdmitChoice(raw)),
             prompt: t('prompts.admit'),
           },
+          // Perguntas opcionais não são feitas de cara (Thiago, 2026-11-27): uma pergunta geral lista os tópicos e só
+          // quem quer contribuir os responde. "Não" segue direto para salvar.
+          {
+            id: 'extrasBasic',
+            options: extrasOptions,
+            parse: parseExtras,
+            prompt: t('prompts.extrasBasic'),
+            when: values => values['admit'] === 'no',
+          },
+          {
+            id: 'extrasAdmission',
+            options: extrasOptions,
+            parse: parseExtras,
+            prompt: t('prompts.extrasAdmission'),
+            when: values => values['admit'] === 'yes',
+          },
+          {
+            id: 'medicalRecordNumber',
+            optional: true,
+            parse: raw => parse(validateMedicalRecordNumber(raw)),
+            prompt: t('prompts.medicalRecordNumber'),
+            jumpTo: { label: t('savePatient'), stepId: 'confirmSave' },
+            when: wantsExtras,
+          },
           ...this.admissionSteps(t, parse),
+          {
+            // Fim do cadastro: cartão com os dados coletados, "Salvar" (principal) e "Informar mais dados". Também vale
+            // digitar "salvar"/"sim" ou "informar mais".
+            id: 'confirmSave',
+            options: [
+              { label: t('save'), primary: true, value: 'save' },
+              { label: t('moreData'), value: 'more' },
+            ],
+            parse: (raw): ConversationParseResult => {
+              const answer = raw.trim().toLowerCase();
+
+              if (['salvar', 'sim', 'pode', 'ok', 'pode salvar'].includes(answer)) {
+                return { value: 'save' };
+              }
+
+              return /^(informar|ajustar|mais)/u.test(answer) ? { value: 'more' } : { error: message('saveChoice') };
+            },
+            prompt: t('prompts.confirmSave'),
+            // "Informar mais dados": reabre as perguntas opcionais (marca "sim" na pergunta geral de extras).
+            rewind: (answer, values): { set: Record<string, string>; stepId: string } | null => {
+              if (answer !== 'more') {
+                return null;
+              }
+              const extras = values['admit'] === 'yes' ? 'extrasAdmission' : 'extrasBasic';
+
+              return { set: { [extras]: 'yes' }, stepId: 'medicalRecordNumber' };
+            },
+            summary: values => this.summaryOf(values, t, sexLabels),
+            summaryTitle: t('summary.title'),
+          },
         ],
         submit: values => this.submit(values, message),
         successMessage: message('MSG-04'),
@@ -134,14 +200,42 @@ export class PatientRegistrationAction {
     };
   }
 
+  /** Linhas do cartão de resumo antes de salvar: só o que foi informado (RN-01), no formato de leitura. */
+  private summaryOf(
+    values: Readonly<Record<string, string>>,
+    t: (key: string) => string,
+    sexLabels: Readonly<Record<PatientSex, string>>,
+  ): { label: string; value: string }[] {
+    const date = (iso: string | undefined): string => (iso ? formatBirthDate(iso) : '');
+    const locations = this.locationsOf(values)
+      .map(location => [t(`locationKind.${location.locationType}`), location.locationValue].join(': '))
+      .join(' · ');
+    const rows: [string, string][] = [
+      [t('summary.fullName'), values['fullName'] ?? ''],
+      [t('summary.birthDate'), date(values['birthDate'])],
+      [t('summary.sex'), sexLabels[values['sex'] as PatientSex] ?? ''],
+      [t('summary.admit'), values['admit'] === 'yes' ? t('admit.yes') : t('admit.no')],
+      [t('summary.medicalRecordNumber'), values['medicalRecordNumber'] ?? ''],
+      [t('summary.bedNumber'), values['bedNumber'] ?? ''],
+      [t('summary.healthInsurance'), values['healthInsurance'] ?? ''],
+      [t('summary.admissionNumber'), values['admissionNumber'] ?? ''],
+      [t('summary.hospitalAdmissionDate'), date(values['hospitalAdmissionDate'])],
+      [t('summary.nutritionalTherapyStartDate'), date(values['nutritionalTherapyStartDate'])],
+      [t('summary.locations'), locations],
+    ];
+
+    return rows.filter(([, value]) => value !== '').map(([label, value]) => ({ label, value }));
+  }
+
   /** US-002-1-06: dados da internação, um por vez; todos opcionais (RN-01) e só perguntados se o usuário quer internar. */
   private admissionSteps(
     t: (key: string) => string,
     parse: <T extends string>(result: RuleResult<T>) => ConversationParseResult,
   ): ConversationStep[] {
-    const when = (values: Readonly<Record<string, string>>): boolean => values['admit'] === 'yes';
+    const when = (values: Readonly<Record<string, string>>): boolean =>
+      values['admit'] === 'yes' && values['extrasAdmission'] === 'yes';
 
-    const steps: Pick<ConversationStep, 'id' | 'parse' | 'prompt'>[] = [
+    const steps: Pick<ConversationStep, 'id' | 'options' | 'parse' | 'prompt'>[] = [
       { id: 'bedNumber', parse: raw => parse(validateBedNumber(raw)), prompt: t('prompts.bedNumber') },
       {
         id: 'healthInsurance',
@@ -155,17 +249,21 @@ export class PatientRegistrationAction {
       },
       {
         id: 'hospitalAdmissionDate',
+        options: [{ label: t('today'), value: 'today' }],
         parse: raw => parse(validateHospitalAdmissionDate(raw, new Date())),
         prompt: t('prompts.hospitalAdmissionDate'),
       },
       {
         id: 'nutritionalTherapyStartDate',
+        options: [{ label: t('today'), value: 'today' }],
         parse: raw => parse(validateNutritionalTherapyStartDate(raw)),
         prompt: t('prompts.nutritionalTherapyStartDate'),
       },
     ];
 
-    return [...steps.map(step => ({ ...step, optional: true, when })), ...this.locationSteps(t, parse, when)];
+    const jumpTo = { label: t('savePatient'), stepId: 'confirmSave' };
+
+    return [...steps.map(step => ({ ...step, jumpTo, optional: true, when })), ...this.locationSteps(t, parse, when)];
   }
 
   /**
@@ -218,6 +316,7 @@ export class PatientRegistrationAction {
         optional: true,
         parse: raw => choice(raw),
         prompt: t('prompts.addLocation'),
+        jumpTo: { label: t('savePatient'), stepId: 'confirmSave' },
         when: admitting,
       },
       typeStep('location1Type', t('prompts.location1Type'), adding),

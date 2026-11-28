@@ -83,6 +83,27 @@ function parseBrDate(raw: string): ParsedDate | null {
   };
 }
 
+function toIso(day: Date): string {
+  return `${String(day.getFullYear()).padStart(4, '0')}-${String(day.getMonth() + 1).padStart(2, '0')}-${String(day.getDate()).padStart(2, '0')}`;
+}
+
+/** "hoje"/"ontem" viram a data na hora, sem precisar da IA (Thiago, 2026-11-27); outra coisa devolve `null`. */
+function relativeDate(raw: string, today: Date): ParsedDate | null {
+  const word = normalize(raw);
+  const offsets = new Map<string, number>([
+    ['hoje', 0],
+    ['ontem', -1],
+  ]);
+  const offset = offsets.get(word);
+
+  if (offset === undefined) {
+    return null;
+  }
+  const date = new Date(today.getFullYear(), today.getMonth(), today.getDate() + offset);
+
+  return { date, iso: toIso(date) };
+}
+
 function startOfDay(day: Date): Date {
   return new Date(day.getFullYear(), day.getMonth(), day.getDate());
 }
@@ -157,7 +178,7 @@ export function validateHospitalAdmissionDate(raw: string, today: Date): RuleRes
   if (isDontKnow(raw)) {
     return { value: '' };
   }
-  const parsed = parseBrDate(raw);
+  const parsed = parseBrDate(raw) ?? relativeDate(raw, today);
 
   if (!parsed) {
     return { code: 'invalidDate' };
@@ -167,11 +188,11 @@ export function validateHospitalAdmissionDate(raw: string, today: Date): RuleRes
 }
 
 /** Data de início da TN: dd/mm/aaaa real (pode ser futura); "não sei" deixa vazio. */
-export function validateNutritionalTherapyStartDate(raw: string): RuleResult<string> {
+export function validateNutritionalTherapyStartDate(raw: string, today: Date = new Date()): RuleResult<string> {
   if (isDontKnow(raw)) {
     return { value: '' };
   }
-  const parsed = parseBrDate(raw);
+  const parsed = parseBrDate(raw) ?? relativeDate(raw, today);
 
   return parsed ? { value: parsed.iso } : { code: 'invalidDate' };
 }

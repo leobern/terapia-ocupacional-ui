@@ -25,7 +25,7 @@ import { IconButtonComponent } from '../icon-button/icon-button.component';
 import { IconLogoButtonComponent } from '../icon-logo/icon-logo-button.component';
 
 /** Mapeia as 6 chaves fixas dos itens de navegação (spec.md § Clarifications + Home). */
-export type NavMenuItemKey = 'home' | 'farmacia' | 'pacientes' | 'tutorial' | 'vinculos';
+export type NavMenuItemKey = 'home' | 'farmacia' | 'pacientes' | 'tutorial' | 'vinculos' | 'equipe';
 
 interface NavMenuItem {
   readonly key: NavMenuItemKey;
@@ -72,7 +72,13 @@ const ROLE_LABELS: Readonly<Record<string, string>> = {
   [Role.GESTOR]: 'Gestão',
   [Role.RECECIONISTA]: 'Recepção',
   [Role.TERAPEUTA]: 'Terapeuta',
+  [Role.MEDICO]: 'Médico',
 };
+
+/** Equipe (Administração): só ADMIN e GESTOR; sem sessão (desenvolvimento) também aparece. O backend autoriza de fato. */
+function canSeeTeam(role: Role | null): boolean {
+  return role === null || role === Role.ADMIN || role === Role.GESTOR;
+}
 
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -101,6 +107,7 @@ export class NavMenuComponent {
   readonly pacientesClick = output();
   readonly tutorialClick = output();
   readonly vinculosClick = output();
+  readonly equipeClick = output();
   readonly logoutClick = output();
 
   /**
@@ -125,14 +132,18 @@ export class NavMenuComponent {
 
   // Ordem e ícones do Figma 4741:11339 (v2/NavRail). Ícones em peso "regular"; o item ativo é SÓLIDO ("fill").
   // Única exceção fixa: o ícone de Sair (template) é sempre bold, aberto ou fechado (CLAUDE.md).
+  // Ordem (Thiago, 2026-11-27): Home, Pacientes, Farmácia, Tutorial, Hospitais e Equipe. Equipe é da Administração:
+  // só ADMIN e GESTOR (ou sem sessão, nos testes de desenvolvimento); o backend é quem autoriza de fato.
   protected readonly items: readonly NavMenuItem[] = [
-    // Home, Pacientes, Hospitais (os vínculos do profissional), Farmácia e Tutorial (Thiago, 2026-11-25).
     { icon: 'house', key: 'home', label: 'Home' },
     { icon: 'users-three', key: 'pacientes', label: 'Pacientes' },
-    // Hospitais = vínculos com hospitais (US-001-2-02, RN03): sem desenho no Figma, ainda; pendente de aprovação.
-    { icon: 'hospital', key: 'vinculos', label: 'Hospitais' },
     { icon: 'pill', key: 'farmacia', label: 'Farmácia' },
     { icon: 'graduation-cap', key: 'tutorial', label: 'Tutorial' },
+    // Hospitais = vínculos com hospitais (US-001-2-02, RN03).
+    { icon: 'hospital', key: 'vinculos', label: 'Hospitais' },
+    ...(canSeeTeam(inject(SessionRoleReader, { optional: true })?.read() ?? null)
+      ? [{ icon: 'identification-badge', key: 'equipe', label: 'Equipe' } satisfies NavMenuItem]
+      : []),
   ];
 
   // Anel de foco sistêmico compartilhado por todos os controles clicáveis do
@@ -170,6 +181,9 @@ export class NavMenuComponent {
         break;
       case 'vinculos':
         this.vinculosClick.emit();
+        break;
+      case 'equipe':
+        this.equipeClick.emit();
         break;
     }
   }

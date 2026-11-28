@@ -104,6 +104,28 @@ describe('BottomSheetComponent', () => {
   // T008 — dispensa e acessibilidade
   // ---------------------------------------------------------------------------
 
+  it('confirmBeforeClose: fechar só avisa (closeBlocked); a dica aparece e fica visível quando pedido', () => {
+    const closed = jasmine.createSpy('closed');
+    const closeBlocked = jasmine.createSpy('closeBlocked');
+
+    fixture.componentInstance.closed.subscribe(closed);
+    fixture.componentInstance.closeBlocked.subscribe(closeBlocked);
+    fixture.componentRef.setInput('confirmBeforeClose', true);
+    fixture.componentRef.setInput('hint', 'Você também pode responder via áudio.');
+    openSheet();
+    closeButton()?.click();
+
+    expect(closeBlocked).toHaveBeenCalledTimes(1);
+    expect(closed).not.toHaveBeenCalled();
+    const hint = fixture.nativeElement.querySelector('.bottom-sheet__hint') as HTMLElement;
+
+    expect(hint.classList).not.toContain('bottom-sheet__hint--visible');
+    fixture.componentRef.setInput('hintVisible', true);
+    fixture.detectChanges();
+
+    expect(hint.classList).toContain('bottom-sheet__hint--visible');
+  });
+
   it('abre o dialog em modo modal quando `open` vira true', () => {
     expect(dialog().open).toBeFalse();
 

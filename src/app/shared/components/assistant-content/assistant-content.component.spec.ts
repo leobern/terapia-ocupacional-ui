@@ -4,6 +4,7 @@ import { By } from '@angular/platform-browser';
 import { Router } from '@angular/router';
 
 import { AiAssistantService } from '../../services/ai-assistant.service';
+import { AssistantConversationService } from '../../services/assistant-conversation.service';
 import { ASSISTANT_QUERY_RESOLVERS } from '../../services/assistant-query-resolver';
 import { type ScreenAction, ScreenActionsService } from '../../services/screen-actions.service';
 import { UserDirectory } from '../../services/user-directory';
@@ -48,7 +49,8 @@ describe('AssistantContentComponent', () => {
 
   it('chat: greets the user', () => {
     expect(text('.assistant-content__title')).toBe('Como eu posso te ajudar?');
-    expect(text('.assistant-content__hint')).toContain('texto ou áudio');
+    // A dica de texto/áudio saiu do conteúdo: fica acima do campo de mensagem (drawer/bottom sheet).
+    expect(el().querySelector('.assistant-content__hint')).toBeNull();
   });
 
   it('chat: shows the welcome message while there is no conversation (Figma v2/AssistantPanel)', () => {
@@ -344,7 +346,6 @@ describe('AssistantContentComponent', () => {
 
   describe('saudação da tela: texto próprio, digitado, com o aviso em fade', () => {
     const live = (index: number): string => el().querySelectorAll('.typewriter__live')[index]?.textContent ?? '';
-    const hint = (): HTMLElement => el().querySelector('.assistant-content__hint') as HTMLElement;
 
     beforeEach(() => jasmine.clock().install());
 
@@ -360,7 +361,6 @@ describe('AssistantContentComponent', () => {
 
       expect(live(0)).toBe('');
       expect(live(1)).toBe('');
-      expect(hint().classList).not.toContain('assistant-content__hint--visible');
 
       jasmine.clock().tick(14 * 'Título da tela'.length);
       fixture.detectChanges();
@@ -372,17 +372,12 @@ describe('AssistantContentComponent', () => {
       fixture.detectChanges();
 
       expect(live(1)).toBe('Descrição da tela');
-      expect(hint().classList).not.toContain('assistant-content__hint--visible');
 
       jasmine.clock().tick(1999);
       fixture.detectChanges();
 
-      expect(hint().classList).not.toContain('assistant-content__hint--visible');
-
       jasmine.clock().tick(1);
       fixture.detectChanges();
-
-      expect(hint().classList).toContain('assistant-content__hint--visible');
     });
 
     it('sem texto registrado pela tela usa a saudação padrão', () => {
@@ -415,7 +410,6 @@ describe('AssistantContentComponent', () => {
 
       expect(live(0)).toBe('Título A');
       expect(live(1)).toBe('Descrição A');
-      expect(hint().classList).toContain('assistant-content__hint--visible');
     });
 
     it('uma nova abertura lê a tela de novo e escreve o texto da tela atual', () => {
@@ -444,15 +438,12 @@ describe('AssistantContentComponent', () => {
         fixture.detectChanges();
       }
 
-      expect(hint().classList).toContain('assistant-content__hint--visible');
-
       assistant.closePanel();
       fixture.detectChanges();
       assistant.openPanel();
       fixture.detectChanges();
 
       expect(live(0)).toBe('');
-      expect(hint().classList).not.toContain('assistant-content__hint--visible');
     });
   });
 
@@ -486,13 +477,15 @@ describe('AssistantContentComponent', () => {
 
     afterEach(() => jasmine.clock().uninstall());
 
-    it('shows the question, answers, errors and the options/skip buttons', () => {
+    it('shows the question, answers and errors; options and skip live in the chips above the message field', () => {
+      const flow = TestBed.inject(AssistantConversationService);
+
       assistant.openAction(chat);
       fixture.detectChanges();
       finishTyping();
 
-      // A pergunta da IA sai em negrito e um pouco maior (classe própria).
-      expect(Array.from(el().querySelectorAll('.assistant-content__ask')).at(-1)?.textContent?.trim()).toBe(
+      // A pergunta da IA é texto corrido regular (padrão de ferramentas de IA), com a digitação por cima.
+      expect(Array.from(el().querySelectorAll('.assistant-content__ask')).at(-1)?.textContent).toContain(
         'Qual o nome?',
       );
       assistant.ask('');
@@ -501,16 +494,90 @@ describe('AssistantContentComponent', () => {
 
       expect(text('.assistant-content__question')).toBe('—');
       expect(text('[role="alert"]')).toBe('Informe o nome.');
-      expect(buttons()).toEqual(['Masculino', 'Pular']);
-      el().querySelectorAll('button')[0].click();
-      el().querySelectorAll('button')[1]?.click();
+      // As opções não são mais botões de 100% no conteúdo: viram chips junto do campo de mensagem.
+      expect(buttons()).toEqual([]);
+      expect(flow.options().map(o => o.label)).toEqual(['Masculino']);
+      expect(flow.canSkip()).toBeTrue();
+      flow.choose(flow.options()[0]);
+      flow.skip();
       fixture.detectChanges();
 
       expect(submit).toHaveBeenCalledWith();
     });
 
-    it('offers a retry button after a failed submit', async () => {
-      expect(el().querySelector('app-button')).toBeNull();
+    /** Guarda os quadros pedidos e os roda sob demanda (a mensagem só entra no DOM depois do efeito). */
+    const fakeFrames = (): { run: () => void } => {
+      const pending: FrameRequestCallback[] = [];
+
+      spyOn(window, 'requestAnimationFrame').and.callFake((callback: FrameRequestCallback): number => {
+        pending.push(callback);
+
+        return pending.length;
+      });
+
+      return {
+        run: (): void => {
+          while (pending.length > 0) {
+            pending.shift()?.(0);
+          }
+        },
+      };
+    };
+
+    it('a última resposta do usuário sobe ao topo da tela (sem área rolável por perto)', () => {
+      const frames = fakeFrames();
+
+      spyOn(Element.prototype, 'scrollIntoView');
+      assistant.openAction(chat);
+      fixture.detectChanges();
+      finishTyping();
+      assistant.ask('Ana');
+      fixture.detectChanges();
+      frames.run();
+
+      expect(Element.prototype.scrollIntoView).toHaveBeenCalledWith({ behavior: 'smooth', block: 'start' });
+    });
+
+    it('com uma área rolável por perto, rola o contêiner até o balão', () => {
+      const frames = fakeFrames();
+
+      spyOn(HTMLElement.prototype, 'scrollTo');
+      assistant.openAction(chat);
+      fixture.detectChanges();
+      finishTyping();
+      // O próprio conteúdo faz o papel da área rolável (overflow-y: auto).
+      (el().querySelector('.assistant-content') as HTMLElement).style.overflowY = 'auto';
+      assistant.ask('Ana');
+      fixture.detectChanges();
+      frames.run();
+
+      expect(HTMLElement.prototype.scrollTo as jasmine.Spy).toHaveBeenCalledWith(
+        jasmine.objectContaining({ behavior: 'smooth' }),
+      );
+    });
+
+    it('mostra "Pensando…" enquanto a IA prepara a próxima pergunta', () => {
+      const flow = TestBed.inject(AssistantConversationService);
+
+      flow.thinkingMs = 600;
+      assistant.openAction(chat);
+      fixture.detectChanges();
+      finishTyping();
+      assistant.ask('Ana');
+      fixture.detectChanges();
+
+      expect(text('.assistant-content__thinking')).toContain('Pensando');
+      expect(flow.options()).toEqual([]);
+      jasmine.clock().tick(700);
+      fixture.detectChanges();
+
+      expect(el().querySelector('.assistant-content__thinking')).toBeNull();
+      expect(flow.options().map(o => o.label)).toEqual(['Masculino']);
+    });
+
+    it('offers a retry after a failed submit (chip above the message field)', async () => {
+      const flow = TestBed.inject(AssistantConversationService);
+
       submit.and.rejectWith(new Error('x'));
       assistant.openAction(chat);
       assistant.ask('Ana');
@@ -521,12 +588,12 @@ describe('AssistantContentComponent', () => {
       fixture.detectChanges();
       submit.and.resolveTo();
 
-      expect(buttons()).toEqual([jasmine.stringMatching(/Tentar novamente|Try again/)]);
-      el().querySelector('button')?.click();
+      expect(flow.canRetry()).toBeTrue();
+      flow.retry();
       await Promise.resolve();
       fixture.detectChanges();
 
-      expect(text('.assistant-content__ask:last-of-type')).toBe('Feito');
+      expect(Array.from(el().querySelectorAll('.assistant-content__ask')).at(-1)?.textContent).toContain('Feito');
     });
   });
 });

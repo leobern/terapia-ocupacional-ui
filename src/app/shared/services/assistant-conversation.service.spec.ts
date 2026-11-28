@@ -141,4 +141,117 @@ describe('AssistantConversationService', () => {
 
     expect(service.currentStep()?.id).toBe('b');
   });
+
+  describe('pensando, resumo, atalho e volta a uma etapa', () => {
+    const flowDefinition = (): ConversationDefinition => ({
+      errorMessage: 'falhou',
+      skipLabel: 'Pular',
+      steps: [
+        { id: 'a', parse: raw => ({ value: raw }), prompt: 'pergunta a' },
+        {
+          id: 'b',
+          jumpTo: { label: 'Ir ao fim', stepId: 'fim' },
+          optional: true,
+          parse: raw => ({ value: raw }),
+          prompt: 'pergunta b',
+        },
+        {
+          id: 'fim',
+          options: [
+            { label: 'Salvar', primary: true, value: 'save' },
+            { label: 'Mais', value: 'more' },
+          ],
+          parse: raw => ({ value: raw === 'Mais' ? 'more' : 'save' }),
+          prompt: 'confirma?',
+          rewind: answer => (answer === 'more' ? { set: { a: 'novo' }, stepId: 'b' } : null),
+          summary: values => Object.entries(values).map(([label, value]) => ({ label, value })),
+          summaryTitle: 'Dados',
+        },
+      ],
+      submit: values => submit(values),
+      successMessage: 'pronto',
+      title: 'Teste',
+    });
+
+    it('com `thinkingMs`, a pergunta da IA entra depois da pausa e as opções só aparecem então', () => {
+      jasmine.clock().install();
+      try {
+        service.thinkingMs = 500;
+        service.start(flowDefinition());
+        service.answer('Ana');
+
+        expect(service.thinking()).toBeTrue();
+        expect(service.messages().map(m => m.text)).toEqual(['pergunta a', 'Ana']);
+        expect(service.canSkip()).toBeFalse();
+        jasmine.clock().tick(500);
+
+        expect(service.thinking()).toBeFalse();
+        expect(service.messages().at(-1)?.text).toBe('pergunta b');
+        expect(service.canSkip()).toBeTrue();
+        expect(service.jump()?.label).toBe('Ir ao fim');
+      } finally {
+        jasmine.clock().uninstall();
+      }
+    });
+
+    it('reiniciar enquanto a IA pensa descarta a fila', () => {
+      jasmine.clock().install();
+      try {
+        service.thinkingMs = 500;
+        service.start(flowDefinition());
+        service.answer('Ana');
+        service.reset();
+        jasmine.clock().tick(1000);
+
+        expect(service.thinking()).toBeFalse();
+        expect(service.messages()).toEqual([]);
+      } finally {
+        jasmine.clock().uninstall();
+      }
+    });
+
+    it('o atalho pula as etapas opcionais que faltam e mostra o resumo na etapa final', () => {
+      service.start(flowDefinition());
+      service.answer('Ana');
+      service.jumpToTarget();
+
+      expect(service.currentStep()?.id).toBe('fim');
+      const last = service.messages().at(-1);
+
+      expect(last?.summaryTitle).toBe('Dados');
+      expect(last?.summary).toContain({ label: 'a', value: 'Ana' });
+      expect(service.jump()).toBeNull();
+    });
+
+    it('"Mais" volta à etapa pedida, descartando as respostas dela em diante e gravando as combinadas', () => {
+      service.start(flowDefinition());
+      service.answer('Ana');
+      service.jumpToTarget();
+      service.choose({ label: 'Mais', value: 'more' });
+
+      expect(service.currentStep()?.id).toBe('b');
+      service.answer('x');
+
+      expect(service.currentStep()?.id).toBe('fim');
+      expect(service.messages().at(-1)?.summary).toContain({ label: 'a', value: 'novo' });
+    });
+
+    it('atalho sem destino válido ou fora de hora não faz nada', () => {
+      service.jumpToTarget();
+      service.start({
+        ...flowDefinition(),
+        steps: [
+          {
+            id: 'a',
+            jumpTo: { label: 'X', stepId: 'inexistente' },
+            parse: (raw): { value: string } => ({ value: raw }),
+            prompt: 'a',
+          },
+        ],
+      });
+      service.jumpToTarget();
+
+      expect(service.currentStep()?.id).toBe('a');
+    });
+  });
 });

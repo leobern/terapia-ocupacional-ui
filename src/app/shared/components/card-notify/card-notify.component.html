@@ -12,6 +12,7 @@
   [class.card-notify--expanded-open]="isAnswerOpen()"
   [class.card-notify--answering]="isAnswering()"
   [class.card-notify--draft]="isDraft()"
+  [class.card-notify--description-open]="descriptionOpen()"
   (click)="onCardClick()"
 >
   <div class="card-notify__row">
@@ -53,19 +54,6 @@
     }
   </div>
 
-  @if (kindLabel() || overdue()) {
-    <div class="card-notify__kind">
-      @if (kindLabel()) {
-        <span class="card-notify__kind-label">{{ kindLabel() }}</span>
-      }
-      @if (overdue()) {
-        <span class="card-notify__kind-label card-notify__kind-label--overdue"
-          >Vencida</span
-        >
-      }
-    </div>
-  }
-
   @if (showPatientHeader()) {
     <!-- Figma v2/NotificationThread: chip só com texto (sem foto do paciente). -->
     <div class="card-notify__patient">
@@ -74,7 +62,36 @@
     </div>
   }
 
-  <p class="card-notify__description">{{ description() }}</p>
+  <div class="card-notify__body">
+    @if (kindLabel() || overdue()) {
+      <div class="card-notify__kind">
+        @if (kindLabel()) {
+          <span class="card-notify__kind-label">{{ kindLabel() }}</span>
+        }
+        @if (overdue()) {
+          <span class="card-notify__kind-label card-notify__kind-label--overdue"
+            >Vencida</span
+          >
+        }
+      </div>
+    }
+    <p #descriptionElement class="card-notify__description">
+      {{ description() }}
+    </p>
+    @if (!isResume()) {
+      <!-- Sem corte o botão não aparece: a altura do card acompanha o texto. -->
+      <button
+        type="button"
+        class="card-notify__more"
+        [class.card-notify__more--hidden]="!truncated() && !descriptionOpen()"
+        [attr.aria-expanded]="descriptionOpen()"
+        [attr.aria-hidden]="!truncated() && !descriptionOpen()"
+        (click)="onToggleDescription($event)"
+      >
+        {{ descriptionOpen() ? 'Exibir menos' : 'Exibir mais' }}
+      </button>
+    }
+  </div>
 
   @if (showReplyBlocks()) {
     @for (reply of replies(); track reply.time + reply.authorName) {
