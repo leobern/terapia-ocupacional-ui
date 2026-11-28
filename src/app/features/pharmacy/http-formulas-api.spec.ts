@@ -24,6 +24,8 @@ describe('HttpFormulasApi', () => {
     controller.expectOne('/api/v1/hospitais/1/formulas').flush([
       {
         categoria: 'SUPLEMENTO_ORAL',
+        embalagem: 'Frasco 200 mL',
+        fabricante: 'Fabricante Y',
         fibra: true,
         gluten: null,
         id: 7,
@@ -33,8 +35,9 @@ describe('HttpFormulasApi', () => {
         padronizada: true,
         proteinaPorMl: null,
         sacarose: null,
-        vegano: null,
-        vegetariano: true,
+        tipoApresentacao: 'Líquido',
+        unidadeBase: 'ML',
+        viaAdministracao: 'Oral',
       },
     ]);
 
@@ -42,16 +45,47 @@ describe('HttpFormulasApi', () => {
       {
         category: 'suplemento-oral',
         fiber: true,
-        gluten: false,
+        gluten: null,
         id: '7',
         kcalPerMl: 1.5,
-        lactose: false,
+        lactose: null,
+        manufacturer: 'Fabricante Y',
         name: 'Suplemento Y',
+        packaging: 'Frasco 200 mL',
+        presentation: 'Líquido',
         proteinPerMl: null,
+        route: 'Oral',
         standardized: true,
-        sucrose: false,
-        vegan: false,
-        vegetarian: true,
+        sucrose: null,
+        unit: 'ml',
+      },
+    ]);
+  });
+
+  it('campo que o backend omite vira null, nunca "Não" nem undefined', async () => {
+    const promise = api.list(1);
+
+    controller
+      .expectOne('/api/v1/hospitais/1/formulas')
+      .flush([{ categoria: 'ESPESSANTE', id: 3, nome: 'Espessante Z', padronizada: false, unidadeBase: 'G' }]);
+
+    expect(await promise).toEqual([
+      {
+        category: 'espessante',
+        fiber: null,
+        gluten: null,
+        id: '3',
+        kcalPerMl: null,
+        lactose: null,
+        manufacturer: null,
+        name: 'Espessante Z',
+        packaging: null,
+        presentation: null,
+        proteinPerMl: null,
+        route: null,
+        standardized: false,
+        sucrose: null,
+        unit: 'g',
       },
     ]);
   });
@@ -71,8 +105,7 @@ describe('HttpFormulasApi', () => {
         padronizada: true,
         proteinaPorMl: 0.04,
         sacarose: false,
-        vegano: false,
-        vegetariano: false,
+        unidadeBase: 'ML',
       },
     ]);
 
@@ -91,6 +124,25 @@ describe('HttpFormulasApi', () => {
     expect(request.request.body).toEqual({ padronizada: true });
     request.flush({});
     await promise;
+  });
+
+  it('lista os pedidos do hospital', async () => {
+    const promise = api.listRequests(1);
+
+    controller
+      .expectOne('/api/v1/hospitais/1/solicitacoes-formula')
+      .flush([{ createdAt: '2026-11-28T10:00:00', descricao: 'Fórmula Z', id: 4 }]);
+
+    expect(await promise).toEqual([{ createdAt: '2026-11-28T10:00:00', description: 'Fórmula Z', id: '4' }]);
+  });
+
+  it('pedidos de hospital só do aparelho ficam no provisório', async () => {
+    const hospitalId = -5;
+
+    await api.requestFormula(hospitalId, 'Primeira');
+    await api.requestFormula(hospitalId, 'Segunda');
+
+    expect((await api.listRequests(hospitalId)).map(r => r.description)).toEqual(['Segunda', 'Primeira']);
   });
 
   it('solicita fórmula nova com POST', async () => {

@@ -23,8 +23,10 @@ export class AssistantEditorFooterComponent {
   protected readonly actions = computed(() => this.controller.active()?.actions() ?? []);
   protected readonly placeholder = computed(() => this.controller.active()?.placeholder ?? 'Escreva a sua mensagem');
 
-  protected onSend(): void {
-    this.controller.message();
+  protected onSend(text = ''): void {
+    if (this.controller.message(text)) {
+      this.value.set('');
+    }
     this.mode.set('text');
   }
 }

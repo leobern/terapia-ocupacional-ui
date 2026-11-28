@@ -44,6 +44,8 @@ const LAST: Prescription = {
   volumeMl: 1200.5,
 };
 
+const POWDER = { ...FORMULA, id: 'p1', name: 'Módulo em pó', unit: 'g' } as Formula;
+
 class FakeSource extends PrescriptionSource {
   stored: readonly Prescription[] = [];
   saves: PrescriptionSaveRequest[] = [];
@@ -124,7 +126,7 @@ describe('PrescriptionEditorComponent', () => {
           provide: FormulasApi,
           useValue: {
             listStandardizedForPatient: (): Promise<readonly Formula[]> =>
-              catalogFails ? Promise.reject(new Error('x')) : Promise.resolve([FORMULA]),
+              catalogFails ? Promise.reject(new Error('x')) : Promise.resolve([FORMULA, POWDER]),
           },
         },
         {
@@ -246,6 +248,13 @@ describe('PrescriptionEditorComponent', () => {
 
     expect(text()).toContain(PRESCRIPTION_SAVE_FAILED_HINT);
     expect((root().querySelector('#rx-volume') as HTMLInputElement).value).toBe('1200');
+  });
+
+  it('não oferece fórmulas medidas em gramas (a prescrição é por volume)', async () => {
+    await create();
+
+    expect(root().textContent).toContain('Fórmula A');
+    expect(root().innerHTML).not.toContain('Módulo em pó');
   });
 
   it('falha ao carregar o catálogo avisa', async () => {

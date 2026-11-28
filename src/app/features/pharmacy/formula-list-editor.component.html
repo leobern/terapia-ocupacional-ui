@@ -1,0 +1,66 @@
+<div class="flist">
+  <app-field-card
+    label="Quais fórmulas você usa?"
+    inputId="formula-list"
+    placeholder="Um nome por linha"
+    caption="Separe por linha ou vírgula."
+    [rows]="5"
+    [value]="text()"
+    (valueChange)="text.set($event)"
+  />
+  <app-button
+    label="Buscar no catálogo"
+    appearance="outlined"
+    [fullWidth]="true"
+    [disabled]="!canSearch() || busy()"
+    (click)="search()"
+  />
+
+  @for (match of matches(); track match.query) {
+    <fieldset class="flist__match">
+      <legend class="flist__query">{{ match.query }}</legend>
+      @for (formula of match.candidates; track formula.id) {
+        <label class="flist__option">
+          <input
+            type="checkbox"
+            [checked]="formula.standardized || selected().has(formula.id)"
+            [disabled]="formula.standardized || busy()"
+            (change)="toggle(formula.id)"
+          />
+          <span>
+            {{ formula.name }}
+            <small>
+              {{ formula.manufacturer ?? 'Fabricante não informado' }}
+              @if (formula.standardized) {
+                · já padronizada
+              }
+            </small>
+          </span>
+        </label>
+      } @empty {
+        <p class="flist__missing">Não encontrada no catálogo.</p>
+      }
+    </fieldset>
+  }
+
+  @if (selected().size > 0) {
+    <app-button
+      [label]="'Padronizar ' + selected().size + ' selecionada(s)'"
+      [fullWidth]="true"
+      [disabled]="busy()"
+      (click)="apply()"
+    />
+  }
+  @if (missing().length > 0 && !requested()) {
+    <app-button
+      label="Pedir inclusão das não encontradas"
+      appearance="outlined"
+      [fullWidth]="true"
+      [disabled]="busy()"
+      (click)="requestMissing()"
+    />
+  }
+  @if (feedback(); as message) {
+    <p class="flist__feedback" role="status">{{ message }}</p>
+  }
+</div>

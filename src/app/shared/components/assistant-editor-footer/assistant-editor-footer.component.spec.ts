@@ -47,6 +47,24 @@ describe('AssistantEditorFooterComponent', () => {
     expect(root().textContent).toContain(EDITOR_ASSIST_UNAVAILABLE_HINT);
   });
 
+  it('editor que aceita mensagem recebe o texto e o campo é limpo', () => {
+    const send = jasmine.createSpy('send');
+
+    TestBed.inject(AssistantEditorController).attach({ actions: signal([]), placeholder: 'Nomes', run, send });
+    fixture.detectChanges();
+    const field = root().querySelector<HTMLTextAreaElement>('textarea, input') as HTMLTextAreaElement;
+
+    field.value = 'Diben';
+    field.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+    field.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
+    fixture.detectChanges();
+
+    expect(send).toHaveBeenCalledWith('Diben');
+    expect(root().textContent).not.toContain(EDITOR_ASSIST_UNAVAILABLE_HINT);
+    expect(field.value).toBe('');
+  });
+
   it('sem editor registrado não mostra chips e usa o placeholder padrão', () => {
     TestBed.resetTestingModule();
     fixture = TestBed.createComponent(AssistantEditorFooterComponent);

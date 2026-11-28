@@ -26,6 +26,14 @@
   @include typography.body-md;
 }
 
+.pharmacy__request {
+  margin: 0;
+  overflow-wrap: anywhere;
+  color: tokens.c(content-1);
+
+  @include typography.body-md;
+}
+
 .pharmacy__notice--error {
   color: tokens.c(content-1);
 }

@@ -1,11 +1,21 @@
 import { Injectable } from '@angular/core';
 
-import { Formula } from './formulas.models';
+import { Formula, FormulaRequest } from './formulas.models';
 import { FormulasApi } from './formulas-api';
 
 type CatalogItem = Omit<Formula, 'standardized'>;
 
-const base = { fiber: false, gluten: false, lactose: false, sucrose: false, vegan: false, vegetarian: false };
+const base = {
+  fiber: false,
+  gluten: false,
+  lactose: false,
+  manufacturer: null,
+  packaging: null,
+  presentation: 'Líquido',
+  route: 'Oral/Sonda',
+  sucrose: false,
+  unit: 'ml',
+} as const;
 
 const CATALOG: readonly CatalogItem[] = [
   { ...base, category: 'enteral', id: 'enteral-1', kcalPerMl: 1, name: 'Fórmula polimérica 1.0', proteinPerMl: 0.04 },
@@ -17,15 +27,29 @@ const CATALOG: readonly CatalogItem[] = [
     kcalPerMl: 1.5,
     name: 'Fórmula hipercalórica com fibras',
     proteinPerMl: 0.06,
-    vegetarian: true,
   },
   {
     ...base,
     category: 'parenteral',
+    fiber: null,
+    gluten: null,
     id: 'parenteral-1',
     kcalPerMl: 1.1,
+    lactose: null,
     name: 'Nutrição parenteral 3 em 1',
     proteinPerMl: 0.05,
+    route: 'Endovenosa (central)',
+    sucrose: null,
+  },
+  {
+    ...base,
+    category: 'modulo-proteico',
+    id: 'modulo-1',
+    kcalPerMl: 3.7,
+    name: 'Módulo de proteína',
+    presentation: 'Pó',
+    proteinPerMl: 0.9,
+    unit: 'g',
   },
   {
     ...base,
@@ -35,26 +59,29 @@ const CATALOG: readonly CatalogItem[] = [
     lactose: true,
     name: 'Suplemento oral hiperproteico',
     proteinPerMl: 0.1,
+    route: 'Oral',
     sucrose: true,
-    vegetarian: true,
   },
   {
     ...base,
-    category: 'suplemento-oral',
-    id: 'suplemento-2',
-    kcalPerMl: 1.2,
-    name: 'Suplemento oral vegano',
-    proteinPerMl: 0.06,
-    vegan: true,
-    vegetarian: true,
+    category: 'espessante',
+    id: 'espessante-1',
+    kcalPerMl: null,
+    name: 'Espessante',
+    presentation: 'Pó espessante',
+    proteinPerMl: null,
+    route: 'Oral',
+    unit: 'g',
   },
   {
     ...base,
     category: 'medicamento',
     id: 'medicamento-1',
     kcalPerMl: null,
-    name: 'Módulo de proteína',
+    name: 'Polivitamínico',
+    presentation: 'Pó liofilizado',
     proteinPerMl: null,
+    route: 'Endovenosa',
   },
 ];
 
@@ -62,7 +89,7 @@ const CATALOG: readonly CatalogItem[] = [
 @Injectable()
 export class ProvisionalFormulasApi extends FormulasApi {
   /** Pedidos registrados nesta sessão (provisório; a API real guarda hospital, solicitante e data/hora). */
-  readonly requests: { readonly description: string; readonly hospitalId: number }[] = [];
+  readonly requests: { readonly createdAt: string; readonly description: string; readonly hospitalId: number }[] = [];
   private readonly standardizedByHospital = new Map<number, Set<string>>();
 
   list(hospitalId: number): Promise<readonly Formula[]> {
@@ -88,8 +115,24 @@ export class ProvisionalFormulasApi extends FormulasApi {
     return Promise.resolve();
   }
 
+  listRequests(hospitalId: number): Promise<readonly FormulaRequest[]> {
+    const requests = this.requests
+      .map(({ createdAt, description, hospitalId: id }, index) => ({
+        createdAt,
+        description,
+        id: String(index + 1),
+        of: id,
+      }))
+      .filter(request => request.of === hospitalId)
+      .map(({ createdAt, description, id }) => ({ createdAt, description, id }));
+
+    requests.reverse();
+
+    return Promise.resolve(requests);
+  }
+
   requestFormula(hospitalId: number, description: string): Promise<void> {
-    this.requests.push({ description, hospitalId });
+    this.requests.push({ createdAt: new Date().toISOString(), description, hospitalId });
 
     return Promise.resolve();
   }

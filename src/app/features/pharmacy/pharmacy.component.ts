@@ -12,11 +12,20 @@ import { Router } from '@angular/router';
 
 import { PageContainerComponent } from '../../shared/components/page-container/page-container.component';
 import { PageHeaderComponent } from '../../shared/components/page-header/page-header.component';
-import { type FormValues, type ScreenAction, ScreenActionsService } from '../../shared/services/screen-actions.service';
+import { AiAssistantService } from '../../shared/services/ai-assistant.service';
+import {
+  FormSubmitError,
+  type FormValues,
+  type ScreenAction,
+  ScreenActionsService,
+  type ScreenCommand,
+} from '../../shared/services/screen-actions.service';
 import { PHARMACY_CONTEXT } from '../../shared/services/screen-contexts';
 import { HospitalContextService } from '../home/hospital-context.service';
 import { UnreadNotificationsReader } from '../home/unread-notifications-reader';
-import { Formula, FORMULA_CATEGORIES } from './formulas.models';
+import { FormulaListEditorComponent } from './formula-list-editor.component';
+import { findInCatalog } from './formula-matcher';
+import { Formula, FORMULA_CATEGORIES, FormulaRequest } from './formulas.models';
 import { FormulasApi } from './formulas-api';
 
 type LoadStatus = 'loading' | 'ready' | 'error';
@@ -42,6 +51,8 @@ export class PharmacyComponent implements OnInit {
   protected readonly online = signal(navigator.onLine);
   protected readonly saveError = signal<string | null>(null);
   protected readonly savingId = signal<string | null>(null);
+  protected readonly requests = signal<readonly FormulaRequest[]>([]);
+  protected readonly notice = signal<string | null>(null);
 
   protected readonly groups = computed(() =>
     FORMULA_CATEGORIES.map(category => ({
@@ -50,11 +61,14 @@ export class PharmacyComponent implements OnInit {
     })).filter(group => group.formulas.length > 0),
   );
 
+  /** Pedido já avisado como parecido com algo do catálogo: enviar o mesmo texto de novo confirma. */
+  private warnedRequest = '';
   private readonly api = inject(FormulasApi);
   private readonly context = inject(HospitalContextService);
   private readonly router = inject(Router);
   private readonly unread = inject(UnreadNotificationsReader);
   private readonly screenActions = inject(ScreenActionsService);
+  private readonly assistant = inject(AiAssistantService);
 
   constructor() {
     effect(onCleanup => {
@@ -76,6 +90,7 @@ export class PharmacyComponent implements OnInit {
     effect(onCleanup => {
       const actions: readonly ScreenAction[] = this.online()
         ? [
+            this.listAction(),
             {
               form: {
                 fields: [
@@ -100,11 +115,22 @@ export class PharmacyComponent implements OnInit {
       onCleanup(this.screenActions.register(actions));
     });
 
+    // Nomes escritos no campo de mensagem do assistente abrem a busca já preenchida.
+    effect(onCleanup => {
+      if (this.online()) {
+        onCleanup(this.screenActions.registerCommandHandler(command => this.openListFromCommand(command)));
+      }
+    });
+
     effect(() => {
       const hospitalId = this.hospital()?.id;
 
+      this.notice.set(null);
+      this.requests.set([]);
+      this.warnedRequest = '';
       if (hospitalId) {
         void this.load(hospitalId);
+        void this.loadRequests(hospitalId);
       }
     });
   }
@@ -170,20 +196,29 @@ export class PharmacyComponent implements OnInit {
       this.savingId.set(null);
     }
   }
-  protected yesNo(value: boolean): string {
+  protected sentOn(createdAt: string): string {
+    return new Date(createdAt).toLocaleDateString('pt-BR');
+  }
+
+  protected yesNo(value: boolean | null): string {
+    if (value === null) {
+      return 'N/A';
+    }
+
     return value ? 'Sim' : 'Não';
   }
 
+  /** Até 5 casas: a proteína por mL perderia precisão com o padrão de 3 (0,0465 viraria 0,047). */
   protected number(value: number | null): string {
-    return value === null ? '—' : value.toLocaleString('pt-BR');
+    return value === null ? 'N/A' : value.toLocaleString('pt-BR', { maximumFractionDigits: 5 });
   }
 
-  protected suitability(formula: Formula): string {
-    if (formula.vegan) {
-      return 'Vegano';
-    }
+  protected text(value: string | null): string {
+    return value || 'N/A';
+  }
 
-    return formula.vegetarian ? 'Vegetariano' : 'Não se aplica';
+  protected unitLabel(formula: Formula): string {
+    return formula.unit === 'g' ? 'g' : 'mL';
   }
 
   /** Envia o pedido pelo formulário dos atalhos; lançar erro mantém o formulário aberto com as respostas. */
@@ -194,6 +229,98 @@ export class PharmacyComponent implements OnInit {
     if (!hospitalId || !this.online() || !description) {
       throw new Error('Solicitação indisponível');
     }
+    this.checkCatalog(description);
+    await this.sendRequest(description);
+    this.warnedRequest = '';
+  }
+
+  /** Barra o pedido do que já existe; do que só é parecido, avisa uma vez. */
+  private checkCatalog(description: string): void {
+    const { exact, similar } = findInCatalog(description, this.formulas());
+    const names = (list: readonly Formula[]): string =>
+      list
+        .slice(0, 3)
+        .map(formula => formula.name)
+        .join(', ');
+
+    if (exact.length > 0) {
+      throw new FormSubmitError(
+        `Já está no catálogo: ${names(exact)}. Não é preciso pedir: padronize pela lista da Farmácia.`,
+      );
+    }
+    if (similar.length > 0 && this.warnedRequest !== description) {
+      this.warnedRequest = description;
+      throw new FormSubmitError(
+        `Há fórmulas parecidas no catálogo: ${names(similar)}. Se a sua for outra, envie de novo para confirmar.`,
+      );
+    }
+  }
+
+  private async sendRequest(description: string): Promise<void> {
+    const hospitalId = this.hospital()?.id;
+
+    if (!hospitalId || !this.online()) {
+      throw new Error('Solicitação indisponível');
+    }
     await this.api.requestFormula(hospitalId, description);
+    this.notice.set('Pedido enviado. A equipe Conductia faz o cadastro da fórmula.');
+    await this.loadRequests(hospitalId);
+  }
+
+  /** Os pedidos são complementares: se não carregarem, o catálogo segue funcionando. */
+  private async loadRequests(hospitalId: number): Promise<void> {
+    const requests = await this.api.listRequests(hospitalId).catch(() => []);
+
+    if (this.hospital()?.id === hospitalId) {
+      this.requests.set(requests);
+    }
+  }
+
+  /** Padroniza as escolhidas; devolve os nomes das que não foram salvas. */
+  private async standardizeMany(ids: readonly string[]): Promise<readonly string[]> {
+    const chosen = this.formulas().filter(item => ids.includes(item.id));
+    const saved = await Promise.allSettled(chosen.map(formula => this.standardizeOne(formula.id)));
+
+    return chosen.filter((_, index) => saved[index].status === 'rejected').map(formula => formula.name);
+  }
+
+  private async standardizeOne(formulaId: string): Promise<void> {
+    const hospitalId = this.hospital()?.id;
+
+    if (!hospitalId || !this.online()) {
+      throw new Error('Padronização indisponível');
+    }
+    await this.api.setStandardized(hospitalId, formulaId, true);
+    this.formulas.update(list => list.map(item => (item.id === formulaId ? { ...item, standardized: true } : item)));
+  }
+
+  private listAction(initialText = ''): ScreenAction {
+    return {
+      editor: {
+        component: FormulaListEditorComponent,
+        description:
+          'Escreva os nomes das fórmulas que você usa. Eu procuro no catálogo e você confirma quais padronizar.',
+        hint: 'Você também pode escrever os nomes no campo de mensagem.',
+        inputs: {
+          formulas: this.formulas.asReadonly(),
+          initialText,
+          request: (description: string): Promise<void> => this.sendRequest(description),
+          standardize: (ids: readonly string[]): Promise<readonly string[]> => this.standardizeMany(ids),
+        },
+        title: 'Padronizar por lista',
+      },
+      id: 'standardize-list',
+      label: 'Padronizar por lista',
+    };
+  }
+
+  /** Áudio ainda não é entendido (sem IA): rejeitar mostra "IA indisponível". */
+  private openListFromCommand(command: ScreenCommand): Promise<void> {
+    if (command.kind !== 'text') {
+      return Promise.reject(new Error('Áudio indisponível'));
+    }
+    this.assistant.openAction(this.listAction(command.text));
+
+    return Promise.resolve();
   }
 }

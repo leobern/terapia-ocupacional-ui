@@ -4,7 +4,7 @@ import { environment } from '@environments/environment';
 import { firstValueFrom } from 'rxjs';
 
 import { isApiPatientId } from '../patient-hub/api-patient-hub-source';
-import { Formula, FormulaCategory } from './formulas.models';
+import { Formula, FormulaCategory, FormulaRequest } from './formulas.models';
 import { FormulasApi } from './formulas-api';
 import { ProvisionalFormulasApi } from './provisional-formulas-api';
 
@@ -12,39 +12,51 @@ import { ProvisionalFormulasApi } from './provisional-formulas-api';
 interface FormulaDto {
   readonly id: number;
   readonly nome: string;
-  readonly categoria: 'ENTERAL' | 'PARENTERAL' | 'SUPLEMENTO_ORAL' | 'MEDICAMENTO';
-  readonly kcalPorMl: number | null;
-  readonly proteinaPorMl: number | null;
-  readonly fibra: boolean | null;
-  readonly sacarose: boolean | null;
-  readonly lactose: boolean | null;
-  readonly gluten: boolean | null;
-  readonly vegetariano: boolean | null;
-  readonly vegano: boolean | null;
+  readonly categoria: 'ENTERAL' | 'PARENTERAL' | 'MODULO_PROTEICO' | 'SUPLEMENTO_ORAL' | 'ESPESSANTE' | 'MEDICAMENTO';
+  readonly fabricante?: string | null;
+  readonly tipoApresentacao?: string | null;
+  readonly unidadeBase: 'ML' | 'G';
+  readonly viaAdministracao?: string | null;
+  readonly embalagem?: string | null;
+  readonly kcalPorMl?: number | null;
+  readonly proteinaPorMl?: number | null;
+  readonly fibra?: boolean | null;
+  readonly sacarose?: boolean | null;
+  readonly lactose?: boolean | null;
+  readonly gluten?: boolean | null;
   readonly padronizada: boolean;
 }
 
 const CATEGORY: Record<FormulaDto['categoria'], FormulaCategory> = {
   ENTERAL: 'enteral',
+  ESPESSANTE: 'espessante',
   MEDICAMENTO: 'medicamento',
+  MODULO_PROTEICO: 'modulo-proteico',
   PARENTERAL: 'parenteral',
   SUPLEMENTO_ORAL: 'suplemento-oral',
 };
 
+/**
+ * O backend omite os campos sem valor (`serialization-inclusion=non-null`): ausente e nulo viram `null`, para a
+ * tela mostrar "N/A". "Não informado" nunca vira "Não".
+ */
 function toFormula(dto: FormulaDto): Formula {
   return {
     category: CATEGORY[dto.categoria],
-    fiber: dto.fibra ?? false,
-    gluten: dto.gluten ?? false,
+    fiber: dto.fibra ?? null,
+    gluten: dto.gluten ?? null,
     id: String(dto.id),
-    kcalPerMl: dto.kcalPorMl,
-    lactose: dto.lactose ?? false,
+    kcalPerMl: dto.kcalPorMl ?? null,
+    lactose: dto.lactose ?? null,
+    manufacturer: dto.fabricante ?? null,
     name: dto.nome,
-    proteinPerMl: dto.proteinaPorMl,
+    packaging: dto.embalagem ?? null,
+    presentation: dto.tipoApresentacao ?? null,
+    proteinPerMl: dto.proteinaPorMl ?? null,
+    route: dto.viaAdministracao ?? null,
     standardized: dto.padronizada,
-    sucrose: dto.sacarose ?? false,
-    vegan: dto.vegano ?? false,
-    vegetarian: dto.vegetariano ?? false,
+    sucrose: dto.sacarose ?? null,
+    unit: dto.unidadeBase === 'G' ? 'g' : 'ml',
   };
 }
 
@@ -97,6 +109,19 @@ export class HttpFormulasApi extends FormulasApi {
         padronizada: standardized,
       }),
     );
+  }
+
+  async listRequests(hospitalId: number): Promise<readonly FormulaRequest[]> {
+    if (!isApiHospitalId(hospitalId)) {
+      return this.provisional.listRequests(hospitalId);
+    }
+    const dtos = await firstValueFrom(
+      this.http.get<{ id: number; descricao: string; createdAt: string }[]>(
+        `${this.base(hospitalId)}/solicitacoes-formula`,
+      ),
+    );
+
+    return dtos.map(dto => ({ createdAt: dto.createdAt, description: dto.descricao, id: String(dto.id) }));
   }
 
   async requestFormula(hospitalId: number, description: string): Promise<void> {
