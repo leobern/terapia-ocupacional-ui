@@ -86,20 +86,33 @@ export interface CatalogHits {
   readonly similar: readonly Formula[];
 }
 
+function sameName(text: string, formulas: readonly Formula[]): Formula[] {
+  const asked = words(text).join(' ');
+
+  return formulas.filter(
+    formula =>
+      asked !== '' &&
+      [formula.name, `${formula.name} ${formula.manufacturer ?? ''}`].some(known => words(known).join(' ') === asked),
+  );
+}
+
+/** Tem todas as palavras do pedido, ou o pedido tem o nome inteiro dela mais alguma coisa. */
+function closeNames(text: string, formulas: readonly Formula[]): Formula[] {
+  const wanted = words(text);
+
+  return formulas.filter(
+    formula =>
+      wanted.length > 0 && (hasAllWords(formula, wanted) || words(formula.name).every(word => wanted.includes(word))),
+  );
+}
+
 export function findInCatalog(description: string, formulas: readonly Formula[]): CatalogHits {
-  const wanted = words(description);
-  const asked = wanted.join(' ');
+  // Vários nomes no mesmo pedido (um por linha): cada um é conferido. Depois de uma vírgula também pode vir outro
+  // nome, mas aí só o nome idêntico conta, para "Nome, fabricante" não virar alarme.
+  const lines = description.split(/[\n;]+/);
+  const parts = [...lines, ...description.split(/[\n;]+|,(?!\d)/)];
+  const exact = new Set(parts.flatMap(part => sameName(part, formulas)));
+  const similar = new Set(lines.flatMap(line => closeNames(line, formulas)).filter(formula => !exact.has(formula)));
 
-  if (!asked) {
-    return { exact: [], similar: [] };
-  }
-  const exact = formulas.filter(formula =>
-    [formula.name, `${formula.name} ${formula.manufacturer ?? ''}`].some(known => words(known).join(' ') === asked),
-  );
-  // Parecida: tem todas as palavras do pedido, ou o pedido tem o nome inteiro dela mais alguma coisa.
-  const similar = formulas.filter(
-    formula => hasAllWords(formula, wanted) || words(formula.name).every(word => wanted.includes(word)),
-  );
-
-  return { exact, similar: exact.length > 0 ? [] : similar };
+  return { exact: [...exact], similar: [...similar] };
 }

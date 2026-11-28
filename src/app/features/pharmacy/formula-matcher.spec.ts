@@ -66,6 +66,11 @@ describe('findInCatalog', () => {
     expect(hits('Diben 2.0 sabor baunilha')).toEqual([[], ['1']]);
   });
 
+  it('com vários nomes no mesmo pedido, confere cada um', () => {
+    expect(hits(['FRESUBIN ORIGINAL', 'Peptamen'].join(String.fromCharCode(10)))).toEqual([['2'], []]);
+    expect(hits('Peptamen, Diben')).toEqual([['1'], []]);
+  });
+
   it('o que não existe, ou texto vazio, não acha nada', () => {
     expect(hits('Peptamen')).toEqual([[], []]);
     expect(hits('  ')).toEqual([[], []]);
