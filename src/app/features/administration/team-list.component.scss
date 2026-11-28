@@ -1,0 +1,181 @@
+@use '../../shared/styles/breakpoints';
+@use '../../shared/styles/tokens';
+@use '../../shared/styles/typography';
+@use 'admin';
+
+:host {
+  --page-container-margin: var(--layout-page-margin, 16px);
+}
+
+.team {
+  @include admin.page;
+}
+
+.team__toolbar {
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$space-8;
+
+  @include breakpoints.md {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+}
+
+.team__search {
+  @include admin.field-input;
+
+  border-radius: tokens.$radius-pill;
+
+  @include breakpoints.md {
+    width: 360px;
+  }
+}
+
+.team__filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: tokens.$space-8;
+}
+
+.team__chip {
+  @include admin.chip;
+}
+
+.team__state {
+  margin: 0;
+  color: tokens.c(content-2);
+
+  @include typography.body-md;
+}
+
+.team__state--error {
+  color: tokens.c(comm-alert);
+}
+
+.team__retry,
+.team__link {
+  min-height: 44px;
+  padding: 0 tokens.$space-8;
+  border: 0;
+  background: transparent;
+  color: tokens.c(content-2);
+  cursor: pointer;
+
+  @include typography.label-md;
+}
+
+.team__table {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid tokens.c(border);
+  border-radius: tokens.$radius-md;
+  background: tokens.c(surface);
+}
+
+.team__row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: tokens.$space-4 tokens.$space-16;
+  align-items: center;
+  padding: tokens.$space-12 tokens.$space-16;
+  border-top: 1px solid tokens.c(border);
+
+  @include breakpoints.md {
+    grid-template-columns: minmax(260px, 2fr) 1fr 100px 1fr 140px 160px;
+    padding: tokens.$space-12 tokens.$space-24;
+  }
+}
+
+.team__row--head {
+  display: none;
+  border-top: 0;
+  background: tokens.c(surface-2);
+  color: tokens.c(content-4);
+
+  @include typography.label-md;
+
+  @include breakpoints.md {
+    display: grid;
+  }
+}
+
+.team__person {
+  display: flex;
+  align-items: center;
+  gap: tokens.$space-12;
+  min-height: 48px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+
+  &:disabled {
+    cursor: default;
+  }
+}
+
+.team__person-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.team__name {
+  color: tokens.c(content-1);
+
+  @include typography.title-md;
+}
+
+.team__email {
+  overflow: hidden;
+  color: tokens.c(content-4);
+  text-overflow: ellipsis;
+
+  @include typography.caption;
+}
+
+.team__cell {
+  color: tokens.c(content-1);
+
+  @include typography.body-md;
+}
+
+.team__cell--muted {
+  color: tokens.c(content-3);
+}
+
+.team__cell--actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.team__cell--role,
+.team__cell:nth-of-type(2),
+.team__cell:nth-of-type(3) {
+  display: none;
+
+  @include breakpoints.md {
+    display: block;
+  }
+}
+
+.team__status {
+  display: inline-flex;
+  align-items: center;
+  padding: 0 tokens.$space-8;
+  border: 1px solid tokens.c(border);
+  border-radius: tokens.$radius-pill;
+  background: tokens.c(surface-2);
+  color: tokens.c(content-3);
+
+  @include typography.label-sm;
+
+  &[data-status='DESATIVADO'] {
+    color: tokens.c(content-4);
+  }
+}

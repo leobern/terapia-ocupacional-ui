@@ -20,12 +20,12 @@ import { ViewportBreakpointService } from '../../services/viewport-breakpoint.se
 // `shared/` nunca importa de `features/` (Princípio IX). O import anterior apontava
 // para `features/home/components/avatar`, diretório que nunca existiu no repositório —
 // o build inteiro quebrava (achado do code review do PR #1).
-import { AvatarComponent } from '../avatar/avatar.component';
 import { IconButtonComponent } from '../icon-button/icon-button.component';
 import { IconLogoButtonComponent } from '../icon-logo/icon-logo-button.component';
+import { UserAvatarComponent } from '../user-avatar/user-avatar.component';
 
 /** Mapeia as 6 chaves fixas dos itens de navegação (spec.md § Clarifications + Home). */
-export type NavMenuItemKey = 'home' | 'farmacia' | 'pacientes' | 'tutorial' | 'vinculos';
+export type NavMenuItemKey = 'home' | 'farmacia' | 'pacientes' | 'tutorial' | 'vinculos' | 'hospitais' | 'equipe';
 
 interface NavMenuItem {
   readonly key: NavMenuItemKey;
@@ -70,6 +70,7 @@ const SWIPE_CLOSE_PX = 56;
 const ROLE_LABELS: Readonly<Record<string, string>> = {
   [Role.ADMIN]: 'Administração',
   [Role.GESTOR]: 'Gestão',
+  [Role.MEDICO]: 'Médico',
   [Role.RECECIONISTA]: 'Recepção',
   [Role.TERAPEUTA]: 'Terapeuta',
 };
@@ -80,7 +81,7 @@ const ROLE_LABELS: Readonly<Record<string, string>> = {
     '[class.nav-menu--open]': 'open()',
     '[class.nav-menu--suppressed]': 'suppressed()',
   },
-  imports: [AvatarComponent, IconButtonComponent, IconLogoButtonComponent, PhIconComponent],
+  imports: [IconButtonComponent, IconLogoButtonComponent, PhIconComponent, UserAvatarComponent],
   selector: 'app-nav-menu',
   styleUrl: './nav-menu.component.scss',
   templateUrl: './nav-menu.component.html',
@@ -89,6 +90,8 @@ export class NavMenuComponent {
   readonly activeItem = input<NavMenuItemKey | null>(null);
   /** Itens sem acesso para o perfil atual: ficam desabilitados (ex.: Farmácia só para o gestor). */
   readonly disabledItems = input<readonly NavMenuItemKey[]>([]);
+  /** Itens que o perfil atual nem vê (Hospitais e Equipe só para ADMIN/GESTOR; Vínculos só para os demais). */
+  readonly hiddenItems = input<readonly NavMenuItemKey[]>([]);
 
   /** Controlado pelo consumidor — só tem efeito visual abaixo de `md` (ver docblock). */
   readonly open = input<boolean>(false);
@@ -101,14 +104,19 @@ export class NavMenuComponent {
   readonly pacientesClick = output();
   readonly tutorialClick = output();
   readonly vinculosClick = output();
+  readonly hospitaisClick = output();
+  readonly equipeClick = output();
+  /** Foto/nome do usuário: abre o perfil. */
+  readonly profileClick = output();
   readonly logoutClick = output();
 
   /**
    * Nome e perfil do profissional autenticado (claims do token); sem sessão (modo dev) ou sem os leitores
    * (galeria e testes do componente) mantém o perfil fixo.
    */
-  protected readonly professionalName =
-    inject(ProfessionalProfileReader, { optional: true })?.read().name ?? 'Michelle Franklin';
+  protected readonly profile = inject(ProfessionalProfileReader, { optional: true })?.read();
+  protected readonly professionalName = this.profile?.name ?? 'Michelle Franklin';
+  protected readonly professionalId = this.profile?.id ?? null;
   protected readonly professionalRole =
     ROLE_LABELS[inject(SessionRoleReader, { optional: true })?.read() ?? ''] ?? 'Nutróloga';
 
@@ -126,14 +134,18 @@ export class NavMenuComponent {
   // Ordem e ícones do Figma 4741:11339 (v2/NavRail). Ícones em peso "regular"; o item ativo é SÓLIDO ("fill").
   // Única exceção fixa: o ícone de Sair (template) é sempre bold, aberto ou fechado (CLAUDE.md).
   protected readonly items: readonly NavMenuItem[] = [
-    // A Home virou "Hospitais" (Thiago, 2026-11-25); Notificações saiu do menu e Configurações virou Tutorial.
-    { icon: 'hospital', key: 'home', label: 'Hospitais' },
+    // Ordem final (Thiago, 2026-11-27): Home, Pacientes, Farmácia, Tutorial, Hospitais, Equipe. Hospitais e Equipe
+    // são da Administração (só ADMIN/GESTOR); Vínculos (US-001-2-02) fica para quem não administra.
+    { icon: 'house', key: 'home', label: 'Home' },
     { icon: 'users-three', key: 'pacientes', label: 'Pacientes' },
     { icon: 'pill', key: 'farmacia', label: 'Farmácia' },
-    // Vínculos com hospitais (US-001-2-02, RN03): sem desenho no Figma, ainda; pendente de aprovação.
     { icon: 'link', key: 'vinculos', label: 'Vínculos' },
     { icon: 'graduation-cap', key: 'tutorial', label: 'Tutorial' },
+    { icon: 'hospital', key: 'hospitais', label: 'Hospitais' },
+    { icon: 'identification-badge', key: 'equipe', label: 'Equipe' },
   ];
+
+  protected readonly visibleItems = computed(() => this.items.filter(item => !this.hiddenItems().includes(item.key)));
 
   // Anel de foco sistêmico compartilhado por todos os controles clicáveis do
   // menu (logo, 4 itens, Sair) — um único signal booleano funciona porque
@@ -171,7 +183,18 @@ export class NavMenuComponent {
       case 'vinculos':
         this.vinculosClick.emit();
         break;
+      case 'hospitais':
+        this.hospitaisClick.emit();
+        break;
+      case 'equipe':
+        this.equipeClick.emit();
+        break;
     }
+  }
+
+  protected onProfileClick(): void {
+    this.collapseAfterClick();
+    this.profileClick.emit();
   }
 
   protected onFocus(): void {

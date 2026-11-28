@@ -1,14 +1,34 @@
 import { Injectable } from '@angular/core';
 import { environment } from '@environments/environment';
 
-import { AcceptInviteResult, InviteGateway } from './invite-gateway';
+import { AcceptInviteResult, InviteGateway, InvitePhoto, InviteSummary } from './invite-gateway';
 
-/** Implementação sobre `fetch` (sem interceptor: ainda não há sessão). Caminho proposto, a confirmar com o backend. */
+/** Implementação sobre `fetch` (sem interceptor: ainda não há sessão). */
 @Injectable()
 export class HttpInviteGateway extends InviteGateway {
-  async accept(token: string, fullName: string, password: string): Promise<AcceptInviteResult> {
+  async check(token: string): Promise<InviteSummary | null> {
+    const response = await fetch(`${environment.apiBaseUrl}/v1/auth/convites/${encodeURIComponent(token)}`);
+
+    if ([400, 404, 410].includes(response.status)) {
+      return null;
+    }
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
+    }
+    const body = (await response.json()) as { email: string; papel: string; hospitais?: string[] };
+
+    return { email: body.email, hospitals: body.hospitais ?? [], role: body.papel };
+  }
+
+  async accept(token: string, fullName: string, password: string, photo?: InvitePhoto): Promise<AcceptInviteResult> {
     const response = await fetch(`${environment.apiBaseUrl}/v1/auth/convites/aceitar`, {
-      body: JSON.stringify({ nomeCompleto: fullName, senha: password, token }),
+      body: JSON.stringify({
+        fotoBase64: photo?.base64,
+        fotoTipo: photo?.type,
+        nomeCompleto: fullName,
+        senha: password,
+        token,
+      }),
       headers: { 'Content-Type': 'application/json' },
       method: 'POST',
     });

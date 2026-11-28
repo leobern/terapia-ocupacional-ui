@@ -96,6 +96,19 @@ const authenticatedRoutes: Routes = [
     loadComponent: () =>
       import('./features/pending-screen/pending-screen.component').then(m => m.PendingScreenComponent),
   })),
+  // Administração (FT-009-3): equipe, hospitais e perfil. Equipe e Hospitais só para ADMIN/GESTOR.
+  {
+    path: 'team',
+    loadChildren: () => import('./features/administration/administration.routes').then(m => m.TEAM_ROUTES),
+  },
+  {
+    path: 'hospitals',
+    loadChildren: () => import('./features/administration/administration.routes').then(m => m.HOSPITAL_ADMIN_ROUTES),
+  },
+  {
+    path: 'profile',
+    loadChildren: () => import('./features/administration/administration.routes').then(m => m.PROFILE_ROUTES),
+  },
   // Convite direto de profissional (FT-009-1): só gestor.
   {
     path: 'hospital-team',

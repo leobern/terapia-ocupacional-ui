@@ -1,0 +1,279 @@
+@use '../../shared/styles/breakpoints';
+@use '../../shared/styles/tokens';
+@use '../../shared/styles/typography';
+@use 'admin';
+
+:host {
+  --page-container-margin: var(--layout-page-margin, 16px);
+}
+
+.person {
+  @include admin.page;
+}
+
+.person__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: tokens.$space-8;
+}
+
+.person__identity {
+  display: flex;
+  align-items: center;
+  gap: tokens.$space-12;
+}
+
+.person__status {
+  padding: 0 tokens.$space-8;
+  border: 1px solid tokens.c(border);
+  border-radius: tokens.$radius-pill;
+  background: tokens.c(surface-2);
+  color: tokens.c(content-3);
+
+  @include typography.label-sm;
+
+  &[data-status='DESATIVADO'] {
+    color: tokens.c(content-4);
+  }
+}
+
+.person__body {
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$space-16;
+
+  @include breakpoints.md {
+    flex-direction: row;
+    align-items: flex-start;
+  }
+}
+
+.person__main {
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  gap: tokens.$space-16;
+  min-width: 0;
+}
+
+.person__interactions {
+  @include breakpoints.md {
+    flex: 0 0 600px;
+    max-height: calc(100vh - 140px);
+  }
+}
+
+.person__card {
+  @include admin.card;
+}
+
+.person__card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: tokens.$space-8;
+}
+
+.person__card-title {
+  margin: 0;
+  color: tokens.c(content-3);
+
+  @include typography.title-md;
+}
+
+.person__interactions .person__card-title {
+  color: tokens.c(content-1);
+}
+
+.person__count {
+  color: tokens.c(content-4);
+}
+
+.person__fields {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: tokens.$space-16;
+  margin: 0;
+
+  @include breakpoints.md {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  div {
+    display: flex;
+    flex-direction: column;
+    gap: tokens.$space-4;
+    min-width: 0;
+  }
+
+  dt {
+    color: tokens.c(content-4);
+
+    @include typography.caption;
+  }
+
+  dd {
+    margin: 0;
+    overflow-wrap: anywhere;
+    color: tokens.c(content-1);
+
+    @include typography.body-md;
+  }
+}
+
+.person__strong {
+  @include typography.title-md;
+}
+
+.person__accent {
+  color: tokens.c(content-3);
+}
+
+.person__links {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.person__link {
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$space-8;
+  padding: tokens.$space-12 0;
+  border-top: 1px solid tokens.c(border);
+
+  @include breakpoints.md {
+    flex-direction: row;
+    align-items: center;
+    gap: tokens.$space-16;
+  }
+}
+
+.person__link-main {
+  flex: 1 1 auto;
+}
+
+.person__link-name {
+  margin: 0;
+  color: tokens.c(content-1);
+
+  @include typography.title-md;
+}
+
+.person__link-role {
+  margin: 0;
+  color: tokens.c(content-1);
+
+  @include typography.label-md;
+}
+
+.person__link-meta {
+  margin: 0;
+  color: tokens.c(content-4);
+
+  @include typography.caption;
+}
+
+.person__feed {
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$space-8;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.person__footnote {
+  margin: 0;
+  padding: tokens.$space-8;
+  color: tokens.c(content-4);
+
+  @include typography.caption;
+}
+
+.person__empty {
+  margin: 0;
+  color: tokens.c(content-2);
+
+  @include typography.body-md;
+}
+
+.person__error {
+  margin: 0;
+  color: tokens.c(comm-alert);
+
+  @include typography.body-md;
+}
+
+.panel-form {
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$space-16;
+}
+
+.panel-card {
+  @include admin.card;
+
+  gap: tokens.$space-8;
+  padding: tokens.$space-16;
+  border-radius: tokens.$radius-sm;
+}
+
+.panel-label {
+  margin: 0;
+  color: tokens.c(content-1);
+
+  @include typography.label-md;
+}
+
+.panel-list {
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$space-8;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.panel-option {
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$space-4;
+  width: 100%;
+  padding: tokens.$space-12;
+  border: 1px solid tokens.c(border);
+  border-radius: tokens.$radius-12;
+  background: tokens.c(surface);
+  color: tokens.c(content-1);
+  text-align: left;
+  cursor: pointer;
+
+  &[aria-pressed='true'] {
+    border: 2px solid tokens.c(secondary);
+  }
+}
+
+.panel-option__name {
+  @include typography.title-md;
+}
+
+.panel-option__meta {
+  color: tokens.c(content-4);
+
+  @include typography.caption;
+}
+
+.panel-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: tokens.$space-8;
+}
+
+.panel-chip {
+  @include admin.chip;
+}
+
+.panel-footer {
+  display: contents;
+}

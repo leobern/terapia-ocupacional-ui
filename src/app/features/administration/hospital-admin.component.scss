@@ -1,0 +1,150 @@
+@use '../../shared/styles/breakpoints';
+@use '../../shared/styles/tokens';
+@use '../../shared/styles/typography';
+@use 'admin';
+
+:host {
+  --page-container-margin: var(--layout-page-margin, 16px);
+}
+
+.hospitals {
+  @include admin.page;
+}
+
+.hospitals__search {
+  @include admin.field-input;
+
+  border-radius: tokens.$radius-pill;
+
+  @include breakpoints.md {
+    width: 360px;
+  }
+}
+
+.hospitals__list {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid tokens.c(border);
+  border-radius: tokens.$radius-md;
+  background: tokens.c(surface);
+  list-style: none;
+}
+
+.hospitals__item {
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$space-8;
+  padding: tokens.$space-16;
+  border-top: 1px solid tokens.c(border);
+
+  &:first-child {
+    border-top: 0;
+  }
+
+  @include breakpoints.md {
+    flex-direction: row;
+    align-items: center;
+    gap: tokens.$space-24;
+    padding: tokens.$space-16 tokens.$space-24;
+  }
+}
+
+.hospitals__main {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.hospitals__name {
+  margin: 0;
+  color: tokens.c(content-1);
+
+  @include typography.title-md;
+}
+
+.hospitals__meta {
+  margin: 0;
+  color: tokens.c(content-4);
+
+  @include typography.caption;
+}
+
+.hospitals__status {
+  align-self: flex-start;
+  padding: 0 tokens.$space-8;
+  border: 1px solid tokens.c(border);
+  border-radius: tokens.$radius-pill;
+  background: tokens.c(surface-2);
+  color: tokens.c(content-3);
+
+  @include typography.label-sm;
+
+  &[data-active='false'] {
+    color: tokens.c(content-4);
+  }
+}
+
+.hospitals__actions {
+  display: flex;
+  gap: tokens.$space-8;
+}
+
+.hospitals__link {
+  min-height: 44px;
+  padding: 0 tokens.$space-8;
+  border: 0;
+  background: transparent;
+  color: tokens.c(content-2);
+  cursor: pointer;
+
+  @include typography.label-md;
+}
+
+.hospitals__state {
+  margin: 0;
+  padding: tokens.$space-16;
+  color: tokens.c(content-2);
+
+  @include typography.body-md;
+}
+
+.hospitals__state--error {
+  color: tokens.c(comm-alert);
+}
+
+.hospital-form {
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$space-12;
+}
+
+.hospital-form__card {
+  @include admin.card;
+
+  gap: tokens.$space-8;
+  padding: tokens.$space-16;
+  border-radius: tokens.$radius-sm;
+}
+
+.hospital-form__label {
+  color: tokens.c(content-1);
+
+  @include typography.label-md;
+}
+
+.hospital-form__input {
+  @include admin.field-input;
+}
+
+.hospital-form__hint {
+  margin: 0;
+  color: tokens.c(content-4);
+
+  @include typography.caption;
+}
+
+.hospital-form__footer {
+  display: contents;
+}

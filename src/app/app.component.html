@@ -9,6 +9,7 @@
       [activeItem]="activeNavItem()"
       [open]="menuOpen()"
       [disabledItems]="disabledNavItems()"
+      [hiddenItems]="hiddenNavItems()"
       (closed)="menuOpen.set(false)"
       (logoClick)="aiAssistant.openPanel()"
       (homeClick)="onHomeClick()"
@@ -16,6 +17,9 @@
       (farmaciaClick)="onFarmaciaClick()"
       (tutorialClick)="onTutorialClick()"
       (vinculosClick)="onVinculosClick()"
+      (hospitaisClick)="onHospitaisClick()"
+      (equipeClick)="onEquipeClick()"
+      (profileClick)="onProfileClick()"
       (logoutClick)="requestLogout()"
     />
   }

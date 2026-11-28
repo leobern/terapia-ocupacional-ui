@@ -1,0 +1,344 @@
+<app-page-container>
+  <div class="person">
+    @if (person(); as view) {
+      <app-page-header
+        [back]="true"
+        [title]="view.name"
+        [subtitle]="subtitleOf(view)"
+        (backClick)="back()"
+      >
+        <div pageHeaderActions class="person__actions">
+          @if (isSelf) {
+            <app-button
+              size="md"
+              label="Editar perfil"
+              (click)="editOpen.set(true)"
+            />
+          } @else {
+            @if (isAdmin) {
+              <app-button
+                size="md"
+                kind="secondary"
+                label="Mudar papel"
+                (click)="openRolePanel()"
+              />
+              @if (view.status === 'DESATIVADO') {
+                <app-button
+                  size="md"
+                  kind="secondary"
+                  label="Reativar usuário"
+                  (click)="reactivate()"
+                />
+              } @else {
+                <app-button
+                  size="md"
+                  kind="secondary"
+                  label="Desativar usuário"
+                  (click)="confirm.set({ kind: 'deactivate' })"
+                />
+              }
+            }
+          }
+        </div>
+      </app-page-header>
+
+      @if (error(); as message) {
+        <p class="person__error" role="alert">{{ message }}</p>
+      }
+
+      <div class="person__identity">
+        <app-user-avatar
+          size="big"
+          [userId]="view.id"
+          [name]="view.name"
+          [hasPhoto]="view.hasPhoto"
+        />
+        <span class="person__status" [attr.data-status]="view.status">{{
+          statusLabels[view.status]
+        }}</span>
+      </div>
+
+      <div class="person__body">
+        <div class="person__main">
+          <section class="person__card" aria-labelledby="person-data">
+            <h2 class="person__card-title" id="person-data">Dados da pessoa</h2>
+            <dl class="person__fields">
+              <div>
+                <dt>Nome completo</dt>
+                <dd class="person__strong">{{ view.name }}</dd>
+              </div>
+              <div>
+                <dt>E-mail</dt>
+                <dd class="person__strong">{{ view.email }}</dd>
+              </div>
+              <div>
+                <dt>Papel</dt>
+                <dd class="person__strong">{{ roleLabels[view.role] }}</dd>
+              </div>
+              <div>
+                <dt>Situação</dt>
+                <dd>{{ statusLabels[view.status] }}</dd>
+              </div>
+              @if (view.invitedBy) {
+                <div>
+                  <dt>Convidado por</dt>
+                  <dd class="person__accent">{{ view.invitedBy }}</dd>
+                </div>
+              }
+              <div>
+                <dt>Último acesso</dt>
+                <dd>{{ view.lastAccess ? at(view.lastAccess) : '—' }}</dd>
+              </div>
+              @if (view.specialty) {
+                <div>
+                  <dt>Especialidade</dt>
+                  <dd>{{ view.specialty }}</dd>
+                </div>
+              }
+              @if (view.registry) {
+                <div>
+                  <dt>Registro profissional</dt>
+                  <dd>{{ view.registry }}</dd>
+                </div>
+              }
+              @if (view.phone) {
+                <div>
+                  <dt>Telefone</dt>
+                  <dd>{{ view.phone }}</dd>
+                </div>
+              }
+            </dl>
+          </section>
+
+          <section class="person__card" aria-labelledby="person-links">
+            <div class="person__card-head">
+              <h2 class="person__card-title" id="person-links">
+                Hospitais vinculados
+                <span class="person__count">· {{ view.links.length }}</span>
+              </h2>
+              @if (canManage()) {
+                <app-button
+                  size="md"
+                  kind="secondary"
+                  label="Adicionar hospital"
+                  (click)="openLinkPanel()"
+                />
+              }
+            </div>
+            <ul class="person__links">
+              @for (link of view.links; track link.hospitalId) {
+                <li class="person__link">
+                  <div class="person__link-main">
+                    <p class="person__link-name">{{ link.name }}</p>
+                    @if (link.address) {
+                      <p class="person__link-meta">{{ link.address }}</p>
+                    }
+                  </div>
+                  @if (link.hospitalRole) {
+                    <p class="person__link-role">
+                      Papel no hospital: {{ link.hospitalRole }}
+                      @if (link.since) {
+                        <span class="person__link-meta">
+                          · desde {{ whenLink(link.since) }}</span
+                        >
+                      }
+                    </p>
+                  }
+                  @if (canManage()) {
+                    <app-button
+                      size="sm"
+                      kind="secondary"
+                      label="Remover do hospital"
+                      (click)="confirm.set({ kind: 'unlink', link: link })"
+                    />
+                  }
+                </li>
+              } @empty {
+                <li class="person__empty">Nenhum hospital vinculado.</li>
+              }
+            </ul>
+          </section>
+        </div>
+
+        <section
+          class="person__card person__interactions"
+          aria-labelledby="person-interactions"
+        >
+          <h2 class="person__card-title" id="person-interactions">
+            {{ isSelf ? 'Minhas últimas interações' : 'Últimas interações' }}
+            <span class="person__count">· públicas</span>
+          </h2>
+          @if (!isSelf) {
+            <app-banner type="info">
+              Você vê só o que é público: evoluções, prescrições, mensagens
+              vinculadas a pacientes e comunicados. Mensagens diretas entre duas
+              pessoas são privadas e não aparecem aqui.
+            </app-banner>
+          }
+          <div class="person__feed">
+            @for (item of interactions(); track $index) {
+              <app-card-notify
+                type="detail"
+                actionAriaLabel="Abrir"
+                [readOnly]="true"
+                [canResolve]="false"
+                [authorName]="view.name"
+                [authorSpecialty]="roleLabels[view.role]"
+                [authorPhotoUrl]="photoUrl()"
+                [description]="item.texto"
+                [time]="when(item)"
+                [kindLabel]="kind(item)"
+                [patientName]="item.pacienteNome ?? ''"
+                [resolved]="item.resolvida"
+                (cardClick)="openInteraction(item)"
+              />
+            } @empty {
+              <p class="person__empty">Nenhuma interação pública ainda.</p>
+            }
+          </div>
+          <p class="person__footnote">
+            Toque num card para abrir a notificação ou o paciente.
+            @if (!isSelf) {
+              Mensagens diretas entre pessoas não aparecem aqui.
+            }
+          </p>
+        </section>
+      </div>
+    } @else if (status() === 'error') {
+      <p class="person__error" role="alert">
+        Não foi possível carregar a pessoa.
+      </p>
+      <app-button kind="secondary" label="Tentar novamente" (click)="load()" />
+    } @else {
+      <p class="person__empty" role="status">Carregando…</p>
+    }
+  </div>
+</app-page-container>
+
+<app-confirm-dialog
+  cancelLabel="Cancelar"
+  [open]="confirm() !== null"
+  [title]="confirmTitle()"
+  [message]="confirmMessage()"
+  [confirmLabel]="confirm()?.kind === 'unlink' ? 'Remover' : 'Desativar'"
+  (confirmed)="confirmed()"
+  (cancelled)="confirm.set(null)"
+/>
+
+<app-side-panel
+  title="Adicionar hospital"
+  [open]="linkPanelOpen()"
+  [description]="
+    'Escolha o hospital em que ' +
+    firstName() +
+    ' vai atuar. O vínculo já nasce aprovado.'
+  "
+  (closed)="linkPanelOpen.set(false)"
+>
+  <div panelBody class="panel-form">
+    <div class="panel-card">
+      <p class="panel-label" id="link-hospitals">Hospitais ainda sem vínculo</p>
+      <ul class="panel-list" aria-labelledby="link-hospitals">
+        @for (hospital of availableHospitals(); track hospital.id) {
+          <li>
+            <button
+              type="button"
+              class="panel-option"
+              [attr.aria-pressed]="newHospitalId() === hospital.id"
+              (click)="newHospitalId.set(hospital.id)"
+            >
+              <span class="panel-option__name">{{ hospital.nome }}</span>
+              @if (hospital.endereco) {
+                <span class="panel-option__meta">{{ hospital.endereco }}</span>
+              }
+            </button>
+          </li>
+        } @empty {
+          <li class="person__empty">Nenhum hospital disponível.</li>
+        }
+      </ul>
+    </div>
+    @if (isAdmin) {
+      <div class="panel-card">
+        <p class="panel-label">Papel neste hospital</p>
+        <div class="panel-chips" role="group" aria-label="Papel neste hospital">
+          <button
+            type="button"
+            class="panel-chip"
+            [attr.aria-pressed]="newHospitalRole() === 'PROFISSIONAL'"
+            (click)="newHospitalRole.set('PROFISSIONAL')"
+          >
+            Profissional
+          </button>
+          <button
+            type="button"
+            class="panel-chip"
+            [attr.aria-pressed]="newHospitalRole() === 'GESTOR'"
+            (click)="newHospitalRole.set('GESTOR')"
+          >
+            Gestor
+          </button>
+        </div>
+        <p class="person__link-meta">Só o administrador nomeia gestor.</p>
+      </div>
+    }
+    @if (error(); as message) {
+      <p class="person__error" role="alert">{{ message }}</p>
+    }
+  </div>
+  <div panelFooter class="panel-footer">
+    <app-button
+      label="Adicionar"
+      [disabled]="newHospitalId() === null"
+      (click)="addLink()"
+    />
+    <app-button
+      kind="secondary"
+      label="Cancelar"
+      (click)="linkPanelOpen.set(false)"
+    />
+  </div>
+</app-side-panel>
+
+<app-side-panel
+  title="Mudar papel"
+  description="O papel define o que a pessoa pode ver e fazer no sistema."
+  [open]="rolePanelOpen()"
+  (closed)="rolePanelOpen.set(false)"
+>
+  <div panelBody class="panel-form">
+    <div class="panel-card">
+      <p class="panel-label">Papel</p>
+      <div class="panel-chips" role="group" aria-label="Papel">
+        @for (key of roleKeys; track key) {
+          <button
+            type="button"
+            class="panel-chip"
+            [attr.aria-pressed]="newRole() === key"
+            (click)="newRole.set(key)"
+          >
+            {{ roleLabels[key] }}
+          </button>
+        }
+      </div>
+    </div>
+    @if (error(); as message) {
+      <p class="person__error" role="alert">{{ message }}</p>
+    }
+  </div>
+  <div panelFooter class="panel-footer">
+    <app-button label="Salvar" (click)="changeRole()" />
+    <app-button
+      kind="secondary"
+      label="Cancelar"
+      (click)="rolePanelOpen.set(false)"
+    />
+  </div>
+</app-side-panel>
+
+<app-profile-edit-panel
+  [open]="editOpen()"
+  [profile]="person()"
+  (closed)="editOpen.set(false)"
+  (saved)="profileSaved()"
+/>

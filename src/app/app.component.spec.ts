@@ -430,7 +430,7 @@ describe('AppComponent', () => {
       fixture.nativeElement.querySelectorAll('app-nav-menu .nav-menu__links .nav-menu__link'),
     ).map(el => el.textContent.trim());
 
-    expect(labels).toEqual(['Hospitais', 'Pacientes', 'Farmácia', 'Vínculos', 'Tutorial']);
+    expect(labels).toEqual(['Home', 'Pacientes', 'Farmácia', 'Tutorial', 'Hospitais', 'Equipe']);
   });
 
   it('navigates to /settings/tutorial and closes the mobile menu when Tutorial is clicked', () => {
@@ -465,11 +465,9 @@ describe('AppComponent', () => {
     spyOn(router, 'navigate').and.resolveTo(true);
     fixture.componentInstance.menuOpen.set(true);
     fixture.detectChanges();
-    const item = Array.from<HTMLButtonElement>(
-      fixture.nativeElement.querySelectorAll('app-nav-menu .nav-menu__links .nav-menu__link'),
-    ).find(el => el.textContent?.includes('Vínculos'));
 
-    item?.click();
+    // Quem administra (ADMIN/GESTOR) não vê "Vínculos" no menu; o evento segue válido para os demais perfis.
+    (fixture.componentInstance as unknown as { onVinculosClick(): void }).onVinculosClick();
     fixture.detectChanges();
 
     expect(router.navigate).toHaveBeenCalledWith(['/hospital-links']);
@@ -493,7 +491,7 @@ describe('AppComponent', () => {
     expect(fixture.componentInstance.menuOpen()).toBeFalse();
   });
 
-  it('navigates to /home and closes the mobile menu when the Hospitais item is clicked', () => {
+  it('navigates to /home and closes the mobile menu when the Home item is clicked', () => {
     const router = TestBed.inject(Router);
 
     spyOn(router, 'navigate').and.resolveTo(true);
@@ -501,12 +499,47 @@ describe('AppComponent', () => {
     fixture.detectChanges();
     const home = Array.from<HTMLButtonElement>(
       fixture.nativeElement.querySelectorAll('app-nav-menu .nav-menu__links .nav-menu__link'),
-    ).find(el => el.textContent?.includes('Hospitais'));
+    ).find(el => el.textContent?.trim() === 'Home');
 
     home?.click();
     fixture.detectChanges();
 
     expect(router.navigate).toHaveBeenCalledWith(['/home']);
+    expect(fixture.componentInstance.menuOpen()).toBeFalse();
+  });
+
+  for (const [label, url] of [
+    ['Hospitais', '/hospitals'],
+    ['Equipe', '/team'],
+  ] as const) {
+    it(`navigates to ${url} and closes the mobile menu when ${label} is clicked`, () => {
+      const router = TestBed.inject(Router);
+
+      spyOn(router, 'navigate').and.resolveTo(true);
+      fixture.componentInstance.menuOpen.set(true);
+      fixture.detectChanges();
+      const item = Array.from<HTMLButtonElement>(
+        fixture.nativeElement.querySelectorAll('app-nav-menu .nav-menu__links .nav-menu__link'),
+      ).find(el => el.textContent?.trim() === label);
+
+      item?.click();
+      fixture.detectChanges();
+
+      expect(router.navigate).toHaveBeenCalledWith([url]);
+      expect(fixture.componentInstance.menuOpen()).toBeFalse();
+    });
+  }
+
+  it('o avatar do menu abre o perfil e fecha o menu', () => {
+    const router = TestBed.inject(Router);
+
+    spyOn(router, 'navigate').and.resolveTo(true);
+    fixture.componentInstance.menuOpen.set(true);
+    fixture.detectChanges();
+    (fixture.nativeElement.querySelector('app-nav-menu .nav-menu__profile') as HTMLButtonElement).click();
+    fixture.detectChanges();
+
+    expect(router.navigate).toHaveBeenCalledWith(['/profile']);
     expect(fixture.componentInstance.menuOpen()).toBeFalse();
   });
 

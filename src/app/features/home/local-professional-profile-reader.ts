@@ -17,10 +17,11 @@ export class LocalProfessionalProfileReader extends ProfessionalProfileReader {
   private readonly session = inject(LocalSessionStore);
 
   read(): ProfessionalProfile {
-    const { nomeCompleto } = readClaims(this.session.accessToken());
+    const { nomeCompleto, usuarioId } = readClaims(this.session.accessToken());
+    const id = typeof usuarioId === 'number' ? usuarioId : undefined;
 
     return typeof nomeCompleto === 'string' && nomeCompleto.trim() !== ''
-      ? { ...FALLBACK_PROFILE, name: nomeCompleto.trim() }
+      ? { ...FALLBACK_PROFILE, ...(id === undefined ? {} : { id }), name: nomeCompleto.trim() }
       : FALLBACK_PROFILE;
   }
 }

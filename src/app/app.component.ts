@@ -92,6 +92,12 @@ export class AppComponent {
   protected readonly disabledNavItems = computed<readonly NavMenuItemKey[]>(() =>
     this.roleReader.read() === Role.GESTOR ? [] : ['farmacia'],
   );
+  /** Administração (Hospitais e Equipe) só para ADMIN/GESTOR; quem administra não usa "Vínculos" (US-001-2-02). */
+  protected readonly hiddenNavItems = computed<readonly NavMenuItemKey[]>(() => {
+    const role = this.roleReader.read();
+
+    return role === Role.ADMIN || role === Role.GESTOR ? ['vinculos'] : ['hospitais', 'equipe'];
+  });
 
   protected readonly viewportBreakpoint = inject(ViewportBreakpointService);
   /** Rotas com `data.hideShell` (ex.: splash) ocultam a navegação e o assistente. */
@@ -118,6 +124,14 @@ export class AppComponent {
 
     if (url.startsWith('/hospital-links')) {
       return 'vinculos';
+    }
+
+    if (url.startsWith('/hospitals')) {
+      return 'hospitais';
+    }
+
+    if (url.startsWith('/team')) {
+      return 'equipe';
     }
 
     return url.startsWith('/settings') || url.startsWith('/tutorial') ? 'tutorial' : null;
@@ -286,6 +300,21 @@ export class AppComponent {
   protected onVinculosClick(): void {
     this.menuOpen.set(false);
     void this.router.navigate(['/hospital-links']);
+  }
+
+  protected onHospitaisClick(): void {
+    this.menuOpen.set(false);
+    void this.router.navigate(['/hospitals']);
+  }
+
+  protected onEquipeClick(): void {
+    this.menuOpen.set(false);
+    void this.router.navigate(['/team']);
+  }
+
+  protected onProfileClick(): void {
+    this.menuOpen.set(false);
+    void this.router.navigate(['/profile']);
   }
 
   protected onFarmaciaClick(): void {

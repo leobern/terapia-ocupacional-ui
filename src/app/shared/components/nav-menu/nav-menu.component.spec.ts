@@ -38,18 +38,20 @@ describe('NavMenuComponent', () => {
     fixture.detectChanges();
   });
 
-  it('renders the 4 navigation items with the expected icons, all in "regular" weight and 24px', () => {
+  it('renders the 7 navigation items with the expected icons, all in "regular" weight and 24px', () => {
     const expected: { label: string; icon: string }[] = [
-      { icon: 'hospital', label: 'Hospitais' },
+      { icon: 'house', label: 'Home' },
       { icon: 'users-three', label: 'Pacientes' },
       { icon: 'pill', label: 'Farmácia' },
       { icon: 'link', label: 'Vínculos' },
       { icon: 'graduation-cap', label: 'Tutorial' },
+      { icon: 'hospital', label: 'Hospitais' },
+      { icon: 'identification-badge', label: 'Equipe' },
     ];
 
     const links = navLinks();
 
-    expect(links.length).toBe(5);
+    expect(links.length).toBe(7);
 
     expected.forEach(({ label, icon }) => {
       const link = linkByLabel(label);
@@ -83,7 +85,9 @@ describe('NavMenuComponent', () => {
   });
 
   const clickCases: { label: string; output: keyof NavMenuComponent }[] = [
-    { label: 'Hospitais', output: 'homeClick' },
+    { label: 'Home', output: 'homeClick' },
+    { label: 'Hospitais', output: 'hospitaisClick' },
+    { label: 'Equipe', output: 'equipeClick' },
     { label: 'Farmácia', output: 'farmaciaClick' },
     { label: 'Pacientes', output: 'pacientesClick' },
     { label: 'Vínculos', output: 'vinculosClick' },
@@ -218,7 +222,7 @@ describe('NavMenuComponent', () => {
       fixture.componentRef.setInput('activeItem', 'home');
       fixture.detectChanges();
 
-      expect(weightOf('Hospitais')).toBe('fill');
+      expect(weightOf('Home')).toBe('fill');
       expect(weightOf('Pacientes')).toBe('regular');
     });
   });
@@ -265,8 +269,25 @@ describe('NavMenuComponent', () => {
       expect(closeButton.icon()).toBe('x');
     });
 
-    it('lists Hospitais as the first navigation item', () => {
-      expect(navLinks()[0].textContent).toContain('Hospitais');
+    it('lists Home as the first navigation item', () => {
+      expect(navLinks()[0].textContent).toContain('Home');
+    });
+
+    it('esconde os itens que o perfil não vê (hiddenItems)', () => {
+      fixture.componentRef.setInput('hiddenItems', ['hospitais', 'equipe']);
+      fixture.detectChanges();
+
+      expect(navLinks().map(l => l.textContent?.trim())).not.toContain('Equipe');
+      expect(navLinks().length).toBe(5);
+    });
+
+    it('o avatar do usuário emite profileClick', () => {
+      const profileClick = jasmine.createSpy('profileClick');
+
+      fixture.componentInstance.profileClick.subscribe(profileClick);
+      (fixture.nativeElement.querySelector('.nav-menu__profile') as HTMLButtonElement).click();
+
+      expect(profileClick).toHaveBeenCalledWith(undefined);
     });
 
     it('tocar no fundo escurecido fecha o menu', () => {

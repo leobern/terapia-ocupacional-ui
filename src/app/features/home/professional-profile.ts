@@ -7,6 +7,8 @@ export interface ProfessionalProfile {
   readonly role: 'doctor' | 'other';
   /** Ausente quando o profissional não tem foto: o avatar cai nas iniciais. */
   readonly photoUrl?: string;
+  /** Id do usuário no backend (claim `usuarioId`); ausente no modo dev sem sessão real. */
+  readonly id?: number;
 }
 
 /**

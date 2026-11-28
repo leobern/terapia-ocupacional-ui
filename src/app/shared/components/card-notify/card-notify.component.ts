@@ -51,6 +51,8 @@ export class CardNotifyComponent {
   readonly actionDisabled = input<boolean>(false);
   /** Quando falso, o indicador de resolução não é oferecido (quem não participa da thread). */
   readonly canResolve = input<boolean>(true);
+  /** Só leitura (ex.: Últimas interações de uma pessoa): sem responder nem resolver. */
+  readonly readOnly = input<boolean>(false);
   /** Indicador de resolução visível porém indisponível (ex.: sem conexão). */
   readonly resolveDisabled = input<boolean>(false);
 
@@ -112,8 +114,12 @@ export class CardNotifyComponent {
   // respostas abertas. A resolvida mantém só o responder (o servidor a reabre ao receber a resposta);
   // não tem o Resolver. Variação ainda sem desenho próprio no Figma.
   // Figma v2/NotificationThread: o Resolver fica no cabeçalho de todo card pendente (não-Home).
-  protected readonly showResolveButton = computed(() => !this.isResume() && !this.resolved() && this.canResolve());
-  protected readonly showActionButton = computed(() => this.isDetail() || this.isAnswerOpen() || this.isDraft());
+  protected readonly showResolveButton = computed(
+    () => !this.isResume() && !this.resolved() && this.canResolve() && !this.readOnly(),
+  );
+  protected readonly showActionButton = computed(
+    () => (this.isDetail() || this.isAnswerOpen() || this.isDraft()) && !this.readOnly(),
+  );
   protected readonly repliesLabel = computed(() => {
     const total = this.replies().length;
 

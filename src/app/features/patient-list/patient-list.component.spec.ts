@@ -1158,13 +1158,16 @@ describe('PatientListComponent', () => {
     });
   });
 
-  it('mostra estado vazio e o botão de cadastrar apenas navega', async () => {
+  it('mostra estado vazio e o botão de cadastrar abre o cadastro em painel', async () => {
     await create();
+    spyOn(TestBed.inject(AiAssistantService), 'openAction');
 
     expect(text()).toContain('Nenhum paciente para este dia');
     q('.patient-list__register button')?.click();
 
-    expect(router.navigate).toHaveBeenCalledWith(['/patients', 'register']);
+    expect(TestBed.inject(AiAssistantService).openAction).toHaveBeenCalledWith(
+      jasmine.objectContaining({ conversation: jasmine.anything() }),
+    );
   });
 
   describe('atalhos de cadastro e edição (US-004-1-07)', () => {

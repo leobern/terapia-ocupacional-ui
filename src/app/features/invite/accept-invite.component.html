@@ -1,116 +1,112 @@
-<!-- Figma "Conductia - V1", seção 12, tela 06 (aceitar convite) e estado de convite inválido. -->
-@if (state() === 'INVALID') {
+<!-- Cadastro por conversa: o assistente pergunta, a pessoa responde (nome, foto opcional e senha). -->
+@if (step() === 'invalid') {
   <app-auth-shell
     [title]="i18n.t('invite.invalidTitle')"
-    [text]="i18n.t('invite.invalidMessage')"
+    [text]="error() ?? i18n.t('invite.invalidMessage')"
   >
     <div class="auth-actions auth-actions--single">
-      <app-button
-        [fullWidth]="!isDesktop()"
-        [label]="i18n.t('invite.goToLogin')"
-        (click)="goToLogin()"
-      />
+      <app-button [label]="i18n.t('invite.goToLogin')" (click)="goToLogin()" />
     </div>
   </app-auth-shell>
 } @else {
   <app-auth-shell
+    title="Bem-vindo à Conductia"
+    text="Crie a sua conta conversando com a gente."
     [brand]="true"
-    [title]="i18n.t('invite.title')"
-    [text]="i18n.t('invite.description')"
   >
-    <form class="auth-form" novalidate (submit)="submit($event)">
-      <div class="auth-fields">
-        <div class="auth-field">
-          <label class="auth-field__label" for="invite-name">{{
-            i18n.t('invite.nameLabel')
-          }}</label>
+    <div class="chat" aria-live="polite">
+      @for (message of messages(); track $index) {
+        <p
+          class="chat__bubble"
+          [class.chat__bubble--user]="message.from === 'user'"
+        >
+          {{ message.text }}
+        </p>
+      }
+      @if (typing()) {
+        <p class="chat__bubble chat__typing" role="status" aria-label="Aguarde">
+          …
+        </p>
+      }
+    </div>
+
+    @switch (step()) {
+      @case ('name') {
+        <form class="chat__form" novalidate (submit)="submitName($event)">
+          <label class="chat__label" for="invite-name">Nome completo</label>
           <input
             id="invite-name"
-            class="auth-field__input"
+            class="chat__input"
             type="text"
             name="name"
             autocomplete="name"
             [value]="fullName()"
-            [attr.aria-invalid]="nameError() ? 'true' : null"
-            [attr.aria-describedby]="nameError() ? 'invite-name-error' : null"
             (input)="onName($event)"
           />
-          @if (nameError(); as error) {
-            <p id="invite-name-error" class="auth-field__error" role="alert">
-              {{ error }}
-            </p>
+          <app-button htmlType="submit" label="Continuar" />
+        </form>
+      }
+      @case ('photo') {
+        <div class="chat__form">
+          @if (photoPreview(); as preview) {
+            <img
+              class="chat__preview"
+              alt="Prévia da sua foto"
+              [src]="preview"
+            />
           }
+          <label class="chat__upload">
+            <input
+              class="chat__file"
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              data-testid="invite-photo"
+              (change)="onFile($event)"
+            />
+            <span>{{ photoPreview() ? 'Trocar foto' : 'Escolher foto' }}</span>
+          </label>
+          <p class="chat__hint">JPEG, PNG ou WebP, até 2 MB.</p>
+          <app-button
+            [label]="photoPreview() ? 'Continuar' : 'Pular por enquanto'"
+            (click)="skipOrContinuePhoto()"
+          />
         </div>
-        <div class="auth-field">
-          <label class="auth-field__label" for="invite-password">{{
-            i18n.t('invite.passwordLabel')
-          }}</label>
+      }
+      @case ('password') {
+        <form class="chat__form" novalidate (submit)="submitPassword($event)">
+          <label class="chat__label" for="invite-password">Senha</label>
           <app-password-field
             inputId="invite-password"
             name="password"
             autocomplete="new-password"
-            [invalid]="!!passwordError()"
-            [describedBy]="
-              passwordError()
-                ? 'invite-password-hint invite-password-error'
-                : 'invite-password-hint'
-            "
+            [invalid]="!!error()"
             [(value)]="password"
           />
-          <p id="invite-password-hint" class="auth-field__hint">
-            {{ i18n.t('passwordRecovery.reset.passwordHint') }}
-          </p>
-          @if (passwordError(); as error) {
-            <p
-              id="invite-password-error"
-              class="auth-field__error"
-              role="alert"
-            >
-              {{ error }}
-            </p>
-          }
-        </div>
-        <div class="auth-field">
-          <label class="auth-field__label" for="invite-confirmation">{{
-            i18n.t('invite.confirmationLabel')
-          }}</label>
+          <app-button htmlType="submit" label="Continuar" />
+        </form>
+      }
+      @case ('confirm') {
+        <form
+          class="chat__form"
+          novalidate
+          (submit)="submitConfirmation($event)"
+        >
+          <label class="chat__label" for="invite-confirmation"
+            >Repita a senha</label
+          >
           <app-password-field
             inputId="invite-confirmation"
             name="confirmation"
             autocomplete="new-password"
-            [invalid]="!!confirmationError()"
-            [describedBy]="
-              confirmationError() ? 'invite-confirmation-error' : null
-            "
+            [invalid]="!!error()"
             [(value)]="confirmation"
           />
-          @if (confirmationError(); as error) {
-            <p
-              id="invite-confirmation-error"
-              class="auth-field__error"
-              role="alert"
-            >
-              {{ error }}
-            </p>
-          }
-        </div>
-        @if (serviceError()) {
-          <app-banner type="warning">{{
-            i18n.t('invite.serviceError')
-          }}</app-banner>
-        }
-      </div>
-      <div class="auth-actions">
-        <a class="auth-link" routerLink="/login">{{
-          i18n.t('invite.haveAccount')
-        }}</a>
-        <app-button
-          htmlType="submit"
-          [fullWidth]="!isDesktop()"
-          [disabled]="state() === 'SUBMITTING'"
-          [label]="i18n.t(serviceError() ? 'invite.retry' : 'invite.submit')"
-        />
-      </div>
-    </form>
+          <app-button htmlType="submit" label="Criar minha conta" />
+        </form>
+      }
+    }
+    @if (error(); as message) {
+      <p class="chat__error" role="alert">{{ message }}</p>
+    }
   </app-auth-shell>
 }

@@ -478,6 +478,11 @@ $duration-collapse: 90ms;
 .nav-menu__profile {
   display: flex;
   align-items: center;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
   gap: 0;
   // Recolhido, a caixa do trilho tem 48px: 4 + 40 + 4 — sem folga à direita o avatar encolheria.
   padding: tokens.$space-12 tokens.$space-4 tokens.$space-4;
