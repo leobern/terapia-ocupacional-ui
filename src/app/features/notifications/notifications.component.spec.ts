@@ -51,8 +51,12 @@ describe('NotificationsComponent', () => {
   let router: Router;
   let actionsSubject: Subject<{ type: string }>;
   const isDesktop = signal(true);
+  let queryParams: Record<string, string> = {};
 
-  beforeEach(() => isDesktop.set(true));
+  beforeEach(() => {
+    isDesktop.set(true);
+    queryParams = {};
+  });
 
   async function configureStore(overrides: Partial<NotificationsState> = {}): Promise<void> {
     actionsSubject = new Subject();
@@ -75,7 +79,9 @@ describe('NotificationsComponent', () => {
         { provide: Actions, useValue: actionsSubject },
         {
           provide: ActivatedRoute,
-          useValue: { snapshot: { queryParamMap: { get: (): null => null } } },
+          useValue: {
+            snapshot: { queryParamMap: { get: (name: string): string | null => queryParams[name] ?? null } },
+          },
         },
       ],
     }).compileComponents();
@@ -105,6 +111,28 @@ describe('NotificationsComponent', () => {
         expect(el.querySelectorAll('.card-notify--resolved').length).toBe(1);
       });
     }
+
+    it('`?abrir=<id>` abre a notificação: expande o card e o destaca por alguns segundos', async () => {
+      jasmine.clock().install();
+      try {
+        queryParams = { abrir: '2' };
+        await configureStore({
+          pendingItems: [notification(1), notification(2)],
+          status: 'success',
+        });
+        createComponent();
+        const el: HTMLElement = fixture.nativeElement;
+
+        expect(el.querySelector('#notification-2')?.classList).toContain('notifications__card--highlight');
+        expect(el.querySelector('#notification-1')?.classList).not.toContain('notifications__card--highlight');
+        jasmine.clock().tick(3100);
+        fixture.detectChanges();
+
+        expect(el.querySelector('#notification-2')?.classList).not.toContain('notifications__card--highlight');
+      } finally {
+        jasmine.clock().uninstall();
+      }
+    });
 
     it('busca a 1ª página de Resolvidas ao abrir e devolve a aba ativa para Pendentes', async () => {
       await configureStore({ status: 'success' });

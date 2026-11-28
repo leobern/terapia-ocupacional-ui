@@ -26,6 +26,8 @@ export type BottomSheetSnap = 'default' | 'full';
 export interface ChatShortcut {
   readonly id: string;
   readonly label: string;
+  /** Ação principal (chip preenchido), ex.: "Salvar". */
+  readonly primary?: boolean;
 }
 
 /** Teto de atalhos renderizados (spec.md FR-023). Excedentes são ignorados. */
@@ -129,6 +131,13 @@ export class BottomSheetComponent {
   readonly ariaLabel = input.required<string>();
 
   readonly closed = output();
+  /** Com `true`, fechar não fecha: emite `closeBlocked` e o consumidor pergunta antes (ex.: cadastro em andamento). */
+  readonly confirmBeforeClose = input<boolean>(false);
+  readonly closeBlocked = output();
+  /** Dica à direita da faixa de atalhos, acima do campo de mensagem (ex.: "Você também pode responder via áudio."). */
+  readonly hint = input<string>('');
+  /** A dica entra de baixo para cima quando fica visível. */
+  readonly hintVisible = input<boolean>(false);
   readonly snapChange = output<BottomSheetSnap>();
   readonly shortcutSelect = output<ChatShortcut>();
 
@@ -137,6 +146,7 @@ export class BottomSheetComponent {
   protected readonly visibleShortcuts = computed(() => this.shortcuts().slice(0, MAX_SHORTCUTS));
 
   protected readonly hasShortcuts = computed(() => this.visibleShortcuts().length > 0);
+  protected readonly showActionsBar = computed(() => this.hasShortcuts() || this.hint() !== '');
 
   /**
    * O teclado virtual força `full` sem sobrescrever a prop do consumidor: o valor
@@ -396,6 +406,11 @@ export class BottomSheetComponent {
    * expandido, que é exatamente o que FR-025 existe para evitar.
    */
   private dismiss(): void {
+    if (this.confirmBeforeClose()) {
+      this.closeBlocked.emit();
+
+      return;
+    }
     if (!this.dismissible()) {
       return;
     }

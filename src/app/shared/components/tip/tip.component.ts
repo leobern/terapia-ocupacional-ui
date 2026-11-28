@@ -10,9 +10,13 @@ import { ChangeDetectionStrategy, Component, input } from '@angular/core';
   changeDetection: ChangeDetectionStrategy.OnPush,
   selector: 'app-tip',
   styleUrl: './tip.component.scss',
-  template: `<button type="button" class="tip" [disabled]="disabled()">{{ label() }}</button>`,
+  template: `<button type="button" class="tip" [class.tip--primary]="primary()" [disabled]="disabled()">
+    {{ label() }}
+  </button>`,
 })
 export class TipComponent {
   readonly label = input.required<string>();
   readonly disabled = input(false);
+  /** Chip de ação principal (ex.: "Salvar" no fim de um cadastro): preenchido com a cor primária. */
+  readonly primary = input(false);
 }

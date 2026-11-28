@@ -11,7 +11,6 @@ import { BedNumberExtractor } from '../patient-hub/move-bed/bed-number-extractor
 import { HospitalSiteSource } from '../shift/hospital-site-source';
 import { ProvisionalHospitalSiteSource } from '../shift/provisional-hospital-site-source';
 import { ProvisionalShiftSource } from '../shift/provisional-shift-source';
-import { ShiftService } from '../shift/shift.service';
 import { ShiftSource } from '../shift/shift-source';
 import { DailyPatientsSource, DailyPatientsSummary } from './daily-patients';
 import { HomeComponent } from './home.component';
@@ -209,148 +208,36 @@ describe('HomeComponent', () => {
   const options = (): HTMLElement[] => Array.from(el().querySelectorAll('[role="option"]'));
   const grid = (): HTMLElement[] => Array.from(el().querySelectorAll('.home__grid > *'));
 
-  describe('turno de trabalho (geolocalização)', () => {
-    const SITE = { address: '', hospitalId: HOSPITALS[0].id, lat: -23.5505, lng: -46.6333, radiusMeters: 300 };
-    const startButton = (): HTMLButtonElement => q<HTMLButtonElement>('.home__shift button') as HTMLButtonElement;
-    const click = async (button: HTMLButtonElement): Promise<void> => {
-      button.click();
-      await settle();
-      // Sem zona, o `whenStable` não espera a cadeia de promessas da gravação: cede a vez antes de olhar a tela.
-      await new Promise<void>(resolve => setTimeout(resolve, 0));
-      await settle();
-    };
-
+  describe('ações da Home (sem turno e sem cadastro de hospital)', () => {
     beforeEach(() => setup());
 
-    it('"Cadastrar hospital" fica no topo (desktop); o turno vem logo abaixo do seletor e a frase e a data no bloco de texto', () => {
-      const actions = q('.home__header-actions') as HTMLElement;
+    it('o seletor é a única ação da linha de hospital; "Cadastrar hospital" saiu da Home (vai para a Administração)', () => {
       const top = q('.home__local-top') as HTMLElement;
       const text = q('.home__local-text') as HTMLElement;
 
-      expect(actions.firstElementChild).toBe(q('.home__cta'));
-      expect(q('.home__cta .home__register-hospital')?.textContent).toContain('Cadastrar hospital');
+      expect(q('.home__cta')).toBeNull();
+      expect(q('.home__register-hospital')).toBeNull();
       expect(top.firstElementChild).toBe(q('.home__hospital-row'));
-      expect(top.lastElementChild).toBe(q('.home__shift'));
-      expect(text.lastElementChild?.classList).toContain('home__date');
-      // Fora do desktop o turno é o botão cheio (Figma Home mobile); no desktop é o contorno.
-      expect(q('.home__shift button')?.className).toContain('solid');
-      expect(q('.home__shift ph-icon')).toBeNull();
+      expect(top.lastElementChild).toBe(q('.home__hospital-row'));
+      expect(text.lastElementChild?.classList).toContain('home__headline');
+      expect(q('.home__shift')).toBeNull();
+      expect(q('.home__team')).toBeNull();
     });
 
-    it('registra as sugestões da barra inferior: cadastrar hospital, iniciar turno e pendências', () => {
+    it('registra a sugestão da barra inferior: só as pendências', () => {
       const suggestions = TestBed.inject(ScreenActionsService).suggestions();
 
-      expect(suggestions.map(s => s.label)).toEqual([
-        'Cadastrar hospital',
-        'Iniciar turno de trabalho',
-        'Ver minhas pendências',
-      ]);
-      suggestions[1].run?.();
-      suggestions[2].run?.();
+      expect(suggestions.map(s => s.label)).toEqual(['Ver minhas pendências']);
       suggestions[0].run?.();
 
       expect(TestBed.inject(AiAssistantService).isOpen()).toBeTrue();
     });
 
-    it('sem localização cadastrada, não inicia e orienta em texto', async () => {
-      await click(startButton());
-
-      expect(q('.home__toast')?.textContent).toContain('ainda não tem localização cadastrada');
-      expect(navigate).not.toHaveBeenCalled();
-    });
-
-    it('fora do raio, não inicia e diz a distância', async () => {
-      await TestBed.inject(HospitalSiteSource).save({ ...SITE, lat: -23.5505 + 0.0135 });
-      await click(startButton());
-
-      expect(q('.home__toast')?.textContent).toContain('Você está a');
-      expect(navigate).not.toHaveBeenCalled();
-    });
-
-    it('dentro do raio, inicia o turno, leva à lista de pacientes e o botão vira "Retomar turno de trabalho"', async () => {
-      await TestBed.inject(HospitalSiteSource).save(SITE);
-      await click(startButton());
-
-      expect(navigate).toHaveBeenCalledWith(['/patients'], { queryParams: { turno: '1' } });
-      expect(q('.home__shift')?.textContent).toContain('Retomar turno de trabalho');
-      expect(q('[data-testid="shift-member"]')?.textContent).toContain('Michelle Franklin');
-
-      navigate.calls.reset();
-      await click(startButton());
-
-      expect(navigate).toHaveBeenCalledOnceWith(['/patients'], { queryParams: { turno: '1' } });
-    });
-
-    it('sem permissão de localização, avisa em texto', async () => {
-      await TestBed.inject(HospitalSiteSource).save(SITE);
-      geo.point = new GeolocationError('denied');
-      await click(startButton());
-
-      expect(q('.home__toast')?.textContent).toContain('Sem acesso à localização');
-    });
-
-    it('mostra a equipe em turno: quem já está trabalhando e quantos pacientes escolheu', async () => {
-      const shifts = TestBed.inject(ShiftSource);
-      const other = await shifts.start({
-        hospitalId: HOSPITALS[0].id,
-        professionalName: 'Dr. Bruno Lima',
-        professionalRole: 'Médico',
-        startedAt: new Date().toISOString(),
-      });
-
-      await shifts.selectPatients(other.id, ['p1', 'p2']);
-      await TestBed.inject(ShiftService).refresh(HOSPITALS[0].id);
-      await settle();
-
-      expect(q('.home__team')?.textContent).toContain('Dr. Bruno Lima');
-      expect(q('.home__team')?.textContent).toContain('Médico · 2 pacientes');
-    });
-
-    it('"Cadastrar hospital" abre o cadastro no painel lateral; ao salvar, limpa o aviso', async () => {
-      const assistant = TestBed.inject(AiAssistantService);
-
-      await click(startButton());
-
-      expect(q('.home__toast')).not.toBeNull();
-
-      await click(q<HTMLButtonElement>('.home__register-hospital button') as HTMLButtonElement);
-      const inputs = assistant.activeAction()?.editor?.inputs as { saved: (id: number) => void };
-
-      expect(assistant.activeAction()?.id).toBe('hospital-registration');
-
-      inputs.saved(HOSPITALS[0].id);
-      await settle();
-      // A saída é animada (200ms): o toast só sai do DOM ao fim dela.
-      await new Promise(resolve => setTimeout(resolve, 400));
-      fixture.detectChanges();
-
-      expect(q('.home__toast')).toBeNull();
-    });
-
-    it('os atalhos da Home trazem "Cadastrar hospital" e "Iniciar turno de trabalho"', async () => {
+    it('os atalhos da Home não trazem cadastro de hospital nem turno', () => {
       const actions = TestBed.inject(ScreenActionsService).actions();
-      const register = actions.find(a => a.id === 'hospital-registration');
 
-      expect(register?.label).toBe('Cadastrar hospital');
-      expect(register?.editor).toBeDefined();
-
-      actions.find(a => a.id === 'start-shift')?.navigate?.();
-      await settle();
-
-      expect(q('.home__toast')?.textContent).toContain('ainda não tem localização cadastrada');
-    });
-
-    it('o toast do turno some sozinho depois de alguns segundos', () => {
-      jasmine.clock().install();
-      try {
-        fixture.componentInstance.shiftMessage.set('Aviso');
-        fixture.detectChanges();
-        jasmine.clock().tick(8000);
-
-        expect(fixture.componentInstance.shiftMessage()).toBeNull();
-      } finally {
-        jasmine.clock().uninstall();
-      }
+      expect(actions.some(a => a.id === 'hospital-registration')).toBeFalse();
+      expect(actions.some(a => a.id === 'start-shift')).toBeFalse();
     });
   });
 
@@ -360,8 +247,8 @@ describe('HomeComponent', () => {
     it('shows the header with title, avatar and the day headline', () => {
       expect(q('.home__header-title')?.textContent?.trim()).toBe('Dra.');
       expect(q('.home__header app-avatar')).toBeTruthy();
-      expect(q('.home__headline')?.textContent?.trim()).toBe('Tarefas diárias do hospital');
-      expect(q('.home__date')?.textContent?.trim()).toMatch(/, \d+ de /);
+      expect(q('.home__headline')?.textContent?.trim()).toMatch(/, \d+ de /);
+      expect(q('.home__date')).toBeNull();
     });
 
     it('does not mount the bottom nav bar itself (the shell owns it)', () => {
@@ -650,11 +537,11 @@ describe('HomeComponent', () => {
       expect(cards[0].querySelector('.card-notify__time ph-icon')).not.toBeNull();
     });
 
-    it('opens the notification detail when the card is tapped anywhere (US-003-3-04)', async () => {
+    it('opens the Notifications screen with that notification open when the card is tapped anywhere (US-003-3-04)', async () => {
       await setup({ feed: Object.assign(new FakeNotifications(), { total: 1 }) });
       (q('app-card-notify .card-notify') as HTMLElement).click();
 
-      expect(navigate).toHaveBeenCalledWith(['/notifications', 0]);
+      expect(navigate).toHaveBeenCalledWith(['/notifications'], { queryParams: { abrir: 0, hospitalId: 1 } });
     });
 
     it('shows only the fixed card plus an empty-state note when there are no notifications (US-003-3-05)', async () => {
@@ -663,6 +550,24 @@ describe('HomeComponent', () => {
       expect(grid()[0].tagName.toLowerCase()).toBe('app-card-patients');
       expect(el().querySelectorAll('app-card-notify').length).toBe(0);
       expect(q('.home__empty')?.textContent).toContain('Nenhuma notificação');
+    });
+
+    it('não mostra notificações já resolvidas: só as pendentes aparecem na Home', async () => {
+      const author = { id: 1, name: 'Autor', photoUrl: null, specialty: 'Nutrição' };
+      const base = { author, createdAt: '2026-11-17T12:00:00Z', read: false };
+
+      await setup({
+        feed: Object.assign(new FakeNotifications(), {
+          custom: [
+            { ...base, description: 'Pendente', id: 1 },
+            { ...base, description: 'Resolvida', id: 2, resolvedAt: '2026-11-18T09:00:00Z' },
+          ],
+        }),
+      });
+
+      expect(el().querySelectorAll('app-card-notify').length).toBe(1);
+      expect(el().textContent).toContain('Pendente');
+      expect(el().textContent).not.toContain('Resolvida');
     });
 
     it('does not show the empty-state note while there are notifications', async () => {

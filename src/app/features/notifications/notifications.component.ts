@@ -174,6 +174,8 @@ export class NotificationsComponent implements OnDestroy {
   });
   protected readonly professionalSpecialty = 'Nutróloga';
 
+  /** Card recém-aberto por `?abrir`: ganha destaque por alguns segundos. */
+  protected readonly highlightedId = signal<number | null>(null);
   protected readonly hospitalName = computed(() => this.hospitalContext.selected()?.name ?? '');
   protected readonly todayLabel = computed(() => formatTodayLabel());
   protected readonly assistant = inject(AiAssistantService);
@@ -215,6 +217,8 @@ export class NotificationsComponent implements OnDestroy {
   // navegação nem precisa ser compartilhado.
   private readonly transcriber = inject(AudioTranscriber);
   private readonly expandedIds = signal<ReadonlySet<number>>(new Set());
+  /** Notificação a abrir ao chegar (`?abrir=<id>`, vindo da Home ou de um atalho); vira `null` depois de aberta. */
+  private pendingOpenId: number | null = Number(this.route.snapshot.queryParamMap.get('abrir')) || null;
 
   // Um sentinel por coluna: no desktop cada coluna tem o próprio scroll.
   private readonly scrollSentinels = viewChildren<ElementRef<HTMLElement>>('scrollSentinel');
@@ -233,6 +237,19 @@ export class NotificationsComponent implements OnDestroy {
       } else if (this.resolvedLoaded() && this.activeTab() === 'resolved') {
         this.store.dispatch(NotificationsActions.tabSelected({ tab: 'pending' }));
       }
+    });
+    // `?abrir=<id>`: assim que a notificação aparece na lista, expande o histórico, rola até ela e a destaca.
+    effect(() => {
+      const id = this.pendingOpenId;
+
+      if (id === null || !this.visibleItems().some(notification => notification.id === id)) {
+        return;
+      }
+      this.pendingOpenId = null;
+      this.onViewRepliesClick(id);
+      this.highlightedId.set(id);
+      setTimeout(() => document.getElementById(`notification-${id}`)?.scrollIntoView({ block: 'center' }), 0);
+      setTimeout(() => this.highlightedId.set(null), 3000);
     });
     const hospitalIdParam = this.route.snapshot.queryParamMap.get('hospitalId');
     const hospitalId = hospitalIdParam ? Number(hospitalIdParam) : null;

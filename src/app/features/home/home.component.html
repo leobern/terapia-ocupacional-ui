@@ -12,16 +12,6 @@
       </div>
 
       <div class="home__header-actions">
-        <!-- CTA principal da tela (desktop): ao lado do sino. No mobile ele vira a sugestão sob o botão central da barra inferior. -->
-        <span class="home__cta">
-          <app-button
-            class="home__register-hospital"
-            size="md"
-            iconLeft="plus"
-            label="Cadastrar hospital"
-            (click)="onRegisterHospital()"
-          />
-        </span>
         <div class="home__header-icons">
           <span class="home__notify-wrapper">
             <app-icon-button
@@ -92,7 +82,7 @@
       }
       @default {
         <div class="home__local">
-          <!-- Seletor de hospital e "Iniciar turno de trabalho" (Figma Home mobile 4591:216: um sob o outro; desktop: na mesma linha, turno à direita). -->
+          <!-- Seletor de hospital (o turno geolocalizado saiu da primeira versão, Thiago 2026-11-27). -->
           <div class="home__local-top">
             <div class="home__hospital-row">
               @if (context.canSwitch() && controlsEnabled()) {
@@ -124,7 +114,9 @@
                 class="home__hospital-list"
                 role="listbox"
                 aria-label="Hospitais vinculados"
+                appClickOutsideIgnore=".home__hospital-trigger"
                 [id]="listId"
+                (appClickOutside)="listOpen.set(false)"
               >
                 @for (
                   hospital of context.hospitals();
@@ -146,70 +138,12 @@
                 }
               </ul>
             }
-
-            <app-button
-              class="home__shift"
-              size="md"
-              [appearance]="viewport.isDesktop() ? 'outlined' : 'solid'"
-              [label]="
-                shift.mine()
-                  ? 'Retomar turno de trabalho'
-                  : 'Iniciar turno de trabalho'
-              "
-              [disabled]="shiftBusy() || context.selected() === null"
-              (click)="onShiftClick()"
-            />
           </div>
           <div class="home__local-text">
-            <p class="home__headline">Tarefas diárias do hospital</p>
-            <p class="home__date">{{ todayLabel() }}</p>
+            <!-- Figma 4592:854: a data substitui o título "Tarefas diárias do hospital" e sai da direita. -->
+            <p class="home__headline">{{ todayLabel() }}</p>
           </div>
         </div>
-
-        @if (shiftMessage(); as message) {
-          <!-- Toast flutuante: entra e sai com animação; some sozinho depois de alguns segundos. -->
-          <p
-            class="home__toast"
-            role="alert"
-            animate.enter="home__toast--enter"
-            animate.leave="home__toast--leave"
-          >
-            <ph-icon name="map-pin" [size]="20" />
-            <span>{{ message }}</span>
-          </p>
-        }
-
-        @if (shift.mine() || shift.others().length > 0) {
-          <!-- Equipe multidisciplinar: quem já está em turno neste hospital e quantos pacientes escolheu. -->
-          <section class="home__team" aria-label="Equipe em turno">
-            <h2 class="home__feed-heading">Equipe em turno</h2>
-            <ul class="home__team-list">
-              @for (member of shift.shifts(); track member.id) {
-                <li class="home__team-item" data-testid="shift-member">
-                  <app-avatar
-                    size="small"
-                    type="user"
-                    [name]="member.professionalName"
-                  />
-                  <span class="home__team-text">
-                    <span class="home__team-name">{{
-                      member.professionalName
-                    }}</span>
-                    <span class="home__team-meta"
-                      >{{ member.professionalRole }} ·
-                      {{ member.patientIds.length }}
-                      {{
-                        member.patientIds.length === 1
-                          ? 'paciente'
-                          : 'pacientes'
-                      }}</span
-                    >
-                  </span>
-                </li>
-              }
-            </ul>
-          </section>
-        }
 
         <div class="home__grid">
           @if (summary(); as s) {

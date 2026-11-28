@@ -58,14 +58,16 @@
                   [count]="pendingCount()"
                 />
               }
-              @for (notification of pendingItems(); track notification.id) {
-                <ng-container
-                  *ngTemplateOutlet="
-                    card;
-                    context: { $implicit: notification, resolved: false }
-                  "
-                />
-              }
+              <div class="notifications__cards">
+                @for (notification of pendingItems(); track notification.id) {
+                  <ng-container
+                    *ngTemplateOutlet="
+                      card;
+                      context: { $implicit: notification, resolved: false }
+                    "
+                  />
+                }
+              </div>
               <div #scrollSentinel class="notifications__scroll-sentinel"></div>
             </section>
           }
@@ -83,14 +85,16 @@
                   [count]="resolvedCount()"
                 />
               }
-              @for (notification of resolvedItems(); track notification.id) {
-                <ng-container
-                  *ngTemplateOutlet="
-                    card;
-                    context: { $implicit: notification, resolved: true }
-                  "
-                />
-              }
+              <div class="notifications__cards">
+                @for (notification of resolvedItems(); track notification.id) {
+                  <ng-container
+                    *ngTemplateOutlet="
+                      card;
+                      context: { $implicit: notification, resolved: true }
+                    "
+                  />
+                }
+              </div>
               <div #scrollSentinel class="notifications__scroll-sentinel"></div>
             </section>
           }
@@ -128,6 +132,8 @@
 <ng-template #card let-notification let-resolved="resolved">
   <app-card-notify
     actionAriaLabel="Responder"
+    [attr.id]="'notification-' + notification.id"
+    [class.notifications__card--highlight]="highlightedId() === notification.id"
     [resolved]="resolved"
     [type]="cardType(notification.id)"
     [authorName]="cardName(notification)"

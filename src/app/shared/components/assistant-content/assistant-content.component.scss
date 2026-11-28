@@ -47,8 +47,35 @@
   margin: 0;
   padding-inline: var(--assistant-text-inset, 0);
   color: tokens.c(content-1);
+  // Perguntas com lista de tópicos (uma linha por item) mantêm as quebras de linha.
+  white-space: pre-line;
 
-  @include typography.chat-question;
+  // Corpo regular de 16/24 como nas ferramentas de IA (antes era um título em negrito de 20).
+  @include typography.chat-message;
+}
+
+.assistant-content--chat {
+  gap: tokens.$space-16;
+}
+
+.assistant-content__thinking {
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$space-8;
+  padding-inline: var(--assistant-text-inset, 0);
+}
+
+// Folga abaixo da última mensagem: sem ela a resposta do usuário não consegue subir até o topo da tela.
+.assistant-content__spacer {
+  flex: none;
+  min-height: 90dvh;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .assistant-content__dots::after {
+    content: '...';
+    animation: none;
+  }
 }
 
 .assistant-content__hint {
@@ -276,4 +303,69 @@
   @media (prefers-reduced-motion: reduce) {
     animation: none;
   }
+}
+
+// Mensagem da IA com cartão de resumo (dados coletados antes de salvar).
+.assistant-content__ai {
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$space-12;
+}
+
+// Cartão de dados no estilo do card de pendências (Figma NotificationThread, estado pendências): título com linha embaixo
+// e linhas com o valor em destaque e o nome do campo embaixo.
+.assistant-content__summary {
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$space-12;
+  margin: 0 var(--assistant-text-inset, 0);
+  padding: var(--layout-card-padding, #{tokens.$space-16});
+  border: 1px solid tokens.c(border);
+  border-radius: tokens.$radius-md;
+  background: tokens.c(surface);
+}
+
+.assistant-content__summary-title {
+  margin: 0;
+  padding: tokens.$space-8;
+  border-bottom: 1px solid tokens.c(border);
+  color: tokens.c(content-2);
+
+  @include typography.label-sm;
+}
+
+.assistant-content__summary-list {
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$space-12;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.assistant-content__summary-row {
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$space-4;
+  padding: 0 tokens.$space-8 tokens.$space-8;
+  border-bottom: 1px solid tokens.c(border);
+
+  &:last-child {
+    border-bottom: 0;
+    padding-bottom: 0;
+  }
+}
+
+.assistant-content__summary-value {
+  color: tokens.c(content-1);
+
+  @include typography.label-md;
+
+  font-weight: tokens.$font-weight-bold;
+}
+
+.assistant-content__summary-label {
+  color: tokens.c(content-5);
+
+  @include typography.label-sm;
 }

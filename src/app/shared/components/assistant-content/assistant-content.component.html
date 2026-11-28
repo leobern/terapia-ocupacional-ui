@@ -76,54 +76,81 @@
     </div>
   }
   @case ('conversation') {
-    <!-- Cadastro por conversa: uma pergunta por vez; as respostas entram pelo campo de mensagem do rodapé. -->
-    <div class="assistant-content" aria-live="polite">
+    <!-- Cadastro por conversa, no padrão das ferramentas de IA (Thiago, 2026-11-27): uma pergunta por vez; ao responder,
+         a resposta sobe para o topo da tela, a IA "pensa" um instante e escreve a próxima pergunta. Dá para rolar de
+         volta e rever tudo. Opções, "Pular" e "Salvar" são chips acima do campo de mensagem (app.component). -->
+    <div class="assistant-content assistant-content--chat" aria-live="polite">
       <ng-container [ngTemplateOutlet]="actionIntroTpl" />
       @if (actionIntroDone()) {
         @for (message of flow.messages(); track $index) {
           @if (message.role === 'user') {
-            <p class="assistant-content__question">{{ message.text }}</p>
+            <p class="assistant-content__question" data-user-message>
+              {{ message.text }}
+            </p>
           } @else if (message.tone === 'error') {
             <div class="assistant-content__error" role="alert">
               <ph-icon name="warning-diamond" [size]="20" />
               <p>{{ message.text }}</p>
             </div>
           } @else {
-            <!-- Pergunta da IA no cadastro: em negrito e um pouco maior. -->
-            <p class="assistant-content__ask">{{ message.text }}</p>
+            <div class="assistant-content__ai">
+              @if ($last && !flow.thinking()) {
+                <!-- A última mensagem da IA se escreve sozinha; as anteriores ficam inteiras. -->
+                <p class="assistant-content__ask">
+                  <app-typewriter
+                    [text]="message.text"
+                    [restartKey]="message"
+                  />
+                </p>
+              } @else {
+                <p class="assistant-content__ask">{{ message.text }}</p>
+              }
+              @if (message.summary; as items) {
+                <!-- Dados coletados no estilo do card de pendências (Figma NotificationThread, estado pendências). -->
+                <section
+                  class="assistant-content__summary"
+                  [attr.aria-label]="message.summaryTitle ?? 'Dados coletados'"
+                >
+                  @if (message.summaryTitle) {
+                    <h3 class="assistant-content__summary-title">
+                      {{ message.summaryTitle }}
+                    </h3>
+                  }
+                  <ul class="assistant-content__summary-list">
+                    @for (item of items; track item.label) {
+                      <li class="assistant-content__summary-row">
+                        <span class="assistant-content__summary-value">{{
+                          item.value
+                        }}</span>
+                        <span class="assistant-content__summary-label">{{
+                          item.label
+                        }}</span>
+                      </li>
+                    }
+                  </ul>
+                </section>
+              }
+            </div>
           }
         }
-        @if (flow.options().length || flow.canSkip()) {
-          <div class="assistant-content__actions">
-            @for (option of flow.options(); track option.value) {
-              <app-button
-                kind="primary"
-                appearance="outlined"
-                [fullWidth]="true"
-                [label]="option.label"
-                (click)="flow.choose(option)"
+        @if (flow.thinking() || flow.submitting()) {
+          <!-- Figma 4628:5795 (v2/ChatMessage, buscando): logo de 24px + texto e duas barras de carregamento. -->
+          <div class="assistant-content__thinking" role="status">
+            <div class="assistant-content__answer-head">
+              <app-icon-logo
+                class="assistant-content__answer-logo"
+                state="anim"
               />
-            }
-            @if (flow.canSkip()) {
-              <app-button
-                kind="secondary"
-                appearance="outlined"
-                [fullWidth]="true"
-                [label]="flow.skipLabel()"
-                (click)="flow.skip()"
-              />
-            }
+              <span>{{ flow.submitting() ? 'Salvando…' : 'Pensando…' }}</span>
+            </div>
+            <div class="assistant-content__skeleton" aria-hidden="true">
+              <span></span>
+              <span></span>
+            </div>
           </div>
         }
-        @if (flow.canRetry()) {
-          <app-button
-            kind="primary"
-            appearance="outlined"
-            [fullWidth]="true"
-            [label]="t('assistant.conversation.retry')"
-            (click)="flow.retry()"
-          />
-        }
+        <!-- Folga embaixo: deixa a última resposta do usuário chegar ao topo da tela. -->
+        <div class="assistant-content__spacer" aria-hidden="true"></div>
       }
     </div>
   }
@@ -150,14 +177,7 @@
             [text]="intro().description"
             [restartKey]="typingKey()"
             [enabled]="typing() && titleDone()"
-            (finished)="onDescriptionFinished()"
           />
-        </p>
-        <p
-          class="assistant-content__hint"
-          [class.assistant-content__hint--visible]="hintVisible()"
-        >
-          Você pode conversar comigo via texto ou áudio.
         </p>
       }
       <ng-container [ngTemplateOutlet]="conversationTpl" />

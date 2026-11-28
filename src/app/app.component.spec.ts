@@ -6,6 +6,8 @@ import { AppComponent } from './app.component';
 import { LogoutService } from './features/auth/logout.service';
 import { SessionRevoker } from './features/auth/session-revoker';
 import { Role, SessionRoleReader } from './shared/auth/session-role';
+import { type ChatShortcut } from './shared/components/bottom-sheet/bottom-sheet.component';
+import { AssistantConversationService } from './shared/services/assistant-conversation.service';
 import { type ScreenAction, ScreenActionsService } from './shared/services/screen-actions.service';
 import { UserDirectory } from './shared/services/user-directory';
 
@@ -430,7 +432,7 @@ describe('AppComponent', () => {
       fixture.nativeElement.querySelectorAll('app-nav-menu .nav-menu__links .nav-menu__link'),
     ).map(el => el.textContent.trim());
 
-    expect(labels).toEqual(['Hospitais', 'Pacientes', 'Farmácia', 'Vínculos', 'Tutorial']);
+    expect(labels).toEqual(['Home', 'Pacientes', 'Farmácia', 'Tutorial', 'Hospitais', 'Equipe']);
   });
 
   it('navigates to /settings/tutorial and closes the mobile menu when Tutorial is clicked', () => {
@@ -467,7 +469,7 @@ describe('AppComponent', () => {
     fixture.detectChanges();
     const item = Array.from<HTMLButtonElement>(
       fixture.nativeElement.querySelectorAll('app-nav-menu .nav-menu__links .nav-menu__link'),
-    ).find(el => el.textContent?.includes('Vínculos'));
+    ).find(el => el.textContent?.trim() === 'Hospitais');
 
     item?.click();
     fixture.detectChanges();
@@ -501,7 +503,7 @@ describe('AppComponent', () => {
     fixture.detectChanges();
     const home = Array.from<HTMLButtonElement>(
       fixture.nativeElement.querySelectorAll('app-nav-menu .nav-menu__links .nav-menu__link'),
-    ).find(el => el.textContent?.includes('Hospitais'));
+    ).find(el => el.textContent?.trim() === 'Home');
 
     home?.click();
     fixture.detectChanges();
@@ -648,6 +650,223 @@ describe('AppComponent', () => {
       nav().onNavAiClick(0);
 
       expect(fixture.componentInstance.aiAssistant.isOpen()).toBe(true);
+    });
+  });
+
+  describe('cadastro por conversa na sidebar', () => {
+    interface AppInternals {
+      assistantHint(): string;
+      assistantHintVisible(): boolean;
+      confirmDiscard(): void;
+      cancelDiscard(): void;
+      discardOpen(): boolean;
+      drawerSnap(): string;
+      onAiShortcut(shortcut: ChatShortcut): void;
+      onAssistantCloseBlocked(): void;
+      onDrawerSnapChange(snap: 'default' | 'expanded'): void;
+      onEquipeClick(): void;
+      onFarmaciaClick(): void;
+      onHomeClick(): void;
+      onPacientesClick(): void;
+      onTutorialClick(): void;
+      onVinculosClick(): void;
+      registrationInProgress(): boolean;
+      shortcuts(): readonly ChatShortcut[];
+    }
+    const registration: ScreenAction = {
+      conversation: {
+        errorMessage: 'Falhou',
+        skipLabel: 'Pular',
+        steps: [
+          { id: 'name', parse: raw => ({ value: raw }), prompt: 'Nome?' },
+          {
+            id: 'extra',
+            jumpTo: { label: 'Salvar paciente', stepId: 'done' },
+            options: [{ label: 'Opção', value: 'o' }],
+            optional: true,
+            parse: raw => ({ value: raw }),
+            prompt: 'Algo mais?',
+          },
+          {
+            id: 'done',
+            options: [{ label: 'Salvar', primary: true, value: 'save' }],
+            parse: raw => ({ value: raw }),
+            prompt: 'Salvar?',
+          },
+        ],
+        submit: () => new Promise<void>(() => undefined),
+        successMessage: 'Feito',
+        title: 'Cadastrar',
+      },
+      id: 'register-test',
+      label: 'Cadastrar',
+    };
+    const app = (): AppInternals => fixture.componentInstance as unknown as AppInternals;
+    let navigate: jasmine.Spy;
+
+    beforeEach(() => {
+      navigate = spyOn(TestBed.inject(Router), 'navigate').and.resolveTo(true);
+      // O app dá 700ms de "pensando" a cada pergunta; nos testes a pergunta seguinte aparece na hora.
+      TestBed.inject(AssistantConversationService).thinkingMs = 0;
+    });
+
+    it('as opções, o "Pular" e o atalho "Salvar paciente" viram chips acima do campo de mensagem', () => {
+      const flow = TestBed.inject(AssistantConversationService);
+
+      fixture.componentInstance.aiAssistant.openAction(registration);
+      flow.answer('Ana');
+      fixture.detectChanges();
+      const chips = app().shortcuts();
+
+      expect(chips.map(chip => chip.label)).toEqual(['Opção', 'Pular', 'Salvar paciente']);
+      app().onAiShortcut(chips[0]);
+
+      expect(flow.currentStep()?.id).toBe('done');
+    });
+
+    it('o chip "Salvar paciente" pula para a etapa final, que tem o chip principal "Salvar"', () => {
+      const flow = TestBed.inject(AssistantConversationService);
+
+      fixture.componentInstance.aiAssistant.openAction(registration);
+      flow.answer('Ana');
+      fixture.detectChanges();
+      app().onAiShortcut(
+        app()
+          .shortcuts()
+          .find(chip => chip.label === 'Salvar paciente') as ChatShortcut,
+      );
+
+      expect(flow.currentStep()?.id).toBe('done');
+      expect(
+        app()
+          .shortcuts()
+          .find(chip => chip.label === 'Salvar')?.primary,
+      ).toBeTrue();
+    });
+
+    it('o chip de pular avança a pergunta opcional', () => {
+      const flow = TestBed.inject(AssistantConversationService);
+
+      fixture.componentInstance.aiAssistant.openAction(registration);
+      flow.answer('Ana');
+      fixture.detectChanges();
+      app().onAiShortcut(
+        app()
+          .shortcuts()
+          .find(chip => chip.label === 'Pular') as ChatShortcut,
+      );
+
+      expect(flow.currentStep()?.id).toBe('done');
+      app().onAiShortcut({ id: 'conversation:__retry', label: 'Tentar novamente' });
+    });
+
+    it('com o cadastro em andamento, trocar de menu pergunta antes; "Continuar" mantém e "Sim, parar" segue', () => {
+      const flow = TestBed.inject(AssistantConversationService);
+
+      fixture.componentInstance.aiAssistant.openAction(registration);
+      fixture.detectChanges();
+
+      expect(app().registrationInProgress()).toBeFalse();
+      flow.answer('Ana');
+      fixture.detectChanges();
+
+      expect(app().registrationInProgress()).toBeTrue();
+      app().onHomeClick();
+
+      expect(app().discardOpen()).toBeTrue();
+      expect(navigate).not.toHaveBeenCalled();
+      app().cancelDiscard();
+
+      expect(app().discardOpen()).toBeFalse();
+      app().onPacientesClick();
+      app().confirmDiscard();
+
+      expect(navigate).toHaveBeenCalledOnceWith(['/patients']);
+      expect(fixture.componentInstance.aiAssistant.isOpen()).toBeFalse();
+    });
+
+    it('fechar a sidebar com o cadastro em andamento pergunta e, confirmado, fecha sem navegar', () => {
+      fixture.componentInstance.aiAssistant.openAction(registration);
+      TestBed.inject(AssistantConversationService).answer('Ana');
+      fixture.detectChanges();
+      app().onAssistantCloseBlocked();
+
+      expect(app().discardOpen()).toBeTrue();
+      app().confirmDiscard();
+
+      expect(fixture.componentInstance.aiAssistant.isOpen()).toBeFalse();
+      expect(navigate).not.toHaveBeenCalled();
+    });
+
+    it('cadastro de paciente salvo: a sidebar fecha sozinha', async () => {
+      const flow = TestBed.inject(AssistantConversationService);
+      const saved: ScreenAction = {
+        conversation: {
+          errorMessage: 'Falhou',
+          skipLabel: 'Pular',
+          steps: [{ id: 'name', parse: raw => ({ value: raw }), prompt: 'Nome?' }],
+          submit: () => Promise.resolve(),
+          successMessage: 'Paciente cadastrado',
+          title: 'Cadastrar',
+        },
+        id: 'register-patient',
+        label: 'Cadastrar',
+      };
+
+      fixture.componentInstance.aiAssistant.openAction(saved);
+      fixture.detectChanges();
+      flow.answer('Ana');
+      await new Promise<void>(resolve => setTimeout(resolve));
+      fixture.detectChanges();
+      await fixture.whenStable();
+
+      expect(fixture.componentInstance.aiAssistant.isOpen()).toBeFalse();
+    });
+
+    it('sem cadastro em andamento os itens do menu navegam direto', () => {
+      app().onHomeClick();
+      app().onPacientesClick();
+      app().onTutorialClick();
+      app().onVinculosClick();
+      app().onEquipeClick();
+      app().onFarmaciaClick();
+
+      expect(navigate.calls.allArgs()).toEqual([
+        [['/home']],
+        [['/patients']],
+        [['/settings/tutorial']],
+        [['/hospital-links']],
+        [['/team']],
+        [['/pharmacy']],
+      ]);
+    });
+
+    it('o cadastro abre em 100% e recolher/expandir vale até fechar o painel', () => {
+      fixture.componentInstance.aiAssistant.openAction(registration);
+
+      expect(app().drawerSnap()).toBe('expanded');
+      app().onDrawerSnapChange('default');
+
+      expect(app().drawerSnap()).toBe('default');
+      app().onDrawerSnapChange('expanded');
+
+      expect(app().drawerSnap()).toBe('expanded');
+    });
+
+    it('a dica de texto/áudio entra 5s depois de cada mensagem', () => {
+      jasmine.clock().install();
+      try {
+        fixture.componentInstance.aiAssistant.openPanel();
+        fixture.detectChanges();
+
+        expect(app().assistantHint()).toContain('texto ou áudio');
+        expect(app().assistantHintVisible()).toBeFalse();
+        jasmine.clock().tick(5000);
+
+        expect(app().assistantHintVisible()).toBeTrue();
+      } finally {
+        jasmine.clock().uninstall();
+      }
     });
   });
 });

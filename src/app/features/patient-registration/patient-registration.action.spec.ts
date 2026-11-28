@@ -9,13 +9,21 @@ import { type CreateInternacaoRequest, InternacaoCreationPort, InternacaoFieldEr
 import { type CreatePatientRequest, PatientCreationPort, PatientFieldError } from './patient-creation.port';
 import { PatientRegistrationAction } from './patient-registration.action';
 
+/** O cadastro termina na pergunta "Posso salvar?": confirma e espera o envio. */
+async function settleRegistration(flow: AssistantConversationService, answer: (text: string) => void): Promise<void> {
+  if (flow.currentStep()?.id === 'confirmSave') {
+    answer('salvar');
+  }
+  await new Promise<void>(resolve => setTimeout(resolve));
+}
+
 describe('PatientRegistrationAction (US-002-1-02)', () => {
   let create: jasmine.Spy<(request: CreatePatientRequest) => Promise<unknown>>;
   let navigate: jasmine.Spy;
   let flow: AssistantConversationService;
   let assistant: AiAssistantService;
   const texts = (): string[] => flow.messages().map(m => m.text);
-  const settle = (): Promise<void> => new Promise(resolve => setTimeout(resolve));
+  const settle = (): Promise<void> => settleRegistration(flow, text => assistant.ask(text));
 
   async function setup(
     hospitals: readonly { id: number; name: string }[] = [{ id: 7, name: 'Hospital A' }],
@@ -49,7 +57,7 @@ describe('PatientRegistrationAction (US-002-1-02)', () => {
     assistant.ask('Carlos Eduardo Matos');
     assistant.ask('15/09/1975');
     flow.choose(flow.options()[0]);
-    flow.skip();
+    assistant.ask('não');
     assistant.ask('não');
     await settle();
 
@@ -61,7 +69,7 @@ describe('PatientRegistrationAction (US-002-1-02)', () => {
     assistant.ask('Carlos Eduardo Matos');
     assistant.ask('15/09/1975');
     flow.choose(flow.options()[0]);
-    flow.skip();
+    assistant.ask('não');
     assistant.ask('não');
     await settle();
 
@@ -81,8 +89,9 @@ describe('PatientRegistrationAction (US-002-1-02)', () => {
     assistant.ask('Ana');
     assistant.ask('01/01/2000');
     assistant.ask('feminino');
-    assistant.ask('ABC-1');
     assistant.ask('não');
+    assistant.ask('sim');
+    assistant.ask('ABC-1');
     await settle();
 
     expect(create.calls.mostRecent().args[0]).toEqual(
@@ -107,7 +116,7 @@ describe('PatientRegistrationAction (US-002-1-02)', () => {
     expect(texts().slice(-2)).toEqual(['Selecione o sexo do paciente.', 'Qual o sexo do paciente?']);
     expect(flow.currentStep()?.id).toBe('sex');
     assistant.ask('masculino');
-    assistant.ask('');
+    assistant.ask('não');
     assistant.ask('não');
     await settle();
 
@@ -140,6 +149,8 @@ describe('PatientRegistrationAction (US-002-1-02)', () => {
     assistant.ask('Ana');
     assistant.ask('01/01/2000');
     assistant.ask('masculino');
+    assistant.ask('não');
+    assistant.ask('sim');
     assistant.ask('1'.repeat(31));
 
     expect(create).not.toHaveBeenCalled();
@@ -151,7 +162,7 @@ describe('PatientRegistrationAction (US-002-1-02)', () => {
     assistant.ask('Ana');
     assistant.ask('01/01/2000');
     assistant.ask('masculino');
-    assistant.ask('');
+    assistant.ask('não');
     assistant.ask('não');
     await settle();
 
@@ -165,7 +176,7 @@ describe('PatientRegistrationAction admit question (US-002-1-05)', () => {
   let flow: AssistantConversationService;
   let assistant: AiAssistantService;
   let create: jasmine.Spy;
-  const settle = (): Promise<void> => new Promise(resolve => setTimeout(resolve));
+  const settle = (): Promise<void> => settleRegistration(flow, text => assistant.ask(text));
 
   async function toAdmitQuestion(): Promise<void> {
     spyOnProperty(navigator, 'language').and.returnValue('pt-BR');
@@ -188,7 +199,6 @@ describe('PatientRegistrationAction admit question (US-002-1-05)', () => {
     assistant.ask('Ana');
     assistant.ask('01/01/2000');
     assistant.ask('masculino');
-    assistant.ask('');
   }
 
   it('scenario 1: asks whether to admit after the basic data, with Sim/Não options', async () => {
@@ -202,6 +212,12 @@ describe('PatientRegistrationAction admit question (US-002-1-05)', () => {
   it('scenarios 2 and 3: "não" saves only the fixed data and asks nothing else', async () => {
     await toAdmitQuestion();
     flow.choose(flow.options()[1]);
+    // Pergunta geral de informações adicionais: "Não, seguir" leva direto a salvar.
+    expect(flow.currentStep()?.id).toBe('extrasBasic');
+    flow.choose(flow.options()[1]);
+
+    expect(flow.currentStep()?.id).toBe('confirmSave');
+    expect(flow.options().map(o => o.label)).toEqual(['Salvar', 'Informar mais dados']);
     await settle();
 
     expect(create).toHaveBeenCalledOnceWith({
@@ -216,9 +232,56 @@ describe('PatientRegistrationAction admit question (US-002-1-05)', () => {
     expect(flow.messages().at(-1)?.text).toBe('Paciente cadastrado com sucesso.');
   });
 
+  it('a pergunta final mostra o resumo dos dados e "Informar mais dados" reabre as perguntas opcionais', async () => {
+    await toAdmitQuestion();
+    flow.choose(flow.options()[1]);
+    flow.choose(flow.options()[1]);
+    const summary = flow.messages().at(-1)?.summary ?? [];
+
+    expect(summary).toEqual([
+      { label: 'Nome', value: 'Ana' },
+      { label: 'Nascimento', value: '01/01/2000' },
+      { label: 'Sexo', value: 'Masculino' },
+      { label: 'Internar agora', value: 'Não' },
+    ]);
+    flow.choose(flow.options()[1]);
+
+    expect(flow.currentStep()?.id).toBe('medicalRecordNumber');
+    assistant.ask('ABC-1');
+
+    expect(flow.currentStep()?.id).toBe('confirmSave');
+    expect(flow.messages().at(-1)?.summary).toContain({ label: 'SAME', value: 'ABC-1' });
+  });
+
+  it('nas perguntas extras, "Salvar paciente" (depois de "Pular") volta ao resumo e o "Salvar" cria o paciente sem perguntar o resto', async () => {
+    await toAdmitQuestion();
+    flow.choose(flow.options()[0]);
+    flow.choose(flow.options()[0]);
+    assistant.ask('ABC-1');
+
+    expect(flow.currentStep()?.id).toBe('bedNumber');
+    expect(flow.jump()?.label).toBe('Salvar paciente');
+    flow.jumpToTarget();
+
+    expect(flow.currentStep()?.id).toBe('confirmSave');
+    expect(flow.messages().at(-1)?.summary).toContain({ label: 'SAME', value: 'ABC-1' });
+    expect(flow.options().map(o => o.label)).toEqual(['Salvar', 'Informar mais dados']);
+    flow.choose(flow.options()[0]);
+    await settle();
+
+    expect(create).toHaveBeenCalledTimes(1);
+    expect(flow.finished()).toBeTrue();
+  });
+
   it('"sim" asks the admission questions in order, all skippable', async () => {
     await toAdmitQuestion();
     assistant.ask('sim');
+
+    expect(flow.currentStep()?.id).toBe('extrasAdmission');
+    assistant.ask('sim');
+
+    expect(flow.currentStep()?.id).toBe('medicalRecordNumber');
+    flow.skip();
 
     expect(flow.currentStep()?.id).toBe('bedNumber');
     expect(flow.canSkip()).toBeTrue();
@@ -243,7 +306,7 @@ describe('PatientRegistrationAction server errors', () => {
   let flow: AssistantConversationService;
   let assistant: AiAssistantService;
   let create: jasmine.Spy;
-  const settle = (): Promise<void> => new Promise(resolve => setTimeout(resolve));
+  const settle = (): Promise<void> => settleRegistration(flow, text => assistant.ask(text));
 
   async function fill(error: unknown): Promise<void> {
     spyOnProperty(navigator, 'language').and.returnValue('pt-BR');
@@ -266,7 +329,7 @@ describe('PatientRegistrationAction server errors', () => {
     assistant.ask('Ana');
     assistant.ask('01/01/2000');
     assistant.ask('masculino');
-    assistant.ask('');
+    assistant.ask('não');
     assistant.ask('não');
     await settle();
   }
@@ -324,7 +387,7 @@ describe('PatientRegistrationAction admission data (US-002-1-06)', () => {
   let flow: AssistantConversationService;
   let assistant: AiAssistantService;
   const texts = (): string[] => flow.messages().map(m => m.text);
-  const settle = (): Promise<void> => new Promise(resolve => setTimeout(resolve));
+  const settle = (): Promise<void> => settleRegistration(flow, text => assistant.ask(text));
 
   async function toAdmissionQuestions(): Promise<void> {
     spyOnProperty(navigator, 'language').and.returnValue('pt-BR');
@@ -348,8 +411,9 @@ describe('PatientRegistrationAction admission data (US-002-1-06)', () => {
     assistant.ask('Ana');
     assistant.ask('01/01/2000');
     assistant.ask('masculino');
-    assistant.ask('');
     assistant.ask('sim');
+    assistant.ask('sim');
+    assistant.ask('');
   }
 
   const skipAll = (): void => {
@@ -409,7 +473,7 @@ describe('PatientRegistrationAction admission data (US-002-1-06)', () => {
     await toAdmissionQuestions();
     flow.reset();
     assistant.openAction(TestBed.inject(PatientRegistrationAction).build());
-    for (const answer of ['Ana', '01/01/2000', 'masculino', '', 'não']) {
+    for (const answer of ['Ana', '01/01/2000', 'masculino', 'não', 'não']) {
       assistant.ask(answer);
     }
     await settle();
@@ -422,10 +486,7 @@ describe('PatientRegistrationAction admission data (US-002-1-06)', () => {
     await toAdmissionQuestions();
     assistant.ask('1'.repeat(21));
 
-    expect(texts().slice(-2)).toEqual([
-      'O leito deve ter no máximo 20 caracteres.',
-      'Qual o leito do paciente? (opcional)',
-    ]);
+    expect(texts().slice(-2)).toEqual(['O leito deve ter no máximo 20 caracteres.', 'Qual o leito do paciente?']);
     flow.skip();
     assistant.ask('a'.repeat(101));
 
@@ -458,7 +519,7 @@ describe('PatientRegistrationAction admission data (US-002-1-06)', () => {
 
     expect(texts().slice(-2)).toEqual([
       'A data de internação hospitalar não pode ser uma data futura.',
-      'Qual a data de internação hospitalar? (dd/mm/aaaa, opcional)',
+      'Qual a data de internação hospitalar? (dd/mm/aaaa)',
     ]);
 
     expect(createInternacao).not.toHaveBeenCalled();
@@ -476,10 +537,7 @@ describe('PatientRegistrationAction admission data (US-002-1-06)', () => {
     flow.skip();
     await settle();
 
-    expect(texts().slice(-2)).toEqual([
-      'Texto do servidor',
-      'Qual a data de internação hospitalar? (dd/mm/aaaa, opcional)',
-    ]);
+    expect(texts().slice(-2)).toEqual(['Texto do servidor', 'Qual a data de internação hospitalar? (dd/mm/aaaa)']);
     createInternacao.and.resolveTo({});
     assistant.ask('02/01/2020');
     await settle();
@@ -520,7 +578,7 @@ describe('PatientRegistrationAction locations (US-002-1-07)', () => {
   let createInternacao: jasmine.Spy<(id: number, request: CreateInternacaoRequest) => Promise<unknown>>;
   let flow: AssistantConversationService;
   const texts = (): string[] => flow.messages().map(m => m.text);
-  const settle = (): Promise<void> => new Promise(resolve => setTimeout(resolve));
+  const settle = (): Promise<void> => settleRegistration(flow, text => flow.answer(text));
   const answers = (...list: string[]): void => list.forEach(a => flow.answer(a));
 
   beforeEach(async () => {
@@ -542,7 +600,7 @@ describe('PatientRegistrationAction locations (US-002-1-07)', () => {
     const assistant = TestBed.inject(AiAssistantService);
 
     assistant.openAction(TestBed.inject(PatientRegistrationAction).build());
-    answers('Ana', '01/01/2000', 'masculino', '', 'sim', '', '', '', '', '');
+    answers('Ana', '01/01/2000', 'masculino', 'sim', 'sim', '', '', '', '', '', '');
   });
 
   it('scenario 1: asks about Unidade/Ala after the admission data; "não" creates without locations', async () => {

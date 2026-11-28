@@ -1,4 +1,5 @@
-import { Routes } from '@angular/router';
+import { inject } from '@angular/core';
+import { Router, Routes } from '@angular/router';
 
 import { environment } from '../environments/environment';
 import { sessionGuard } from './features/auth/session.guard';
@@ -58,12 +59,12 @@ const authenticatedRoutes: Routes = [
     data: { hideShell: true },
     loadChildren: () => import('./features/welcome/welcome.routes').then(m => m.WELCOME_ROUTES),
   },
-  // Detalhe da notificação (US-003-3-04): tela com especificação própria — placeholder até lá.
+  // Detalhe da notificação (US-003-3-04): é a própria tela de Notificações com o card aberto (`?abrir=<id>`).
   {
     path: 'notifications/:id',
-    data: { screen: 'notification-detail' },
-    loadComponent: () =>
-      import('./features/pending-screen/pending-screen.component').then(m => m.PendingScreenComponent),
+    pathMatch: 'full',
+    redirectTo: ({ params }) =>
+      inject(Router).createUrlTree(['/notifications'], { queryParams: { abrir: params['id'] } }),
   },
   {
     path: 'notifications',
@@ -112,6 +113,14 @@ const authenticatedRoutes: Routes = [
     loadComponent: () => import('./features/patient-hub/patient-hub.component').then(m => m.PatientHubComponent),
   },
   // Solicitar acesso a um hospital (US-001-2-01).
+  // Menu Equipe (FT-009-3, US-009-3-04): a tela de Administração ainda não existe; placeholder até a story.
+  {
+    path: 'team',
+    canActivate: [sessionGuard],
+    data: { screen: 'Equipe (Administração) — em construção' },
+    loadComponent: () =>
+      import('./features/pending-screen/pending-screen.component').then(m => m.PendingScreenComponent),
+  },
   {
     path: 'hospital-links/request',
     loadComponent: () =>

@@ -168,6 +168,17 @@
   );
 }
 
+// Mensagem da IA numa conversa (cadastro por chat): corpo regular de 16/24, como nas ferramentas de IA; o título da
+// pergunta deixou de ser um cabeçalho em negrito.
+@mixin chat-message {
+  @include text-style(
+    tokens.$font-family-chat,
+    tokens.$font-weight-roman,
+    tokens.$font-size-interactive,
+    tokens.$line-height-24
+  );
+}
+
 @mixin chat-hint {
   @include text-style(
     tokens.$font-family-chat,

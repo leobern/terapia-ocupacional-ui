@@ -1,7 +1,7 @@
 @use '../../styles/tokens';
 @use '../../styles/typography';
 
-// Figma v2/Dialog Type=confirm: 340px, padding 24, raio 24, sombra elevation-focus,
+// Figma v2/Dialog (4598:1865): 360px, padding 24, gap 24, raio 24, sombra elevation-focus,
 // sobre o scrim do tema.
 .confirm-dialog__scrim {
   position: fixed;
@@ -29,13 +29,25 @@
 .confirm-dialog__panel {
   display: flex;
   flex-direction: column;
-  gap: tokens.$space-16;
-  width: 100%;
-  max-width: 340px;
+  gap: tokens.$space-24;
+  // 360px é o mínimo (Figma v2/Dialog); se os botões forem mais largos que isso, o diálogo cresce com eles (o texto
+  // não conta para a largura: ele quebra dentro do que os botões definirem).
+  width: max-content;
+  min-width: min(360px, 100%);
+  max-width: 100%;
   padding: tokens.$space-24;
   border-radius: tokens.$radius-md;
   background: tokens.c(surface);
   box-shadow: 0 4px 16px rgb(0 0 0 / 16%);
+}
+
+.confirm-dialog__text {
+  // largura 0 + min 100%: o texto ocupa a largura do diálogo sem aumentá-la.
+  width: 0;
+  min-width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$space-4;
 }
 
 .confirm-dialog__title {
@@ -58,4 +70,22 @@
   flex-wrap: nowrap;
   justify-content: flex-end;
   gap: tokens.$space-16;
+}
+
+// Type=Mobile: ações lg, 100% de largura, uma sob a outra (primária em cima), 8px entre elas.
+@media (width <= 671px) {
+  .confirm-dialog__panel {
+    width: 100%;
+    max-width: 360px;
+  }
+
+  .confirm-dialog__actions {
+    flex-direction: column;
+    align-items: stretch;
+    gap: tokens.$space-8;
+
+    app-button {
+      display: block;
+    }
+  }
 }
