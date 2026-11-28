@@ -224,6 +224,18 @@ describe('PharmacyComponent', () => {
     expect(navigate).toHaveBeenCalledWith(['/notifications']);
   });
 
+  it('falha ao contar notificações não impede a tela: sino sem número', async () => {
+    spyOn(TestBed.inject(UnreadNotificationsReader), 'countUnread').and.rejectWith(new Error('403'));
+    const other = TestBed.createComponent(PharmacyComponent);
+
+    other.detectChanges();
+    await other.whenStable();
+    other.detectChanges();
+
+    expect(other.nativeElement.textContent).toContain('Enterais');
+    expect(other.nativeElement.innerHTML).not.toContain('não lidas');
+  });
+
   describe('sem hospital selecionado', () => {
     const render = async (read: () => Promise<readonly { id: number; name: string }[]>): Promise<string> => {
       const context = TestBed.inject(HospitalContextService);
