@@ -119,7 +119,7 @@ describe('FollowUpClosureSheetComponent', () => {
 
     expect(writer.requests).toEqual([]);
     expect(el().querySelector('#closure-confirm-title')).not.toBeNull();
-    expect(el().textContent).toContain('Óbito em 21/11/2026');
+    expect(el().textContent).toContain('Óbito em 21/11/26');
 
     await click('Confirmar encerramento');
 

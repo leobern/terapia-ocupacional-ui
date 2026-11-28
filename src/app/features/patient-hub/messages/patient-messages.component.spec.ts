@@ -53,7 +53,7 @@ describe('PatientMessagesComponent', () => {
 
     expect(cards.length).toBe(1);
     expect(cards[0].textContent).toContain('Observação');
-    expect(cards[0].textContent).toContain('Michelle · 21/11/2026 09:05');
+    expect(cards[0].textContent).toContain('Michelle · 21/11/26 09:05');
     expect(cards[0].textContent).toContain('conteúdo 2');
     expect(el().textContent).not.toContain('conteúdo 1');
   });

@@ -306,7 +306,7 @@ describe('DiagnosisComponent', () => {
 
       await click(el, 'Confirmar');
 
-      expect(el.textContent).toContain('Confirmado por Dra. Ana em 20/11/2026 10:30.');
+      expect(el.textContent).toContain('Confirmado por Dra. Ana em 20/11/26 10:30.');
       expect(el.querySelector('.diagnosis__actions')).toBeNull();
       expect((await decisions.load('p1')).audit.map(e => e.action)).toEqual(['confirm']);
     });
@@ -408,7 +408,7 @@ describe('DiagnosisComponent', () => {
       fixture.detectChanges();
 
       expect(el.textContent).toContain('Diagnóstico excluído');
-      expect(el.textContent).toContain('Excluído por Dra. Ana em 20/11/2026 10:30.');
+      expect(el.textContent).toContain('Excluído por Dra. Ana em 20/11/26 10:30.');
       expect(el.querySelector('.diagnosis__actions')).toBeNull();
       expect((await decisions.load('p1')).audit.map(e => e.action)).toEqual(['exclude']);
       fixture.destroy();
@@ -438,7 +438,7 @@ describe('DiagnosisComponent', () => {
       fixture.detectChanges();
 
       expect(el.textContent).toContain('Desnutrição excluída');
-      expect(el.textContent).toContain('Alterado pelo médico: Dra. Ana em 20/11/2026 10:30.');
+      expect(el.textContent).toContain('Alterado pelo médico: Dra. Ana em 20/11/26 10:30.');
       await click(el, 'Confirmar');
       const record = await decisions.load('p1');
 

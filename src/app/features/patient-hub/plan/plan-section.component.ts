@@ -63,18 +63,11 @@ export {
   WEIGHTS_FAILED_HINT,
   WEIGHTS_MISSING_HINT,
 } from './targets-editor.component';
+import { formatDateTimeShortYear } from '../../../shared/utils/br-date';
 export const RESPONSIBLE_OPTIONS_FAILED_HINT =
   'Não foi possível carregar a lista de médicos. O responsável atual foi mantido.';
 export const EMPTY_CADENCE_HINT = 'Marque ao menos um dia da semana para a revisão ou escolha a cadência diária.';
 export const EMPTY_SELECTION_HINT = 'Selecione ao menos uma via de nutrição para salvar.';
-
-/** Formata ISO como dd/MM/aaaa HH:mm. */
-function fullDateTime(iso: string): string {
-  const d = new Date(iso);
-  const p = (n: number): string => String(n).padStart(2, '0');
-
-  return `${p(d.getDate())}/${p(d.getMonth() + 1)}/${d.getFullYear()} ${p(d.getHours())}:${p(d.getMinutes())}`;
-}
 
 /** Formata ISO como dd/MM (ano omitido, como no Figma 4716-9503). */
 function shortDate(iso: string): string {
@@ -230,7 +223,7 @@ export class PlanSectionComponent {
   }
 
   protected formatFlagDate(iso: string): string {
-    return fullDateTime(iso);
+    return formatDateTimeShortYear(iso);
   }
 
   protected onFlagInput(event: Event): void {

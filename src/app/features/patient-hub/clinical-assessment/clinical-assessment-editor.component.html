@@ -81,7 +81,7 @@
             <p class="clin__error" role="alert">{{ message }}</p>
           } @else if (previousWeight(); as previous) {
             <p class="clin__caption">
-              Anterior: {{ previous.kg }} kg em {{ previous.at }}.
+              Anterior: {{ previous.kg }} kg em {{ previousDate(previous.at) }}.
             </p>
           } @else {
             <p class="clin__caption">Peso atual do paciente.</p>
