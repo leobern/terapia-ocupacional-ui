@@ -77,3 +77,29 @@ export function matchFormulas(text: string, formulas: readonly Formula[]): Formu
     return { candidates, query };
   });
 }
+
+/** O que o catálogo já tem parecido com um pedido de inclusão (texto livre: nome, fabricante, características). */
+export interface CatalogHits {
+  /** Mesmo nome (com ou sem o fabricante): o pedido não faz sentido. */
+  readonly exact: readonly Formula[];
+  /** Nome parecido: pode ser outra versão, quem pede decide. */
+  readonly similar: readonly Formula[];
+}
+
+export function findInCatalog(description: string, formulas: readonly Formula[]): CatalogHits {
+  const wanted = words(description);
+  const asked = wanted.join(' ');
+
+  if (!asked) {
+    return { exact: [], similar: [] };
+  }
+  const exact = formulas.filter(formula =>
+    [formula.name, `${formula.name} ${formula.manufacturer ?? ''}`].some(known => words(known).join(' ') === asked),
+  );
+  // Parecida: tem todas as palavras do pedido, ou o pedido tem o nome inteiro dela mais alguma coisa.
+  const similar = formulas.filter(
+    formula => hasAllWords(formula, wanted) || words(formula.name).every(word => wanted.includes(word)),
+  );
+
+  return { exact, similar: exact.length > 0 ? [] : similar };
+}

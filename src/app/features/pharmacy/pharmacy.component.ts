@@ -14,6 +14,7 @@ import { PageContainerComponent } from '../../shared/components/page-container/p
 import { PageHeaderComponent } from '../../shared/components/page-header/page-header.component';
 import { AiAssistantService } from '../../shared/services/ai-assistant.service';
 import {
+  FormSubmitError,
   type FormValues,
   type ScreenAction,
   ScreenActionsService,
@@ -23,6 +24,7 @@ import { PHARMACY_CONTEXT } from '../../shared/services/screen-contexts';
 import { HospitalContextService } from '../home/hospital-context.service';
 import { UnreadNotificationsReader } from '../home/unread-notifications-reader';
 import { FormulaListEditorComponent } from './formula-list-editor.component';
+import { findInCatalog } from './formula-matcher';
 import { Formula, FORMULA_CATEGORIES, FormulaRequest } from './formulas.models';
 import { FormulasApi } from './formulas-api';
 
@@ -59,6 +61,8 @@ export class PharmacyComponent implements OnInit {
     })).filter(group => group.formulas.length > 0),
   );
 
+  /** Pedido já avisado como parecido com algo do catálogo: enviar o mesmo texto de novo confirma. */
+  private warnedRequest = '';
   private readonly api = inject(FormulasApi);
   private readonly context = inject(HospitalContextService);
   private readonly router = inject(Router);
@@ -123,6 +127,7 @@ export class PharmacyComponent implements OnInit {
 
       this.notice.set(null);
       this.requests.set([]);
+      this.warnedRequest = '';
       if (hospitalId) {
         void this.load(hospitalId);
         void this.loadRequests(hospitalId);
@@ -224,7 +229,31 @@ export class PharmacyComponent implements OnInit {
     if (!hospitalId || !this.online() || !description) {
       throw new Error('Solicitação indisponível');
     }
+    this.checkCatalog(description);
     await this.sendRequest(description);
+    this.warnedRequest = '';
+  }
+
+  /** Barra o pedido do que já existe; do que só é parecido, avisa uma vez. */
+  private checkCatalog(description: string): void {
+    const { exact, similar } = findInCatalog(description, this.formulas());
+    const names = (list: readonly Formula[]): string =>
+      list
+        .slice(0, 3)
+        .map(formula => formula.name)
+        .join(', ');
+
+    if (exact.length > 0) {
+      throw new FormSubmitError(
+        `Já está no catálogo: ${names(exact)}. Não é preciso pedir: padronize pela lista da Farmácia.`,
+      );
+    }
+    if (similar.length > 0 && this.warnedRequest !== description) {
+      this.warnedRequest = description;
+      throw new FormSubmitError(
+        `Há fórmulas parecidas no catálogo: ${names(similar)}. Se a sua for outra, envie de novo para confirmar.`,
+      );
+    }
   }
 
   private async sendRequest(description: string): Promise<void> {

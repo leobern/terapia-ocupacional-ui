@@ -1,4 +1,4 @@
-import { matchFormulas, splitFormulaNames } from './formula-matcher';
+import { findInCatalog, matchFormulas, splitFormulaNames } from './formula-matcher';
 import { Formula } from './formulas.models';
 
 const formula = (id: string, name: string, manufacturer: string | null = null): Formula => ({
@@ -45,5 +45,29 @@ describe('formula-matcher', () => {
   it('número não casa pela metade e o que não existe vem sem opções', () => {
     expect(ids('Diben 1')).toEqual([[]]);
     expect(ids('Peptamen')).toEqual([[]]);
+  });
+});
+
+describe('findInCatalog', () => {
+  const catalog = [formula('1', 'Diben®', 'Fresenius Kabi'), formula('2', 'Fresubin® Original', 'Fresenius Kabi')];
+  const hits = (text: string): [string[], string[]] => {
+    const found = findInCatalog(text, catalog);
+
+    return [found.exact.map(f => f.id), found.similar.map(f => f.id)];
+  };
+
+  it('mesmo nome, com ou sem o fabricante, é o que já existe', () => {
+    expect(hits('fresubin original')).toEqual([['2'], []]);
+    expect(hits('Fresubin Original Fresenius Kabi')).toEqual([['2'], []]);
+  });
+
+  it('nome parcial ou com detalhes a mais vira parecida', () => {
+    expect(hits('Fresubin')).toEqual([[], ['2']]);
+    expect(hits('Diben 2.0 sabor baunilha')).toEqual([[], ['1']]);
+  });
+
+  it('o que não existe, ou texto vazio, não acha nada', () => {
+    expect(hits('Peptamen')).toEqual([[], []]);
+    expect(hits('  ')).toEqual([[], []]);
   });
 });

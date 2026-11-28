@@ -241,6 +241,29 @@ describe('PharmacyComponent', () => {
       await expectAsync(Promise.resolve(action()?.form?.submit({ description: 'Z' }))).toBeRejected();
     });
 
+    it('não pede o que já está no catálogo', async () => {
+      const submit = action()?.form?.submit;
+
+      await expectAsync(Promise.resolve(submit?.({ description: 'espessante' }))).toBeRejectedWithError(
+        /Já está no catálogo: Espessante/,
+      );
+      await expectAsync(Promise.resolve(submit?.({ description: 'espessante' }))).toBeRejected();
+
+      expect(api.requests).toEqual([]);
+    });
+
+    it('do que é parecido avisa uma vez e envia se confirmado', async () => {
+      const submit = action()?.form?.submit;
+
+      await expectAsync(Promise.resolve(submit?.({ description: 'Módulo' }))).toBeRejectedWithError(/parecidas/);
+
+      expect(api.requests).toEqual([]);
+
+      await submit?.({ description: 'Módulo' });
+
+      expect(api.requests.length).toBe(1);
+    });
+
     it('offline: a ação sai dos atalhos e o envio é recusado', async () => {
       const submit = action()?.form?.submit;
 
