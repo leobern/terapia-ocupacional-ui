@@ -12,13 +12,7 @@ import { ProvisionalFormulasApi } from './provisional-formulas-api';
 interface FormulaDto {
   readonly id: number;
   readonly nome: string;
-  readonly categoria:
-    | 'ENTERAL'
-    | 'PARENTERAL'
-    | 'MODULO_PROTEICO'
-    | 'SUPLEMENTO_ORAL'
-    | 'ESPESSANTE'
-    | 'MEDICAMENTO';
+  readonly categoria: 'ENTERAL' | 'PARENTERAL' | 'MODULO_PROTEICO' | 'SUPLEMENTO_ORAL' | 'ESPESSANTE' | 'MEDICAMENTO';
   readonly fabricante: string | null;
   readonly tipoApresentacao: string | null;
   readonly unidadeBase: 'ML' | 'G';

@@ -1,10 +1,5 @@
 export type FormulaCategory =
-  | 'enteral'
-  | 'parenteral'
-  | 'modulo-proteico'
-  | 'suplemento-oral'
-  | 'espessante'
-  | 'medicamento';
+  'enteral' | 'parenteral' | 'modulo-proteico' | 'suplemento-oral' | 'espessante' | 'medicamento';
 
 export const FORMULA_CATEGORIES: readonly { readonly key: FormulaCategory; readonly label: string }[] = [
   { key: 'enteral', label: 'Enterais' },
