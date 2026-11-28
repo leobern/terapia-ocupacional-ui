@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 
-import { Formula } from './formulas.models';
+import { Formula, FormulaRequest } from './formulas.models';
 import { FormulasApi } from './formulas-api';
 
 type CatalogItem = Omit<Formula, 'standardized'>;
@@ -89,7 +89,7 @@ const CATALOG: readonly CatalogItem[] = [
 @Injectable()
 export class ProvisionalFormulasApi extends FormulasApi {
   /** Pedidos registrados nesta sessão (provisório; a API real guarda hospital, solicitante e data/hora). */
-  readonly requests: { readonly description: string; readonly hospitalId: number }[] = [];
+  readonly requests: { readonly createdAt: string; readonly description: string; readonly hospitalId: number }[] = [];
   private readonly standardizedByHospital = new Map<number, Set<string>>();
 
   list(hospitalId: number): Promise<readonly Formula[]> {
@@ -115,8 +115,24 @@ export class ProvisionalFormulasApi extends FormulasApi {
     return Promise.resolve();
   }
 
+  listRequests(hospitalId: number): Promise<readonly FormulaRequest[]> {
+    const requests = this.requests
+      .map(({ createdAt, description, hospitalId: id }, index) => ({
+        createdAt,
+        description,
+        id: String(index + 1),
+        of: id,
+      }))
+      .filter(request => request.of === hospitalId)
+      .map(({ createdAt, description, id }) => ({ createdAt, description, id }));
+
+    requests.reverse();
+
+    return Promise.resolve(requests);
+  }
+
   requestFormula(hospitalId: number, description: string): Promise<void> {
-    this.requests.push({ description, hospitalId });
+    this.requests.push({ createdAt: new Date().toISOString(), description, hospitalId });
 
     return Promise.resolve();
   }

@@ -1,4 +1,4 @@
-import { Formula } from './formulas.models';
+import { Formula, FormulaRequest } from './formulas.models';
 
 /**
  * Fronteira do catálogo de fórmulas e da padronização por hospital (FR-004..FR-006).
@@ -15,6 +15,8 @@ export abstract class FormulasApi {
   abstract listStandardizedForPatient(patientId: string, hospitalId: number): Promise<readonly Formula[]>;
   /** Padroniza/desmarca a fórmula só no hospital informado; rejeita em caso de falha. */
   abstract setStandardized(hospitalId: number, formulaId: string, standardized: boolean): Promise<void>;
+  /** Pedidos de inclusão do hospital, do mais recente para o mais antigo. */
+  abstract listRequests(hospitalId: number): Promise<readonly FormulaRequest[]>;
   /** Registra o pedido de inclusão de fórmula nova (hospital, descrição); tratado manualmente pela equipe, sem fluxo de aprovação (FR-009). */
   abstract requestFormula(hospitalId: number, description: string): Promise<void>;
 }

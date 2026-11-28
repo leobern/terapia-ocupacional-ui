@@ -11,6 +11,8 @@ export interface ActiveAssistantEditor {
   readonly actions: Signal<readonly EditorAction[]>;
   readonly run: (id: string) => void;
   readonly placeholder: string;
+  /** Recebe o texto do campo de mensagem; ausente = o editor ainda não aceita pedidos por mensagem. */
+  readonly send?: (message: string) => void;
 }
 
 export const EDITOR_ASSIST_UNAVAILABLE_HINT =
@@ -51,8 +53,21 @@ export class AssistantEditorController {
     this.activeSignal()?.run(id);
   }
 
-  /** Mensagem ou áudio do rodapé: a IA ainda não altera os itens; avisa e deixa o preenchimento manual. */
-  message(): void {
+  /**
+   * Mensagem ou áudio do rodapé. Texto vai para o editor que sabe recebê-lo (`send`) e devolve `true`; senão avisa que
+   * a alteração por mensagem ainda não existe e deixa o preenchimento manual.
+   */
+  message(text = ''): boolean {
+    const send = this.activeSignal()?.send;
+
+    if (send && text.trim()) {
+      this.hintSignal.set(null);
+      send(text.trim());
+
+      return true;
+    }
     this.hintSignal.set(EDITOR_ASSIST_UNAVAILABLE_HINT);
+
+    return false;
   }
 }

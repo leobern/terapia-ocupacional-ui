@@ -126,6 +126,25 @@ describe('HttpFormulasApi', () => {
     await promise;
   });
 
+  it('lista os pedidos do hospital', async () => {
+    const promise = api.listRequests(1);
+
+    controller
+      .expectOne('/api/v1/hospitais/1/solicitacoes-formula')
+      .flush([{ createdAt: '2026-11-28T10:00:00', descricao: 'Fórmula Z', id: 4 }]);
+
+    expect(await promise).toEqual([{ createdAt: '2026-11-28T10:00:00', description: 'Fórmula Z', id: '4' }]);
+  });
+
+  it('pedidos de hospital só do aparelho ficam no provisório', async () => {
+    const hospitalId = -5;
+
+    await api.requestFormula(hospitalId, 'Primeira');
+    await api.requestFormula(hospitalId, 'Segunda');
+
+    expect((await api.listRequests(hospitalId)).map(r => r.description)).toEqual(['Segunda', 'Primeira']);
+  });
+
   it('solicita fórmula nova com POST', async () => {
     const promise = api.requestFormula(1, 'Fórmula Z');
     const request = controller.expectOne('/api/v1/hospitais/1/solicitacoes-formula');

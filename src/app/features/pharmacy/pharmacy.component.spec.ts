@@ -1,6 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
 
+import { AiAssistantService } from '../../shared/services/ai-assistant.service';
 import { ScreenActionsService } from '../../shared/services/screen-actions.service';
 import { HospitalContextService } from '../home/hospital-context.service';
 import { LinkedHospitalsReader } from '../home/linked-hospitals';
@@ -66,6 +67,59 @@ describe('PharmacyComponent', () => {
     expect(text()).toContain('N/A');
     expect(text()).toContain('Sim');
     expect(text()).not.toContain('Vegetariano');
+  });
+
+  describe('padronizar por lista e pedidos', () => {
+    const actions = (): ScreenActionsService => TestBed.inject(ScreenActionsService);
+    const listInputs = (): {
+      initialText: string;
+      request: (description: string) => Promise<void>;
+      standardize: (ids: readonly string[]) => Promise<readonly string[]>;
+    } =>
+      actions()
+        .actions()
+        .find(a => a.id === 'standardize-list')?.editor?.inputs as never;
+
+    it('padroniza várias de uma vez e devolve o nome das que falharam', async () => {
+      const save = api.setStandardized.bind(api);
+
+      spyOn(api, 'setStandardized').and.callFake((hospital, id, value) =>
+        id === 'enteral-2' ? Promise.reject(new Error('falhou')) : save(hospital, id, value),
+      );
+
+      const failed = await listInputs().standardize(['enteral-1', 'enteral-2']);
+
+      await settle();
+
+      expect(failed).toEqual(['Fórmula hipercalórica com fibras']);
+      expect(fixture.nativeElement.querySelectorAll('.pharmacy__status--on').length).toBe(1);
+    });
+
+    it('o pedido enviado confirma na tela e entra na lista', async () => {
+      expect(text()).not.toContain('Pedidos de inclusão');
+
+      await listInputs().request('Peptamen');
+      await settle();
+
+      expect(text()).toContain('Pedido enviado. A equipe Conductia faz o cadastro da fórmula.');
+      expect(text()).toContain('Pedidos de inclusão');
+      expect(text()).toContain('Peptamen');
+      expect(text()).toContain(`Enviado em ${new Date().toLocaleDateString('pt-BR')}`);
+    });
+
+    it('nomes escritos no assistente abrem a busca; áudio ainda não é entendido', async () => {
+      const assistant = TestBed.inject(AiAssistantService);
+
+      spyOn(assistant, 'openAction');
+      const open = assistant.openAction as jasmine.Spy<AiAssistantService['openAction']>;
+      const handler = actions().commandHandler();
+
+      await handler?.({ kind: 'text', text: 'Diben' });
+
+      expect(open.calls.mostRecent().args[0].id).toBe('standardize-list');
+      expect(open.calls.mostRecent().args[0].editor?.inputs?.['initialText']).toBe('Diben');
+      await expectAsync(handler?.({ audio: new Blob(), kind: 'audio' }) as Promise<void>).toBeRejected();
+    });
   });
 
   it('padroniza e desmarca com estado em texto', async () => {
@@ -170,7 +224,9 @@ describe('PharmacyComponent', () => {
     it('registra o pedido para o hospital atual, sem aprovação automática', async () => {
       await action()?.form?.submit({ description: '  Fórmula hipercalórica Z  ' });
 
-      expect(api.requests).toEqual([{ description: 'Fórmula hipercalórica Z', hospitalId: 1 }]);
+      expect(api.requests).toEqual([
+        jasmine.objectContaining({ description: 'Fórmula hipercalórica Z', hospitalId: 1 }),
+      ]);
     });
 
     it('rejeita descrição vazia e mantém o formulário aberto', async () => {
@@ -199,7 +255,7 @@ describe('PharmacyComponent', () => {
       window.dispatchEvent(new Event('online'));
       await settle();
 
-      expect(TestBed.inject(ScreenActionsService).actions().length).toBe(1);
+      expect(TestBed.inject(ScreenActionsService).actions().length).toBe(2);
     });
 
     it('remove a ação ao sair da tela', () => {

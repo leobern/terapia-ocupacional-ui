@@ -13,7 +13,7 @@
     [placeholder]="placeholder()"
     [(value)]="value"
     [(mode)]="mode"
-    (send)="onSend()"
+    (send)="onSend(value())"
     (audioSend)="onSend()"
   />
 </div>

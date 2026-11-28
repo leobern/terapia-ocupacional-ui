@@ -1,0 +1,68 @@
+@use '../../shared/styles/tokens';
+@use '../../shared/styles/typography';
+
+:host {
+  display: block;
+}
+
+.flist {
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$space-8;
+}
+
+.flist__match {
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$space-8;
+  min-width: 0;
+  margin: 0;
+  padding: tokens.$space-16;
+  border: 1px solid tokens.c(border);
+  border-radius: tokens.$radius-md;
+  background: tokens.c(surface);
+}
+
+.flist__query {
+  color: tokens.c(content-1);
+
+  @include typography.title-md;
+}
+
+.flist__option {
+  display: flex;
+  align-items: center;
+  gap: tokens.$space-8;
+  min-height: 44px;
+  color: tokens.c(content-1);
+  cursor: pointer;
+
+  @include typography.body-md;
+
+  input {
+    width: 20px;
+    height: 20px;
+    margin: 0;
+    accent-color: tokens.c(secondary);
+  }
+
+  span {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+
+  small {
+    color: tokens.c(content-4);
+
+    @include typography.caption;
+  }
+}
+
+.flist__missing,
+.flist__feedback {
+  margin: 0;
+  color: tokens.c(content-2);
+
+  @include typography.body-md;
+}

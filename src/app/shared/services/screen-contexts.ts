@@ -30,6 +30,6 @@ export const PATIENT_HUB_CONTEXT: ScreenContext = {
 
 export const PHARMACY_CONTEXT: ScreenContext = {
   description:
-    'Você está na Farmácia. Posso ajudar a padronizar as fórmulas deste hospital para ficarem disponíveis nas prescrições. Me diga qual fórmula você quer ajustar.',
+    'Você está na Farmácia. Escreva os nomes das fórmulas que você usa e eu procuro no catálogo, para você padronizar várias de uma vez.',
   title: 'Como posso ajudar na farmácia?',
 };

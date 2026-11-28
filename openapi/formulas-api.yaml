@@ -87,6 +87,28 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
   /api/v1/hospitais/{hospitalId}/solicitacoes-formula:
+    get:
+      operationId: listarSolicitacoesFormula
+      x-implemented: true
+      summary: Listar os pedidos de inclusão de fórmula do hospital
+      description: Do mais recente para o mais antigo. Não há status de aprovação (FR-009). Apenas GESTOR.
+      parameters:
+        - $ref: "#/components/parameters/HospitalId"
+      responses:
+        "200":
+          description: Pedidos do hospital
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SolicitacaoFormula"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
     post:
       operationId: solicitarFormula
       x-implemented: true

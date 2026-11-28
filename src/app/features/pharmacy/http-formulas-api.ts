@@ -4,7 +4,7 @@ import { environment } from '@environments/environment';
 import { firstValueFrom } from 'rxjs';
 
 import { isApiPatientId } from '../patient-hub/api-patient-hub-source';
-import { Formula, FormulaCategory } from './formulas.models';
+import { Formula, FormulaCategory, FormulaRequest } from './formulas.models';
 import { FormulasApi } from './formulas-api';
 import { ProvisionalFormulasApi } from './provisional-formulas-api';
 
@@ -109,6 +109,19 @@ export class HttpFormulasApi extends FormulasApi {
         padronizada: standardized,
       }),
     );
+  }
+
+  async listRequests(hospitalId: number): Promise<readonly FormulaRequest[]> {
+    if (!isApiHospitalId(hospitalId)) {
+      return this.provisional.listRequests(hospitalId);
+    }
+    const dtos = await firstValueFrom(
+      this.http.get<{ id: number; descricao: string; createdAt: string }[]>(
+        `${this.base(hospitalId)}/solicitacoes-formula`,
+      ),
+    );
+
+    return dtos.map(dto => ({ createdAt: dto.createdAt, description: dto.descricao, id: String(dto.id) }));
   }
 
   async requestFormula(hospitalId: number, description: string): Promise<void> {

@@ -13,6 +13,14 @@ export const FORMULA_CATEGORIES: readonly { readonly key: FormulaCategory; reado
 /** Base das densidades: por mL (líquidos) ou por grama (pós e módulos). */
 export type FormulaUnit = 'ml' | 'g';
 
+/** Pedido de inclusão de fórmula já enviado pelo hospital (sem status: o cadastro é manual, FR-009). */
+export interface FormulaRequest {
+  readonly id: string;
+  readonly description: string;
+  /** Data e hora do envio (ISO). */
+  readonly createdAt: string;
+}
+
 /** Fórmula do catálogo compartilhado (FR-002/FR-003); `null` = não se aplica ou não informado (exibido "N/A"). */
 export interface Formula {
   readonly id: string;
