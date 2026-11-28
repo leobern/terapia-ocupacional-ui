@@ -9,6 +9,7 @@ import {
   ConversationStepError,
   type ScreenAction,
 } from '../../shared/services/screen-actions.service';
+import { formatBirthDate } from '../../shared/utils/br-date';
 import { HospitalContextService } from '../home/hospital-context.service';
 import {
   type CreateInternacaoRequest,
@@ -16,7 +17,6 @@ import {
   InternacaoFieldError,
   type InternacaoLocation,
 } from './internacao-creation.port';
-import { formatBirthDate } from './parse-birth-date';
 import { type CreatedPatient, PatientCreationPort, PatientFieldError } from './patient-creation.port';
 import {
   LOCATION_KINDS,

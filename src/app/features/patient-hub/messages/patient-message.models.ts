@@ -1,3 +1,5 @@
+import { formatDateTimeShortYear } from '../../../shared/utils/br-date';
+
 /** Perfis profissionais que podem ser mencionados como grupo (@medicos, @nutris, @enfermagem…). */
 export type ProfessionalGroup = 'doctors' | 'nurses' | 'nutritionists' | 'pharmacists' | 'physio' | 'speech';
 
@@ -41,12 +43,8 @@ export interface RecipientSpec {
  */
 export type PatientRecordRequest = Omit<PatientRecord, 'id'> & { readonly recipientSpecs?: readonly RecipientSpec[] };
 
-const pad = (n: number): string => String(n).padStart(2, '0');
-
 export function formatRecordTime(iso: string): string {
-  const d = new Date(iso);
-
-  return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  return formatDateTimeShortYear(iso);
 }
 
 const SPECIALTY_PATTERNS: readonly { readonly group: ProfessionalGroup; readonly pattern: RegExp }[] = [

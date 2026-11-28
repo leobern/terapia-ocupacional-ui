@@ -32,6 +32,8 @@ export class AuthShellComponent {
   readonly text = input<string>('');
   /** O texto é um resultado (ex.: e-mail enviado): leitores de tela anunciam como status. */
   readonly statusText = input<boolean>(false);
+  /** Ícone Phosphor (sólido) por cima do logo, no centro (ex.: `lock-key` na tela de bloqueio). */
+  readonly logoIcon = input<string | null>(null);
 
   protected readonly themeService = inject(ThemeService);
   protected readonly themes: readonly { readonly icon: string; readonly label: string; readonly value: Theme }[] = [

@@ -49,13 +49,6 @@ export function toIsoDate(day: Date): string {
   return `${day.getFullYear()}-${month}-${date}`;
 }
 
-/** DD/MM/AAAA para exibição. */
-export function formatIsoDate(iso: string): string {
-  const [year, month, day] = iso.split('-');
-
-  return `${day}/${month}/${year}`;
-}
-
 /** `null` = data válida (passada ou hoje); data futura não é aceita (decisão do desenho). */
 export function validateEffectiveDate(value: string, today: Date): string | null {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(value) || Number.isNaN(Date.parse(`${value}T00:00:00`))) {

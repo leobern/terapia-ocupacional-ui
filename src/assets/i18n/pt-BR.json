@@ -72,9 +72,11 @@
     "biometricFailed": "Não foi possível reconhecer a biometria. Tente novamente.",
     "message": "Por segurança, o app foi bloqueado após 30 minutos sem uso.",
     "passwordError": "Senha incorreta. Tente novamente.",
-    "passwordLabel": "Senha da conta",
+    "passwordLabel": "Senha",
     "passwordLocked": "Muitas tentativas. Tente novamente mais tarde.",
+    "passwordMessage": "Por segurança, bloqueamos o app depois de um tempo parado. Digite sua senha para continuar.",
     "passwordUnavailable": "Sem conexão. Conecte-se para desbloquear com a senha da conta.",
+    "signOut": "Sair da conta",
     "title": "App bloqueado",
     "unlock": "Desbloquear",
     "useBiometric": "Usar biometria"
