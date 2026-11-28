@@ -234,6 +234,21 @@ export class PharmacyComponent implements OnInit {
     this.warnedRequest = '';
   }
 
+  /** Já existe: em vez do pedido, oferece padronizar ali mesmo (a busca por lista, já preenchida e marcada). */
+  private rejectKnown(exact: readonly Formula[], names: (list: readonly Formula[]) => string): never {
+    const pending = exact.filter(formula => !formula.standardized);
+
+    if (pending.length === 0) {
+      throw new FormSubmitError(`Já está padronizada neste hospital: ${names(exact)}. Não é preciso pedir.`);
+    }
+    const list = pending.map(formula => formula.name).join('\n');
+
+    throw new FormSubmitError(`Já está no catálogo: ${names(pending)}. Não é preciso pedir.`, {
+      label: 'Padronizar agora',
+      run: () => this.assistant.openAction(this.listAction(list)),
+    });
+  }
+
   /** Barra o pedido do que já existe; do que só é parecido, avisa uma vez. */
   private checkCatalog(description: string): void {
     const { exact, similar } = findInCatalog(description, this.formulas());
@@ -244,9 +259,7 @@ export class PharmacyComponent implements OnInit {
         .join(', ');
 
     if (exact.length > 0) {
-      throw new FormSubmitError(
-        `Já está no catálogo: ${names(exact)}. Não é preciso pedir: padronize pela lista da Farmácia.`,
-      );
+      this.rejectKnown(exact, names);
     }
     if (similar.length > 0 && this.warnedRequest !== description) {
       this.warnedRequest = description;
