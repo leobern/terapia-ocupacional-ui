@@ -869,4 +869,17 @@ describe('AppComponent', () => {
       }
     });
   });
+
+  it('o avatar do menu abre o perfil e fecha o menu', () => {
+    const router = TestBed.inject(Router);
+
+    spyOn(router, 'navigate').and.resolveTo(true);
+    fixture.componentInstance.menuOpen.set(true);
+    fixture.detectChanges();
+    (fixture.nativeElement.querySelector('app-nav-menu .nav-menu__profile') as HTMLButtonElement).click();
+    fixture.detectChanges();
+
+    expect(router.navigate).toHaveBeenCalledWith(['/profile']);
+    expect(fixture.componentInstance.menuOpen()).toBeFalse();
+  });
 });

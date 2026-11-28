@@ -3,6 +3,7 @@ export interface AccessTokenClaims {
   readonly groups?: unknown;
   readonly nomeCompleto?: unknown;
   readonly upn?: unknown;
+  readonly usuarioId?: unknown;
 }
 
 /**

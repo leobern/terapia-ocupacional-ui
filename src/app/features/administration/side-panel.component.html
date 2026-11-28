@@ -1,0 +1,34 @@
+@if (open()) {
+  <div
+    class="side-panel__scrim"
+    aria-hidden="true"
+    (click)="closed.emit()"
+  ></div>
+  <section
+    #panel
+    class="side-panel"
+    role="dialog"
+    aria-modal="true"
+    tabindex="-1"
+    [attr.aria-label]="title()"
+  >
+    <header class="side-panel__header">
+      <h2 class="side-panel__title">{{ title() }}</h2>
+      <app-icon-button
+        kind="secondary"
+        appearance="icon"
+        size="small"
+        icon="x"
+        ariaLabel="Fechar"
+        (click)="closed.emit()"
+      />
+    </header>
+    @if (description()) {
+      <p class="side-panel__description">{{ description() }}</p>
+    }
+    <div class="side-panel__body"><ng-content select="[panelBody]" /></div>
+    <footer class="side-panel__footer">
+      <ng-content select="[panelFooter]" />
+    </footer>
+  </section>
+}

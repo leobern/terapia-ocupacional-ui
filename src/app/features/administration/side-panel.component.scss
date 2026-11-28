@@ -1,0 +1,80 @@
+@use '../../shared/styles/breakpoints';
+@use '../../shared/styles/tokens';
+@use '../../shared/styles/typography';
+
+.side-panel__scrim {
+  position: fixed;
+  z-index: 40;
+  inset: 0;
+  background: tokens.c(scrim);
+}
+
+.side-panel {
+  position: fixed;
+  z-index: 41;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$space-8;
+  max-height: 92vh;
+  padding: tokens.$space-16;
+  border-radius: tokens.$radius-md tokens.$radius-md 0 0;
+  background: tokens.c(surface);
+  color: tokens.c(content-1);
+  outline: none;
+
+  @include breakpoints.md {
+    top: 0;
+    left: auto;
+    width: 480px;
+    max-height: none;
+    padding: tokens.$space-24;
+    border-radius: 4px 0 0 4px;
+    border-left: 4px solid tokens.c(secondary);
+  }
+}
+
+.side-panel__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: tokens.$space-8;
+}
+
+.side-panel__title {
+  margin: 0;
+  color: tokens.c(content-1);
+
+  @include typography.title-lg;
+}
+
+.side-panel__description {
+  margin: 0;
+  color: tokens.c(content-4);
+
+  @include typography.body-md;
+}
+
+.side-panel__body {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: tokens.$space-16;
+  min-height: 0;
+  overflow-y: auto;
+  padding: tokens.$space-8 0;
+}
+
+.side-panel__footer {
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$space-8;
+  padding-top: tokens.$space-8;
+
+  @include breakpoints.md {
+    flex-direction: row;
+    justify-content: flex-start;
+  }
+}

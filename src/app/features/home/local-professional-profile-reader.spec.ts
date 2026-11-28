@@ -25,6 +25,14 @@ describe('LocalProfessionalProfileReader', () => {
     expect(reader.read()).toEqual({ name: 'Almira Conceição', role: 'doctor' });
   });
 
+  it('lê o id do usuário (claim usuarioId) quando há', () => {
+    const payload = btoa(JSON.stringify({ nomeCompleto: 'Ana', usuarioId: 42 }));
+
+    store.open({ accessToken: 'h.' + payload + '.s', refreshToken: 'r' });
+
+    expect(reader.read()).toEqual({ id: 42, name: 'Ana', role: 'doctor' });
+  });
+
   it('sem sessão ou sem nome no token mantém o perfil fixo do modo dev', () => {
     expect(reader.read().name).toBe('Michelle Franklin');
     store.open({ accessToken: `h.${btoa('{"nomeCompleto":"  "}')}.s`, refreshToken: 'r' });

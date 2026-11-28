@@ -1,0 +1,82 @@
+@use '../../shared/styles/tokens';
+@use '../../shared/styles/typography';
+@use 'admin';
+
+.edit {
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$space-12;
+}
+
+.edit__card {
+  @include admin.card;
+
+  gap: tokens.$space-8;
+  padding: tokens.$space-16;
+  border-radius: tokens.$radius-sm;
+}
+
+.edit__photo {
+  flex-direction: row;
+  align-items: center;
+}
+
+.edit__photo-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: tokens.$space-4;
+}
+
+.edit__upload {
+  @include admin.chip;
+
+  display: inline-flex;
+  align-items: center;
+}
+
+.edit__file {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+}
+
+.edit__remove {
+  min-height: 44px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: tokens.c(content-2);
+  cursor: pointer;
+
+  @include typography.label-md;
+}
+
+.edit__label {
+  color: tokens.c(content-1);
+
+  @include typography.label-md;
+}
+
+.edit__input {
+  @include admin.field-input;
+}
+
+.edit__hint {
+  margin: 0;
+  color: tokens.c(content-4);
+
+  @include typography.caption;
+}
+
+.edit__error {
+  margin: 0;
+  color: tokens.c(comm-alert);
+
+  @include typography.body-md;
+}
+
+.edit__footer {
+  display: contents;
+}

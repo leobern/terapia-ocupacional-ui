@@ -1,0 +1,93 @@
+@use '../../shared/styles/tokens';
+@use '../../shared/styles/typography';
+@use 'admin';
+
+.invite {
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$space-16;
+}
+
+.invite__card {
+  @include admin.card;
+
+  margin: 0;
+  gap: tokens.$space-8;
+  padding: tokens.$space-16;
+  border-radius: tokens.$radius-sm;
+}
+
+.invite__label {
+  margin: 0;
+  color: tokens.c(content-1);
+
+  @include typography.label-md;
+}
+
+.invite__input {
+  @include admin.field-input;
+}
+
+.invite__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: tokens.$space-8;
+}
+
+.invite__chip {
+  @include admin.chip;
+}
+
+.invite__list {
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$space-8;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.invite__check {
+  display: flex;
+  align-items: center;
+  gap: tokens.$space-12;
+  min-height: 44px;
+  color: tokens.c(content-1);
+
+  @include typography.body-md;
+
+  input {
+    width: 20px;
+    height: 20px;
+    accent-color: tokens.c(secondary);
+  }
+}
+
+.invite__link {
+  margin: 0;
+  padding: tokens.$space-12 tokens.$space-16;
+  border-radius: tokens.$radius-12;
+  background: tokens.c(surface-2);
+  color: tokens.c(content-2);
+  word-break: break-all;
+
+  @include typography.body-md;
+}
+
+.invite__hint {
+  margin: 0;
+  color: tokens.c(content-4);
+
+  @include typography.caption;
+}
+
+.invite__error {
+  margin: 0;
+  color: tokens.c(comm-alert);
+
+  @include typography.body-md;
+}
+
+.invite__footer {
+  display: contents;
+}

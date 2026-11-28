@@ -103,6 +103,15 @@ describe('NavMenuComponent', () => {
     });
   }
 
+  it('o avatar do usuário emite profileClick', () => {
+    const profileClick = jasmine.createSpy('profileClick');
+
+    fixture.componentInstance.profileClick.subscribe(profileClick);
+    (fixture.nativeElement.querySelector('.nav-menu__profile') as HTMLButtonElement).click();
+
+    expect(profileClick).toHaveBeenCalledWith(undefined);
+  });
+
   it('emits logoutClick when "Sair" is clicked', () => {
     const logoutClick = jasmine.createSpy('logoutClick');
 

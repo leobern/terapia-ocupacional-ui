@@ -428,6 +428,11 @@ export class AppComponent {
     this.confirmDiscardThen(() => void this.router.navigate(['/team']));
   }
 
+  protected onProfileClick(): void {
+    this.menuOpen.set(false);
+    this.confirmDiscardThen(() => void this.router.navigate(['/profile']));
+  }
+
   protected onFarmaciaClick(): void {
     this.menuOpen.set(false);
     this.confirmDiscardThen(() => void this.router.navigate(['/pharmacy']));

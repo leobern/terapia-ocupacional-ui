@@ -20,9 +20,9 @@ import { ViewportBreakpointService } from '../../services/viewport-breakpoint.se
 // `shared/` nunca importa de `features/` (Princípio IX). O import anterior apontava
 // para `features/home/components/avatar`, diretório que nunca existiu no repositório —
 // o build inteiro quebrava (achado do code review do PR #1).
-import { AvatarComponent } from '../avatar/avatar.component';
 import { IconButtonComponent } from '../icon-button/icon-button.component';
 import { IconLogoButtonComponent } from '../icon-logo/icon-logo-button.component';
+import { UserAvatarComponent } from '../user-avatar/user-avatar.component';
 
 /** Mapeia as 6 chaves fixas dos itens de navegação (spec.md § Clarifications + Home). */
 export type NavMenuItemKey = 'home' | 'farmacia' | 'pacientes' | 'tutorial' | 'vinculos' | 'equipe';
@@ -70,9 +70,9 @@ const SWIPE_CLOSE_PX = 56;
 const ROLE_LABELS: Readonly<Record<string, string>> = {
   [Role.ADMIN]: 'Administração',
   [Role.GESTOR]: 'Gestão',
+  [Role.MEDICO]: 'Médico',
   [Role.RECECIONISTA]: 'Recepção',
   [Role.TERAPEUTA]: 'Terapeuta',
-  [Role.MEDICO]: 'Médico',
 };
 
 /** Equipe (Administração): só ADMIN e GESTOR; sem sessão (desenvolvimento) também aparece. O backend autoriza de fato. */
@@ -86,7 +86,7 @@ function canSeeTeam(role: Role | null): boolean {
     '[class.nav-menu--open]': 'open()',
     '[class.nav-menu--suppressed]': 'suppressed()',
   },
-  imports: [AvatarComponent, IconButtonComponent, IconLogoButtonComponent, PhIconComponent],
+  imports: [IconButtonComponent, IconLogoButtonComponent, PhIconComponent, UserAvatarComponent],
   selector: 'app-nav-menu',
   styleUrl: './nav-menu.component.scss',
   templateUrl: './nav-menu.component.html',
@@ -108,14 +108,17 @@ export class NavMenuComponent {
   readonly tutorialClick = output();
   readonly vinculosClick = output();
   readonly equipeClick = output();
+  /** Foto/nome do usuário: abre o perfil. */
+  readonly profileClick = output();
   readonly logoutClick = output();
 
   /**
    * Nome e perfil do profissional autenticado (claims do token); sem sessão (modo dev) ou sem os leitores
    * (galeria e testes do componente) mantém o perfil fixo.
    */
-  protected readonly professionalName =
-    inject(ProfessionalProfileReader, { optional: true })?.read().name ?? 'Michelle Franklin';
+  protected readonly profile = inject(ProfessionalProfileReader, { optional: true })?.read();
+  protected readonly professionalName = this.profile?.name ?? 'Michelle Franklin';
+  protected readonly professionalId = this.profile?.id ?? null;
   protected readonly professionalRole =
     ROLE_LABELS[inject(SessionRoleReader, { optional: true })?.read() ?? ''] ?? 'Nutróloga';
 
@@ -186,6 +189,11 @@ export class NavMenuComponent {
         this.equipeClick.emit();
         break;
     }
+  }
+
+  protected onProfileClick(): void {
+    this.collapseAfterClick();
+    this.profileClick.emit();
   }
 
   protected onFocus(): void {

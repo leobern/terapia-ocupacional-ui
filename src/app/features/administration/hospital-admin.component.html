@@ -1,0 +1,149 @@
+<app-page-container>
+  <div class="hospitals">
+    <app-page-header icon="hospital" title="Hospitais" [subtitle]="subtitle()">
+      @if (isAdmin) {
+        <app-button
+          pageHeaderActions
+          size="md"
+          label="+ Cadastrar hospital"
+          (click)="openCreate()"
+        />
+      }
+    </app-page-header>
+
+    <input
+      class="hospitals__search"
+      type="search"
+      placeholder="Buscar hospital"
+      aria-label="Buscar hospital"
+      [value]="search()"
+      (input)="onSearch($event)"
+    />
+
+    @if (error(); as message) {
+      @if (!panelOpen()) {
+        <p class="hospitals__state hospitals__state--error" role="alert">
+          {{ message }}
+        </p>
+      }
+    }
+
+    @switch (status()) {
+      @case ('loading') {
+        <p class="hospitals__state" role="status">Carregando os hospitais…</p>
+      }
+      @case ('error') {
+        <div class="hospitals__state hospitals__state--error" role="alert">
+          <p>Erro ao carregar os hospitais.</p>
+          <button type="button" class="hospitals__link" (click)="load()">
+            Tentar novamente
+          </button>
+        </div>
+      }
+      @default {
+        <ul class="hospitals__list">
+          @for (hospital of visible(); track hospital.id) {
+            <li class="hospitals__item">
+              <div class="hospitals__main">
+                <p class="hospitals__name">{{ hospital.nome }}</p>
+                <p class="hospitals__meta">
+                  {{ hospital.endereco ?? 'Sem endereço' }}
+                </p>
+              </div>
+              <p class="hospitals__meta">
+                {{ hospital.pessoas }}
+                {{ hospital.pessoas === 1 ? 'pessoa' : 'pessoas' }} ·
+                {{ hospital.pacientes }}
+                {{ hospital.pacientes === 1 ? 'paciente' : 'pacientes' }} ·
+                {{
+                  hospital.gestor ? 'Gestor: ' + hospital.gestor : 'Sem gestor'
+                }}
+              </p>
+              <span
+                class="hospitals__status"
+                [attr.data-active]="hospital.ativo"
+              >
+                {{ hospital.ativo ? 'Ativo' : 'Inativo' }}
+              </span>
+              @if (isAdmin) {
+                <div class="hospitals__actions">
+                  <button
+                    type="button"
+                    class="hospitals__link"
+                    (click)="openEdit(hospital)"
+                  >
+                    Editar
+                  </button>
+                  <button
+                    type="button"
+                    class="hospitals__link"
+                    (click)="toggleActive(hospital)"
+                  >
+                    {{ hospital.ativo ? 'Inativar' : 'Reativar' }}
+                  </button>
+                </div>
+              }
+            </li>
+          } @empty {
+            <li class="hospitals__state" role="status">
+              Nenhum hospital encontrado.
+            </li>
+          }
+        </ul>
+      }
+    }
+  </div>
+</app-page-container>
+
+<app-side-panel
+  description="Informe o nome e o endereço. Depois de salvar, convide o primeiro gestor pela Equipe."
+  [open]="panelOpen()"
+  [title]="editing() ? 'Editar hospital' : 'Cadastrar hospital'"
+  (closed)="panelOpen.set(false)"
+>
+  <div panelBody class="hospital-form">
+    <div class="hospital-form__card">
+      <label class="hospital-form__label" for="hospital-name"
+        >Nome do hospital</label
+      >
+      <input
+        id="hospital-name"
+        class="hospital-form__input"
+        type="text"
+        [value]="name()"
+        (input)="onName($event)"
+      />
+      <p class="hospital-form__hint">Obrigatório. Deve ser único.</p>
+    </div>
+    <div class="hospital-form__card">
+      <label class="hospital-form__label" for="hospital-address"
+        >Endereço</label
+      >
+      <input
+        id="hospital-address"
+        class="hospital-form__input"
+        type="text"
+        [value]="address()"
+        (input)="onAddress($event)"
+      />
+      <p class="hospital-form__hint">Rua, número, cidade e estado.</p>
+    </div>
+    @if (error(); as message) {
+      <p class="hospitals__state hospitals__state--error" role="alert">
+        {{ message }}
+      </p>
+    }
+  </div>
+  <div panelFooter class="hospital-form__footer">
+    <app-button
+      [label]="editing() ? 'Salvar' : 'Cadastrar hospital'"
+      [disabled]="saving()"
+      (click)="save()"
+    />
+    <app-button
+      kind="secondary"
+      label="Cancelar"
+      (click)="panelOpen.set(false)"
+    />
+  </div>
+</app-side-panel>
