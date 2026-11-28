@@ -35,6 +35,7 @@ type LoadStatus = 'loading' | 'ready' | 'error';
 })
 export class PharmacyComponent implements OnInit {
   protected readonly hospital = inject(HospitalContextService).selected;
+  protected readonly hospitalStatus = inject(HospitalContextService).status;
   protected readonly unreadCount = signal(0);
   protected readonly status = signal<LoadStatus>('loading');
   protected readonly formulas = signal<readonly Formula[]>([]);
@@ -50,6 +51,7 @@ export class PharmacyComponent implements OnInit {
   );
 
   private readonly api = inject(FormulasApi);
+  private readonly context = inject(HospitalContextService);
   private readonly router = inject(Router);
   private readonly unread = inject(UnreadNotificationsReader);
   private readonly screenActions = inject(ScreenActionsService);
@@ -108,7 +110,22 @@ export class PharmacyComponent implements OnInit {
   }
 
   async ngOnInit(): Promise<void> {
-    this.unreadCount.set(await this.unread.countUnread());
+    // Falha anterior ao carregar os hospitais: tenta de novo ao abrir a tela (como a Home).
+    if (this.hospitalStatus() === 'error') {
+      void this.context.load();
+    }
+    this.unreadCount.set(await this.unread.countUnread().catch(() => 0));
+  }
+
+  protected reloadHospitals(): void {
+    void this.context.load();
+  }
+
+  protected subtitle(): string {
+    const name = this.hospital()?.name;
+    const hint = 'Fórmulas padronizadas ficam disponíveis na prescrição deste hospital.';
+
+    return name ? `${name} · ${hint}` : hint;
   }
 
   protected openNotifications(): void {
