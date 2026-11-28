@@ -229,6 +229,8 @@ describe('PharmacyComponent', () => {
       const context = TestBed.inject(HospitalContextService);
 
       spyOn(TestBed.inject(LinkedHospitalsReader), 'read').and.callFake(read);
+      // Sem os hospitais do beforeEach: com um já selecionado, a falha na releitura mantém a tela do catálogo.
+      context.hospitals.set([]);
       await context.load();
       const other = TestBed.createComponent(PharmacyComponent);
 
@@ -252,7 +254,7 @@ describe('PharmacyComponent', () => {
 
       (fixture.nativeElement.querySelector('.pharmacy__retry') as HTMLButtonElement).click();
 
-      expect(load).toHaveBeenCalled();
+      expect(load).toHaveBeenCalledWith();
     });
 
     it('enquanto os hospitais carregam, informa isso', () => {
